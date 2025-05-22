@@ -1,0 +1,56 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "lib": ["ES2020", "DOM"],
+    "outDir": "./dist",
+    "rootDir": "./",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "declaration": true,
+    "sourceMap": true,
+    "jsx": "react",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "baseUrl": "./",
+    "paths": {
+      "@/*": ["src/*"],
+      "@core/*": ["src/core/*"],
+      "@utils/*": ["src/utils/*"],
+      "@plugins/*": ["src/plugins/*"],
+      "@tools/*": ["tools/*"],
+      "@crash-analyzer/*": ["src/plugins/crash-analyzer/*"],
+      "@log-viz/*": ["src/plugins/log-visualization/*"],
+      "../../../../utils/*": ["src/utils/*"],
+      "../../../../core/*": ["src/core/*"],
+      "../../../utils/*": ["src/utils/*"],
+      "../../../core/*": ["src/core/*"],
+      "../../../../tools/*": ["tools/*"]
+    },
+    "typeRoots": ["./node_modules/@types", "./src/types"]
+  },
+  "include": [
+    "src/core/**/*",
+    "src/server/**/*",
+    "src/infrastructure/**/*",
+    "src/utils/**/*",
+    "src/index.ts",
+    "tools/**/*"
+  ],
+  "exclude": [
+    "node_modules", 
+    "dist", 
+    "**/*.test.ts", 
+    "**/*.test.tsx", 
+    "**/__tests__/**/*", 
+    "src/client/**/*",
+    "src/ui/**/*",
+    "src/plugins/crash-analyzer/ui/**/*",
+    "src/plugins/log-visualization/ui/**/*",
+    "src/plugins/**/ui/**/*",
+    "src/types/client.d.ts"
+  ]
+}

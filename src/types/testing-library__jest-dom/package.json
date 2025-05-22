@@ -1,0 +1,6 @@
+{
+  "name": "testing-library__jest-dom",
+  "version": "1.0.0",
+  "description": "Type definitions for @testing-library/jest-dom",
+  "types": "index.d.ts"
+}

@@ -1,0 +1,15 @@
+instrumentation:
+  excludes: ['**/node_modules/**', '**/dist/**', '**/coverage/**', '**/*.test.ts', '**/*.test.tsx', '**/__tests__/**', '**/jest.*']
+  extensions: ['.ts', '.tsx']
+
+reporting:
+  print: summary
+  reports:
+    - html
+    - lcov
+    - json-summary
+  watermarks:
+    statements: [70, 80]
+    lines: [70, 80]
+    functions: [70, 80]
+    branches: [70, 80]

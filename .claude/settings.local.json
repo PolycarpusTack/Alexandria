@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(touch:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm install:*)",
+      "Bash(ls:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(git checkout:*)",
+      "Bash(npx tailwindcss init:*)",
+      "Bash(cat:*)",
+      "Bash(chmod:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx typescript:*)",
+      "Bash(node:*)",
+      "Bash(curl:*)",
+      "WebFetch(domain:docs.anthropic.com)",
+      "Bash(rm:*)",
+      "Bash(npm test:*)",
+      "Bash(cp:*)",
+      "Bash(rg:*)",
+      "Bash(sed:*)",
+      "Bash(mv:*)",
+      "Bash(npm run build:*)",
+      "Bash(npx vite build:*)",
+      "Bash(npm uninstall:*)"
+    ],
+    "deny": []
+  }
+}

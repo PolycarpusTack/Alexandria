@@ -1,0 +1,10 @@
+{
+  "coverageDirectory": "./coverage",
+  "badgesDirectory": "./badges",
+  "reportingMode": "flat",
+  "badgesFormats": ["svg"],
+  "badgesStyle": "flat",
+  "badgesUrl": "/badges",
+  "readmeFile": "./README.md",
+  "coverageFile": "./coverage/coverage-summary.json"
+}

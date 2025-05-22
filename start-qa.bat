@@ -1,0 +1,3 @@
+@echo off
+echo Starting Alexandria in QA mode...
+node start-qa.js

@@ -1,0 +1,48 @@
+{
+  "id": "alexandria-crash-analyzer",
+  "name": "AI-Powered Crash Analyzer",
+  "version": "1.0.0",
+  "description": "Analyzes crash logs using AI to identify root causes and suggest solutions",
+  "author": {
+    "name": "Alexandria Team",
+    "email": "team@alexandria-platform.com"
+  },
+  "license": "MIT",
+  "main": "src/index.ts",
+  "minPlatformVersion": "0.1.0",
+  "permissions": [
+    "file:read",
+    "llm:access",
+    "database:access",
+    "event:subscribe",
+    "event:publish"
+  ],
+  "dependencies": [],
+  "uiEntryPoints": [
+    {
+      "id": "crash-analyzer-dashboard",
+      "name": "Crash Analyzer",
+      "location": "sidebar",
+      "icon": "mdi-bug-outline",
+      "component": "ui/components/Dashboard"
+    },
+    {
+      "id": "crash-log-detail",
+      "name": "Crash Log Detail",
+      "location": "main",
+      "component": "ui/components/CrashLogDetail"
+    },
+    {
+      "id": "crash-analyzer-code-snippet-detail",
+      "name": "Code Analysis",
+      "location": "main",
+      "component": "ui/components/CodeSnippetDetail",
+      "routes": ["/snippets/:snippetId"]
+    }
+  ],
+  "eventSubscriptions": [
+    "system:initialized",
+    "user:authenticated",
+    "log:uploaded"
+  ]
+}
