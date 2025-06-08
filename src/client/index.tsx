@@ -9,7 +9,8 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter as Router } from 'react-router-dom';
 import App from './App';
 import { UIRegistryImpl, UIContextProvider } from './components/ui';
-import ThemeProvider from './styles/ThemeProvider';
+import { ThemeProvider } from './components/theme-provider';
+import StyledThemeProvider from './styles/ThemeProvider';
 import { createClientLogger } from './utils/client-logger';
 import './global.css';
 
@@ -31,12 +32,14 @@ if (!root) {
 // Render the app
 ReactDOM.createRoot(root).render(
   <React.StrictMode>
-    <ThemeProvider>
-      <Router>
-        <UIContextProvider uiRegistry={uiRegistry}>
-          <App />
-        </UIContextProvider>
-      </Router>
+    <ThemeProvider defaultTheme="system">
+      <StyledThemeProvider>
+        <Router>
+          <UIContextProvider uiRegistry={uiRegistry}>
+            <App />
+          </UIContextProvider>
+        </Router>
+      </StyledThemeProvider>
     </ThemeProvider>
   </React.StrictMode>
 );

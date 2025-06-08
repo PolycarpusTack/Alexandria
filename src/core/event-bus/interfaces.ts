@@ -6,7 +6,7 @@
  */
 
 /**
- * Event data type
+ * Event data type - structured data with known types
  */
 export type EventData = Record<string, any>;
 
@@ -191,4 +191,9 @@ export interface EventBus {
    * Remove all subscriptions
    */
   clearAllSubscriptions(): void;
+  
+  /**
+   * Destroy the event bus and clean up all resources
+   */
+  destroy(): void;
 }

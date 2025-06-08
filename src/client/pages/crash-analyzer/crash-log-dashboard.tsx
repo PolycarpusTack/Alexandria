@@ -24,7 +24,10 @@ import { Badge } from '../../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Input } from '../../components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../components/ui/select';
-import { UploadIcon, Search, Plus, Filter, RefreshCw, ExternalLink, Trash2 } from 'lucide-react';
+import { Upload, Search, Plus, Filter, RefreshCw, ExternalLink, Trash2 } from 'lucide-react';
+import { createClientLogger } from '../../utils/client-logger';
+
+const logger = createClientLogger({ serviceName: 'crash-log-dashboard' });
 
 export const CrashLogDashboard: React.FC = () => {
   const { service } = useCrashAnalyzerContext();
@@ -46,7 +49,7 @@ export const CrashLogDashboard: React.FC = () => {
       setCrashLogs(logs);
       setError(null);
     } catch (err) {
-      console.error('Error loading crash logs:', err);
+      logger.error('Error loading crash logs', { error: err });
       setError('Failed to load crash logs. Please try again.');
     } finally {
       setLoading(false);
@@ -68,7 +71,7 @@ export const CrashLogDashboard: React.FC = () => {
         await service.deleteCrashLog(logId);
         loadCrashLogs();
       } catch (err) {
-        console.error('Error deleting crash log:', err);
+        logger.error('Error deleting crash log', { error: err, logId });
         setError('Failed to delete crash log. Please try again.');
       }
     }
@@ -106,7 +109,7 @@ export const CrashLogDashboard: React.FC = () => {
           <p className="text-muted-foreground">Analyze crash logs using AI to identify root causes</p>
         </div>
         <Button onClick={handleUploadClick}>
-          <UploadIcon className="mr-2 h-4 w-4" />
+          <Upload className="mr-2 h-4 w-4" />
           Upload Crash Log
         </Button>
       </div>

@@ -44,7 +44,7 @@ done
 # Install missing dependencies
 if [ ! -z "$MISSING_DEPS" ]; then
   echo "Installing missing dependencies: $MISSING_DEPS"
-  npm install $MISSING_DEPS
+  ppppnpm install $MISSING_DEPS
 else
   echo "All dependencies are installed"
 fi
@@ -52,7 +52,7 @@ fi
 # Install missing type definitions
 if [ ! -z "$MISSING_TYPES" ]; then
   echo "Installing missing type definitions: $MISSING_TYPES"
-  npm install --save-dev $MISSING_TYPES
+  ppppnpm install --save-dev $MISSING_TYPES
 else
   echo "All type definitions are installed"
 fi

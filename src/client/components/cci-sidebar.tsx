@@ -129,6 +129,7 @@ export function CCISidebar() {
       <SidebarItem icon="home" label="Dashboard" to="/" />
       
       <Section icon="plug" label="Plugins" defaultOpen>
+        <SidebarItem icon="robot" label="ALFRED Assistant" to="/alfred" status="green" />
         <SidebarItem icon="microchip" label="Crash Analyzer" to="/crash-analyzer" status="green" />
         <SidebarItem icon="chart-line" label="Log Visualization" to="/log-visualization" status="red" />
         <SidebarItem icon="ticket" label="Ticket Analysis" to="/ticket-analysis" status="green" />

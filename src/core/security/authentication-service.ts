@@ -27,28 +27,53 @@ export class JwtAuthenticationService implements AuthenticationService {
   private tokenExpiration: number; // in seconds
   private refreshTokens: Map<string, { userId: string; expiresAt: Date }> = new Map();
   private isInitialized: boolean = false;
+  private readonly MIN_JWT_SECRET_LENGTH = 32;
 
   constructor(
     logger: Logger, 
     dataService: DataService,
-    options?: {
-      jwtSecret?: string;
+    options: {
+      jwtSecret: string;
       tokenExpiration?: number; // in seconds
     }
   ) {
     this.logger = logger;
     this.dataService = dataService;
-    this.jwtSecret = options?.jwtSecret || process.env.JWT_SECRET || 'alexandria-dev-secret';
-    this.tokenExpiration = options?.tokenExpiration || 3600; // 1 hour default
     
-    // Warn if using default secret in production
-    if (
-      this.jwtSecret === 'alexandria-dev-secret' && 
-      process.env.NODE_ENV === 'production'
-    ) {
-      this.logger.warn('Using default JWT secret in production environment. This is insecure.', {
-        component: 'JwtAuthenticationService'
-      });
+    // Validate JWT secret
+    if (!options.jwtSecret) {
+      throw new Error('JWT secret is required and must be provided in options');
+    }
+    
+    if (options.jwtSecret.length < this.MIN_JWT_SECRET_LENGTH) {
+      throw new Error(`JWT secret must be at least ${this.MIN_JWT_SECRET_LENGTH} characters long for security`);
+    }
+    
+    // Check for weak secrets
+    const weakSecrets = ['alexandria-dev-secret', 'secret', 'password', 'changeme'];
+    if (weakSecrets.includes(options.jwtSecret.toLowerCase())) {
+      throw new Error('JWT secret appears to be a weak or default value. Please use a strong, random secret');
+    }
+    
+    this.jwtSecret = options.jwtSecret;
+    this.tokenExpiration = options.tokenExpiration || 3600; // 1 hour default
+    
+    // Additional warning for production
+    if (process.env.NODE_ENV === 'production') {
+      // Ensure the secret has sufficient entropy (basic check)
+      const hasNumbers = /\d/.test(this.jwtSecret);
+      const hasLowerCase = /[a-z]/.test(this.jwtSecret);
+      const hasUpperCase = /[A-Z]/.test(this.jwtSecret);
+      const hasSpecialChars = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(this.jwtSecret);
+      
+      const complexityScore = [hasNumbers, hasLowerCase, hasUpperCase, hasSpecialChars].filter(Boolean).length;
+      
+      if (complexityScore < 3) {
+        this.logger.warn('JWT secret has low complexity. Consider using a more complex secret with mixed character types', {
+          component: 'JwtAuthenticationService',
+          complexityScore
+        });
+      }
     }
   }
 
@@ -88,6 +113,12 @@ export class JwtAuthenticationService implements AuthenticationService {
     // Find user by username
     const user = await this.dataService.users.findByUsername(username);
     
+    // Log authentication attempt (without sensitive data)
+    this.logger.debug('Authentication attempt', {
+      component: 'JwtAuthenticationService',
+      username: username
+    });
+    
     if (!user) {
       this.logger.debug('Authentication failed: User not found', {
         component: 'JwtAuthenticationService',
@@ -109,21 +140,30 @@ export class JwtAuthenticationService implements AuthenticationService {
     }
     
     // Verify password
-    // In a real implementation, this would check against hashed passwords
-    // For this example, we assume the password is stored in the metadata
+    const passwordHash = user.hashedPassword || (user.metadata?.passwordHash as string) || '';
+    
+    if (!passwordHash) {
+      this.logger.error('No password hash found for user', {
+        component: 'JwtAuthenticationService',
+        userId: user.id
+      });
+      throw new Error('Invalid credentials');
+    }
+    
+    // Log authentication attempt without sensitive data
+    this.logger.debug('Password verification attempt', {
+      component: 'JwtAuthenticationService',
+      username
+    });
+    
     const passwordValid = await this.comparePassword(
       password,
-      user.metadata?.passwordHash || 'no-password'
+      passwordHash
     );
     
     if (!passwordValid) {
-      this.logger.debug('Authentication failed: Invalid password', {
-        component: 'JwtAuthenticationService',
-        username,
-        userId: user.id
-      });
-      
-      throw new Error('Invalid username or password');
+      // Use generic error message
+      throw new Error('Invalid credentials');
     }
     
     // Generate token

@@ -1,18 +1,17 @@
 import React, { useState } from 'react';
-import { NavLink, useLocation } from 'react-router-dom';
-import { cn } from '../lib/utils';
+import { useLocation, NavLink } from 'react-router-dom';
 import {
-  HomeIcon,
-  PackageIcon,
-  SettingsIcon,
-  BugIcon,
-  BarChartIcon,
-  DatabaseIcon,
-  TicketIcon,
-  BookIcon,
-  PlusIcon,
-  ChevronDownIcon,
-  ChevronRightIcon,
+  Home,
+  Package,
+  Settings,
+  Bug,
+  BarChart3 as BarChart,
+  Database,
+  Ticket,
+  Book,
+  Plus,
+  ChevronDown,
+  ChevronRight,
 } from 'lucide-react';
 import { Button } from './ui/button';
 import {
@@ -20,6 +19,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from './ui/collapsible';
+import { cn } from '../lib/utils';
 
 interface SidebarItemProps {
   to: string;
@@ -69,9 +69,9 @@ const SidebarGroup: React.FC<SidebarGroupProps> = ({ title, children, defaultOpe
       <CollapsibleTrigger className="flex w-full items-center justify-between px-3 py-1 text-sm font-medium text-muted-foreground hover:text-foreground">
         {title}
         {isOpen ? (
-          <ChevronDownIcon className="h-4 w-4" />
+          <ChevronDown className="h-4 w-4" />
         ) : (
-          <ChevronRightIcon className="h-4 w-4" />
+          <ChevronRight className="h-4 w-4" />
         )}
       </CollapsibleTrigger>
       <CollapsibleContent className="space-y-1 px-1 py-2">
@@ -86,29 +86,29 @@ export const Sidebar: React.FC = () => {
     <div className="sidebar">
       <div className="flex flex-col space-y-6">
         <div className="space-y-1">
-          <SidebarItem to="/" icon={<HomeIcon className="h-4 w-4" />} label="Dashboard" />
+          <SidebarItem to="/" icon={<Home className="h-4 w-4" />} label="Dashboard" />
         </div>
 
         <SidebarGroup title="PLUGINS" defaultOpen={true}>
           <SidebarItem 
             to="/crash-analyzer" 
-            icon={<BugIcon className="h-4 w-4" />} 
+            icon={<Bug className="h-4 w-4" />} 
             label="Crash Analyzer" 
             badge={3} 
           />
           <SidebarItem 
             to="/log-visualization" 
-            icon={<BarChartIcon className="h-4 w-4" />} 
+            icon={<BarChart className="h-4 w-4" />} 
             label="Log Visualization" 
           />
           <SidebarItem 
             to="/ticket-analysis" 
-            icon={<TicketIcon className="h-4 w-4" />} 
+            icon={<Ticket className="h-4 w-4" />} 
             label="Ticket Analysis" 
           />
           <SidebarItem 
             to="/knowledge-base" 
-            icon={<BookIcon className="h-4 w-4" />} 
+            icon={<Book className="h-4 w-4" />} 
             label="Knowledge Base" 
           />
         </SidebarGroup>
@@ -116,12 +116,12 @@ export const Sidebar: React.FC = () => {
         <SidebarGroup title="WORKFLOWS" defaultOpen={false}>
           <SidebarItem 
             to="/workflows/ticket-to-resolution" 
-            icon={<DatabaseIcon className="h-4 w-4" />} 
+            icon={<Database className="h-4 w-4" />} 
             label="Ticket to Resolution" 
           />
           <SidebarItem 
             to="/workflows/proactive-communication" 
-            icon={<DatabaseIcon className="h-4 w-4" />} 
+            icon={<Database className="h-4 w-4" />} 
             label="Proactive Communication" 
           />
         </SidebarGroup>
@@ -129,19 +129,19 @@ export const Sidebar: React.FC = () => {
         <SidebarGroup title="SYSTEM" defaultOpen={false}>
           <SidebarItem 
             to="/settings" 
-            icon={<SettingsIcon className="h-4 w-4" />} 
+            icon={<Settings className="h-4 w-4" />} 
             label="Settings" 
           />
           <SidebarItem 
             to="/plugins" 
-            icon={<PackageIcon className="h-4 w-4" />} 
+            icon={<Package className="h-4 w-4" />} 
             label="Plugin Manager" 
           />
         </SidebarGroup>
 
         <div className="pt-4">
           <Button className="w-full justify-start" variant="outline">
-            <PlusIcon className="mr-2 h-4 w-4" />
+            <Plus className="mr-2 h-4 w-4" />
             Add Plugin
           </Button>
         </div>

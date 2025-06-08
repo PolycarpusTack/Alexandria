@@ -9,9 +9,13 @@
  * import { Button, Card } from '@ui/components';
  */
 import React from 'react';
+import { createClientLogger } from '../../client/utils/client-logger';
+
+const logger = createClientLogger({ serviceName: 'ui-components' });
 
 // Core UI Components
-export { Button, ButtonProps, ButtonVariant, ButtonSize } from './button';
+export { Button } from './button';
+export type { ButtonProps, ButtonVariant, ButtonSize } from './button';
 export { Card } from './card';
 export { Input } from './input';
 export { Modal } from './modal';
@@ -24,7 +28,9 @@ export {
   DialogTitle,
   DialogDescription,
   DialogFooter,
-  DialogClose,
+  DialogClose
+} from './dialog';
+export type {
   DialogProps,
   DialogTriggerProps,
   DialogContentProps,
@@ -34,8 +40,10 @@ export {
   DialogFooterProps,
   DialogCloseProps
 } from './dialog';
-export { EmptyState, EmptyStateProps } from './empty-state';
-export { Pagination, PaginationProps } from './pagination';
+export { EmptyState } from './empty-state';
+export type { EmptyStateProps } from './empty-state';
+export { Pagination } from './pagination';
+export type { PaginationProps } from './pagination';
 
 // Additional components that may be referenced in imports
 // These are re-exported from their actual implementations
@@ -54,27 +62,27 @@ export interface ToastOptions {
 // Support both the object-based API and the function-based API
 const toastFunction = (options: ToastOptions) => {
   const { title, description, variant = 'default' } = options;
-  console.log(`Toast (${variant}):`, title, description);
+  logger.info('Toast notification', { variant, title, description });
   // This is a placeholder for the actual toast implementation
 };
 
 // Support the object-based API with methods
 const toastMethods = {
   success: (config: { title: string; description?: string }) => {
-    console.log('Toast success:', config);
+    logger.info('Toast success', config);
     // This is a placeholder for the actual toast implementation
     // In a real implementation, this would use a toast library
   },
   error: (config: { title: string; description?: string; variant?: string }) => {
-    console.error('Toast error:', config);
+    logger.error('Toast error', config);
     // This is a placeholder for the actual toast implementation
   },
   warning: (config: { title: string; description?: string }) => {
-    console.warn('Toast warning:', config);
+    logger.warn('Toast warning', config);
     // This is a placeholder for the actual toast implementation
   },
   info: (config: { title: string; description?: string }) => {
-    console.info('Toast info:', config);
+    logger.info('Toast info', config);
     // This is a placeholder for the actual toast implementation
   }
 };

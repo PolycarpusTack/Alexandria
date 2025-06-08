@@ -52,7 +52,7 @@ const NotFound: React.FC = () => {
         The page you're looking for doesn't exist or has been moved.
       </Message>
       <Link to="/">
-        <Button variant="primary">
+        <Button variant="default">
           Return to Dashboard
         </Button>
       </Link>

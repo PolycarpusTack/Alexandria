@@ -59,3 +59,6 @@ export function createClientLogger(options?: ClientLoggerOptions): Logger {
   
   return logger;
 }
+
+// Default logger instance
+export const logger = createClientLogger();

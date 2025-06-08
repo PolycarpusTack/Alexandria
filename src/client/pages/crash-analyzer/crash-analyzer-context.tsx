@@ -20,3 +20,6 @@ export const useCrashAnalyzerContext = () => {
   }
   return context;
 };
+
+// Alias for convenience
+export const useCrashAnalyzer = useCrashAnalyzerContext;

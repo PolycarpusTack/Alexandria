@@ -254,13 +254,15 @@ export interface UserSchema {
   id: string;
   username: string;
   email: string;
-  password_hash: string;
+  hashed_password: string;
   roles: string[];
   permissions: string[];
-  metadata: Record<string, any>;
   is_active: boolean;
   created_at: Date;
   updated_at: Date;
+  failed_login_attempts?: number;
+  locked_until?: Date;
+  last_login_at?: Date;
 }
 
 /**

@@ -1,0 +1,80 @@
+{
+  "id": "alexandria-alfred",
+  "name": "ALFRED - AI Coding Assistant",
+  "version": "2.0.0",
+  "description": "AI-powered coding assistant for rapid engineering development",
+  "author": {
+    "name": "Alexandria Team",
+    "email": "team@alexandria-platform.com"
+  },
+  "license": "MIT",
+  "main": "src/index.ts",
+  "minPlatformVersion": "0.1.0",
+  "permissions": [
+    "file:read",
+    "file:write",
+    "llm:access",
+    "database:access",
+    "event:subscribe",
+    "event:publish",
+    "project:analyze",
+    "code:generate",
+    "template:manage"
+  ],
+  "dependencies": [],
+  "uiEntryPoints": [
+    {
+      "id": "alfred-dashboard",
+      "name": "ALFRED Assistant",
+      "location": "sidebar",
+      "icon": "mdi-robot-happy",
+      "component": "ui/components/AlfredDashboard",
+      "routes": ["/alfred"]
+    },
+    {
+      "id": "alfred-chat",
+      "name": "AI Chat",
+      "location": "main",
+      "component": "ui/components/ChatInterface",
+      "routes": ["/alfred/chat/:sessionId?"]
+    },
+    {
+      "id": "alfred-projects",
+      "name": "Project Explorer",
+      "location": "main", 
+      "component": "ui/components/ProjectExplorer",
+      "routes": ["/alfred/projects"]
+    },
+    {
+      "id": "alfred-templates",
+      "name": "Template Manager",
+      "location": "main",
+      "component": "ui/components/TemplateManager",
+      "routes": ["/alfred/templates"]
+    }
+  ],
+  "eventSubscriptions": [
+    "system:initialized",
+    "user:authenticated",
+    "project:loaded",
+    "file:changed",
+    "ai:response-received"
+  ],
+  "configuration": {
+    "defaultModel": {
+      "type": "string",
+      "default": "deepseek-coder:latest",
+      "description": "Default AI model for code generation"
+    },
+    "enableAutoSave": {
+      "type": "boolean",
+      "default": true,
+      "description": "Automatically save chat sessions"
+    },
+    "codeExtractionDepth": {
+      "type": "number",
+      "default": 3,
+      "description": "Maximum depth for code extraction"
+    }
+  }
+}

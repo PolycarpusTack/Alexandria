@@ -8,6 +8,9 @@
 import React, { createContext, useContext, useState, useCallback, ReactNode } from 'react';
 import { UIContext as UIContextInterface, UIRegistry, UITheme, UIComponentType } from './interfaces';
 import { darkTheme, defaultTheme } from './themes/default-theme';
+import { createClientLogger } from '../client/utils/client-logger';
+
+const logger = createClientLogger({ serviceName: 'ui-context' });
 
 // Create the context with a default value
 export type { UIContextInterface };
@@ -84,7 +87,7 @@ export const UIContextProvider: React.FC<UIContextProviderProps> = ({
     duration?: number;
   }) => {
     // In a real implementation, this would dispatch to a notification system
-    console.log('Notification:', notification);
+    logger.info('Notification shown', notification);
   }, []);
   
   // Ensure both light and dark themes are registered

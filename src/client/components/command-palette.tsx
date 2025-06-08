@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Command } from './ui/command';
 import {
   CommandDialog,
   CommandEmpty,
@@ -10,6 +9,9 @@ import {
   CommandList,
   CommandSeparator,
 } from './ui/command';
+import { createClientLogger } from '../utils/client-logger';
+
+const logger = createClientLogger({ serviceName: 'command-palette' });
 
 interface CommandPaletteProps {
   open: boolean;
@@ -98,13 +100,13 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps) {
         
         <CommandGroup heading="LLM Models">
           <CommandItem
-            onSelect={() => runCommand(() => console.log('Starting Vicuna'))}
+            onSelect={() => runCommand(() => logger.info('Starting Vicuna'))}
           >
             <i className="fa-solid fa-play mr-2" />
             <span>Start Vicuna</span>
           </CommandItem>
           <CommandItem
-            onSelect={() => runCommand(() => console.log('Stopping LLama2'))}
+            onSelect={() => runCommand(() => logger.info('Stopping LLama2'))}
           >
             <i className="fa-solid fa-stop mr-2" />
             <span>Stop Llama2</span>

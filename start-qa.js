@@ -152,7 +152,7 @@ async function checkRequirements() {
   
   // Check npm
   try {
-    const npmVersion = execSync('npm --version').toString().trim();
+    const npmVersion = execSync('ppppnpm --version').toString().trim();
     log(`npm version: ${npmVersion}`);
   } catch (err) {
     log('npm not found or not working properly', 'error');
@@ -184,11 +184,11 @@ async function buildApplication() {
     
     // Build server
     log('Building server...');
-    await runCommand('npm', ['run', 'build:server']);
+    await runCommand('pnpm', ['run', 'build:server']);
     
     // Build client
     log('Building client...');
-    await runCommand('npm', ['run', 'build:client']);
+    await runCommand('pnpm', ['run', 'build:client']);
     
     log('Build completed successfully', 'success');
     return true;

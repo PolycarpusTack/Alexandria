@@ -572,14 +572,22 @@ export class InMemoryDataService implements DataService {
   }
 
   private async createInitialData(): Promise<void> {
-    // Create admin user
+    // Import bcrypt for password hashing
+    const bcrypt = require('bcryptjs');
+    
+    // Create admin user with a known password
+    const adminPassword = 'admin123';
+    const adminPasswordHash = await bcrypt.hash(adminPassword, 10);
+    
     const adminUser = await this.users.create({
       username: 'admin',
       email: 'admin@alexandria.example',
       roles: ['admin'],
       permissions: ['admin'],
       isActive: true,
-      metadata: {}
+      metadata: {
+        passwordHash: adminPasswordHash
+      }
     });
     
     this.logger.info('Created default admin user', {
@@ -588,13 +596,18 @@ export class InMemoryDataService implements DataService {
     });
     
     // Create demo user
+    const demoPassword = 'demo123';
+    const demoPasswordHash = await bcrypt.hash(demoPassword, 10);
+    
     const demoUser = await this.users.create({
       username: 'demo',
       email: 'demo@alexandria.example',
       roles: ['user'],
       permissions: ['read:cases', 'write:cases'],
       isActive: true,
-      metadata: {}
+      metadata: {
+        passwordHash: demoPasswordHash
+      }
     });
     
     this.logger.info('Created demo user', {

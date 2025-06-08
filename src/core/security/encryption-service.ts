@@ -42,7 +42,13 @@ export class CryptoEncryptionService implements EncryptionService {
     }
     
     // Use provided key or generate one from environment variable
-    const keyString = options?.key || process.env.ENCRYPTION_KEY || 'alexandria-dev-encryption-key';
+    const keyString = options?.key || process.env.ENCRYPTION_KEY || (() => {
+      if (process.env.NODE_ENV === 'development') {
+        this.logger.warn('ENCRYPTION_KEY not set, using development default');
+        return 'alexandria-dev-encryption-key-DO-NOT-USE-IN-PRODUCTION';
+      }
+      throw new Error('ENCRYPTION_KEY environment variable is required in production');
+    })();
     
     // Derive a 32-byte key from the key string using SHA-256
     this.encryptionKey = crypto.createHash('sha256').update(keyString).digest();

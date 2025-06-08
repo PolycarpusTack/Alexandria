@@ -1,5 +1,5 @@
-import { EventBusImpl } from '../../../alexandria-platform/src/core/event-bus/event-bus';
-import { Event, EventData, Subscription } from '../../../alexandria-platform/src/core/event-bus/interfaces';
+import { EventBusImpl } from '../event-bus';
+import { Event, EventData, Subscription } from '../interfaces';
 
 // Mock logger
 const mockLogger = {

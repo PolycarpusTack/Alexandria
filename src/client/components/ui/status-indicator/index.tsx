@@ -106,7 +106,7 @@ export function StatusIndicator({
   return (
     <TooltipProvider>
       <Tooltip>
-        <TooltipTrigger asChild>
+        <TooltipTrigger>
           {indicator}
         </TooltipTrigger>
         <TooltipContent>

@@ -6,21 +6,38 @@
 
 import React, { useState, useEffect } from 'react';
 import { Route, Routes, Navigate, useNavigate, useLocation } from 'react-router-dom';
-import { useUI, Button, Card } from './components/ui';
-import { CCILayout } from './components/cci-layout';
+import { useUI} from './components/ui';
+import { ErrorBoundary, RouteErrorBoundary } from './components/ErrorBoundary';
+import { createClientLogger } from './utils/client-logger';
+import { LayoutProvider, DynamicLayout } from './components/layout-selector';
+
+const logger = createClientLogger({ serviceName: 'alexandria-app' });
 
 // Pages
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
-import CCIDashboard from './pages/cci-dashboard';
 import NotFound from './pages/NotFound';
+import { CrashAnalyzerRoutes } from './pages/crash-analyzer';
+
+// Plugin Routes - Dynamic imports for better code splitting
+const AlfredRoutes = React.lazy(() => import('../plugins/alfred/ui/AlfredRoutes').then(module => ({ default: module.AlfredRoutes })));
+const HeimdallDashboard = React.lazy(() => import('../plugins/heimdall/ui/components/HeimdallDashboard'));
 
 // Auth context
+interface User {
+  id: string;
+  email: string;
+  name?: string;
+  username?: string;
+  role?: string;
+  avatar?: string;
+}
+
 interface AuthContextType {
   isAuthenticated: boolean;
   token: string | null;
-  user: any | null;
-  login: (token: string, user: any) => void;
+  user: User | null;
+  login: (token: string, user: User) => void;
   logout: () => void;
 }
 
@@ -52,14 +69,34 @@ const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => 
     const storedUser = localStorage.getItem('auth_user');
     
     if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-      setIsAuthenticated(true);
+      try {
+        // Validate and parse stored user data
+        const parsedUser = JSON.parse(storedUser);
+        
+        // Basic validation of user object structure
+        if (parsedUser && typeof parsedUser === 'object' && 
+            typeof parsedUser.id === 'string' && 
+            typeof parsedUser.email === 'string') {
+          
+          setToken(storedToken);
+          setUser(parsedUser);
+          setIsAuthenticated(true);
+        } else {
+          // Invalid user data, clear storage
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('auth_user');
+        }
+      } catch (error) {
+        // Invalid JSON, clear storage
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('auth_user');
+        console.warn('Invalid user data in localStorage, cleared');
+      }
     }
   }, []);
   
   // Login function
-  const login = (newToken: string, newUser: any) => {
+  const login = (newToken: string, newUser: User) => {
     localStorage.setItem('auth_token', newToken);
     localStorage.setItem('auth_user', JSON.stringify(newUser));
     
@@ -105,52 +142,78 @@ const App: React.FC = () => {
   const { uiRegistry, theme, darkMode, toggleDarkMode } = useUI();
   
   return (
-    <AuthProvider>
-      <Routes>
+    <ErrorBoundary
+      onError={(error, errorInfo) => {
+        // Send error to monitoring service
+        logger.error('App Error', { error: error.message, errorInfo });
+      }}
+    >
+      <LayoutProvider>
+        <AuthProvider>
+          <Routes>
         <Route path="/login" element={<Login />} />
         <Route path="/" element={
           <ProtectedRoute 
             element={
-              <CCILayout>
-                <CCIDashboard />
-              </CCILayout>
+              <DynamicLayout>
+                <Dashboard />
+              </DynamicLayout>
             } 
           />
         } />
         {/* Plugin Routes */}
-        <Route path="/crash-analyzer/*" element={
+        <Route path="/alfred/*" element={
           <ProtectedRoute 
             element={
-              <CCILayout>
-                <div>Crash Analyzer Plugin Content</div>
-              </CCILayout>
+              <DynamicLayout>
+                <RouteErrorBoundary>
+                  <React.Suspense fallback={<div>Loading Alfred...</div>}>
+                    <AlfredRoutes />
+                  </React.Suspense>
+                </RouteErrorBoundary>
+              </DynamicLayout>
             } 
           />
         } />
-        <Route path="/log-visualization/*" element={
+        <Route path="/crash-analyzer/*" element={
           <ProtectedRoute 
             element={
-              <CCILayout>
-                <div>Log Visualization Plugin Content</div>
-              </CCILayout>
+              <DynamicLayout>
+                <RouteErrorBoundary>
+                  <CrashAnalyzerRoutes />
+                </RouteErrorBoundary>
+              </DynamicLayout>
+            } 
+          />
+        } />
+        <Route path="/heimdall/*" element={
+          <ProtectedRoute 
+            element={
+              <DynamicLayout>
+                <RouteErrorBoundary>
+                  <React.Suspense fallback={<div>Loading Heimdall...</div>}>
+                    <HeimdallDashboard />
+                  </React.Suspense>
+                </RouteErrorBoundary>
+              </DynamicLayout>
             } 
           />
         } />
         <Route path="/ticket-analysis/*" element={
           <ProtectedRoute 
             element={
-              <CCILayout>
+              <DynamicLayout>
                 <div>Ticket Analysis Plugin Content</div>
-              </CCILayout>
+              </DynamicLayout>
             } 
           />
         } />
         <Route path="/knowledge-base/*" element={
           <ProtectedRoute 
             element={
-              <CCILayout>
+              <DynamicLayout>
                 <div>Knowledge Base Plugin Content</div>
-              </CCILayout>
+              </DynamicLayout>
             } 
           />
         } />
@@ -159,27 +222,27 @@ const App: React.FC = () => {
         <Route path="/configuration/*" element={
           <ProtectedRoute 
             element={
-              <CCILayout>
+              <DynamicLayout>
                 <div>Configuration Content</div>
-              </CCILayout>
+              </DynamicLayout>
             } 
           />
         } />
         <Route path="/data-services/*" element={
           <ProtectedRoute 
             element={
-              <CCILayout>
-                <div>Data Services Content</div>
-              </CCILayout>
+              <DynamicLayout>
+                <Dashboard />
+              </DynamicLayout>
             } 
           />
         } />
         <Route path="/security/*" element={
           <ProtectedRoute 
             element={
-              <CCILayout>
+              <DynamicLayout>
                 <div>Security Content</div>
-              </CCILayout>
+              </DynamicLayout>
             } 
           />
         } />
@@ -188,18 +251,18 @@ const App: React.FC = () => {
         <Route path="/user-settings/*" element={
           <ProtectedRoute 
             element={
-              <CCILayout>
+              <DynamicLayout>
                 <div>User Settings Content</div>
-              </CCILayout>
+              </DynamicLayout>
             } 
           />
         } />
         <Route path="/appearance/*" element={
           <ProtectedRoute 
             element={
-              <CCILayout>
+              <DynamicLayout>
                 <div>Appearance Settings Content</div>
-              </CCILayout>
+              </DynamicLayout>
             } 
           />
         } />
@@ -207,7 +270,9 @@ const App: React.FC = () => {
         {/* Catch-all route */}
         <Route path="*" element={<NotFound />} />
       </Routes>
-    </AuthProvider>
+        </AuthProvider>
+      </LayoutProvider>
+    </ErrorBoundary>
   );
 };
 

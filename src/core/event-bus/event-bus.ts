@@ -99,9 +99,58 @@ class EventSubscription implements Subscription {
 export class EventBusImpl implements EventBus {
   private subscriptions: Map<string, EventSubscription> = new Map();
   private logger: Logger;
+  private cleanupTimer: NodeJS.Timeout | null = null;
+  private readonly CLEANUP_INTERVAL = 60000; // 1 minute
+  private readonly MAX_SUBSCRIPTIONS = 10000; // Maximum number of subscriptions
+  private readonly MAX_SUBSCRIPTIONS_PER_TOPIC = 1000; // Maximum per topic
+  private topicSubscriptionCounts: Map<string, number> = new Map();
 
   constructor(logger: Logger) {
     this.logger = logger;
+    this.startCleanupTimer();
+  }
+
+  /**
+   * Start periodic cleanup of expired subscriptions
+   */
+  private startCleanupTimer(): void {
+    this.cleanupTimer = setInterval(() => {
+      this.cleanupExpiredSubscriptions();
+    }, this.CLEANUP_INTERVAL);
+  }
+
+  /**
+   * Clean up expired subscriptions
+   */
+  private cleanupExpiredSubscriptions(): void {
+    const expiredIds: string[] = [];
+    
+    for (const [id, subscription] of this.subscriptions.entries()) {
+      if (subscription.isExpired()) {
+        expiredIds.push(id);
+      }
+    }
+    
+    if (expiredIds.length > 0) {
+      for (const id of expiredIds) {
+        this.subscriptions.delete(id);
+      }
+      
+      this.logger.debug(`Cleaned up ${expiredIds.length} expired subscriptions`);
+    }
+  }
+
+  /**
+   * Destroy the event bus and clean up resources
+   */
+  destroy(): void {
+    if (this.cleanupTimer) {
+      clearInterval(this.cleanupTimer);
+      this.cleanupTimer = null;
+    }
+    
+    this.subscriptions.clear();
+    this.logger.info('EventBus destroyed and resources cleaned up');
   }
 
   /**
@@ -116,16 +165,39 @@ export class EventBusImpl implements EventBus {
       throw new Error('Handler must be a function');
     }
     
+    // Check subscription limits
+    if (this.subscriptions.size >= this.MAX_SUBSCRIPTIONS) {
+      this.logger.error('Maximum subscription limit reached', {
+        limit: this.MAX_SUBSCRIPTIONS,
+        current: this.subscriptions.size
+      });
+      throw new Error(`Maximum subscription limit (${this.MAX_SUBSCRIPTIONS}) reached`);
+    }
+    
+    // Check per-topic limits
+    const topicCount = this.topicSubscriptionCounts.get(topic) || 0;
+    if (topicCount >= this.MAX_SUBSCRIPTIONS_PER_TOPIC) {
+      this.logger.error('Maximum subscriptions per topic reached', {
+        topic,
+        limit: this.MAX_SUBSCRIPTIONS_PER_TOPIC,
+        current: topicCount
+      });
+      throw new Error(`Maximum subscriptions per topic (${this.MAX_SUBSCRIPTIONS_PER_TOPIC}) reached for topic: ${topic}`);
+    }
+    
     const subscription = new EventSubscription(topic, handler, options);
     
     // Override the unsubscribe method to use the EventBus's unsubscribe
     subscription.unsubscribe = () => this.unsubscribe(subscription.id);
     
     this.subscriptions.set(subscription.id, subscription);
+    this.topicSubscriptionCounts.set(topic, topicCount + 1);
     
     this.logger.debug(`Subscribed to topic: ${topic}`, { 
       subscriptionId: subscription.id,
-      options
+      options,
+      totalSubscriptions: this.subscriptions.size,
+      topicSubscriptions: topicCount + 1
     });
     
     return subscription;
@@ -284,12 +356,45 @@ export class EventBusImpl implements EventBus {
       // Fire and forget - still process promises but don't wait
       // This ensures all event count tracking and unsubscribing works
       processPromises().catch(error => {
-        // This should never happen since errors are handled inside processPromises
-        // But we add an extra catch here as a safety measure
+        // Log the error
         this.logger.error('Unexpected error in background event processing', {
           topic,
-          error: error instanceof Error ? error.message : String(error)
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined
         });
+        
+        // Emit system error event for monitoring/alerting
+        // Use a separate try-catch to prevent recursive errors
+        try {
+          // Don't wait for this publish to avoid blocking
+          this.publish('system.error', {
+            source: 'event-bus',
+            operation: 'background-event-processing',
+            topic,
+            error: error instanceof Error ? {
+              name: error.name,
+              message: error.message,
+              stack: error.stack
+            } : String(error),
+            timestamp: new Date().toISOString()
+          }, { 
+            ignoreErrors: true,
+            source: 'event-bus-error-handler'
+          }).catch(() => {
+            // If we can't even publish the error event, just log it
+            this.logger.error('Failed to publish system error event', {
+              originalTopic: topic,
+              component: 'EventBus'
+            });
+          });
+        } catch (publishError) {
+          // Last resort - just log if error event publishing fails synchronously
+          this.logger.error('Critical error: Failed to handle background processing error', {
+            originalError: error instanceof Error ? error.message : String(error),
+            publishError: publishError instanceof Error ? publishError.message : String(publishError),
+            topic
+          });
+        }
       });
     }
     
@@ -309,10 +414,26 @@ export class EventBusImpl implements EventBus {
         return false;
       }
       
+      const subscription = this.subscriptions.get(subscriptionIdOrTopic);
+      if (!subscription) {
+        return false;
+      }
+      
       const removed = this.subscriptions.delete(subscriptionIdOrTopic);
       
       if (removed) {
-        this.logger.debug(`Unsubscribed by ID: ${subscriptionIdOrTopic}`);
+        // Update topic count
+        const topicCount = this.topicSubscriptionCounts.get(subscription.topic) || 0;
+        if (topicCount > 1) {
+          this.topicSubscriptionCounts.set(subscription.topic, topicCount - 1);
+        } else {
+          this.topicSubscriptionCounts.delete(subscription.topic);
+        }
+        
+        this.logger.debug(`Unsubscribed by ID: ${subscriptionIdOrTopic}`, {
+          topic: subscription.topic,
+          remainingTopicSubscriptions: topicCount - 1
+        });
       }
       
       return removed;
@@ -321,14 +442,31 @@ export class EventBusImpl implements EventBus {
     // If topic and handler are provided (two arguments)
     const topic = subscriptionIdOrTopic;
     let found = false;
+    let unsubscribedCount = 0;
     
     // Find subscriptions with matching topic and handler
     for (const [id, subscription] of this.subscriptions.entries()) {
       if (subscription.topic === topic && subscription.handler === handler) {
         this.subscriptions.delete(id);
         found = true;
-        this.logger.debug(`Unsubscribed by topic and handler: ${topic}`);
+        unsubscribedCount++;
       }
+    }
+    
+    if (found) {
+      // Update topic count
+      const topicCount = this.topicSubscriptionCounts.get(topic) || 0;
+      const newCount = topicCount - unsubscribedCount;
+      if (newCount > 0) {
+        this.topicSubscriptionCounts.set(topic, newCount);
+      } else {
+        this.topicSubscriptionCounts.delete(topic);
+      }
+      
+      this.logger.debug(`Unsubscribed by topic and handler: ${topic}`, {
+        unsubscribedCount,
+        remainingTopicSubscriptions: newCount
+      });
     }
     
     return found;
@@ -407,3 +545,6 @@ export class EventBusImpl implements EventBus {
     }
   }
 }
+
+// Re-export as EventBus for backwards compatibility
+export { EventBusImpl as EventBus };

@@ -1,0 +1,58 @@
+{
+  "name": "@alexandria/plugin-alfred",
+  "version": "2.0.0",
+  "description": "ALFRED - AI Coding Assistant Plugin for Alexandria",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "clean": "rm -rf dist",
+    "prebuild": "npm run clean"
+  },
+  "keywords": [
+    "alexandria",
+    "plugin",
+    "ai",
+    "coding",
+    "assistant",
+    "alfred"
+  ],
+  "author": "Alexandria Team",
+  "license": "MIT",
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.0.0",
+    "@types/react-dom": "^18.0.0",
+    "jest": "^29.5.0",
+    "ts-jest": "^29.1.0",
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "date-fns": "^2.30.0",
+    "uuid": "^9.0.0"
+  },
+  "jest": {
+    "preset": "ts-jest",
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^@alexandria/(.*)$": "<rootDir>/../../$1"
+    },
+    "testMatch": [
+      "**/__tests__/**/*.test.ts"
+    ],
+    "collectCoverageFrom": [
+      "src/**/*.ts",
+      "!src/**/*.d.ts",
+      "!src/**/*.test.ts"
+    ]
+  }
+}

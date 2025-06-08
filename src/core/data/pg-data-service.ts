@@ -8,29 +8,27 @@ import { Pool, PoolClient } from 'pg';
 import { Logger } from '../../utils/logger';
 import { DataService, UserRepository, CaseRepository, LogEntryRepository, PluginStorageRepository } from './interfaces';
 import { QueryOptions, QueryResult, EntityType, Entity, Repository, PostgresDataService as PgDataServiceInterface } from './pg-interfaces';
+import { ConnectionPool, DatabaseConfig } from './connection-pool';
+import { MigrationRunner } from './migrations/migration-runner';
+import { QueryBuilder } from './query-builder';
+import * as path from 'path';
 
 /**
  * PostgreSQL connection options
  */
-export interface PostgresOptions {
-  host: string;
-  port: number;
-  database: string;
-  user: string;
-  password: string;
-  ssl?: boolean;
-  max?: number; // Maximum number of clients in the pool
-  idleTimeoutMillis?: number; // How long a client is allowed to remain idle before being closed
-  connectionTimeoutMillis?: number; // How long to wait for a connection to become available
+export interface PostgresOptions extends DatabaseConfig {
+  runMigrations?: boolean;
+  migrationsPath?: string;
 }
 
 /**
  * Implementation of the DataService interface using PostgreSQL
  */
 export class PostgresDataService implements DataService, PgDataServiceInterface {
-  private pool: Pool;
+  private connectionPool: ConnectionPool;
   private logger: Logger;
   private isInitialized: boolean = false;
+  private options: PostgresOptions;
 
   // Repository instances
   public users!: UserRepository;
@@ -40,27 +38,10 @@ export class PostgresDataService implements DataService, PgDataServiceInterface 
 
   constructor(options: PostgresOptions, logger: Logger) {
     this.logger = logger;
+    this.options = options;
     
-    // Create connection pool
-    this.pool = new Pool({
-      host: options.host,
-      port: options.port,
-      database: options.database,
-      user: options.user,
-      password: options.password,
-      ssl: options.ssl,
-      max: options.max || 20,
-      idleTimeoutMillis: options.idleTimeoutMillis || 30000,
-      connectionTimeoutMillis: options.connectionTimeoutMillis || 2000,
-    });
-    
-    // Handle pool errors
-    this.pool.on('error', (err: Error & { code?: string }) => {
-      this.logger.error(`Unexpected error on PostgreSQL idle client: ${err.message}`, { 
-        stack: err.stack,
-        code: err.code
-      });
-    });
+    // Create connection pool using the new ConnectionPool class
+    this.connectionPool = new ConnectionPool(options, logger);
     
     // Initialize repository instances (but don't connect to the database yet)
     this.initRepositories();
@@ -77,17 +58,27 @@ export class PostgresDataService implements DataService, PgDataServiceInterface 
     this.logger.info('Initializing PostgreSQL data service');
     
     try {
-      // Test the connection
-      const client = await this.pool.connect();
-      try {
-        await client.query('SELECT NOW()');
-        this.logger.info('PostgreSQL connection established successfully');
-      } finally {
-        client.release();
-      }
+      // Initialize connection pool
+      await this.connectionPool.initialize();
       
-      // Create necessary tables if they don't exist
-      await this.createTables();
+      // Run migrations if enabled
+      if (this.options.runMigrations !== false) {
+        const migrationsPath = this.options.migrationsPath || 
+          path.join(__dirname, 'migrations', 'migrations');
+        
+        this.logger.info('Running database migrations', {
+          component: 'PostgresDataService',
+          migrationsPath
+        });
+        
+        const migrationRunner = new MigrationRunner(
+          await this.getPool(),
+          this.logger,
+          migrationsPath
+        );
+        
+        await migrationRunner.runMigrations();
+      }
       
       this.isInitialized = true;
       this.logger.info('PostgreSQL data service initialized successfully');
@@ -110,7 +101,7 @@ export class PostgresDataService implements DataService, PgDataServiceInterface 
     this.logger.info('Disconnecting from PostgreSQL');
     
     try {
-      await this.pool.end();
+      await this.connectionPool.shutdown();
       this.isInitialized = false;
       this.logger.info('PostgreSQL connection closed successfully');
     } catch (error) {
@@ -119,6 +110,43 @@ export class PostgresDataService implements DataService, PgDataServiceInterface 
       });
       throw error;
     }
+  }
+  
+  /**
+   * Get the underlying connection pool (for migrations)
+   */
+  private async getPool(): Promise<Pool> {
+    // Create a temporary pool for migrations
+    return new Pool({
+      host: this.options.host,
+      port: this.options.port,
+      database: this.options.database,
+      user: this.options.user,
+      password: this.options.password,
+      ssl: this.options.ssl
+    });
+  }
+
+  /**
+   * Validate and escape column names to prevent SQL injection
+   */
+  private safeColumnName(col: string): string {
+    // Normalize Unicode to prevent normalization attacks
+    const normalizedCol = col.normalize('NFC');
+    
+    // Strict allowlist: only ASCII letters, numbers, underscores, and dots
+    if (!/^[a-zA-Z][a-zA-Z0-9_]*(\.[a-zA-Z][a-zA-Z0-9_]*)?$/.test(normalizedCol)) {
+      throw new Error(`Invalid column name: ${normalizedCol}`);
+    }
+    
+    // Additional length validation
+    if (normalizedCol.length > 63) { // PostgreSQL identifier limit
+      throw new Error(`Column name too long: ${normalizedCol}`);
+    }
+    
+    // Escape with double quotes and handle table.column format
+    const parts = normalizedCol.split('.');
+    return parts.map(part => `"${part}"`).join('.');
   }
 
   /**
@@ -129,22 +157,9 @@ export class PostgresDataService implements DataService, PgDataServiceInterface 
       throw new Error('PostgreSQL data service is not initialized');
     }
     
-    const client = await this.getClient(options?.useTransaction);
-    
-    try {
-      // Begin transaction if requested
-      if (options?.useTransaction && !options?.existingTransaction) {
-        await client.query('BEGIN');
-      }
-      
-      // Execute the query
-      const result = await client.query(sql, params);
-      
-      // Commit transaction if this is the outermost transaction
-      if (options?.useTransaction && !options?.existingTransaction) {
-        await client.query('COMMIT');
-      }
-      
+    if (options?.useTransaction && options?.existingTransaction) {
+      // Use existing transaction client
+      const result = await options.existingTransaction.query(sql, params);
       return {
         rows: result.rows as T[],
         rowCount: result.rowCount || 0,
@@ -153,29 +168,33 @@ export class PostgresDataService implements DataService, PgDataServiceInterface 
           type: field.dataTypeID,
         })),
       };
-    } catch (error) {
-      // Rollback transaction on error if this is the outermost transaction
-      if (options?.useTransaction && !options?.existingTransaction) {
-        try {
-          await client.query('ROLLBACK');
-        } catch (rollbackError) {
-          this.logger.error(`Failed to rollback transaction: ${rollbackError instanceof Error ? rollbackError.message : String(rollbackError)}`);
-        }
-      }
-      
-      this.logger.error(`Query error: ${error instanceof Error ? error.message : String(error)}`, {
-        sql,
-        params,
-        stack: error instanceof Error ? error.stack : undefined
-      });
-      
-      throw error;
-    } finally {
-      // Release the client if we're not in a transaction or this is the outermost transaction
-      if (!options?.useTransaction || !options?.existingTransaction) {
-        client.release();
-      }
     }
+    
+    if (options?.useTransaction) {
+      // New transaction
+      return await this.connectionPool.transaction(async (client) => {
+        const result = await client.query(sql, params);
+        return {
+          rows: result.rows as T[],
+          rowCount: result.rowCount || 0,
+          fields: result.fields.map(field => ({
+            name: field.name,
+            type: field.dataTypeID,
+          })),
+        };
+      });
+    }
+    
+    // Regular query without transaction
+    const result = await this.connectionPool.query<T>(sql, params);
+    return {
+      rows: result.rows,
+      rowCount: result.rowCount,
+      fields: result.rows.length > 0 ? Object.keys(result.rows[0] as any).map(name => ({
+        name,
+        type: 0, // Type information not available from simple query
+      })) : [],
+    };
   }
 
   /**
@@ -198,20 +217,24 @@ export class PostgresDataService implements DataService, PgDataServiceInterface 
       throw new Error('PostgreSQL data service is not initialized');
     }
     
-    // Build the query
-    let sql = `SELECT ${options?.select ? options.select.join(', ') : '*'} FROM "${entityType}"`;
-    const params: any[] = [];
+    // Build the query with safe column names
+    const selectColumns = options?.select 
+      ? options.select.map(col => this.safeColumnName(col)).join(', ')
+      : '*';
+    
+    let sql = `SELECT ${selectColumns} FROM ${this.safeColumnName(entityType)}`;
+    const params: unknown[] = [];
+    let paramIndex = 1;
     
     // Add WHERE clause if criteria provided
     if (criteria && Object.keys(criteria).length > 0) {
       const whereClauses: string[] = [];
-      let paramIndex = 1;
       
       for (const [key, value] of Object.entries(criteria)) {
         if (value === null) {
-          whereClauses.push(`"${key}" IS NULL`);
+          whereClauses.push(`${this.safeColumnName(key)} IS NULL`);
         } else {
-          whereClauses.push(`"${key}" = $${paramIndex}`);
+          whereClauses.push(`${this.safeColumnName(key)} = $${paramIndex}`);
           params.push(value);
           paramIndex++;
         }
@@ -225,13 +248,19 @@ export class PostgresDataService implements DataService, PgDataServiceInterface 
       sql += ` ORDER BY "${options.orderBy}" ${options.orderDirection || 'ASC'}`;
     }
     
-    // Add LIMIT and OFFSET if specified
+    // Add LIMIT and OFFSET if specified with bounds checking
     if (options?.limit) {
-      sql += ` LIMIT ${options.limit}`;
+      const limit = Math.min(Math.max(1, options.limit), 10000); // Max 10,000 records
+      sql += ` LIMIT $${paramIndex}`;
+      params.push(limit);
+      paramIndex++;
     }
     
     if (options?.offset) {
-      sql += ` OFFSET ${options.offset}`;
+      const offset = Math.max(0, options.offset);
+      sql += ` OFFSET $${paramIndex}`;
+      params.push(offset);
+      paramIndex++;
     }
     
     // Execute the query
@@ -320,7 +349,7 @@ export class PostgresDataService implements DataService, PgDataServiceInterface 
     
     // Build the query
     let sql = `SELECT COUNT(*) FROM "${entityType}"`;
-    const params: any[] = [];
+    const params: unknown[] = [];
     
     // Add WHERE clause if criteria provided
     if (criteria && Object.keys(criteria).length > 0) {
@@ -329,9 +358,9 @@ export class PostgresDataService implements DataService, PgDataServiceInterface 
       
       for (const [key, value] of Object.entries(criteria)) {
         if (value === null) {
-          whereClauses.push(`"${key}" IS NULL`);
+          whereClauses.push(`${this.safeColumnName(key)} IS NULL`);
         } else {
-          whereClauses.push(`"${key}" = $${paramIndex}`);
+          whereClauses.push(`${this.safeColumnName(key)} = $${paramIndex}`);
           params.push(value);
           paramIndex++;
         }
@@ -443,23 +472,6 @@ export class PostgresDataService implements DataService, PgDataServiceInterface 
     return result.rowCount > 0;
   }
 
-  /**
-   * Get a database client (possibly with a transaction)
-   */
-  private async getClient(useTransaction?: boolean): Promise<PoolClient> {
-    const client = await this.pool.connect();
-    
-    if (useTransaction) {
-      // Make sure we override the release method to allow nested transactions
-      const originalRelease = client.release;
-      client.release = () => {
-        client.release = originalRelease;
-        return client.release();
-      };
-    }
-    
-    return client;
-  }
 
   /**
    * Initialize repository instances
@@ -479,113 +491,4 @@ export class PostgresDataService implements DataService, PgDataServiceInterface 
     this.pluginStorage = new PgPluginStorageRepository(this);
   }
 
-  /**
-   * Create database tables if they don't exist
-   */
-  private async createTables(): Promise<void> {
-    this.logger.info('Creating database tables if they don\'t exist');
-    
-    const client = await this.pool.connect();
-    
-    try {
-      await client.query('BEGIN');
-      
-      // Create users table
-      await client.query(`
-        CREATE TABLE IF NOT EXISTS "users" (
-          "id" VARCHAR(36) PRIMARY KEY,
-          "username" VARCHAR(50) NOT NULL UNIQUE,
-          "email" VARCHAR(255) NOT NULL UNIQUE,
-          "password_hash" VARCHAR(255),
-          "roles" TEXT[] NOT NULL DEFAULT '{}',
-          "permissions" TEXT[] NOT NULL DEFAULT '{}',
-          "metadata" JSONB,
-          "is_active" BOOLEAN NOT NULL DEFAULT TRUE,
-          "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-          "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
-        )
-      `);
-      
-      // Create cases table
-      await client.query(`
-        CREATE TABLE IF NOT EXISTS "cases" (
-          "id" VARCHAR(36) PRIMARY KEY,
-          "title" VARCHAR(255) NOT NULL,
-          "description" TEXT NOT NULL,
-          "status" VARCHAR(20) NOT NULL,
-          "priority" VARCHAR(20) NOT NULL,
-          "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-          "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-          "assigned_to" VARCHAR(36) REFERENCES "users"("id"),
-          "created_by" VARCHAR(36) NOT NULL REFERENCES "users"("id"),
-          "tags" TEXT[] NOT NULL DEFAULT '{}',
-          "metadata" JSONB
-        )
-      `);
-      
-      // Create logs table
-      await client.query(`
-        CREATE TABLE IF NOT EXISTS "logs" (
-          "id" VARCHAR(36) PRIMARY KEY,
-          "timestamp" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-          "level" VARCHAR(10) NOT NULL,
-          "message" TEXT NOT NULL,
-          "context" JSONB,
-          "source" VARCHAR(50) NOT NULL
-        )
-      `);
-      
-      // Create plugins table
-      await client.query(`
-        CREATE TABLE IF NOT EXISTS "plugins" (
-          "id" VARCHAR(36) PRIMARY KEY,
-          "name" VARCHAR(100) NOT NULL UNIQUE,
-          "version" VARCHAR(20) NOT NULL,
-          "status" VARCHAR(20) NOT NULL,
-          "description" TEXT,
-          "author" VARCHAR(100),
-          "dependencies" JSONB,
-          "install_date" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-          "last_updated" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-          "config" JSONB
-        )
-      `);
-      
-      // Create feature_flags table
-      await client.query(`
-        CREATE TABLE IF NOT EXISTS "feature_flags" (
-          "id" VARCHAR(36) PRIMARY KEY,
-          "name" VARCHAR(100) NOT NULL UNIQUE,
-          "description" TEXT,
-          "enabled" BOOLEAN NOT NULL DEFAULT FALSE,
-          "context_rules" JSONB,
-          "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-          "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
-        )
-      `);
-      
-      // Create plugin_storage table
-      await client.query(`
-        CREATE TABLE IF NOT EXISTS "plugin_storage" (
-          "plugin_id" VARCHAR(36) NOT NULL,
-          "key" VARCHAR(255) NOT NULL,
-          "value" JSONB,
-          "created_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-          "updated_at" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
-          PRIMARY KEY ("plugin_id", "key")
-        )
-      `);
-      
-      await client.query('COMMIT');
-      this.logger.info('Database tables created successfully');
-    } catch (error) {
-      await client.query('ROLLBACK');
-      this.logger.error(`Failed to create database tables: ${error instanceof Error ? error.message : String(error)}`, {
-        stack: error instanceof Error ? error.stack : undefined
-      });
-      throw error;
-    } finally {
-      client.release();
-    }
-  }
 }

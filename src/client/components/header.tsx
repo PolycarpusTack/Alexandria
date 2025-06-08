@@ -5,9 +5,11 @@ import { SearchBar } from './search-bar';
 import { NotificationsPanel } from './notifications-panel';
 import { UserDropdown } from './user-dropdown';
 import { CommandPalette } from './command-palette';
+import { useLayout } from './layout-selector';
 
 export function Header() {
   const { theme, setTheme } = useTheme();
+  const { layoutMode, setLayoutMode } = useLayout();
   const [commandOpen, setCommandOpen] = useState(false);
   
   const isDark = theme === 'dark' || 
@@ -22,7 +24,7 @@ export function Header() {
       } border-b`}>
         <div className="flex items-center gap-4">
           <div className="flex items-center text-xl font-semibold" style={{ color: 'var(--primary-color)' }}>
-            <img src="/favicon.png" alt="Logo" className="h-8 w-auto mr-2"/>
+            <img src="/alexandria-icon.png" alt="Alexandria Logo" className="h-8 w-auto mr-2"/>
             Alexandria
           </div>
           
@@ -38,6 +40,20 @@ export function Header() {
           
           <div className="flex items-center gap-2">
             <NotificationsPanel />
+            
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setLayoutMode(layoutMode === 'modern' ? 'classic' : 'modern')}
+              aria-label={layoutMode === 'modern' ? "Switch to classic layout" : "Switch to modern layout"}
+              title={layoutMode === 'modern' ? "Switch to classic layout" : "Switch to modern VSCode-style layout"}
+            >
+              {layoutMode === 'modern' ? (
+                <i className="fa-solid fa-table-columns"></i>
+              ) : (
+                <i className="fa-solid fa-code"></i>
+              )}
+            </Button>
             
             <Button
               variant="ghost"

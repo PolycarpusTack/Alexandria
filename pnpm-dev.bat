@@ -1,0 +1,3 @@
+@echo off
+echo Starting Alexandria with pnpm...
+pnpm run dev

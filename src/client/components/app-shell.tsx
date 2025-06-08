@@ -1,9 +1,17 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useTheme } from './theme-provider';
-import { AuthUser } from '../App';
-import { Button } from './ui/button';
 import {
+  Bell,
+  Search,
+  Settings,
+  Sun,
+  Moon,
+  Monitor,
+  LogOut,
+  Lightbulb,
+} from 'lucide-react';
+import { Button } from './ui/button';
+import { 
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -11,17 +19,17 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from './ui/dropdown-menu';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
-import {
-  BellIcon,
-  SearchIcon,
-  SettingsIcon,
-  SunIcon,
-  MoonIcon,
-  MonitorIcon,
-  LogOutIcon,
-  LightbulbIcon,
-} from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from './ui/avatar';
+import { useTheme } from './theme-provider';
+
+interface AuthUser {
+  id: string;
+  username: string;
+  email: string;
+  roles: string[];
+  name: string;
+  avatar?: string;
+}
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -56,9 +64,11 @@ export const AppShell: React.FC<AppShellProps> = ({ children, user, onLogout }) 
           <div className="flex items-center">
             <div className="mr-4">
               <Link to="/" className="flex items-center">
-                <div className="text-primary rounded-md w-8 h-8 flex items-center justify-center mr-2">
-                  <LightbulbIcon className="w-5 h-5" />
-                </div>
+                <img 
+                  src="/alexandria-icon.png" 
+                  alt="Alexandria" 
+                  className="w-8 h-8 mr-2 object-contain"
+                />
                 <h1 className="text-xl font-bold">Alexandria</h1>
               </Link>
             </div>
@@ -69,7 +79,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children, user, onLogout }) 
               className="hidden md:flex gap-2 ml-4"
               onClick={handleCommandOpen}
             >
-              <SearchIcon className="h-4 w-4" />
+              <Search className="h-4 w-4" />
               <span>Search...</span>
               <kbd className="bg-muted rounded-sm px-1.5 py-0.5 text-xs flex items-center gap-1">
                 <span className="text-xs">⌘</span>K
@@ -84,28 +94,28 @@ export const AppShell: React.FC<AppShellProps> = ({ children, user, onLogout }) 
               aria-label="Notifications"
               className="rounded-full"
             >
-              <BellIcon className="h-5 w-5" />
+              <Bell className="h-5 w-5" />
             </Button>
             
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="rounded-full">
-                  <SettingsIcon className="h-5 w-5" />
+                  <Settings className="h-5 w-5" />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel>Appearance</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => setTheme("light")}>
-                  <SunIcon className="h-4 w-4 mr-2" />
+                  <Sun className="h-4 w-4 mr-2" />
                   <span>Light</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setTheme("dark")}>
-                  <MoonIcon className="h-4 w-4 mr-2" />
+                  <Moon className="h-4 w-4 mr-2" />
                   <span>Dark</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => setTheme("system")}>
-                  <MonitorIcon className="h-4 w-4 mr-2" />
+                  <Monitor className="h-4 w-4 mr-2" />
                   <span>System</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -116,14 +126,14 @@ export const AppShell: React.FC<AppShellProps> = ({ children, user, onLogout }) 
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full">
                   <Avatar className="h-8 w-8">
                     <AvatarImage src={user?.avatar} alt={user?.name || "User"} />
-                    <AvatarFallback>{user ? getInitials(user.name) : "U"}</AvatarFallback>
+                    <AvatarFallback>{user ? getInitials(user.name || user.username) : "U"}</AvatarFallback>
                   </Avatar>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none">{user?.name}</p>
+                    <p className="text-sm font-medium leading-none">{user?.name || user?.username}</p>
                     <p className="text-xs leading-none text-muted-foreground">
                       {user?.email}
                     </p>
@@ -138,7 +148,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children, user, onLogout }) 
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={onLogout}>
-                  <LogOutIcon className="h-4 w-4 mr-2" />
+                  <LogOut className="h-4 w-4 mr-2" />
                   <span>Log out</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>

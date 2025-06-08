@@ -9,7 +9,7 @@ import { DialogProps } from "@radix-ui/react-dialog";
 import { Command as CommandPrimitive } from "cmdk";
 import { Search } from "lucide-react";
 
-import { Dialog, DialogContent } from "../dialog";
+import { Dialog as DialogComponent, DialogContent as DialogContentComponent } from "../dialog";
 import { cn } from "../../../lib/utils";
 
 // Main Command component
@@ -33,13 +33,13 @@ interface CommandDialogProps extends DialogProps {}
 
 const CommandDialog = ({ children, ...props }: CommandDialogProps) => {
   return (
-    <Dialog {...props}>
-      <DialogContent className="overflow-hidden p-0 shadow-lg">
+    <DialogComponent {...props}>
+      <DialogContentComponent className="overflow-hidden p-0 shadow-lg">
         <Command className="[&_[cmdk-group-heading]]:px-2 [&_[cmdk-group-heading]]:font-medium [&_[cmdk-group-heading]]:text-gray-500 [&_[cmdk-group]:not([hidden])_~[cmdk-group]]:pt-0 [&_[cmdk-input-wrapper]_svg]:h-5 [&_[cmdk-input-wrapper]_svg]:w-5 [&_[cmdk-input]]:h-12 [&_[cmdk-item]]:px-2 [&_[cmdk-item]]:py-3 [&_[cmdk-item]_svg]:h-5 [&_[cmdk-item]_svg]:w-5">
           {children}
         </Command>
-      </DialogContent>
-    </Dialog>
+      </DialogContentComponent>
+    </DialogComponent>
   );
 };
 
@@ -162,37 +162,3 @@ export {
   CommandShortcut,
   CommandSeparator,
 };
-
-// Make sure Dialog component is available
-function Dialog({
-  children,
-  ...props
-}: DialogProps & { children: React.ReactNode }) {
-  return (
-    <div
-      className="fixed inset-0 z-50 flex items-start justify-center sm:items-center"
-      {...props}
-    >
-      {children}
-    </div>
-  );
-}
-
-// Dialog Content - basic implementation
-function DialogContent({
-  className,
-  children,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      className={cn(
-        "fixed z-50 grid w-full max-w-xl gap-4 bg-white dark:bg-gray-800 p-6 shadow-lg sm:rounded-lg md:w-full",
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </div>
-  );
-}

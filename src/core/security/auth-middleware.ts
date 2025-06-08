@@ -5,9 +5,37 @@
  * retrieving user information, and attaching the user object to the request.
  */
 
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction, Application } from 'express';
 import { AuthenticationService } from './interfaces';
-import { Logger } from '../../utils/logger';
+import { createLogger, Logger } from '../../utils/logger';
+import { DataService } from '../data/interfaces';
+
+// Extend Express Request to include user property
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        id: string;
+        username: string;
+        email?: string;
+        roles: string[];
+        permissions: string[];
+      };
+    }
+  }
+}
+
+// Extend Express types
+interface AlexandriaApp extends Application {
+  locals: {
+    dataService?: DataService;
+    [key: string]: any;
+  };
+}
+
+interface AlexandriaRequest extends Request {
+  app: AlexandriaApp;
+}
 
 /**
  * Options for the authentication middleware
@@ -75,7 +103,19 @@ export function createAuthMiddleware(
         const payload = await authService.validateToken(token);
         
         // Get user details
-        const user = await retrieveUserDetails(payload.userId);
+        const dataService = (req as AlexandriaRequest).app.locals.dataService;
+        const user = await retrieveUserDetails(payload.userId, dataService);
+        
+        // Check if user was found
+        if (!user) {
+          if (requireAuth) {
+            return res.status(401).json({
+              error: 'User not found or inactive'
+            });
+          }
+          // Continue without user for optional auth routes
+          return next();
+        }
         
         // Attach user to request
         req.user = user;
@@ -137,17 +177,39 @@ function defaultTokenExtractor(req: Request): string | null {
 
 /**
  * Retrieve user details from data source
- * This is a placeholder and would be replaced with actual implementation
+ * @param userId - The user ID to retrieve
+ * @param dataService - The data service instance
+ * @returns User details or null if not found
  */
-async function retrieveUserDetails(userId: string) {
-  // In a real implementation, this would fetch user from the data service
-  // For now, we're creating a simple mock
-  return {
-    id: userId,
-    username: 'user', // This would be retrieved from database
-    email: 'user@example.com',
-    roles: ['user'],
-    permissions: ['read:own', 'write:own'],
-    isActive: true
-  };
+async function retrieveUserDetails(userId: string, dataService?: DataService) {
+  try {
+    // If no data service is provided, return null
+    if (!dataService) {
+      createLogger({ serviceName: 'auth-middleware' }).warn('No data service available for user retrieval');
+      return null;
+    }
+    
+    // Fetch user from database
+    const user = await dataService.users.findById(userId);
+    
+    if (!user || !user.isActive) {
+      return null;
+    }
+    
+    // Return user with proper role and permission structure
+    return {
+      id: user.id,
+      username: user.username,
+      email: user.email,
+      roles: user.roles || ['user'],
+      permissions: user.permissions || ['read:own', 'write:own'],
+      isActive: user.isActive
+    };
+  } catch (error) {
+    createLogger({ serviceName: 'auth-middleware' }).error('Failed to retrieve user details', { error, userId });
+    return null;
+  }
 }
+
+// Export the middleware for compatibility
+export { createAuthMiddleware as authMiddleware };

@@ -183,13 +183,15 @@ export class PgUserRepository implements UserRepository {
     const data: Omit<UserSchema, 'id'> = {
       username: userData.username,
       email: userData.email,
-      password_hash: '',  // Password should be hashed before calling this method
+      hashed_password: userData.hashedPassword || '',
       roles: userData.roles || [],
       permissions: userData.permissions || [],
-      metadata: userData.metadata || {},
       is_active: userData.isActive !== undefined ? userData.isActive : true,
       created_at: new Date(),
-      updated_at: new Date()
+      updated_at: new Date(),
+      failed_login_attempts: userData.failedLoginAttempts || 0,
+      locked_until: userData.lockedUntil,
+      last_login_at: userData.lastLoginAt
     };
     
     const result = await this.baseRepo.create(data);
@@ -205,10 +207,15 @@ export class PgUserRepository implements UserRepository {
     
     if (userData.username !== undefined) data.username = userData.username;
     if (userData.email !== undefined) data.email = userData.email;
+    if (userData.hashedPassword !== undefined) {
+      data.hashed_password = userData.hashedPassword;
+    }
     if (userData.roles !== undefined) data.roles = userData.roles;
     if (userData.permissions !== undefined) data.permissions = userData.permissions;
-    if (userData.metadata !== undefined) data.metadata = userData.metadata;
     if (userData.isActive !== undefined) data.is_active = userData.isActive;
+    if (userData.failedLoginAttempts !== undefined) data.failed_login_attempts = userData.failedLoginAttempts;
+    if (userData.lockedUntil !== undefined) data.locked_until = userData.lockedUntil;
+    if (userData.lastLoginAt !== undefined) data.last_login_at = userData.lastLoginAt;
     
     // Set updated_at
     data.updated_at = new Date();
@@ -225,10 +232,16 @@ export class PgUserRepository implements UserRepository {
       id: schema.id,
       username: schema.username,
       email: schema.email,
+      hashedPassword: schema.hashed_password,
       roles: schema.roles,
       permissions: schema.permissions,
-      metadata: schema.metadata,
-      isActive: schema.is_active
+      metadata: {}, // Add empty metadata since User interface requires it
+      isActive: schema.is_active,
+      createdAt: schema.created_at,
+      updatedAt: schema.updated_at,
+      failedLoginAttempts: schema.failed_login_attempts || 0,
+      lockedUntil: schema.locked_until,
+      lastLoginAt: schema.last_login_at
     };
   }
   

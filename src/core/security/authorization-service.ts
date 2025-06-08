@@ -260,13 +260,26 @@ export class RbacAuthorizationService implements AuthorizationService {
         'read:cases',
         'write:cases',
         'read:profile',
-        'write:profile'
+        'write:profile',
+        // Plugin permissions
+        'database:access',
+        'event:publish',
+        'project:analyze',
+        'code:generate',
+        'template:manage',
+        'network:access',
+        'ml:execute',
+        'analytics:write'
       ],
       'support': [
         'read:cases',
         'write:cases',
         'read:logs',
-        'read:users'
+        'read:users',
+        // Plugin permissions
+        'database:access',
+        'event:publish',
+        'analytics:write'
       ],
       'manager': [
         'read:cases',
@@ -274,7 +287,16 @@ export class RbacAuthorizationService implements AuthorizationService {
         'read:logs',
         'read:users',
         'read:reports',
-        'read:analytics'
+        'read:analytics',
+        // Plugin permissions
+        'database:access',
+        'event:publish',
+        'project:analyze',
+        'code:generate',
+        'template:manage',
+        'network:access',
+        'ml:execute',
+        'analytics:write'
       ],
       'guest': [
         'read:public'

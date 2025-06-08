@@ -3,7 +3,7 @@
  */
 
 import React, { useRef, useEffect } from 'react';
-import { X } from 'lucide-react'; // Import X icon from lucide-react
+import { X } from 'lucide-react';
 
 interface ModalProps {
   isOpen: boolean;

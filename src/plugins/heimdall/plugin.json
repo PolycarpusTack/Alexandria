@@ -1,0 +1,67 @@
+{
+  "id": "heimdall",
+  "name": "Heimdall - Log Intelligence Platform",
+  "version": "1.0.0",
+  "description": "Enterprise-grade log intelligence platform with real-time monitoring, ML-powered insights, and predictive analytics",
+  "author": {
+    "name": "Alexandria Team",
+    "email": "team@alexandria-platform.com"
+  },
+  "license": "MIT",
+  "main": "src/index.ts",
+  "minPlatformVersion": "0.1.0",
+  "permissions": [
+    "file:read",
+    "database:access",
+    "event:subscribe",
+    "event:publish",
+    "network:access",
+    "ml:execute",
+    "analytics:write"
+  ],
+  "dependencies": [],
+  "uiEntryPoints": [
+    {
+      "id": "heimdall-dashboard",
+      "name": "Heimdall",
+      "location": "sidebar",
+      "icon": "mdi-eye",
+      "component": "ui/components/HeimdallDashboard"
+    },
+    {
+      "id": "heimdall-search",
+      "name": "Search",
+      "location": "main",
+      "component": "ui/components/HeimdallSearch"
+    },
+    {
+      "id": "heimdall-analytics",
+      "name": "Analytics",
+      "location": "main", 
+      "component": "ui/components/HeimdallAnalytics"
+    }
+  ],
+  "eventSubscriptions": [
+    "system:initialized",
+    "user:authenticated",
+    "log:source:connected",
+    "log:query:executed",
+    "crash:detected",
+    "alert:triggered"
+  ],
+  "settings": {
+    "kafka": {
+      "enabled": false,
+      "brokers": ["localhost:9092"]
+    },
+    "storage": {
+      "hot": "elasticsearch",
+      "warm": "postgresql",
+      "cold": "s3"
+    },
+    "ml": {
+      "anomalyDetection": true,
+      "naturalLanguageSearch": true
+    }
+  }
+}

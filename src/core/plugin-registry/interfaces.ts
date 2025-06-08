@@ -9,6 +9,23 @@ import { UIComponent } from '../system/interfaces';
 import { EventBus } from '../event-bus/interfaces';
 
 /**
+ * Plugin permissions
+ */
+export type PluginPermission = 
+  | 'file:read'
+  | 'file:write'
+  | 'network:http'
+  | 'database:read'
+  | 'database:write'
+  | 'llm:access'
+  | 'event:emit'
+  | 'event:subscribe'
+  | 'crypto:access'
+  | 'buffer:access'
+  | 'system:info'
+  | 'plugin:communicate';
+
+/**
  * Plugin state enum
  */
 export enum PluginState {
@@ -50,6 +67,11 @@ export interface PluginManifest {
   main: string;
   
   /**
+   * Module type (for ES modules vs CommonJS)
+   */
+  type?: 'module' | 'commonjs';
+  
+  /**
    * Author information
    */
   author: {
@@ -83,7 +105,7 @@ export interface PluginManifest {
   /**
    * Required platform permissions
    */
-  permissions?: string[];
+  permissions?: PluginPermission[];
   
   /**
    * UI contribution points
@@ -173,6 +195,15 @@ export interface Plugin {
    * Plugin settings
    */
   settings?: Record<string, any>;
+}
+
+/**
+ * Plugin interface for sandboxing
+ */
+export interface IPlugin {
+  id: string;
+  entryPoint: string;
+  permissions?: PluginPermission[];
 }
 
 /**

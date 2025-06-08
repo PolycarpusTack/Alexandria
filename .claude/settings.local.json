@@ -25,7 +25,13 @@
       "Bash(mv:*)",
       "Bash(npm run build:*)",
       "Bash(npx vite build:*)",
-      "Bash(npm uninstall:*)"
+      "Bash(npm uninstall:*)",
+      "Bash(npm ls:*)",
+      "Bash(pkill:*)",
+      "Bash(true)",
+      "Bash(timeout 10s npm run dev)",
+      "Bash(timeout 15s npm run dev:client)",
+      "Bash(kill:*)"
     ],
     "deny": []
   }

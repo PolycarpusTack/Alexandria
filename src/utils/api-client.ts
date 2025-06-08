@@ -1,4 +1,4 @@
-const axios = require('axios');
+import axios from 'axios';
 
 /**
  * Create an Axios instance with common configuration
@@ -69,3 +69,4 @@ apiClient.interceptors.response.use(
 );
 
 export default apiClient;
+export { apiClient };

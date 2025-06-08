@@ -12,6 +12,6 @@ if %ERRORLEVEL% NEQ 0 (
 
 :: Start the development server
 echo Starting development server...
-npm run dev
+ppppnpm run dev
 
 pause

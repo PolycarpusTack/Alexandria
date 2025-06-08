@@ -4,12 +4,16 @@ import {
   PluginManifest, 
   PluginState, 
   PluginAPI, 
-  PluginLifecycle 
+  PluginLifecycle,
+  IPlugin
 } from './interfaces';
 import { EventBus } from '../event-bus/interfaces';
 import { UIComponent } from '../system/interfaces';
 import { CoreSystem } from '../system/interfaces';
 import { Logger } from '../../utils/logger';
+import { SecurityService } from '../security/security-service';
+import { SandboxManager, SandboxOptions } from './sandbox-manager';
+import { permissionValidator } from './permission-validator';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { v4 as uuidv4 } from 'uuid';
@@ -24,6 +28,8 @@ export class PluginRegistryImpl implements PluginRegistry {
   private logger: Logger;
   private eventBus: EventBus;
   private coreSystem: CoreSystem;
+  private securityService: SecurityService;
+  private sandboxManager: SandboxManager;
   private platformVersion: string;
   private environment: string;
 
@@ -31,18 +37,21 @@ export class PluginRegistryImpl implements PluginRegistry {
     logger: Logger, 
     eventBus: EventBus, 
     coreSystem: CoreSystem,
+    securityService: SecurityService,
     platformVersion: string = '0.1.0',
     environment: string = 'development'
   ) {
     this.logger = logger;
     this.eventBus = eventBus;
     this.coreSystem = coreSystem;
+    this.securityService = securityService;
+    this.sandboxManager = new SandboxManager(securityService);
     this.platformVersion = platformVersion;
     this.environment = environment;
   }
 
   /**
-   * Discover plugins from the given directory
+   * Discover plugins from the given directory with parallel processing
    */
   async discoverPlugins(directory: string): Promise<Plugin[]> {
     this.logger.info(`Discovering plugins in ${directory}`, { component: 'PluginRegistry' });
@@ -55,10 +64,8 @@ export class PluginRegistryImpl implements PluginRegistry {
       const entries = await fs.readdir(directory, { withFileTypes: true });
       const subdirs = entries.filter(entry => entry.isDirectory());
       
-      const discoveredPlugins: Plugin[] = [];
-      
-      // Check each subdirectory for a plugin manifest
-      for (const subdir of subdirs) {
+      // Process all subdirectories in parallel
+      const pluginPromises = subdirs.map(async (subdir) => {
         const pluginPath = path.join(directory, subdir.name);
         const manifestPath = path.join(pluginPath, 'plugin.json');
         
@@ -80,17 +87,13 @@ export class PluginRegistryImpl implements PluginRegistry {
             path: pluginPath
           };
           
-          // Add to discovered plugins
-          discoveredPlugins.push(plugin);
-          
-          // Update the registry
-          this.plugins.set(manifest.id, plugin);
-          
           this.logger.debug(`Discovered plugin: ${manifest.name} (${manifest.id})`, {
             component: 'PluginRegistry',
             version: manifest.version,
             path: pluginPath
           });
+          
+          return plugin;
         } catch (error) {
           if (error instanceof Error && error.message.includes('manifest')) {
             this.logger.warn(`Invalid plugin manifest in ${pluginPath}: ${error.message}`, {
@@ -103,11 +106,25 @@ export class PluginRegistryImpl implements PluginRegistry {
               error: error instanceof Error ? error.message : String(error)
             });
           }
+          return null;
         }
+      });
+      
+      // Wait for all plugin discovery to complete
+      const results = await Promise.all(pluginPromises);
+      
+      // Filter out nulls and update the registry
+      const discoveredPlugins = results.filter((plugin): plugin is Plugin => plugin !== null);
+      
+      // Update the registry with discovered plugins
+      for (const plugin of discoveredPlugins) {
+        this.plugins.set(plugin.manifest.id, plugin);
       }
       
       this.logger.info(`Discovered ${discoveredPlugins.length} plugins`, {
-        component: 'PluginRegistry'
+        component: 'PluginRegistry',
+        totalChecked: subdirs.length,
+        failed: subdirs.length - discoveredPlugins.length
       });
       
       return discoveredPlugins;
@@ -317,6 +334,49 @@ export class PluginRegistryImpl implements PluginRegistry {
         }
       }
       
+      // Validate permissions - security is enforced in all environments
+      if (plugin.manifest.permissions) {
+        const validationResult = permissionValidator.validatePermissions(plugin.manifest.permissions);
+        
+        if (!validationResult.valid) {
+          throw new Error(`Invalid permissions: ${validationResult.errors.join(', ')}`);
+        }
+        
+        if (validationResult.warnings.length > 0) {
+          this.logger.warn(`Permission warnings for plugin ${plugin.manifest.id}:`, {
+            component: 'PluginRegistry',
+            warnings: validationResult.warnings,
+            environment: this.environment
+          });
+        }
+        
+        this.logger.info(`Permission validation passed for plugin ${plugin.manifest.id}`, {
+          component: 'PluginRegistry',
+          environment: this.environment,
+          permissions: plugin.manifest.permissions
+        });
+        
+        // Create sandbox for the plugin
+        const sandboxOptions: SandboxOptions = {
+          permissions: plugin.manifest.permissions,
+          memoryLimit: 256, // MB
+          timeout: 60000, // 60 seconds
+        };
+        
+        const iPlugin: IPlugin = {
+          id: plugin.manifest.id,
+          entryPoint: path.join(plugin.path, plugin.manifest.main),
+          permissions: plugin.manifest.permissions
+        };
+        
+        await this.sandboxManager.createSandbox(iPlugin, sandboxOptions);
+        
+        this.logger.info(`Created sandbox for plugin ${plugin.manifest.id}`, {
+          component: 'PluginRegistry',
+          permissions: plugin.manifest.permissions
+        });
+      }
+      
       // Create plugin API if it doesn't exist
       if (!this.pluginAPIs.has(id)) {
         this.pluginAPIs.set(id, this.createPluginAPI(plugin));
@@ -431,6 +491,13 @@ export class PluginRegistryImpl implements PluginRegistry {
           api.unregisterComponent(component.id);
         }
       }
+      
+      // Destroy sandbox if it exists - security is enforced in all environments
+      await this.sandboxManager.destroySandbox(plugin.manifest.id);
+      this.logger.info(`Destroyed sandbox for plugin ${plugin.manifest.id}`, {
+        component: 'PluginRegistry',
+        environment: this.environment
+      });
       
       // Update plugin state
       plugin.state = PluginState.INACTIVE;
@@ -754,44 +821,185 @@ export class PluginRegistryImpl implements PluginRegistry {
   }
 
   /**
-   * Load a plugin module
+   * Load a plugin module with proper security and isolation
    */
   private async loadPluginModule(plugin: Plugin): Promise<any> {
     try {
-      const mainPath = path.join(plugin.path, plugin.manifest.main);
+      let mainPath = path.join(plugin.path, plugin.manifest.main);
       
-      // In a real implementation, this would use a more sophisticated
-      // module loading mechanism, possibly with a sandbox
-      // For simplicity, we're using a direct require here
-      // return require(mainPath);
-      
-      // Since we can't actually load the module in this example,
-      // we'll return a mock module
-      return {
-        default: class MockPlugin implements PluginLifecycle {
-          async onInstall(): Promise<void> {
-            // Mock implementation
-          }
-          
-          async onActivate(): Promise<void> {
-            // Mock implementation
-          }
-          
-          async onDeactivate(): Promise<void> {
-            // Mock implementation
-          }
-          
-          async onUninstall(): Promise<void> {
-            // Mock implementation
-          }
-          
-          async onUpdate(fromVersion: string, toVersion: string): Promise<void> {
-            // Mock implementation
-          }
+      // Try .js file first if .ts is specified
+      if (mainPath.endsWith('.ts')) {
+        const jsPath = mainPath.replace(/\.ts$/, '.js');
+        try {
+          await fs.access(jsPath);
+          mainPath = jsPath;
+        } catch {
+          // .js doesn't exist, continue with .ts
         }
-      };
+      }
+      
+      // Validate plugin path is within allowed boundaries - secure path validation
+      const realPluginPath = await fs.realpath(plugin.path);
+      const realMainPath = await fs.realpath(mainPath);
+      
+      // Normalize paths to prevent Unicode and case sensitivity attacks
+      const normalizedPluginPath = path.normalize(realPluginPath);
+      const normalizedMainPath = path.normalize(realMainPath);
+      
+      // Use relative path calculation for secure boundary checking
+      const relativePath = path.relative(normalizedPluginPath, normalizedMainPath);
+      
+      // Ensure the relative path doesn't escape the plugin directory
+      if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
+        throw new Error(`Plugin main file is outside of plugin directory: ${relativePath}`);
+      }
+      
+      // Additional security: ensure no symlinks point outside the plugin directory
+      if (normalizedMainPath !== realMainPath || normalizedPluginPath !== realPluginPath) {
+        this.logger.warn(`Symlink detected in plugin path, verifying security`, {
+          component: 'PluginRegistry',
+          plugin: plugin.manifest.id,
+          normalizedMain: normalizedMainPath,
+          realMain: realMainPath
+        });
+      }
+      
+      // Check if the main file exists
+      try {
+        await fs.access(mainPath);
+      } catch (error) {
+        throw new Error(`Plugin main file not found: ${mainPath}`);
+      }
+      
+      // Determine module type
+      const isESModule = plugin.manifest.main.endsWith('.mjs') || 
+                        plugin.manifest.type === 'module' ||
+                        (plugin.manifest.main.endsWith('.js') && await this.isESModule(mainPath));
+      
+      this.logger.debug(`Loading plugin module: ${plugin.manifest.id}`, {
+        component: 'PluginRegistry',
+        mainPath,
+        isESModule,
+        moduleType: plugin.manifest.type || 'auto-detected'
+      });
+      
+      let moduleExports;
+      
+      if (isESModule) {
+        // Use dynamic import for ES modules
+        try {
+          // Convert Windows paths to file URLs if necessary
+          const moduleUrl = process.platform === 'win32' 
+            ? `file:///${mainPath.replace(/\\/g, '/')}`
+            : mainPath;
+            
+          moduleExports = await import(moduleUrl);
+        } catch (importError) {
+          this.logger.error(`Failed to import ES module: ${mainPath}`, {
+            component: 'PluginRegistry',
+            error: importError instanceof Error ? importError.message : String(importError)
+          });
+          throw new Error(`Failed to import ES module: ${importError instanceof Error ? importError.message : String(importError)}`);
+        }
+      } else {
+        // Use require for CommonJS modules
+        try {
+          // Try to resolve the module path
+          let resolvedPath;
+          try {
+            resolvedPath = require.resolve(mainPath);
+          } catch {
+            // If direct resolve fails, try from the plugin's directory
+            const relativePath = path.relative(process.cwd(), mainPath);
+            try {
+              resolvedPath = require.resolve(`./${relativePath}`);
+            } catch {
+              // If that also fails, use the absolute path directly
+              resolvedPath = mainPath;
+            }
+          }
+          
+          // Clear require cache to ensure fresh load
+          if (resolvedPath && require.cache[resolvedPath]) {
+            delete require.cache[resolvedPath];
+          }
+          
+          moduleExports = require(resolvedPath);
+        } catch (requireError) {
+          this.logger.error(`Failed to require CommonJS module: ${mainPath}`, {
+            component: 'PluginRegistry',
+            error: requireError instanceof Error ? requireError.message : String(requireError)
+          });
+          throw new Error(`Failed to require CommonJS module: ${requireError instanceof Error ? requireError.message : String(requireError)}`);
+        }
+      }
+      
+      // Validate the loaded module has expected structure
+      if (!moduleExports) {
+        throw new Error('Plugin module exports are undefined');
+      }
+      
+      // Check for default export or direct export
+      const PluginClass = moduleExports.default || moduleExports;
+      
+      // Validate plugin class
+      if (typeof PluginClass !== 'function' && typeof PluginClass !== 'object') {
+        throw new Error('Plugin module must export a class or object with lifecycle methods');
+      }
+      
+      this.logger.info(`Successfully loaded plugin module: ${plugin.manifest.id}`, {
+        component: 'PluginRegistry',
+        exportType: typeof PluginClass,
+        hasLifecycleMethods: {
+          onInstall: 'onInstall' in PluginClass || (PluginClass.prototype && 'onInstall' in PluginClass.prototype),
+          onActivate: 'onActivate' in PluginClass || (PluginClass.prototype && 'onActivate' in PluginClass.prototype),
+          onDeactivate: 'onDeactivate' in PluginClass || (PluginClass.prototype && 'onDeactivate' in PluginClass.prototype),
+          onUninstall: 'onUninstall' in PluginClass || (PluginClass.prototype && 'onUninstall' in PluginClass.prototype)
+        }
+      });
+      
+      return moduleExports;
     } catch (error) {
       throw new Error(`Failed to load plugin module: ${error instanceof Error ? error.message : String(error)}`);
+    }
+  }
+  
+  /**
+   * Check if a JavaScript file is an ES module
+   */
+  private async isESModule(filePath: string): Promise<boolean> {
+    try {
+      // Check if the nearest package.json has "type": "module"
+      let currentDir = path.dirname(filePath);
+      
+      while (currentDir !== path.dirname(currentDir)) { // Not at root
+        const packageJsonPath = path.join(currentDir, 'package.json');
+        
+        try {
+          await fs.access(packageJsonPath);
+          const packageJson = JSON.parse(await fs.readFile(packageJsonPath, 'utf-8'));
+          
+          if (packageJson.type === 'module') {
+            return true;
+          } else if (packageJson.type === 'commonjs') {
+            return false;
+          }
+          // If no type specified, continue searching up
+        } catch {
+          // No package.json at this level, continue searching
+        }
+        
+        currentDir = path.dirname(currentDir);
+      }
+      
+      // Default to CommonJS if no package.json type found
+      return false;
+    } catch (error) {
+      this.logger.warn(`Error checking if file is ES module: ${filePath}`, {
+        component: 'PluginRegistry',
+        error: error instanceof Error ? error.message : String(error)
+      });
+      return false;
     }
   }
 }

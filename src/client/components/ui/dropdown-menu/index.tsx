@@ -227,8 +227,11 @@ export {
   DropdownMenuRadioGroup,
 };
 
+// Default export for DropdownMenu root
+export const DropdownMenu = DropdownMenuRoot;
+
 // For convenience and easier imports
-export const DropdownMenu = {
+export default {
   Root: DropdownMenuRoot,
   Trigger: DropdownMenuTrigger,
   Content: DropdownMenuContent,

@@ -1,0 +1,5 @@
+packages:
+  # Plugin packages
+  - 'src/plugins/*'
+  # Tool packages  
+  - 'tools/*'

@@ -4,47 +4,57 @@
 
 @layer base {
   :root {
-    /* CCI-style Dashboard variables */
-    --sidebar-width: 280px;
-    --header-height: 60px;
-    --primary-color: #7055F2;
-    --background-color: #F8F9FA;
-    --text-color: #333;
-    --card-bg: #FFF;
+    /* VSCode/Notion-style Dashboard variables */
+    --sidebar-width: 240px;
+    --header-height: 48px;
+    --primary-color: #007acc;
+    --background-color: #fafbfc;
+    --text-color: #37352f;
+    --card-bg: #ffffff;
+    --border-color: rgba(55, 53, 47, 0.16);
     
-    /* ShadCN UI variables */
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* ShadCN UI variables - VSCode/Notion style */
+    --background: 0 0% 98%;
+    --foreground: 20 6% 20%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 20 6% 20%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 20 6% 20%;
 
-    --primary: 255 70% 64%; /* Updated to match CCI purple */
-    --primary-foreground: 210 40% 98%;
+    --primary: 207 91% 54%; /* VSCode blue */
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 210 11% 96%;
+    --secondary-foreground: 20 6% 20%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 220 13% 95%;
+    --muted-foreground: 220 8% 46%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 207 91% 95%;
+    --accent-foreground: 207 91% 54%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 207 91% 54%;
 
     --radius: 0.5rem;
   }
 
   .dark {
+    /* VSCode dark theme colors */
+    --sidebar-width: 240px;
+    --header-height: 48px;
+    --primary-color: #007acc;
+    --background-color: #1e1e1e;
+    --text-color: #cccccc;
+    --card-bg: #252526;
+    --border-color: #3c3c3c;
+    
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
 
@@ -81,53 +91,79 @@
   }
   body {
     @apply bg-background text-foreground;
-    font-family: 'Roboto', sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, 'Apple Color Emoji', Arial, sans-serif;
     background: var(--background-color);
     color: var(--text-color);
     font-feature-settings: "rlig" 1, "calt" 1;
     box-sizing: border-box;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }
 
-/* Custom styles for Alexandria */
+/* Custom styles for Alexandria - VSCode/Notion style */
 .app-shell {
   height: 100vh;
   display: flex;
   overflow: hidden;
+  background: var(--background-color);
 }
 
 .sidebar {
-  width: 260px;
+  width: 240px;
   height: 100%;
   flex-shrink: 0;
   overflow-y: auto;
-  border-right: 1px solid hsl(var(--border));
-  padding: 0.5rem;
+  background: #f7f6f3;
+  border-right: 1px solid rgba(55, 53, 47, 0.08);
+  padding: 0;
+}
+
+.dark .sidebar {
+  background: #252526;
+  border-right: 1px solid #1e1e1e;
 }
 
 .main-content {
   flex: 1;
   overflow-y: auto;
-  padding: 1rem;
+  padding: 0;
+  background: var(--background-color);
 }
 
 .sidebar-item {
   display: flex;
   align-items: center;
-  padding: 0.5rem 1rem;
-  margin-bottom: 0.25rem;
-  border-radius: var(--radius);
+  padding: 6px 14px;
+  margin: 0 8px 1px;
+  border-radius: 3px;
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: background-color 0.1s ease;
+  color: rgba(55, 53, 47, 0.8);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.dark .sidebar-item {
+  color: #cccccc;
 }
 
 .sidebar-item:hover {
-  background-color: hsl(var(--accent));
+  background-color: rgba(55, 53, 47, 0.08);
+}
+
+.dark .sidebar-item:hover {
+  background-color: rgba(90, 93, 94, 0.31);
 }
 
 .sidebar-item.active {
-  background-color: hsl(var(--primary));
-  color: hsl(var(--primary-foreground));
+  background-color: rgba(35, 131, 226, 0.14);
+  color: #2383e2;
+}
+
+.dark .sidebar-item.active {
+  background-color: #094771;
+  color: #4fc3f7;
 }
 
 .app-header {
@@ -182,22 +218,28 @@
   z-index: 100;
 }
 
-/* CCI-style Dashboard styles */
-.cci-card {
+/* VSCode/Notion Dashboard styles */
+.notion-card {
   background: var(--card-bg);
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border-radius: 3px;
+  box-shadow: rgba(15, 15, 15, 0.05) 0px 0px 0px 1px, rgba(15, 15, 15, 0.1) 0px 3px 6px, rgba(15, 15, 15, 0.2) 0px 9px 24px;
   overflow: hidden;
+  transition: box-shadow 0.15s ease;
 }
 
-.cci-header {
+.notion-card:hover {
+  box-shadow: rgba(15, 15, 15, 0.05) 0px 0px 0px 1px, rgba(15, 15, 15, 0.1) 0px 6px 12px, rgba(15, 15, 15, 0.2) 0px 15px 30px;
+}
+
+.vscode-header {
   height: var(--header-height);
-  background-color: white;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  background-color: #2c2c2c;
+  color: #cccccc;
+  border-bottom: 1px solid #1e1e1e;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 20px;
+  padding: 0 16px;
   position: fixed;
   top: 0;
   left: 0;
@@ -205,23 +247,34 @@
   z-index: 50;
 }
 
-.cci-sidebar {
+.light .vscode-header {
+  background-color: #ffffff;
+  color: #424242;
+  border-bottom: 1px solid #e7e7e7;
+}
+
+.vscode-sidebar {
   position: fixed;
   top: var(--header-height);
   left: 0;
   bottom: 0;
   width: var(--sidebar-width);
-  background-color: white;
-  border-right: 1px solid rgba(0, 0, 0, 0.1);
+  background-color: #252526;
+  border-right: 1px solid #1e1e1e;
   overflow-y: auto;
-  padding: 20px;
+  padding: 8px 0;
   z-index: 40;
 }
 
-.cci-content {
+.light .vscode-sidebar {
+  background-color: #f3f3f3;
+  border-right: 1px solid #e7e7e7;
+}
+
+.main-content {
   margin-left: var(--sidebar-width);
   margin-top: var(--header-height);
-  padding: 20px;
+  padding: 24px;
   min-height: calc(100vh - var(--header-height));
   background-color: var(--background-color);
 }

@@ -109,20 +109,21 @@ const SelectSeparator = React.forwardRef<
 ));
 SelectSeparator.displayName = SelectPrimitive.Separator.displayName;
 
-// Export all components
+// Export all components with expected names
 export {
-  SelectRoot as Root,
-  SelectGroup as Group,
-  SelectValue as Value,
-  SelectTrigger as Trigger,
-  SelectContent as Content,
-  SelectLabel as Label,
-  SelectItem as Item,
-  SelectSeparator as Separator,
+  SelectRoot,
+  SelectRoot as Select,
+  SelectGroup,
+  SelectValue,
+  SelectTrigger,
+  SelectContent,
+  SelectLabel,
+  SelectItem,
+  SelectSeparator,
 };
 
 // For convenience and easier imports
-export const Select = {
+export default {
   Root: SelectRoot,
   Group: SelectGroup,
   Value: SelectValue,

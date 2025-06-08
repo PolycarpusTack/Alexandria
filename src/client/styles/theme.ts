@@ -5,6 +5,9 @@
  */
 
 export const theme = {
+  // Theme metadata
+  id: 'default',
+  name: 'Default Theme',
   // Color palette
   colors: {
     primary: '#3b82f6', // Blue
@@ -26,10 +29,7 @@ export const theme = {
   
   // Typography
   typography: {
-    fontFamily: {
-      base: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      monospace: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-    },
+    fontFamily: 'Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
     fontSize: {
       xs: '0.75rem', // 12px
       sm: '0.875rem', // 14px
@@ -40,9 +40,9 @@ export const theme = {
       xxxl: '2rem', // 32px
     },
     fontWeight: {
+      light: 300,
       regular: 400,
       medium: 500,
-      semibold: 600,
       bold: 700,
     },
     lineHeight: {
@@ -67,8 +67,7 @@ export const theme = {
     sm: '0.25rem', // 4px
     md: '0.375rem', // 6px
     lg: '0.5rem', // 8px
-    xl: '0.75rem', // 12px
-    full: '9999px',
+    pill: '9999px',
   },
   
   // Shadows
@@ -87,13 +86,13 @@ export const theme = {
     fixed: 1200,
     modal: 1300,
     popover: 1400,
-    tooltip: 1500,
+    toast: 1500,
   },
   
   // Transitions
   transitions: {
     fast: '150ms ease',
-    normal: '300ms ease',
+    medium: '300ms ease',
     slow: '500ms ease',
   },
   

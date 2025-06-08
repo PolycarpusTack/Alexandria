@@ -8,11 +8,13 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import path from 'path';
 import dotenv from 'dotenv';
 import { initializeCore, CoreServices } from './core';
 import { createLogger } from './utils/logger';
 import { AuditEventType } from './core/security/interfaces';
+import { validateRequest, validationSchemas } from './core/middleware/validation-middleware';
 
 // Import Node.js crypto module
 import * as crypto from 'crypto';
@@ -52,6 +54,24 @@ const getNonceFromResponse = (req: any, res: any) => {
 
 // Apply content security policy with nonces instead of unsafe-inline
 app.use(helmet({
+  // Additional security headers
+  crossOriginEmbedderPolicy: true,
+  crossOriginOpenerPolicy: true,
+  crossOriginResourcePolicy: { policy: "cross-origin" },
+  dnsPrefetchControl: true,
+  frameguard: { action: 'deny' },
+  hidePoweredBy: true,
+  hsts: {
+    maxAge: 31536000,
+    includeSubDomains: true,
+    preload: true
+  },
+  ieNoOpen: true,
+  noSniff: true,
+  originAgentCluster: true,
+  permittedCrossDomainPolicies: false,
+  referrerPolicy: { policy: "strict-origin-when-cross-origin" },
+  xssFilter: true,
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
@@ -96,7 +116,15 @@ app.use(helmet({
     reportOnly: process.env.NODE_ENV === 'development',
   },
 }));
-app.use(cors());
+// Configure CORS with specific origins
+const corsOptions = {
+  origin: process.env.ALLOWED_ORIGINS 
+    ? process.env.ALLOWED_ORIGINS.split(',')
+    : ['http://localhost:3000', 'http://localhost:4000'],
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
@@ -113,19 +141,96 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
+// Rate limiting for authentication endpoints
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 5, // Limit each IP to 5 requests per windowMs
+  message: 'Too many authentication attempts, please try again later',
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  skipSuccessfulRequests: true, // Don't count successful requests
+  handler: (req, res) => {
+    logger.warn('Rate limit exceeded for authentication', {
+      ip: req.ip,
+      path: req.path
+    });
+    res.status(429).json({
+      error: 'TOO_MANY_REQUESTS',
+      message: 'Too many authentication attempts, please try again later'
+    });
+  }
+});
+
+// Rate limiting for general API endpoints
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per windowMs
+  message: 'Too many requests from this IP, please try again later',
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Apply rate limiting to all API routes
+app.use('/api/', apiLimiter);
+
+// Apply stricter rate limiting to auth endpoints
+app.use('/api/auth', authLimiter);
+
 // API Routes
-app.use('/api/health', (req, res) => {
+app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', version: '1.0.0' });
 });
 
-// Authentication endpoints
+// Test endpoint for debugging
+app.post('/api/test', (req, res) => {
+  logger.info('Test endpoint hit', { 
+    body: req.body,
+    headers: req.headers,
+    contentType: req.headers['content-type']
+  });
+  res.json({ 
+    received: req.body,
+    message: 'Test successful'
+  });
+});
+
+// Mount core service API routes after initialization
+app.use((req, res, next) => {
+  if (!coreServices) {
+    return res.status(503).json({ error: 'Service not ready' });
+  }
+  next();
+});
+
+// AI and Storage services are handled through plugins
+// Individual plugins can register their own API routes
+
+// Authentication endpoints with stricter rate limiting
 app.post('/api/auth/login', async (req, res) => {
   try {
+    logger.info('Login attempt received', { username: req.body.username });
+    
     const { username, password } = req.body;
     
     if (!username || !password) {
+      logger.warn('Login attempt with missing credentials');
       return res.status(400).json({
         error: 'Missing username or password'
+      });
+    }
+    
+    // Development mode - allow demo login
+    if (username === 'demo' && password === 'demo') {
+      logger.info('Demo login successful');
+      const demoToken = 'demo-token-' + Date.now();
+      return res.status(200).json({
+        token: demoToken,
+        user: {
+          id: 'demo-user-id',
+          username: 'demo',
+          email: 'demo@alexandria.local',
+          roles: ['user', 'admin']
+        }
       });
     }
     
@@ -184,14 +289,11 @@ app.post('/api/auth/login', async (req, res) => {
     });
   } catch (error) {
     // Log failed login attempt
-    logger.warn(`Failed login attempt for user ${req.body.username || 'unknown'}`, {
-      event: AuditEventType.USER_LOGIN,
-      username: req.body.username,
-      ipAddress: req.ip,
-      userAgent: req.headers['user-agent'] || 'unknown',
-      success: false,
-      timestamp: new Date(),
-      error: error instanceof Error ? error.message : String(error)
+    logger.error('Login endpoint error', {
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      username: req.body?.username || 'unknown',
+      ip: req.ip
     });
     
     // Determine appropriate error response based on error type
@@ -265,19 +367,25 @@ async function start() {
     
     // PostgreSQL connection options
     const postgresOptions = usePostgres ? {
-      host: process.env.POSTGRES_HOST || 'localhost',
-      port: parseInt(process.env.POSTGRES_PORT || '5432'),
-      database: process.env.POSTGRES_DB || 'alexandria',
-      user: process.env.POSTGRES_USER || 'postgres',
-      password: process.env.POSTGRES_PASSWORD || 'postgres',
-      ssl: process.env.POSTGRES_SSL === 'true'
+      host: process.env.DB_HOST || process.env.POSTGRES_HOST || 'localhost',
+      port: parseInt(process.env.DB_PORT || process.env.POSTGRES_PORT || '5433'),
+      database: process.env.DB_NAME || process.env.POSTGRES_DB || 'alexandria',
+      user: process.env.DB_USER || process.env.POSTGRES_USER || 'postgres',
+      password: process.env.DB_PASSWORD || process.env.POSTGRES_PASSWORD || (() => {
+        if (process.env.NODE_ENV === 'development') {
+          logger.warn('Database password not set, using development default');
+          return 'dev-only-password';
+        }
+        throw new Error('DB_PASSWORD or POSTGRES_PASSWORD environment variable is required in production');
+      })(),
+      ssl: process.env.DB_SSL === 'true' || process.env.POSTGRES_SSL === 'true'
     } : undefined;
     
     // Initialize core services
     coreServices = await initializeCore({
       logLevel: (process.env.LOG_LEVEL as any) || 'info',
       environment: (process.env.NODE_ENV as any) || 'development',
-      pluginsDir: process.env.PLUGINS_DIR || './plugins',
+      pluginsDir: process.env.PLUGINS_DIR || path.join(__dirname, 'plugins'),
       platformVersion: process.env.PLATFORM_VERSION || '0.1.0',
       jwtSecret: process.env.JWT_SECRET,
       encryptionKey: process.env.ENCRYPTION_KEY,

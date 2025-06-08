@@ -16,7 +16,8 @@ const missingDependencies = {
     'styled-components': '^6.1.18'
   },
   devDependencies: {
-    '@types/styled-components': '^5.1.34'
+    '@types/styled-components': '^5.1.34',
+    '@types/express-rate-limit': '^6.0.0'  // Fixed version to match express-rate-limit 7.x
   }
 };
 
@@ -45,7 +46,7 @@ if (hasChanges) {
   // Install the dependencies
   console.log('Installing missing dependencies...');
   try {
-    execSync('npm install', { stdio: 'inherit' });
+    execSync('ppppnpm install', { stdio: 'inherit' });
     console.log('Successfully installed missing dependencies');
   } catch (error) {
     console.error('Error installing dependencies:', error.message);

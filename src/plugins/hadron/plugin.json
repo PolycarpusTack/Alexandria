@@ -1,0 +1,48 @@
+{
+  "id": "hadron",
+  "name": "Hadron - AI-Powered Crash Analyzer",
+  "version": "1.0.0",
+  "description": "Enterprise-grade crash analysis platform using AI to identify root causes and provide actionable solutions",
+  "author": {
+    "name": "Alexandria Team",
+    "email": "team@alexandria-platform.com"
+  },
+  "license": "MIT",
+  "main": "src/index.ts",
+  "minPlatformVersion": "0.1.0",
+  "permissions": [
+    "file:read",
+    "llm:access",
+    "database:access",
+    "event:subscribe",
+    "event:publish"
+  ],
+  "dependencies": [],
+  "uiEntryPoints": [
+    {
+      "id": "hadron-dashboard",
+      "name": "Hadron",
+      "location": "sidebar",
+      "icon": "mdi-atom",
+      "component": "ui/components/Dashboard"
+    },
+    {
+      "id": "hadron-crash-detail",
+      "name": "Crash Analysis",
+      "location": "main",
+      "component": "ui/components/CrashLogDetail"
+    },
+    {
+      "id": "hadron-code-analysis",
+      "name": "Code Analysis",
+      "location": "main",
+      "component": "ui/components/CodeSnippetDetail",
+      "routes": ["/hadron/analysis/:snippetId"]
+    }
+  ],
+  "eventSubscriptions": [
+    "system:initialized",
+    "user:authenticated",
+    "log:uploaded"
+  ]
+}

@@ -57,8 +57,17 @@ export interface User {
   email: string;
   roles: string[];
   permissions: string[];
-  metadata?: Record<string, any>;
+  metadata?: {
+    passwordHash?: string;
+    [key: string]: unknown;
+  };
   isActive: boolean;
+  hashedPassword?: string; // For authentication - stored securely
+  createdAt?: Date;
+  updatedAt?: Date;
+  lastLoginAt?: Date;
+  failedLoginAttempts?: number;
+  lockedUntil?: Date;
 }
 
 /**
@@ -104,6 +113,8 @@ export interface CoreSystem {
   
   // Core data access
   getUserById: (id: string) => Promise<User | null>;
+  getUserByUsername: (username: string) => Promise<User | null>;
+  saveUser: (user: User) => Promise<User>;
   getCaseById: (id: string) => Promise<Case | null>;
   
   // Authentication/Authorization
