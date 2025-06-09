@@ -46,7 +46,7 @@ export interface CoreServices {
   featureFlags: import('./feature-flags/interfaces').FeatureFlagService;
   dataService: import('./data/interfaces').DataService;
   securityService: import('./security/interfaces').SecurityService;
-  aiService: import('./services/ai-service/interfaces').AIService;
+  aiService: import('./services/ai-service/interfaces').AIService | null;
   storageService: import('./services/storage/interfaces').StorageService;
 }
 
@@ -62,7 +62,7 @@ import { FeatureFlagServiceImpl } from './feature-flags/feature-flag-service';
 import { SecurityServiceImpl } from './security/security-service';
 import { createLogger } from '../utils/logger';
 import { createDataService, DataServiceType } from './data/data-service-factory';
-import { createAIService } from './services/ai-service';
+import { createDynamicAIService } from './services/ai-service';
 import { createStorageService } from './services/storage';
 
 /**
@@ -153,17 +153,17 @@ export async function initializeCore(options: {
     const featureFlags = new FeatureFlagServiceImpl(logger, eventBus);
     await featureFlags.initialize();
     
-    // Initialize AI service
-    logger.info('Initializing AI service');
-    const aiService = createAIService({
-      provider: 'ollama',
-      defaultModel: process.env.OLLAMA_MODEL || 'llama2',
-      cache: {
-        enabled: true,
+    // Initialize AI service with dynamic model detection
+    logger.info('Initializing AI service with dynamic model detection');
+    const aiService = await createDynamicAIService(logger, {
+      ollamaHost: process.env.OLLAMA_HOST || 'http://localhost:11434',
+      enableCache: true,
+      cacheOptions: {
         ttl: 3600,
         maxSize: 100
-      }
-    }, logger);
+      },
+      checkInterval: 900000 // Check for new models every 15 minutes
+    });
     
     // Initialize storage service
     logger.info('Initializing storage service');
@@ -208,15 +208,11 @@ export async function initializeCore(options: {
       }
     }
     
-    // Try to load default AI models
-    try {
-      logger.info('Loading default AI models');
-      await aiService.loadModel('llama2');
-      logger.info('Default AI model loaded: llama2');
-    } catch (error) {
-      logger.warn('Failed to load default AI model', {
-        error: error instanceof Error ? error.message : String(error)
-      });
+    // AI service will dynamically detect available models
+    if (aiService) {
+      logger.info('AI service initialized with dynamic model detection');
+    } else {
+      logger.warn('No AI models detected. AI features will be unavailable.');
     }
     
     logger.info('Alexandria Platform core initialized successfully');

@@ -8,6 +8,7 @@ import { UploadCrashLog } from './components/UploadCrashLog';
 import { SecurityScanResults } from './components/SecurityScanResults';
 import { CodeSnippetUpload } from './components/CodeSnippetUpload';
 import { CodeSnippetDetail } from './components/CodeSnippetDetail';
+import { AnalyticsDashboard } from './components/AnalyticsDashboard';
 
 /**
  * Create and return the UI components for the Crash Analyzer plugin
@@ -21,6 +22,8 @@ export function createUIComponents(
   
   // Determine if we have the enhanced service with security capabilities
   const hasSecurityFeatures = 'scanFileForSecurityIssues' in crashAnalyzerService;
+  // Check if analytics service is available in context
+  const analyticsService = context.services?.get('analytics');
   
   const components: UIComponentDefinition[] = [
     {
@@ -89,6 +92,22 @@ export function createUIComponents(
       position: UIComponentPosition.MAIN,
       component: CodeSnippetDetail,
       props: { 
+        crashAnalyzerService 
+      },
+      priority: UIComponentPriority.MEDIUM,
+      pluginId: 'alexandria-crash-analyzer'
+    });
+  }
+  
+  // Add analytics dashboard if analytics service is available
+  if (analyticsService) {
+    components.push({
+      id: 'crash-analyzer-analytics',
+      type: UIComponentType.NAVIGATION,
+      position: UIComponentPosition.SIDEBAR,
+      component: AnalyticsDashboard,
+      props: { 
+        analyticsService,
         crashAnalyzerService 
       },
       priority: UIComponentPriority.MEDIUM,

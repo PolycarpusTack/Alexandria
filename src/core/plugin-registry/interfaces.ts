@@ -12,18 +12,57 @@ import { EventBus } from '../event-bus/interfaces';
  * Plugin permissions
  */
 export type PluginPermission = 
+  // File permissions
   | 'file:read'
   | 'file:write'
+  // Network permissions
   | 'network:http'
+  | 'network:access'
+  | 'network:external'
+  | 'network:internal'
+  // Database permissions
+  | 'database:access'
   | 'database:read'
   | 'database:write'
-  | 'llm:access'
+  | 'database:delete'
+  | 'database:schema'
+  // Event permissions
   | 'event:emit'
   | 'event:subscribe'
+  | 'event:publish'
+  | 'event:list'
+  | 'event:history'
+  // AI/ML permissions
+  | 'llm:access'
+  | 'ml:execute'
+  | 'ml:train'
+  | 'ml:manage'
+  | 'code:generate'
+  | 'code:analyze'
+  // Project permissions
+  | 'project:analyze'
+  | 'project:read'
+  | 'project:write'
+  | 'project:create'
+  | 'project:delete'
+  // Template permissions
+  | 'template:manage'
+  | 'template:create'
+  | 'template:read'
+  | 'template:write'
+  | 'template:delete'
+  // Analytics permissions
+  | 'analytics:read'
+  | 'analytics:write'
+  | 'analytics:export'
+  | 'analytics:manage'
+  // System permissions
   | 'crypto:access'
   | 'buffer:access'
   | 'system:info'
-  | 'plugin:communicate';
+  | 'system:shutdown'
+  | 'plugin:communicate'
+  | 'security:bypass';
 
 /**
  * Plugin state enum

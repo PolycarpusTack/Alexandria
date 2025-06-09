@@ -1,0 +1,138 @@
+name: Hadron Plugin Quality Check
+
+on:
+  push:
+    paths:
+      - 'src/plugins/hadron/**'
+  pull_request:
+    paths:
+      - 'src/plugins/hadron/**'
+  schedule:
+    # Run weekly on Mondays at 9 AM UTC
+    - cron: '0 9 * * 1'
+
+jobs:
+  quality-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'pnpm'
+    
+    - name: Install dependencies
+      run: |
+        npm install -g pnpm
+        pnpm install
+    
+    - name: Run Quality Checks
+      run: |
+        cd src/plugins/hadron
+        npm run quality:check
+      continue-on-error: true
+    
+    - name: Run Type Coverage
+      run: |
+        cd src/plugins/hadron
+        npm run type:coverage
+    
+    - name: Run Tests with Coverage
+      run: |
+        cd src/plugins/hadron
+        npm run test:coverage:ci
+    
+    - name: Check for Hard-coded Colors
+      run: |
+        cd src/plugins/hadron
+        npm run css:check
+    
+    - name: Analyze Technical Debt
+      run: |
+        cd src/plugins/hadron
+        npm run debt:analyze || true
+    
+    - name: Upload Quality Report
+      uses: actions/upload-artifact@v3
+      with:
+        name: quality-report
+        path: |
+          src/plugins/hadron/quality-report.json
+          src/plugins/hadron/tech-debt-report.json
+          src/plugins/hadron/coverage/
+    
+    - name: Comment PR with Quality Metrics
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const fs = require('fs');
+          const report = JSON.parse(fs.readFileSync('src/plugins/hadron/quality-report.json', 'utf8'));
+          
+          let comment = '## 📊 Hadron Plugin Quality Report\n\n';
+          comment += '| Check | Status |\n';
+          comment += '|-------|--------|\n';
+          
+          report.results.forEach(result => {
+            const icon = result.passed ? '✅' : '❌';
+            comment += `| ${result.name} | ${icon} |\n`;
+          });
+          
+          comment += `\n**Overall**: ${report.passed ? '✅ Passed' : '❌ Failed'}\n`;
+          comment += `\n_Generated at: ${report.timestamp}_`;
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+    
+    - name: Fail if Quality Checks Failed
+      run: |
+        cd src/plugins/hadron
+        node -e "const r = require('./quality-report.json'); process.exit(r.passed ? 0 : 1)"
+
+  debt-tracking:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Create Debt Report Issue
+      uses: actions/github-script@v6
+      with:
+        script: |
+          const date = new Date().toISOString().split('T')[0];
+          const title = `[Hadron] Weekly Technical Debt Report - ${date}`;
+          const body = `
+          ## 🔍 Weekly Technical Debt Analysis
+          
+          This is an automated weekly report of technical debt in the Hadron plugin.
+          
+          ### Action Items
+          - [ ] Review service duplication
+          - [ ] Check for new TODO/FIXME comments
+          - [ ] Verify type coverage is improving
+          - [ ] Ensure CSS compliance
+          
+          ### Metrics
+          See the [latest quality report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          
+          ### Next Steps
+          1. Prioritize high-impact debt items
+          2. Allocate 20% of next sprint to debt reduction
+          3. Update TECHNICAL_DEBT_REMEDIATION_PLAN.md
+          `;
+          
+          github.rest.issues.create({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            title: title,
+            body: body,
+            labels: ['tech-debt', 'hadron', 'automated']
+          });

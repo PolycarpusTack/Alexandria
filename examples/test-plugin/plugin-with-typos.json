@@ -1,0 +1,18 @@
+{
+  "id": "example-plugin-with-typos",
+  "name": "Example Plugin with Permission Typos",
+  "version": "1.0.0",
+  "description": "This plugin demonstrates how the enhanced validator catches typos",
+  "main": "index.js",
+  "author": {
+    "name": "Alexandria Team",
+    "email": "team@alexandria.dev"
+  },
+  "minPlatformVersion": "0.1.0",
+  "permissions": [
+    "fil:read",
+    "databse:access",
+    "event:emmit",
+    "netowrk:http"
+  ]
+}

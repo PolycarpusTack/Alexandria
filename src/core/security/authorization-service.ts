@@ -1,7 +1,8 @@
 /**
- * Authorization Service implementation for the Alexandria Platform
+ * Enhanced Authorization Service implementation for the Alexandria Platform
  * 
- * This implementation provides role-based access control (RBAC) for the platform.
+ * This implementation provides role-based access control (RBAC) with comprehensive
+ * permission management for the platform.
  */
 
 import { 
@@ -11,9 +12,16 @@ import {
 import { User } from '../system/interfaces';
 import { Logger } from '../../utils/logger';
 import { DataService } from '../data/interfaces';
+import { 
+  PERMISSION_CATEGORIES, 
+  ALL_PERMISSIONS, 
+  ROLE_PERMISSIONS,
+  PermissionCategory,
+  Permission 
+} from './permissions';
 
 /**
- * Role-based Authorization Service implementation
+ * Enhanced Role-based Authorization Service implementation
  */
 export class RbacAuthorizationService implements AuthorizationService {
   private logger: Logger;
@@ -25,7 +33,6 @@ export class RbacAuthorizationService implements AuthorizationService {
     this.logger = logger;
     this.dataService = dataService;
   }
-
   /**
    * Initialize authorization service
    */
@@ -34,8 +41,10 @@ export class RbacAuthorizationService implements AuthorizationService {
       throw new Error('Authorization service is already initialized');
     }
     
-    this.logger.info('Initializing authorization service', {
-      component: 'RbacAuthorizationService'
+    this.logger.info('Initializing enhanced authorization service', {
+      component: 'RbacAuthorizationService',
+      permissionCategories: Object.keys(PERMISSION_CATEGORIES),
+      totalPermissions: ALL_PERMISSIONS.length
     });
     
     // Set up default roles and permissions
@@ -45,14 +54,27 @@ export class RbacAuthorizationService implements AuthorizationService {
     
     this.logger.info('Authorization service initialized successfully', {
       component: 'RbacAuthorizationService',
-      roles: Array.from(this.rolePermissions.keys())
+      roles: Array.from(this.rolePermissions.keys()),
+      totalPermissions: ALL_PERMISSIONS.length
     });
   }
 
   /**
    * Check if a user has a specific permission
    */
-  hasPermission(user: User, permission: string): PermissionCheckResult {
+  hasPermission(user: User, permission: string): PermissionCheckResult {    // Validate permission first
+    if (!this.isValidPermission(permission)) {
+      this.logger.warn('Invalid permission requested', {
+        component: 'RbacAuthorizationService',
+        permission,
+        user: user.username
+      });
+      return {
+        granted: false,
+        reason: `Invalid permission: ${permission}`
+      };
+    }
+    
     // Admin role has all permissions
     if (user.roles.includes('admin')) {
       return {
@@ -70,8 +92,7 @@ export class RbacAuthorizationService implements AuthorizationService {
     }
     
     // Check wildcard permissions
-    if (this.hasWildcardPermission(user.permissions, permission)) {
-      return {
+    if (this.hasWildcardPermission(user.permissions, permission)) {      return {
         granted: true,
         reason: 'User has wildcard permission'
       };
@@ -102,7 +123,6 @@ export class RbacAuthorizationService implements AuthorizationService {
       reason: 'User does not have the required permission'
     };
   }
-
   /**
    * Check if a user has any of the specified permissions
    */
@@ -132,8 +152,7 @@ export class RbacAuthorizationService implements AuthorizationService {
 
   /**
    * Check if a user has all of the specified permissions
-   */
-  hasAllPermissions(user: User, permissions: string[]): PermissionCheckResult {
+   */  hasAllPermissions(user: User, permissions: string[]): PermissionCheckResult {
     // Admin role has all permissions
     if (user.roles.includes('admin')) {
       return {
@@ -163,8 +182,7 @@ export class RbacAuthorizationService implements AuthorizationService {
   /**
    * Check if a user has a specific role
    */
-  hasRole(user: User, role: string): PermissionCheckResult {
-    // Check if user has the role
+  hasRole(user: User, role: string): PermissionCheckResult {    // Check if user has the role
     if (user.roles.includes(role)) {
       return {
         granted: true,
@@ -176,6 +194,65 @@ export class RbacAuthorizationService implements AuthorizationService {
       granted: false,
       reason: `User does not have the '${role}' role`
     };
+  }
+
+  /**
+   * Check if a permission exists and is valid
+   */
+  public isValidPermission(permission: string): boolean {
+    // Check for wildcard
+    if (permission === '*') return true;
+    
+    // Check for category wildcard (e.g., 'plugin:*')
+    const [category, action] = permission.split(':');
+    if (action === '*' && PERMISSION_CATEGORIES[category.toUpperCase() as PermissionCategory]) {
+      return true;
+    }
+    
+    // Check exact permission
+    return ALL_PERMISSIONS.includes(permission as Permission);
+  }
+  /**
+   * Get all available permissions
+   */
+  public getAllPermissions(): Promise<string[]> {
+    return Promise.resolve([...ALL_PERMISSIONS]);
+  }
+
+  /**
+   * Get permissions by category
+   */
+  public getPermissionsByCategory(category: string): string[] {
+    const upperCategory = category.toUpperCase() as PermissionCategory;
+    const permissions = PERMISSION_CATEGORIES[upperCategory];
+    return permissions ? [...permissions] : [];
+  }
+
+  /**
+   * Validate multiple permissions
+   */
+  public validatePermissions(permissions: string[]): {
+    valid: string[];
+    invalid: string[];
+  } {
+    const valid: string[] = [];
+    const invalid: string[] = [];
+    
+    permissions.forEach(perm => {
+      if (this.isValidPermission(perm)) {
+        valid.push(perm);
+      } else {
+        invalid.push(perm);
+      }
+    });    
+    return { valid, invalid };
+  }
+
+  /**
+   * Get all permission categories
+   */
+  public getPermissionCategories(): string[] {
+    return Object.keys(PERMISSION_CATEGORIES);
   }
 
   /**
@@ -195,6 +272,17 @@ export class RbacAuthorizationService implements AuthorizationService {
    * Set permissions for a role
    */
   async setPermissionsForRole(role: string, permissions: string[]): Promise<boolean> {
+    // Validate all permissions first
+    const validation = this.validatePermissions(permissions);
+    
+    if (validation.invalid.length > 0) {      this.logger.error('Invalid permissions provided for role', {
+        component: 'RbacAuthorizationService',
+        role,
+        invalidPermissions: validation.invalid
+      });
+      throw new Error(`Invalid permissions: ${validation.invalid.join(', ')}`);
+    }
+    
     // Create role if it doesn't exist
     if (!this.rolePermissions.has(role)) {
       this.rolePermissions.set(role, new Set());
@@ -217,7 +305,6 @@ export class RbacAuthorizationService implements AuthorizationService {
     
     return true;
   }
-
   /**
    * Get all available roles
    */
@@ -235,85 +322,20 @@ export class RbacAuthorizationService implements AuthorizationService {
   }
 
   /**
-   * Get all available permissions
-   */
-  async getAllPermissions(): Promise<string[]> {
-    const permissions = new Set<string>();
-    
-    for (const rolePerms of this.rolePermissions.values()) {
-      for (const perm of rolePerms) {
-        permissions.add(perm);
-      }
-    }
-    
-    return Array.from(permissions);
-  }
-
-  /**
    * Set up default roles and permissions
    */
   private async setupDefaultRolesAndPermissions(): Promise<void> {
-    // Define default roles and permissions
-    const defaultRoles: Record<string, string[]> = {
-      'admin': ['*'], // Admin has all permissions
-      'user': [
-        'read:cases',
-        'write:cases',
-        'read:profile',
-        'write:profile',
-        // Plugin permissions
-        'database:access',
-        'event:publish',
-        'project:analyze',
-        'code:generate',
-        'template:manage',
-        'network:access',
-        'ml:execute',
-        'analytics:write'
-      ],
-      'support': [
-        'read:cases',
-        'write:cases',
-        'read:logs',
-        'read:users',
-        // Plugin permissions
-        'database:access',
-        'event:publish',
-        'analytics:write'
-      ],
-      'manager': [
-        'read:cases',
-        'write:cases',
-        'read:logs',
-        'read:users',
-        'read:reports',
-        'read:analytics',
-        // Plugin permissions
-        'database:access',
-        'event:publish',
-        'project:analyze',
-        'code:generate',
-        'template:manage',
-        'network:access',
-        'ml:execute',
-        'analytics:write'
-      ],
-      'guest': [
-        'read:public'
-      ]
-    };
-    
-    // Set up roles and permissions
-    for (const [role, permissions] of Object.entries(defaultRoles)) {
-      await this.setPermissionsForRole(role, permissions);
+    // Use the comprehensive role permissions from our constants
+    for (const [role, permissions] of Object.entries(ROLE_PERMISSIONS)) {
+      await this.setPermissionsForRole(role, [...permissions]);
       
       this.logger.debug(`Set up role: ${role}`, {
         component: 'RbacAuthorizationService',
-        permissions
+        permissions: permissions.slice(0, 5), // Log first 5 permissions for brevity
+        totalPermissions: permissions.length
       });
     }
   }
-
   /**
    * Check if a user has a wildcard permission
    */
@@ -343,8 +365,7 @@ export class RbacAuthorizationService implements AuthorizationService {
    */
   private hasWildcardInSet(permissionSet: Set<string>, permission: string): boolean {
     const parts = permission.split(':');
-    
-    // Check for exact wildcards like '*'
+        // Check for exact wildcards like '*'
     if (permissionSet.has('*')) {
       return true;
     }

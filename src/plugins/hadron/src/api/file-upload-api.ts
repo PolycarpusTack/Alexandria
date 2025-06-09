@@ -4,6 +4,7 @@ import { FileSecurityApi } from './file-security-service-api';
 import { Logger } from '../../../../utils/logger';
 import { validateRequest, commonSchemas } from '../../../../core/middleware/validation-middleware';
 import * as Joi from 'joi';
+import { IErrorMiddleware } from '../types/llm-types';
 
 /**
  * API router for file upload endpoints
@@ -229,7 +230,7 @@ export function createFileUploadRouter(
   /**
    * Error handling middleware for multer errors
    */
-  router.use((err: any, req: Request, res: Response, next: Function) => {
+  router.use((err: Error, req: Request, res: Response, next: Function) => {
     if (err instanceof multer.MulterError) {
       logger.error('Multer upload error:', { error: err.message, code: err.code });
       

@@ -1,0 +1,21 @@
+{
+  "id": "example-plugin-redundant",
+  "name": "Example Plugin with Redundant Permissions",
+  "version": "1.0.0",
+  "description": "This plugin demonstrates detection of redundant permissions",
+  "main": "index.js",
+  "author": {
+    "name": "Alexandria Team",
+    "email": "team@alexandria.dev"
+  },
+  "minPlatformVersion": "0.1.0",
+  "permissions": [
+    "database:*",
+    "database:read",
+    "database:write",
+    "file:*",
+    "file:read",
+    "*",
+    "event:emit"
+  ]
+}

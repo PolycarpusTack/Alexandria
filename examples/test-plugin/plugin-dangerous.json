@@ -1,0 +1,19 @@
+{
+  "id": "example-plugin-dangerous",
+  "name": "Example Plugin with Dangerous Permissions",
+  "version": "1.0.0",
+  "description": "This plugin demonstrates warnings for dangerous permission combinations",
+  "main": "index.js",
+  "author": {
+    "name": "Alexandria Team",
+    "email": "team@alexandria.dev"
+  },
+  "minPlatformVersion": "0.1.0",
+  "permissions": [
+    "database:delete",
+    "database:schema",
+    "file:write",
+    "network:http",
+    "system:shutdown"
+  ]
+}

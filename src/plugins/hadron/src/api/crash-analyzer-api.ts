@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { Logger } from '../../../../utils/logger';
 import { EnhancedCrashAnalyzerService } from '../services/enhanced-crash-analyzer-service';
 import { CrashRepository } from '../repositories/crash-repository';
+import { IAuthenticatedRequest } from '../types/llm-types';
 
 /**
  * API router for crash analyzer endpoints
@@ -19,7 +20,7 @@ export function createCrashAnalyzerRouter(
    */
   router.get('/logs', async (req: Request, res: Response) => {
     try {
-      const userId = (req as any).user?.id || 'demo-user';
+      const userId = (req as IAuthenticatedRequest).user?.id || 'demo-user';
       const logs = await crashRepository.findByUserId(userId);
       
       res.json(logs);
@@ -56,7 +57,7 @@ export function createCrashAnalyzerRouter(
   router.post('/analyze', async (req: Request, res: Response) => {
     try {
       const { logId, content, metadata } = req.body;
-      const userId = (req as any).user?.id || 'demo-user';
+      const userId = (req as IAuthenticatedRequest).user?.id || 'demo-user';
       
       if (!content) {
         return res.status(400).json({ error: 'Content is required' });
@@ -82,7 +83,7 @@ export function createCrashAnalyzerRouter(
    */
   router.post('/upload', async (req: Request, res: Response) => {
     try {
-      const userId = (req as any).user?.id || 'demo-user';
+      const userId = (req as IAuthenticatedRequest).user?.id || 'demo-user';
       
       // This endpoint would handle file uploads via multer
       // For now, we'll handle text content directly
@@ -127,7 +128,7 @@ export function createCrashAnalyzerRouter(
   router.delete('/logs/:id', async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const userId = (req as any).user?.id || 'demo-user';
+      const userId = (req as IAuthenticatedRequest).user?.id || 'demo-user';
       
       // Verify ownership
       const log = await crashRepository.findById(id);

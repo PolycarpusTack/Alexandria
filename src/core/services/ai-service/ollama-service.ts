@@ -5,7 +5,7 @@
  * This service is shared by all plugins for AI functionality.
  */
 
-const axios = require('axios');
+import axios from 'axios';
 import { EventEmitter } from 'events';
 import {
   AIService,

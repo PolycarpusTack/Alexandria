@@ -26,6 +26,17 @@ type ModelTierSystem = {
 }
 import { v4 as uuidv4 } from 'uuid';
 import { Logger } from '@utils/logger';
+import { ErrorHandler, ErrorType, ErrorSeverity, handleErrors, withErrorHandling } from '../utils/error-handler';
+import { 
+  ILlmResponse, 
+  IOllamaModelsResponse, 
+  ILlmAnalysisResponse, 
+  ICodeAnalysisResponse, 
+  IModelStatusDetails,
+  IAnalysisContext
+} from '../types/llm-types';
+import { LLMCacheService, ICachedLLMResponse } from './llm-cache-service';
+import { CacheService } from '../../../../core/cache/cache-service';
 
 /**
  * Enhanced service for interacting with Ollama LLMs for crash analysis
@@ -37,6 +48,8 @@ export class EnhancedLlmService implements ILlmService {
   private readonly MEDIUM_MODELS = ['llama2:8b-chat-q4', 'mistral:7b-instruct-v0.2-q4', 'phi3:medium-128k-instruct-q4'];
   private readonly LARGE_MODELS = ['llama2:13b-chat-q4', 'mistral:7b-instruct-v0.2'];
   private readonly XL_MODELS = ['llama2:70b-chat-q4', 'mixtral:8x7b-instruct-v0.1', 'phi3:medium-128k-instruct'];
+  
+  private llmCacheService?: LLMCacheService;
   
   // Model tiers with recommended workloads
   private readonly MODEL_TIERS: ModelTierSystem = {
@@ -87,8 +100,18 @@ export class EnhancedLlmService implements ILlmService {
     private featureFlagService: FeatureFlagService,
     private logger: Logger,
     private eventBus: EventBus,
-    ollamaBaseUrl?: string
+    ollamaBaseUrl?: string,
+    private cacheService?: CacheService
   ) {
+    // Initialize LLM cache service if cache is available
+    if (this.cacheService) {
+      this.llmCacheService = new LLMCacheService(this.cacheService, {
+        enableCaching: true,
+        defaultTtl: 24 * 60 * 60 * 1000, // 24 hours
+        maxPromptLength: 10000,
+        minConfidence: 0.7
+      });
+    }
     this.OLLAMA_BASE_URL = ollamaBaseUrl || 'http://localhost:11434/api';
     this.resilienceManager = new ResilienceManager(logger, eventBus);
   }
@@ -100,6 +123,7 @@ export class EnhancedLlmService implements ILlmService {
    * 
    * @returns true if Ollama is reachable and working
    */
+  @handleErrors(ErrorType.LLM_SERVICE_ERROR, ErrorSeverity.MEDIUM)
   async checkAvailability(): Promise<boolean> {
     return this.resilienceManager.execute(
       'ollama-availability-check',
@@ -137,6 +161,7 @@ export class EnhancedLlmService implements ILlmService {
    * @param customModel Optional model to use instead of the default
    * @returns Analysis result
    */
+  @handleErrors(ErrorType.LLM_SERVICE_ERROR, ErrorSeverity.HIGH)
   async analyzeLog(
     parsedData: ParsedCrashData, 
     rawContent: string, 
@@ -166,7 +191,7 @@ export class EnhancedLlmService implements ILlmService {
       // Call the LLM with resilience protection
       const response = await this.resilienceManager.execute(
         'ollama-analyze-log',
-        () => this.callLlm(model, prompt),
+        () => this.callLlm(model, prompt, { language: parsedData.stackTrace?.language, analysisType: 'crash' }),
         {
           enableCircuitBreaker: true,
           enableRetry: true,
@@ -214,6 +239,7 @@ export class EnhancedLlmService implements ILlmService {
    * @param forceRefresh Force refresh the model list
    * @returns Array of model names
    */
+  @handleErrors(ErrorType.LLM_SERVICE_ERROR, ErrorSeverity.MEDIUM)
   async getAvailableModels(forceRefresh: boolean = false): Promise<string[]> {
     // Return cached list if available and not expired
     const now = Date.now();
@@ -238,7 +264,8 @@ export class EnhancedLlmService implements ILlmService {
       const data = await response.json();
       
       // Update cache
-      this.availableModelsList = data.models.map((model: any) => model.name);
+      const modelsResponse = data as IOllamaModelsResponse;
+      this.availableModelsList = modelsResponse.models.map(model => model.name);
       this.modelListLastUpdated = now;
       
       return this.availableModelsList;
@@ -261,6 +288,7 @@ export class EnhancedLlmService implements ILlmService {
    * @param modelId Model identifier
    * @returns Model status information
    */
+  @handleErrors(ErrorType.LLM_SERVICE_ERROR, ErrorSeverity.MEDIUM)
   async getModelStatus(modelId: string): Promise<ModelStatus> {
     try {
       // Check if the model exists
@@ -268,7 +296,7 @@ export class EnhancedLlmService implements ILlmService {
       const isAvailable = availableModels.includes(modelId);
       
       // Get detailed model info if available
-      let details: any = {};
+      let details: IModelStatusDetails = { loaded: false };
       
       if (isAvailable) {
         const response = await fetch(`${this.OLLAMA_BASE_URL}/show`, {
@@ -327,6 +355,7 @@ export class EnhancedLlmService implements ILlmService {
    * 
    * @returns Models organized by tier with recommendations
    */
+  @handleErrors(ErrorType.LLM_SERVICE_ERROR, ErrorSeverity.LOW)
   async getModelTiers(): Promise<ModelTierSystem> {
     const availableModels = await this.getAvailableModels();
     // Create a deep copy of the model tiers
@@ -349,6 +378,7 @@ export class EnhancedLlmService implements ILlmService {
    * @param rawContent Raw log content
    * @returns Recommended model with explanation
    */
+  @handleErrors(ErrorType.LLM_SERVICE_ERROR, ErrorSeverity.MEDIUM)
   async recommendModel(
     parsedData: ParsedCrashData, 
     rawContent: string
@@ -590,7 +620,7 @@ Ensure your analysis is technically precise, focusing on the evidence provided i
    * @param prompt Prompt text
    * @returns LLM response
    */
-  private async callLlm(model: string, prompt: string): Promise<{
+  private async callLlm(model: string, prompt: string, context?: Record<string, any>): Promise<{
     response: string;
     model: string;
     done: boolean;
@@ -599,6 +629,24 @@ Ensure your analysis is technically precise, focusing on the evidence provided i
     prompt_eval_count?: number;
     eval_count?: number;
   }> {
+    // Check cache first
+    if (this.llmCacheService) {
+      const cached = await this.llmCacheService.getCachedResponse(prompt, model, context);
+      if (cached) {
+        this.logger.info('Using cached LLM response', { model, cacheAge: Date.now() - cached.timestamp.getTime() });
+        return {
+          response: cached.response,
+          model: cached.model,
+          done: true,
+          total_duration: 0, // Cached response is instant
+          prompt_eval_count: cached.tokenUsage?.promptTokens,
+          eval_count: cached.tokenUsage?.completionTokens
+        };
+      }
+    }
+    
+    const startTime = Date.now();
+    
     // Get model-specific parameters from prompt engineering system
     const { ModelOptimizations } = await import('./prompt-engineering/model-optimizations');
     const modelParams = ModelOptimizations.getModelParameters(model);
@@ -636,7 +684,32 @@ Ensure your analysis is technically precise, focusing on the evidence provided i
       throw new Error(`Ollama API error: ${response.statusText} (${response.status})`);
     }
     
-    return await response.json();
+    const llmResponse = await response.json();
+    const inferenceTime = Date.now() - startTime;
+    
+    // Cache the response if caching is enabled
+    if (this.llmCacheService && llmResponse.response) {
+      await this.llmCacheService.cacheResponse(
+        prompt,
+        model,
+        llmResponse.response,
+        inferenceTime,
+        {
+          tokenUsage: {
+            promptTokens: llmResponse.prompt_eval_count || 0,
+            completionTokens: llmResponse.eval_count || 0,
+            totalTokens: (llmResponse.prompt_eval_count || 0) + (llmResponse.eval_count || 0)
+          },
+          context,
+          metadata: {
+            total_duration: llmResponse.total_duration,
+            done_reason: llmResponse.done_reason
+          }
+        }
+      );
+    }
+    
+    return llmResponse;
   }
   
   /**
@@ -648,7 +721,7 @@ Ensure your analysis is technically precise, focusing on the evidence provided i
    * @returns Analysis result
    */
   private async parseAnalysisResponse(
-    response: any, 
+    response: ILlmResponse, 
     parsedData: ParsedCrashData, 
     model: string
   ): Promise<CrashAnalysisResult> {
@@ -936,7 +1009,7 @@ Ensure your analysis is technically precise, focusing on the evidence provided i
       // Call the LLM with resilience protection
       const response = await this.resilienceManager.execute(
         'ollama-analyze-code',
-        () => this.callLlm(model, prompt),
+        () => this.callLlm(model, prompt, { language, analysisType: 'code_review' }),
         {
           enableCircuitBreaker: true,
           enableRetry: true,

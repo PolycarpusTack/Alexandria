@@ -14,6 +14,7 @@ import { Logger } from '../../utils/logger';
 import { SecurityService } from '../security/security-service';
 import { SandboxManager, SandboxOptions } from './sandbox-manager';
 import { permissionValidator } from './permission-validator';
+import { EnhancedPermissionValidator, enhancedPermissionValidator } from './permission-validator-enhanced';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { v4 as uuidv4 } from 'uuid';
@@ -32,6 +33,7 @@ export class PluginRegistryImpl implements PluginRegistry {
   private sandboxManager: SandboxManager;
   private platformVersion: string;
   private environment: string;
+  private enhancedValidator!: EnhancedPermissionValidator; // Using definite assignment assertion
 
   constructor(
     logger: Logger, 
@@ -48,6 +50,10 @@ export class PluginRegistryImpl implements PluginRegistry {
     this.sandboxManager = new SandboxManager(securityService);
     this.platformVersion = platformVersion;
     this.environment = environment;
+    
+    // Initialize enhanced validator with authorization service
+    const authorizationService = (securityService as any).authorizationService;
+    this.enhancedValidator = new EnhancedPermissionValidator(authorizationService, this);
   }
 
   /**
@@ -336,6 +342,42 @@ export class PluginRegistryImpl implements PluginRegistry {
       
       // Validate permissions - security is enforced in all environments
       if (plugin.manifest.permissions) {
+        // Use enhanced validator for better error messages
+        const enhancedValidation = this.enhancedValidator.validatePluginPermissions(
+          id,
+          plugin.manifest.permissions
+        );
+
+        if (!enhancedValidation.isValid) {
+          // Log detailed error information
+          this.logger.error('Plugin permission validation failed', {
+            plugin: id,
+            errors: enhancedValidation.errors,
+            warnings: enhancedValidation.warnings,
+            suggestions: enhancedValidation.suggestions,
+            requestedPermissions: plugin.manifest.permissions,
+            availablePermissions: this.enhancedValidator.getAllPermissions()
+          });
+
+          // Create detailed error message
+          const errorMessage = [
+            `Failed to activate plugin ${id}:`,
+            ...enhancedValidation.errors,
+            ...(enhancedValidation.suggestions.length > 0 ? ['', 'Suggestions:', ...enhancedValidation.suggestions] : []),
+            ...(enhancedValidation.warnings.length > 0 ? ['', 'Warnings:', ...enhancedValidation.warnings] : [])
+          ].join('\n');
+
+          throw new Error(errorMessage);
+        }
+
+        // Log warnings even if validation passes
+        if (enhancedValidation.warnings.length > 0) {
+          this.logger.warn(`Plugin ${id} activation warnings`, {
+            warnings: enhancedValidation.warnings
+          });
+        }
+
+        // Also run the original validator for compatibility
         const validationResult = permissionValidator.validatePermissions(plugin.manifest.permissions);
         
         if (!validationResult.valid) {

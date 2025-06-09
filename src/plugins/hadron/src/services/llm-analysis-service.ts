@@ -2,6 +2,7 @@ import { Logger } from '../../../../utils/logger';
 import { ILlmService, ParsedCrashData } from '../interfaces';
 import { AnalysisResult } from '../models';
 import { CodeSnippet } from '../models';
+import { ILlmAnalysisResponse } from '../types/llm-types';
 
 /**
  * Service responsible for LLM-based analysis operations
@@ -181,7 +182,7 @@ export class LLMAnalysisService {
   /**
    * Parse the analysis response from LLM
    */
-  private parseAnalysisResponse(responseText: string): any {
+  private parseAnalysisResponse(responseText: string): ILlmAnalysisResponse {
     const extractedJson = this.extractJsonFromResponse(responseText);
     
     if (!extractedJson) {

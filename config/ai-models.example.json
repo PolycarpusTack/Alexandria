@@ -1,0 +1,97 @@
+{
+  "providers": [
+    {
+      "id": "openai",
+      "name": "OpenAI",
+      "type": "openai",
+      "enabled": false,
+      "endpoint": "https://api.openai.com/v1",
+      "apiKey": "",
+      "timeout": 30000,
+      "retryAttempts": 3
+    },
+    {
+      "id": "anthropic",
+      "name": "Anthropic",
+      "type": "anthropic", 
+      "enabled": false,
+      "endpoint": "https://api.anthropic.com/v1",
+      "apiKey": "",
+      "timeout": 30000,
+      "retryAttempts": 3
+    },
+    {
+      "id": "azure-openai",
+      "name": "Azure OpenAI",
+      "type": "azure",
+      "enabled": false,
+      "endpoint": "",
+      "apiKey": "",
+      "timeout": 30000,
+      "retryAttempts": 3
+    }
+  ],
+  "apiModels": [
+    {
+      "id": "gpt-4",
+      "providerId": "openai",
+      "name": "GPT-4",
+      "model": "gpt-4",
+      "contextLength": 8192,
+      "maxTokens": 4096,
+      "temperature": 0.7,
+      "capabilities": ["chat", "code", "function_calling"],
+      "cost": {
+        "input": 0.03,
+        "output": 0.06
+      }
+    },
+    {
+      "id": "gpt-4-turbo",
+      "providerId": "openai",
+      "name": "GPT-4 Turbo",
+      "model": "gpt-4-1106-preview",
+      "contextLength": 128000,
+      "maxTokens": 4096,
+      "temperature": 0.7,
+      "capabilities": ["chat", "code", "function_calling", "vision"],
+      "cost": {
+        "input": 0.01,
+        "output": 0.03
+      }
+    },
+    {
+      "id": "claude-3-opus",
+      "providerId": "anthropic",
+      "name": "Claude 3 Opus",
+      "model": "claude-3-opus-20240229",
+      "contextLength": 200000,
+      "maxTokens": 4096,
+      "temperature": 0.7,
+      "capabilities": ["chat", "code", "vision"],
+      "cost": {
+        "input": 0.015,
+        "output": 0.075
+      }
+    },
+    {
+      "id": "claude-3-sonnet",
+      "providerId": "anthropic",
+      "name": "Claude 3 Sonnet",
+      "model": "claude-3-sonnet-20240229",
+      "contextLength": 200000,
+      "maxTokens": 4096,
+      "temperature": 0.7,
+      "capabilities": ["chat", "code", "vision"],
+      "cost": {
+        "input": 0.003,
+        "output": 0.015
+      }
+    }
+  ],
+  "preferences": {
+    "defaultModel": null,
+    "defaultEmbeddingModel": null,
+    "fallbackModels": []
+  }
+}

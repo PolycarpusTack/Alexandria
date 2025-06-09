@@ -1,0 +1,19 @@
+{
+  "id": "example-plugin-valid",
+  "name": "Example Plugin with Valid Permissions",
+  "version": "1.0.0",
+  "description": "This plugin demonstrates a properly configured plugin",
+  "main": "index.js",
+  "author": {
+    "name": "Alexandria Team",
+    "email": "team@alexandria.dev"
+  },
+  "minPlatformVersion": "0.1.0",
+  "permissions": [
+    "file:read",
+    "database:read",
+    "event:emit",
+    "event:subscribe",
+    "analytics:write"
+  ]
+}

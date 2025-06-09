@@ -283,6 +283,27 @@
     border-top: 3px solid var(--heimdall-color);
   }
   
+  /* Hadron-specific utilities */
+  .hadron-accent {
+    color: var(--hadron-color);
+  }
+  
+  .dark .hadron-accent {
+    color: #fb7185;
+  }
+  
+  .hadron-border {
+    border-color: var(--hadron-color);
+  }
+  
+  .hadron-bg {
+    background-color: rgba(244, 63, 94, 0.05);
+  }
+  
+  .dark .hadron-bg {
+    background-color: rgba(244, 63, 94, 0.1);
+  }
+  
   .plugin-header {
     padding: 1.25rem 1.25rem 0.75rem;
     display: flex;
@@ -343,6 +364,15 @@
   .badge-secondary {
     background-color: var(--hover-bg);
     color: var(--text-muted);
+  }
+  
+  .badge-hadron {
+    background-color: rgba(244, 63, 94, 0.1);
+    color: var(--hadron-color);
+  }
+  
+  .dark .badge-hadron {
+    color: #fb7185;
   }
   
   /* Status Indicators */
@@ -658,6 +688,11 @@
     padding: 2px 8px;
     border-bottom-left-radius: 6px;
     font-weight: 600;
+  }
+  
+  .plugin-tag.hadron {
+    background-color: var(--hadron-color);
+    color: white;
   }
   
   .dark .plugin-tag {

@@ -16,6 +16,7 @@ import { createFeedbackRouter } from './feedback-api';
 import { applyAuthMiddleware } from './middleware';
 import { requirePermission, requireAnyPermission } from './permission-middleware';
 import { FeedbackService } from '../services/feedback/feedback-service';
+import alertRouter from './alerts-api';
 
 /**
  * Initialize the API layer for the Hadron Crash Analyzer
@@ -76,6 +77,8 @@ export function initializeApi(
   // Initialize the feedback service
   const feedbackService = new FeedbackService(dataService, logger);
   
+  // Alert routes are handled separately with DI container
+  
   // Create the routers
   const fileSecurityRouter = createFileSecurityRouter(fileSecurityApi, logger);
   const fileUploadRouter = createFileUploadRouter(
@@ -84,6 +87,8 @@ export function initializeApi(
     config.maxFileSize || 50 * 1024 * 1024
   );
   const feedbackRouter = createFeedbackRouter(feedbackService, logger);
+  
+  // Alert router uses DI container directly
   
   // Apply authentication middleware to protect routes if requested
   const requireAuth = config.requireAuth ?? true; // Default to requiring auth
@@ -110,6 +115,13 @@ export function initializeApi(
     requireAuth
   );
   
+  const protectedAlertRouter = applyAuthMiddleware(
+    alertRouter,
+    securityService,
+    logger,
+    requireAuth
+  );
+  
   return {
     fileStorageService,
     fileSecurityService,
@@ -118,7 +130,8 @@ export function initializeApi(
     routers: {
       fileSecurityRouter: protectedFileSecurityRouter,
       fileUploadRouter: protectedFileUploadRouter,
-      feedbackRouter: protectedFeedbackRouter
+      feedbackRouter: protectedFeedbackRouter,
+      alertRouter: protectedAlertRouter
     }
   };
 }
@@ -129,3 +142,4 @@ export { createFileUploadRouter } from './file-upload-api';
 export { createFeedbackRouter } from './feedback-api';
 export { applyAuthMiddleware } from './middleware';
 export { requirePermission, requireAnyPermission } from './permission-middleware';
+export { default as alertRouter } from './alerts-api';

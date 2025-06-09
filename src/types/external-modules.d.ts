@@ -138,10 +138,7 @@ declare module 'multer' {
   }
 }
 
-// Axios
-declare module 'axios' {
-  // Axios already has types via @types/axios, but if needed, we can extend them here
-}
+// Axios - removed empty module declaration as axios includes its own type definitions
 
 // Lucide React icons
 declare module 'lucide-react' {

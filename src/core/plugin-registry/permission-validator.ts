@@ -40,6 +40,12 @@ export class PermissionValidator {
         windowMs: 60000, // 1 minute
       },
     }],
+    // Database permissions (enhanced)
+    ['database:access', {
+      permission: 'database:access',
+      description: 'Basic database access',
+      riskLevel: 'low',
+    }],
     ['database:read', {
       permission: 'database:read',
       description: 'Read from database',
@@ -102,6 +108,60 @@ export class PermissionValidator {
       description: 'Communicate with other plugins',
       riskLevel: 'medium',
       requiredApproval: true,
+    }],
+    // Event permissions
+    ['event:publish', {
+      permission: 'event:publish',
+      description: 'Publish events to the event bus',
+      riskLevel: 'low',
+      rateLimit: {
+        requests: 1000,
+        windowMs: 60000,
+      },
+    }],
+    // Project permissions
+    ['project:analyze', {
+      permission: 'project:analyze',
+      description: 'Analyze project data',
+      riskLevel: 'medium',
+    }],
+    // AI/ML permissions
+    ['code:generate', {
+      permission: 'code:generate',
+      description: 'Generate code using AI',
+      riskLevel: 'high',
+      requiredApproval: true,
+    }],
+    ['ml:execute', {
+      permission: 'ml:execute',
+      description: 'Execute machine learning models',
+      riskLevel: 'medium',
+      rateLimit: {
+        requests: 100,
+        windowMs: 60000,
+      },
+    }],
+    // Template permissions
+    ['template:manage', {
+      permission: 'template:manage',
+      description: 'Manage templates',
+      riskLevel: 'medium',
+    }],
+    // Network permissions
+    ['network:access', {
+      permission: 'network:access',
+      description: 'Basic network access',
+      riskLevel: 'low',
+    }],
+    // Analytics permissions
+    ['analytics:write', {
+      permission: 'analytics:write',
+      description: 'Write analytics data',
+      riskLevel: 'low',
+      rateLimit: {
+        requests: 1000,
+        windowMs: 60000,
+      },
     }],
   ]);
 

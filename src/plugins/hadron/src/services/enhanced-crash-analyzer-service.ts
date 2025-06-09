@@ -12,6 +12,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { 
   HadronRepository 
 } from '../repositories/hadron-repository';
+import { IFileMetadata, ISessionMetadata } from '../models/interfaces';
 import {
   UploadedFile,
   CodeSnippet,
@@ -776,7 +777,7 @@ export class EnhancedCrashAnalyzerService implements ICrashAnalyzerService {
    * @param metadata Metadata
    * @returns Generated title
    */
-  private generateLogTitle(content: string, metadata: any): string {
+  private generateLogTitle(content: string, metadata: IFileMetadata | ISessionMetadata | Record<string, any>): string {
     // Try to extract a meaningful title from metadata or content
     if (metadata.title) {
       return metadata.title;
@@ -1017,7 +1018,8 @@ Ensure your analysis is technically precise and appropriate for the ${language} 
   private getFeatureFlagService() {
     // Access the feature flag service via the LLM service
     if (this.llmService && 'featureFlagService' in this.llmService) {
-      const service = (this.llmService as any).featureFlagService;
+      // Access feature flag service if available
+    const service = 'featureFlagService' in this.llmService ? (this.llmService as any).featureFlagService : null;
       
       // Verify service has expected getValue method
       if (service && typeof service.getValue === 'function') {

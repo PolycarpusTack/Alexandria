@@ -14,6 +14,7 @@ import { useUIContext } from '../../../../ui/ui-context';
 import { CrashLog } from '../../src/interfaces';
 import { CrashLogList } from './CrashLogList';
 import { StatsSummary } from './StatsSummary';
+import { hadronTheme } from '../utils/theme';
 
 interface DashboardProps {
   crashAnalyzerService: any;
@@ -182,7 +183,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ crashAnalyzerService }) =>
       <div className="flex flex-col space-y-4 mb-6">
         <div className="flex justify-between items-center">
           <div className="flex items-center">
-            <h1 className="text-2xl font-bold">Crash Analyzer</h1>
+            <h1 className="text-2xl font-bold flex items-center gap-2">
+              <span className={hadronTheme.classes.accent}>⚡</span>
+              Crash Analyzer
+            </h1>
             {lastUpdated && (
               <div className="ml-4 text-sm text-gray-500">
                 Last updated: {lastUpdated.toLocaleTimeString()}

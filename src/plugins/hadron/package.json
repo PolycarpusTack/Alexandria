@@ -8,7 +8,22 @@
     "test:coverage:detailed": "jest --coverage --coverageReporters=text-summary --coverageReporters=lcov --coverageReporters=html",
     "test:coverage:ci": "jest --coverage --ci --reporters=default --reporters=jest-junit",
     "test:coverage:badges": "npx istanbul-badges-readme",
-    "coverage:report": "npm run test:coverage:detailed && npm run test:coverage:badges"
+    "coverage:report": "npm run test:coverage:detailed && npm run test:coverage:badges",
+    "quality:check": "node scripts/check-quality.js",
+    "quality:fix": "eslint src --ext .ts,.tsx --fix",
+    "debt:analyze": "npx code-complexity src --format json > tech-debt-report.json",
+    "css:check": "grep -r '#[0-9a-fA-F]\\{3,6\\}' src/ui --include='*.tsx' --include='*.ts' || echo 'No hard-coded colors found'",
+    "type:coverage": "npx type-coverage --detail",
+    "precommit": "npm run quality:check",
+    "prepush": "npm run test:coverage && npm run quality:check"
+  },
+  "dependencies": {
+    "jspdf": "^2.5.1",
+    "jspdf-autotable": "^3.8.2",
+    "date-fns": "^3.3.1",
+    "react-day-picker": "^8.10.0",
+    "chartjs-plugin-zoom": "^2.0.1",
+    "chartjs-plugin-datalabels": "^2.2.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.5.1",

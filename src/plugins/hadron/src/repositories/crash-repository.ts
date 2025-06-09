@@ -6,6 +6,7 @@ import {
   CrashLogFilterOptions
 } from '../interfaces';
 import { v4 as uuidv4 } from 'uuid';
+import { INestedObject, IQueryOptions } from '../types/llm-types';
 
 /**
  * Repository for storing and retrieving crash logs and analysis results
@@ -100,7 +101,7 @@ export class CrashRepository implements ICrashRepository {
     }
     
     // Sorting and pagination parameters
-    const queryOptions: any = {};
+    const queryOptions: IQueryOptions = {};
     
     if (options.sortBy) {
       queryOptions.sort = { [options.sortBy]: options.sortOrder === 'desc' ? -1 : 1 };
@@ -159,7 +160,7 @@ export class CrashRepository implements ICrashRepository {
   /**
    * Helper method to get nested object values
    */
-  private getNestedValue(obj: any, path: string): any {
+  private getNestedValue(obj: INestedObject, path: string): string | number | boolean | INestedObject | Array<any> {
     return path.split('.').reduce((current, key) => current?.[key], obj);
   }
   

@@ -1,0 +1,24 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+echo "🔍 Running Hadron quality checks..."
+
+# Run quality checks
+cd src/plugins/hadron && node scripts/check-quality.js
+
+if [ $? -ne 0 ]; then
+  echo "❌ Quality checks failed. Please fix the issues before committing."
+  exit 1
+fi
+
+echo "✅ Quality checks passed!"
+
+# Run only staged file linting
+git diff --cached --name-only --diff-filter=ACM | grep -E '\.(ts|tsx)$' | xargs npx eslint
+
+if [ $? -ne 0 ]; then
+  echo "❌ Linting failed. Please fix the issues before committing."
+  exit 1
+fi
+
+echo "✨ All checks passed! Proceeding with commit."

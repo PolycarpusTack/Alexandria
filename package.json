@@ -9,7 +9,8 @@
     "build:client": "vite build",
     "start": "node dist/index.js",
     "dev": "concurrently \"pnpm run dev:server\" \"pnpm run dev:client\"",
-    "dev:server": "ts-node-dev --respawn src/index.ts",
+    "dev:server": "node ts-node-dev-patched.js --respawn src/index.ts",
+    "dev:server:original": "ts-node-dev --respawn src/index.ts",
     "dev:client": "vite",
     "fix-rollup": "node fix-rollup.js",
     "//postinstall": "node fix-rollup.js",
@@ -20,7 +21,15 @@
     "test:summary:verbose": "node scripts/test-summary-simple.js --verbose",
     "test:report": "node scripts/test-summary.js",
     "test:report:save": "node scripts/test-summary.js --save",
-    "lint": "eslint . --ext .ts,.tsx"
+    "test:ai-models": "ts-node scripts/test-ai-models.ts",
+    "test:ollama-compat": "ts-node scripts/check-ollama-compat.ts",
+    "lint": "eslint . --ext .ts,.tsx",
+    "check:deprecations": "node scripts/scan-deprecations.js",
+    "fix:deprecations": "node scripts/fix-deprecations.js",
+    "dev:patched": "node start-dev-patched.js",
+    "permissions": "ts-node src/cli/index.ts",
+    "permissions:list": "ts-node src/cli/index.ts list",
+    "permissions:validate": "ts-node src/cli/index.ts validate"
   },
   "dependencies": {
     "@elastic/elasticsearch": "8.10.0",

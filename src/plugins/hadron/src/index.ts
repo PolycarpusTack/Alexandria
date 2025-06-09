@@ -1,15 +1,16 @@
 import { PluginContext, PluginLifecycle } from '../../../core/plugin-registry/interfaces';
-import { CrashAnalyzerService } from './services/crash-analyzer-service';
 import { EnhancedCrashAnalyzerService } from './services/enhanced-crash-analyzer-service';
-import { LogParser } from './services/log-parser';
 import { EnhancedLogParser } from './services/enhanced-log-parser';
-import { LlmService } from './services/llm-service';
 import { EnhancedLlmService } from './services/enhanced-llm-service';
 import { CrashRepository } from './repositories/crash-repository';
 import { HadronRepository } from './repositories/hadron-repository';
-import { FileStorageService } from './services/file-storage-service';
+import { EnhancedFileStorageService } from './services/enhanced-file-storage-service';
 import { FileValidator } from './services/file-validator';
 import { FileSecurityService } from './services/file-security-service';
+import { AnalyticsService } from './services/analytics/analytics-service';
+import { AlertManager } from './services/analytics/alert-manager';
+import { NotificationService } from './services/analytics/notification-service';
+import { container } from 'tsyringe';
 import { createUIComponents } from '../ui';
 import { Router } from 'express';
 import { createFileSecurityRouter } from './api/file-security-api';
@@ -24,14 +25,16 @@ import { initializeApi } from './api';
  */
 export default class CrashAnalyzerPlugin implements PluginLifecycle {
   private context: PluginContext | null = null;
-  private crashAnalyzerService: CrashAnalyzerService | EnhancedCrashAnalyzerService | null = null;
-  private logParser: LogParser | EnhancedLogParser | null = null;
-  private llmService: LlmService | EnhancedLlmService | null = null;
+  private crashAnalyzerService: EnhancedCrashAnalyzerService | null = null;
+  private logParser: EnhancedLogParser | null = null;
+  private llmService: EnhancedLlmService | null = null;
   private crashRepository: CrashRepository | null = null;
   private hadronRepository: HadronRepository | null = null;
-  private fileStorage: FileStorageService | null = null;
+  private fileStorage: EnhancedFileStorageService | null = null;
   private fileValidator: FileValidator | null = null;
-  private useEnhancedVersion: boolean = true;
+  private analyticsService: AnalyticsService | null = null;
+  private alertManager: AlertManager | null = null;
+  private notificationService: NotificationService | null = null;
   
   // Bound event handlers for memory safety
   private readonly handleLogUploadedEvent = this.handleLogUploaded.bind(this);
@@ -60,50 +63,77 @@ export default class CrashAnalyzerPlugin implements PluginLifecycle {
     this.crashRepository = new CrashRepository(context.services.data);
     await this.crashRepository.initialize();
     
-    // Initialize Hadron repository if using enhanced version
-    if (this.useEnhancedVersion) {
-      this.hadronRepository = new HadronRepository(context.services.data);
-      await this.hadronRepository.initialize();
-      
-      // Initialize file storage service with environment-based configuration
-      const storageOptions = {
-        baseStoragePath: process.env.HADRON_STORAGE_PATH || process.env.STORAGE_PATH || './storage/hadron',
-        maxSizeBytes: parseInt(process.env.HADRON_MAX_FILE_SIZE || '20971520'), // 20MB default
-        allowedExtensions: (process.env.HADRON_ALLOWED_EXTENSIONS || '.txt,.log,.json,.xml,.html,.md,.stacktrace,.crash,.py,.js,.ts,.jsx,.tsx,.java,.cpp,.h,.cs').split(',')
-      };
-      
-      this.fileStorage = new FileStorageService(storageOptions, context.services.logger);
-      this.fileValidator = new FileValidator(context.services.logger, {});
-    }
+    // Initialize Hadron repository
+    this.hadronRepository = new HadronRepository(context.services.data);
+    await this.hadronRepository.initialize();
     
-    // Initialize services - standard or enhanced versions
-    if (this.useEnhancedVersion && this.hadronRepository && this.fileStorage) {
-      this.logParser = new EnhancedLogParser(context.services.logger);
-      this.llmService = new EnhancedLlmService(context.services.featureFlags, context.services.logger);
+    // Initialize file storage service with environment-based configuration
+    const storageOptions = {
+      baseStoragePath: process.env.HADRON_STORAGE_PATH || process.env.STORAGE_PATH || './storage/hadron',
+      maxSizeBytes: parseInt(process.env.HADRON_MAX_FILE_SIZE || '20971520'), // 20MB default
+      allowedExtensions: (process.env.HADRON_ALLOWED_EXTENSIONS || '.txt,.log,.json,.xml,.html,.md,.stacktrace,.crash,.py,.js,.ts,.jsx,.tsx,.java,.cpp,.h,.cs').split(',')
+    };
+    
+    this.fileStorage = new EnhancedFileStorageService(
+      storageOptions,
+      this.hadronRepository.fileRepository,
+      this.hadronRepository.sessionRepository,
+      this.hadronRepository.userRepository,
+      context.services.logger
+    );
+    this.fileValidator = new FileValidator(context.services.logger, {});
+    
+    // Initialize enhanced services
+    this.logParser = new EnhancedLogParser(context.services.logger);
+    this.llmService = new EnhancedLlmService(
+      context.services.featureFlags, 
+      context.services.logger, 
+      context.services.eventBus,
+      undefined, // ollamaBaseUrl
+      context.services.cache // Add cache service
+    );
+    
+    // Create enhanced analyzer service
+    this.crashAnalyzerService = new EnhancedCrashAnalyzerService(
+      this.logParser,
+      this.llmService,
+      this.crashRepository,
+      this.hadronRepository,
+      this.fileStorage,
+      context.services.logger,
+      {
+        baseStoragePath: process.env.HADRON_STORAGE_PATH || process.env.STORAGE_PATH || './storage/hadron',
+        quarantineDir: process.env.HADRON_QUARANTINE_PATH || process.env.QUARANTINE_PATH || './storage/hadron/quarantine'
+      }
+    );
+    
+    // Initialize analytics service
+    if (this.crashRepository && this.hadronRepository) {
+      // Register services in DI container
+      container.register('DataService', { useValue: context.services.data });
+      container.register('EventBus', { useValue: context.services.eventBus });
+      container.register('Logger', { useValue: context.services.logger });
       
-      // Create enhanced analyzer service
-      this.crashAnalyzerService = new EnhancedCrashAnalyzerService(
-        this.logParser,
-        this.llmService,
+      this.analyticsService = new AnalyticsService(
         this.crashRepository,
         this.hadronRepository,
-        this.fileStorage,
-        context.services.logger,
-        {
-          baseStoragePath: process.env.HADRON_STORAGE_PATH || process.env.STORAGE_PATH || './storage/hadron',
-          quarantineDir: process.env.HADRON_QUARANTINE_PATH || process.env.QUARANTINE_PATH || './storage/hadron/quarantine'
-        }
-      );
-    } else {
-      // Fallback to standard services
-      this.logParser = new LogParser();
-      this.llmService = new LlmService(context.services.featureFlags);
-      this.crashAnalyzerService = new CrashAnalyzerService(
-        this.logParser,
-        this.llmService,
-        this.crashRepository,
+        context.services.cache,
         context.services.logger
       );
+      await this.analyticsService.initialize();
+      
+      // Initialize alert system
+      this.alertManager = new AlertManager(
+        context.services.data,
+        context.services.eventBus
+      );
+      this.notificationService = new NotificationService(
+        context.services.eventBus
+      );
+      
+      // Register services in container for API access
+      container.register(AlertManager, { useValue: this.alertManager });
+      container.register(NotificationService, { useValue: this.notificationService });
     }
     
     context.services.logger.info('Crash Analyzer Plugin installed successfully');
@@ -128,6 +158,11 @@ export default class CrashAnalyzerPlugin implements PluginLifecycle {
     context.services.eventBus.subscribe('log:uploaded', this.handleLogUploadedEvent);
     context.services.eventBus.subscribe('system:initialized', this.handleSystemInitializedEvent);
     
+    // Register analytics service if available
+    if (this.analyticsService) {
+      context.services.set('analytics', this.analyticsService);
+    }
+    
     // Register UI components
     const uiComponents = createUIComponents(this.crashAnalyzerService!, context);
     for (const component of uiComponents) {
@@ -135,7 +170,7 @@ export default class CrashAnalyzerPlugin implements PluginLifecycle {
     }
     
     // Register API endpoints
-    if (this.useEnhancedVersion && this.crashAnalyzerService instanceof EnhancedCrashAnalyzerService) {
+    if (this.crashAnalyzerService) {
       // Use the consolidated Hadron repository instead of separate repositories
       // This ensures consistent data access patterns throughout the plugin
       
@@ -163,6 +198,21 @@ export default class CrashAnalyzerPlugin implements PluginLifecycle {
         context.services.logger
       );
       context.services.api.registerRoutes('/api/crash-analyzer', crashAnalyzerRouter);
+      
+      // Register analytics API routes if analytics service is available
+      if (this.analyticsService) {
+        const { createAnalyticsRouter } = await import('./api/analytics-api');
+        const analyticsRouter = createAnalyticsRouter(
+          this.analyticsService,
+          context.services.logger,
+          this.llmService
+        );
+        context.services.api.registerRoutes('/api/hadron/analytics', analyticsRouter);
+        
+        // Register alert API routes
+        const { default: alertRouter } = await import('./api/alerts-api');
+        context.services.api.registerRoutes('/api/hadron/alerts', alertRouter);
+      }
     }
     
     context.services.logger.info('Crash Analyzer Plugin activated successfully');
@@ -179,6 +229,11 @@ export default class CrashAnalyzerPlugin implements PluginLifecycle {
    * Plugin deactivate method (internal implementation)
    */
   async deactivate(context: PluginContext): Promise<void> {
+    // Stop alert monitoring
+    if (this.alertManager) {
+      this.alertManager.stopMonitoring();
+    }
+    
     // Unsubscribe from events with handler references - passing both event name and handler
     // The unsubscribe method should support this signature pattern
     context.services.eventBus.unsubscribe('log:uploaded', this.handleLogUploadedEvent);
