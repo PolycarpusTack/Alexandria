@@ -318,7 +318,7 @@ importers:
         version: 29.7.0(@types/node@20.10.4)(ts-node@10.9.2(@types/node@20.10.4)(typescript@5.3.3))
       ts-jest:
         specifier: ^29.1.0
-        version: 29.1.1(@babel/core@7.27.4)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.27.4))(jest@29.7.0(@types/node@20.10.4)(ts-node@10.9.2(@types/node@20.10.4)(typescript@5.3.3)))(typescript@5.3.3)
+        version: 29.1.1(@babel/core@7.23.3)(@jest/types@29.6.3)(babel-jest@29.7.0(@babel/core@7.23.3))(jest@29.7.0(@types/node@20.10.4)(ts-node@10.9.2(@types/node@20.10.4)(typescript@5.3.3)))(typescript@5.3.3)
       typescript:
         specifier: ^5.0.0
         version: 5.3.3
@@ -2959,8 +2959,8 @@ packages:
   core-js-compat@3.42.0:
     resolution: {integrity: sha512-bQasjMfyDGyaeWKBIu33lHh9qlSR0MFE/Nmc6nMjf/iU9b3rSMdAYz1Baxrv4lPdGUsTqZudHA4jIGSJy0SWZQ==}
 
-  core-js@3.43.0:
-    resolution: {integrity: sha512-N6wEbTTZSYOY2rYAn85CuvWWkCK6QweMn7/4Nr3w+gDBeBhk/x4EJeY6FPo4QzDoJZxVTv8U7CMvgWk6pOHHqA==}
+  core-js@3.42.0:
+    resolution: {integrity: sha512-Sz4PP4ZA+Rq4II21qkNqOEDTDrCvcANId3xpIgB34NDkWc3UduWj2dqEtN9yZIq8Dk3HyPI33x9sqqU5C8sr0g==}
 
   core-util-is@1.0.3:
     resolution: {integrity: sha512-ZQBvi1DcpJ4GDqanjucZ2Hj3wEO5pZDS89BWbkcrvdxksJorwUDDZamX9ldFkp9aw2lmBDLgkObEA4DWNJ9FYQ==}
@@ -8885,7 +8885,7 @@ snapshots:
     dependencies:
       '@babel/runtime': 7.27.6
       '@types/raf': 3.4.3
-      core-js: 3.43.0
+      core-js: 3.42.0
       raf: 3.4.1
       regenerator-runtime: 0.13.11
       rgbcolor: 1.0.1
@@ -9084,7 +9084,7 @@ snapshots:
     dependencies:
       browserslist: 4.25.0
 
-  core-js@3.43.0:
+  core-js@3.42.0:
     optional: true
 
   core-util-is@1.0.3: {}
@@ -10554,7 +10554,7 @@ snapshots:
       fflate: 0.8.2
     optionalDependencies:
       canvg: 3.0.11
-      core-js: 3.43.0
+      core-js: 3.42.0
       dompurify: 2.5.8
       html2canvas: 1.4.1
 

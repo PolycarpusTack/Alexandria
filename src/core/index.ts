@@ -156,13 +156,11 @@ export async function initializeCore(options: {
     // Initialize AI service with dynamic model detection
     logger.info('Initializing AI service with dynamic model detection');
     const aiService = await createDynamicAIService(logger, {
-      ollamaHost: process.env.OLLAMA_HOST || 'http://localhost:11434',
       enableCache: true,
       cacheOptions: {
         ttl: 3600,
         maxSize: 100
-      },
-      checkInterval: 900000 // Check for new models every 15 minutes
+      }
     });
     
     // Initialize storage service

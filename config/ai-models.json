@@ -1,0 +1,30 @@
+{
+  "providers": [
+    {
+      "id": "openai",
+      "name": "OpenAI",
+      "type": "openai",
+      "enabled": false,
+      "endpoint": "https://api.openai.com/v1",
+      "apiKey": ""
+    },
+    {
+      "id": "anthropic",
+      "name": "Anthropic",
+      "type": "anthropic",
+      "enabled": false,
+      "endpoint": "https://api.anthropic.com/v1",
+      "apiKey": ""
+    },
+    {
+      "id": "azure-openai",
+      "name": "Azure OpenAI",
+      "type": "azure",
+      "enabled": false,
+      "endpoint": "",
+      "apiKey": ""
+    }
+  ],
+  "apiModels": [],
+  "preferences": {}
+}

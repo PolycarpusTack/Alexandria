@@ -3,8 +3,10 @@ import { CCILayout } from './cci-layout';
 import { ModernLayout } from './modern-layout';
 import EnhancedLayout from './enhanced-layout';
 import MockupLayout from './mockup-layout';
+import EnhancedMockupLayout from './enhanced-mockup-layout';
+import EnhancedMockupSimple from './enhanced-mockup-simple';
 
-type LayoutMode = 'classic' | 'modern' | 'enhanced' | 'mockup';
+type LayoutMode = 'classic' | 'modern' | 'enhanced' | 'mockup' | 'enhanced-mockup';
 
 interface LayoutContextType {
   layoutMode: LayoutMode;
@@ -12,24 +14,24 @@ interface LayoutContextType {
 }
 
 const LayoutContext = createContext<LayoutContextType>({
-  layoutMode: 'mockup',
+  layoutMode: 'enhanced-mockup',
   setLayoutMode: () => {}
 });
 
 export const useLayout = () => useContext(LayoutContext);
 
 export function LayoutProvider({ children }: { children: React.ReactNode }) {
-  const [layoutMode, setLayoutMode] = useState<LayoutMode>('mockup');
+  const [layoutMode, setLayoutMode] = useState<LayoutMode>('enhanced-mockup');
   
   // Load layout preference from localStorage
   useEffect(() => {
     const savedLayout = localStorage.getItem('alexandria-layout-mode') as LayoutMode;
-    if (savedLayout && ['classic', 'modern', 'enhanced', 'mockup'].includes(savedLayout)) {
+    if (savedLayout && ['classic', 'modern', 'enhanced', 'mockup', 'enhanced-mockup'].includes(savedLayout)) {
       setLayoutMode(savedLayout);
     } else {
-      // Default to mockup layout
-      localStorage.setItem('alexandria-layout-mode', 'mockup');
-      setLayoutMode('mockup');
+      // Default to enhanced-mockup layout
+      localStorage.setItem('alexandria-layout-mode', 'enhanced-mockup');
+      setLayoutMode('enhanced-mockup');
     }
   }, []);
   
@@ -52,6 +54,10 @@ interface DynamicLayoutProps {
 
 export function DynamicLayout({ children }: DynamicLayoutProps) {
   const { layoutMode } = useLayout();
+  
+  if (layoutMode === 'enhanced-mockup') {
+    return <EnhancedMockupSimple>{children}</EnhancedMockupSimple>;
+  }
   
   if (layoutMode === 'mockup') {
     return <MockupLayout>{children}</MockupLayout>;

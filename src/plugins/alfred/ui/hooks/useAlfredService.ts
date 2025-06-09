@@ -13,7 +13,8 @@ export function useAlfredService(): AlfredService {
     throw new Error('useAlfredService must be used within a PluginProvider');
   }
 
-  const service = context.getService<AlfredService>('alfred');
+  // The context provides api object, not getService method
+  const service = context.api?.getService?.('alfred');
   
   if (!service) {
     throw new Error('Alfred service not found. Is the plugin activated?');

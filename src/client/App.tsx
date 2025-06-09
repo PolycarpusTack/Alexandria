@@ -23,7 +23,7 @@ import Settings from './pages/Settings';
 import { CrashAnalyzerRoutes } from './pages/crash-analyzer';
 
 // Plugin Routes - Dynamic imports for better code splitting
-const AlfredRoutes = React.lazy(() => import('../plugins/alfred/ui/AlfredRoutes').then(module => ({ default: module.AlfredRoutes })));
+const AlfredApp = React.lazy(() => import('../plugins/alfred/ui').then(module => ({ default: module.AlfredApp })));
 const HeimdallDashboard = React.lazy(() => import('../plugins/heimdall/ui/components/HeimdallDashboard'));
 
 // Auth context
@@ -180,7 +180,7 @@ const App: React.FC = () => {
               <DynamicLayout>
                 <RouteErrorBoundary>
                   <React.Suspense fallback={<div>Loading Alfred...</div>}>
-                    <AlfredRoutes />
+                    <AlfredApp />
                   </React.Suspense>
                 </RouteErrorBoundary>
               </DynamicLayout>

@@ -219,12 +219,12 @@ export class ModelRegistry extends EventEmitter {
    * Start periodic model detection
    */
   private startPeriodicDetection(): void {
-    // Check every 30 seconds
+    // Check every 15 minutes
     this.checkInterval = setInterval(() => {
       this.detectAllModels().catch(error => {
         this.logger.error('Periodic model detection failed', { error });
       });
-    }, 30000);
+    }, 900000); // 15 minutes
   }
 
   /**
