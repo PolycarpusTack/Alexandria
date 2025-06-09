@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alexandria Plugin Example</title>
+  <link rel="stylesheet" href="/src/styles/global.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+  <!-- Example plugin using Alexandria global styles -->
+  <div class="plugin-container theme-alfred">
+    
+    <!-- Plugin Header -->
+    <div class="plugin-header">
+      <h1 class="plugin-title">
+        <i class="fa-solid fa-code" style="color: var(--color-alfred); margin-right: 12px;"></i>
+        ALFRED Plugin
+      </h1>
+      <p class="plugin-description">AI-powered coding assistant with project-aware context</p>
+    </div>
+    
+    <!-- Stats Section -->
+    <div class="stats-grid mb-4">
+      <div class="card">
+        <div class="card-body">
+          <div class="text-primary" style="font-size: 24px; font-weight: 700;">893</div>
+          <div class="text-muted">Total Requests</div>
+        </div>
+      </div>      <div class="card">
+        <div class="card-body">
+          <div class="text-success" style="font-size: 24px; font-weight: 700;">98.2%</div>
+          <div class="text-muted">Success Rate</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-body">
+          <div class="text-warning" style="font-size: 24px; font-weight: 700;">145ms</div>
+          <div class="text-muted">Avg Response</div>
+        </div>
+      </div>
+    </div>
+    
+    <!-- Main Content Card -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title">Recent Sessions</h2>
+        <button class="btn btn-primary">
+          <i class="fa-solid fa-plus"></i>
+          New Session
+        </button>
+      </div>
+      <div class="card-body">
+        <!-- Table Example -->
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Session ID</th>                <th>Type</th>
+                <th>Status</th>
+                <th>Duration</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>#12345</td>
+                <td>Code Generation</td>
+                <td><span class="badge badge-success">Completed</span></td>
+                <td>2.3s</td>
+                <td>
+                  <button class="btn btn-ghost btn-sm">
+                    <i class="fa-solid fa-eye"></i>
+                  </button>
+                </td>
+              </tr>
+              <tr>
+                <td>#12344</td>
+                <td>Debug Analysis</td>
+                <td><span class="badge badge-warning">Running</span></td>
+                <td>0.8s</td>
+                <td>
+                  <button class="btn btn-ghost btn-sm">
+                    <i class="fa-solid fa-stop"></i>
+                  </button>
+                </td>
+              </tr>
+            </tbody>
+          </table>        </div>
+      </div>
+    </div>
+    
+    <!-- Alert Example -->
+    <div class="alert alert-info">
+      <i class="fa-solid fa-info-circle" style="margin-right: 8px;"></i>
+      ALFRED is ready to assist with your coding tasks.
+    </div>
+    
+    <!-- Form Example -->
+    <div class="card">
+      <div class="card-header">
+        <h3 class="card-title">Configuration</h3>
+      </div>
+      <div class="card-body">
+        <div class="form-group">
+          <label class="form-label">Model Selection</label>
+          <select class="form-control">
+            <option>GPT-4</option>
+            <option>Claude</option>
+            <option>Llama 2</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Context Window</label>
+          <input type="number" class="form-control" value="4096">
+        </div>
+        <div class="d-flex gap-2">
+          <button class="btn btn-primary">Save Changes</button>
+          <button class="btn btn-secondary">Cancel</button>
+        </div>
+      </div>
+    </div>
+    
+  </div>
+</body>
+</html>

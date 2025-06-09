@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Alexandria Enhanced UI - Preview</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 20px;
+      background: #1a1a1a;
+      color: #e5e5e5;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 30px;
+      background: linear-gradient(to right, #3b82f6, #8b5cf6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+    .preview-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+      gap: 30px;
+      margin-bottom: 40px;
+    }
+    .preview-card {
+      background: #0d0d0d;
+      border: 1px solid #262626;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      transition: transform 0.3s ease;
+    }
+    .preview-card:hover {
+      transform: translateY(-5px);
+    }
+    .preview-header {
+      background: #171717;
+      padding: 15px 20px;
+      border-bottom: 1px solid #262626;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .preview-content {
+      padding: 20px;
+      height: 400px;
+      overflow: hidden;
+      position: relative;
+    }
+    .dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .dot-red { background: #ff605c; }
+    .dot-yellow { background: #ffbd44; }
+    .dot-green { background: #00ca4e; }
+    .feature-list {
+      list-style: none;
+      padding: 0;
+      margin: 20px 0;
+    }
+    .feature-list li {
+      padding: 10px 0;
+      border-bottom: 1px solid #262626;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .feature-list li:last-child {
+      border-bottom: none;
+    }
+    .icon {
+      width: 20px;
+      height: 20px;
+      background: #3b82f6;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+    }
+    .badge {
+      background: #3b82f6;
+      color: white;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 11px;
+      margin-left: auto;
+    }
+    .mock-ui {
+      background: #0d0d0d;
+      border: 1px solid #262626;
+      border-radius: 8px;
+      height: 100%;
+      display: flex;
+      overflow: hidden;
+    }
+    .activity-bar {
+      width: 48px;
+      background: #171717;
+      border-right: 1px solid #262626;
+      padding: 8px 0;
+    }
+    .activity-icon {
+      width: 40px;
+      height: 40px;
+      margin: 0 4px 4px;
+      background: #262626;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .activity-icon:hover {
+      background: #333;
+    }
+    .activity-icon.active {
+      background: #1a1a1a;
+      border-left: 2px solid #3b82f6;
+    }
+    .sidebar {
+      width: 240px;
+      background: #1a1a1a;
+      border-right: 1px solid #262626;
+      padding: 10px;
+    }
+    .main-content {
+      flex: 1;
+      padding: 20px;
+      background: #0d0d0d;
+    }
+    .tab-bar {
+      height: 36px;
+      background: #171717;
+      border-bottom: 1px solid #262626;
+      display: flex;
+      align-items: center;
+      padding: 0 10px;
+    }
+    .tab {
+      padding: 8px 16px;
+      background: #0d0d0d;
+      border-right: 1px solid #262626;
+      font-size: 13px;
+      cursor: pointer;
+    }
+    .tab.active {
+      border-bottom: 1px solid #3b82f6;
+    }
+    .status-bar {
+      height: 24px;
+      background: #3b82f6;
+      color: white;
+      display: flex;
+      align-items: center;
+      padding: 0 12px;
+      font-size: 11px;
+      justify-content: space-between;
+    }
+    .login-preview {
+      display: flex;
+      height: 100%;
+    }
+    .login-left {
+      flex: 1;
+      background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 100%);
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    .login-right {
+      flex: 1;
+      padding: 40px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    .form-input {
+      width: 100%;
+      padding: 12px 16px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 6px;
+      color: white;
+      margin-bottom: 16px;
+    }
+    .btn-primary {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(to right, #3b82f6, #2563eb);
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Alexandria Platform - Enhanced UI Preview</h1>
+    
+    <div class="preview-grid">
+      <!-- Main Dashboard Preview -->
+      <div class="preview-card">
+        <div class="preview-header">
+          <span class="dot dot-red"></span>
+          <span class="dot dot-yellow"></span>
+          <span class="dot dot-green"></span>
+          <span style="margin-left: auto;">Enhanced Dashboard</span>
+        </div>
+        <div class="preview-content">
+          <div class="mock-ui">
+            <div class="activity-bar">
+              <div class="activity-icon active"></div>
+              <div class="activity-icon"></div>
+              <div class="activity-icon"></div>
+              <div class="activity-icon"></div>
+            </div>
+            <div class="sidebar">
+              <div style="font-size: 11px; color: #666; margin-bottom: 10px;">EXPLORER</div>
+              <div style="padding: 5px; background: rgba(59,130,246,0.1); border-radius: 4px; margin-bottom: 4px;">📁 Dashboard</div>
+              <div style="padding: 5px;">📁 Plugins</div>
+              <div style="padding: 5px;">📁 AI Models</div>
+              <div style="padding: 5px;">⚙️ Settings</div>
+            </div>
+            <div style="flex: 1; display: flex; flex-direction: column;">
+              <div class="tab-bar">
+                <div class="tab active">Dashboard</div>
+                <div class="tab">ALFRED</div>
+                <div class="tab">Crash Analyzer</div>
+              </div>
+              <div class="main-content">
+                <h2 style="margin-top: 0;">Welcome back</h2>
+                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 20px;">
+                  <div style="background: #1a1a1a; padding: 20px; border-radius: 6px; border: 1px solid #262626;">
+                    <div style="font-size: 24px; font-weight: bold; color: #3b82f6;">3</div>
+                    <div style="font-size: 12px; color: #666;">Active Plugins</div>
+                  </div>
+                  <div style="background: #1a1a1a; padding: 20px; border-radius: 6px; border: 1px solid #262626;">
+                    <div style="font-size: 24px; font-weight: bold; color: #f59e0b;">2</div>
+                    <div style="font-size: 12px; color: #666;">AI Models</div>
+                  </div>
+                  <div style="background: #1a1a1a; padding: 20px; border-radius: 6px; border: 1px solid #262626;">
+                    <div style="font-size: 24px; font-weight: bold; color: #10b981;">147</div>
+                    <div style="font-size: 12px; color: #666;">Sessions</div>
+                  </div>
+                  <div style="background: #1a1a1a; padding: 20px; border-radius: 6px; border: 1px solid #262626;">
+                    <div style="font-size: 24px; font-weight: bold; color: #8b5cf6;">99.9%</div>
+                    <div style="font-size: 12px; color: #666;">Uptime</div>
+                  </div>
+                </div>
+              </div>
+              <div class="status-bar">
+                <div>🌿 main • ✓ All systems operational</div>
+                <div>🔌 3 Plugins • 🧠 2 Models • 📡 Connected</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Login Page Preview -->
+      <div class="preview-card">
+        <div class="preview-header">
+          <span class="dot dot-red"></span>
+          <span class="dot dot-yellow"></span>
+          <span class="dot dot-green"></span>
+          <span style="margin-left: auto;">Enhanced Login</span>
+        </div>
+        <div class="preview-content">
+          <div class="login-preview">
+            <div class="login-left">
+              <h2 style="font-size: 28px; margin-bottom: 16px;">Alexandria Platform</h2>
+              <p style="color: #999; margin-bottom: 40px;">The AI-powered platform that transforms how you build software</p>
+              <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 8px;">
+                  <div class="icon" style="background: #38bdf8;">🤖</div>
+                  <h4 style="margin: 10px 0 5px;">ALFRED AI</h4>
+                  <p style="font-size: 12px; color: #666;">Intelligent coding</p>
+                </div>
+                <div style="background: rgba(255,255,255,0.05); padding: 20px; border-radius: 8px;">
+                  <div class="icon" style="background: #f43f5e;">🐛</div>
+                  <h4 style="margin: 10px 0 5px;">Crash Analyzer</h4>
+                  <p style="font-size: 12px; color: #666;">AI debugging</p>
+                </div>
+              </div>
+            </div>
+            <div class="login-right">
+              <div style="width: 100%; max-width: 300px;">
+                <h3 style="text-align: center; margin-bottom: 30px;">Welcome back</h3>
+                <form>
+                  <input type="text" class="form-input" placeholder="Username" value="demo">
+                  <input type="password" class="form-input" placeholder="Password" value="••••">
+                  <button class="btn-primary">Sign in to Alexandria →</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Feature List -->
+    <div style="background: #0d0d0d; border: 1px solid #262626; border-radius: 12px; padding: 30px;">
+      <h2 style="text-align: center; margin-bottom: 30px;">Key Features Implemented</h2>
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px;">
+        <ul class="feature-list">
+          <li><span class="icon">✓</span> VSCode-style Activity Bar <span class="badge">New</span></li>
+          <li><span class="icon">✓</span> Multi-tab Support</li>
+          <li><span class="icon">✓</span> Command Palette (Ctrl+K)</li>
+          <li><span class="icon">✓</span> File Explorer Tree View</li>
+          <li><span class="icon">✓</span> Theme Toggle (Dark/Light/System)</li>
+        </ul>
+        <ul class="feature-list">
+          <li><span class="icon">✓</span> Context Menus <span class="badge">New</span></li>
+          <li><span class="icon">✓</span> Status Bar with Info</li>
+          <li><span class="icon">✓</span> Quick Access Panel</li>
+          <li><span class="icon">✓</span> Keyboard Shortcuts</li>
+          <li><span class="icon">✓</span> Responsive Design</li>
+        </ul>
+        <ul class="feature-list">
+          <li><span class="icon">✓</span> Modern Login Page <span class="badge">New</span></li>
+          <li><span class="icon">✓</span> Animated Backgrounds</li>
+          <li><span class="icon">✓</span> Loading States</li>
+          <li><span class="icon">✓</span> Error Handling</li>
+          <li><span class="icon">✓</span> Badge Notifications</li>
+        </ul>
+      </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 40px; color: #666;">
+      <p>Alexandria Platform Enhanced UI - Ready for Production</p>
+      <p style="font-size: 14px;">Run <code style="background: #262626; padding: 4px 8px; border-radius: 4px;">SETUP_ENHANCED_UI.bat</code> to activate</p>
+    </div>
+  </div>
+</body>
+</html>

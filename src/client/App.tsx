@@ -15,8 +15,11 @@ const logger = createClientLogger({ serviceName: 'alexandria-app' });
 
 // Pages
 import Login from './pages/Login';
-import Dashboard from './pages/Dashboard';
+import MockupLogin from './pages/MockupLogin';
+import DashboardWrapper from './pages/DashboardWrapper';
 import NotFound from './pages/NotFound';
+import LLMModels from './pages/LLMModels';
+import Settings from './pages/Settings';
 import { CrashAnalyzerRoutes } from './pages/crash-analyzer';
 
 // Plugin Routes - Dynamic imports for better code splitting
@@ -151,12 +154,21 @@ const App: React.FC = () => {
       <LayoutProvider>
         <AuthProvider>
           <Routes>
-        <Route path="/login" element={<Login />} />
+        <Route path="/login" element={<MockupLogin />} />
         <Route path="/" element={
           <ProtectedRoute 
             element={
               <DynamicLayout>
-                <Dashboard />
+                <DashboardWrapper />
+              </DynamicLayout>
+            } 
+          />
+        } />
+        <Route path="/dashboard" element={
+          <ProtectedRoute 
+            element={
+              <DynamicLayout>
+                <DashboardWrapper />
               </DynamicLayout>
             } 
           />
@@ -199,6 +211,15 @@ const App: React.FC = () => {
             } 
           />
         } />
+        <Route path="/llm-models" element={
+          <ProtectedRoute 
+            element={
+              <DynamicLayout>
+                <LLMModels />
+              </DynamicLayout>
+            } 
+          />
+        } />
         <Route path="/ticket-analysis/*" element={
           <ProtectedRoute 
             element={
@@ -232,7 +253,7 @@ const App: React.FC = () => {
           <ProtectedRoute 
             element={
               <DynamicLayout>
-                <Dashboard />
+                <DashboardWrapper />
               </DynamicLayout>
             } 
           />
@@ -248,6 +269,15 @@ const App: React.FC = () => {
         } />
         
         {/* Settings Routes */}
+        <Route path="/settings" element={
+          <ProtectedRoute 
+            element={
+              <DynamicLayout>
+                <Settings />
+              </DynamicLayout>
+            } 
+          />
+        } />
         <Route path="/user-settings/*" element={
           <ProtectedRoute 
             element={

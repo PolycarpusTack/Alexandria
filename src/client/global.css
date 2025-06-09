@@ -4,84 +4,88 @@
 
 @layer base {
   :root {
-    /* VSCode/Notion-style Dashboard variables */
+    /* Alexandria Mockup Design Variables */
     --sidebar-width: 240px;
     --header-height: 48px;
-    --primary-color: #007acc;
-    --background-color: #fafbfc;
-    --text-color: #37352f;
-    --card-bg: #ffffff;
-    --border-color: rgba(55, 53, 47, 0.16);
+    --primary-color: #3b82f6;
+    --primary-dark: #2563eb;
+    --secondary-color: #6366f1;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --danger-color: #ef4444;
+    --alfred-color: #38bdf8;
+    --hadron-color: #f43f5e;
+    --heimdall-color: #a78bfa;
     
-    /* ShadCN UI variables - VSCode/Notion style */
+    /* Light mode (matching mockup light theme) */
+    --background-color: #f9fafb;
+    --surface-color: #ffffff;
+    --card-bg: #ffffff;
+    --text-color: #1f2937;
+    --text-secondary: #4b5563;
+    --text-muted: #6b7280;
+    --border-color: #e5e7eb;
+    --border-dark: #d1d5db;
+    --hover-bg: #f3f4f6;
+    
+    /* ShadCN UI variables - Light theme */
     --background: 0 0% 98%;
-    --foreground: 20 6% 20%;
-
+    --foreground: 222 14% 19%;
     --card: 0 0% 100%;
-    --card-foreground: 20 6% 20%;
-
+    --card-foreground: 222 14% 19%;
     --popover: 0 0% 100%;
-    --popover-foreground: 20 6% 20%;
-
-    --primary: 207 91% 54%; /* VSCode blue */
+    --popover-foreground: 222 14% 19%;
+    --primary: 211 91% 51%;
     --primary-foreground: 0 0% 100%;
-
-    --secondary: 210 11% 96%;
-    --secondary-foreground: 20 6% 20%;
-
-    --muted: 220 13% 95%;
-    --muted-foreground: 220 8% 46%;
-
-    --accent: 207 91% 95%;
-    --accent-foreground: 207 91% 54%;
-
+    --secondary: 210 5% 96%;
+    --secondary-foreground: 222 14% 19%;
+    --muted: 210 6% 95%;
+    --muted-foreground: 215 8% 42%;
+    --accent: 210 5% 96%;
+    --accent-foreground: 222 14% 19%;
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 98%;
-
-    --border: 220 13% 91%;
-    --input: 220 13% 91%;
-    --ring: 207 91% 54%;
-
-    --radius: 0.5rem;
+    --border: 214 6% 89%;
+    --input: 214 6% 89%;
+    --ring: 211 91% 51%;
+    --radius: 0.375rem;
   }
 
   .dark {
-    /* VSCode dark theme colors */
-    --sidebar-width: 240px;
-    --header-height: 48px;
-    --primary-color: #007acc;
-    --background-color: #1e1e1e;
-    --text-color: #cccccc;
-    --card-bg: #252526;
-    --border-color: #3c3c3c;
+    /* Alexandria Mockup Dark Theme - Exact colors */
+    --background-color: #171717;
+    --surface-color: #1f2937;
+    --card-bg: #262626;
+    --text-color: #f9fafb;
+    --text-secondary: #e5e7eb;
+    --text-muted: #9ca3af;
+    --border-color: #404040;
+    --border-dark: #333333;
+    --hover-bg: #374151;
     
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+    /* Header specific */
+    --header-bg: #111827;
+    
+    /* ShadCN UI variables - Dark theme */
+    --background: 0 0% 9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 15%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 12%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 211 91% 51%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 21%;
+    --muted-foreground: 0 0% 61%;
+    --accent: 0 0% 21%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 25%;
+    --input: 0 0% 25%;
+    --ring: 211 91% 51%;
   }
 }
 
@@ -89,212 +93,717 @@
   * {
     @apply border-border;
   }
+  
   body {
     @apply bg-background text-foreground;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, 'Apple Color Emoji', Arial, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'SF Pro Display', 'Inter', Helvetica, Arial, sans-serif;
     background: var(--background-color);
     color: var(--text-color);
     font-feature-settings: "rlig" 1, "calt" 1;
-    box-sizing: border-box;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-}
-
-/* Custom styles for Alexandria - VSCode/Notion style */
-.app-shell {
-  height: 100vh;
-  display: flex;
-  overflow: hidden;
-  background: var(--background-color);
-}
-
-.sidebar {
-  width: 240px;
-  height: 100%;
-  flex-shrink: 0;
-  overflow-y: auto;
-  background: #f7f6f3;
-  border-right: 1px solid rgba(55, 53, 47, 0.08);
-  padding: 0;
-}
-
-.dark .sidebar {
-  background: #252526;
-  border-right: 1px solid #1e1e1e;
-}
-
-.main-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 0;
-  background: var(--background-color);
-}
-
-.sidebar-item {
-  display: flex;
-  align-items: center;
-  padding: 6px 14px;
-  margin: 0 8px 1px;
-  border-radius: 3px;
-  cursor: pointer;
-  transition: background-color 0.1s ease;
-  color: rgba(55, 53, 47, 0.8);
-  font-size: 14px;
-  font-weight: 500;
-}
-
-.dark .sidebar-item {
-  color: #cccccc;
-}
-
-.sidebar-item:hover {
-  background-color: rgba(55, 53, 47, 0.08);
-}
-
-.dark .sidebar-item:hover {
-  background-color: rgba(90, 93, 94, 0.31);
-}
-
-.sidebar-item.active {
-  background-color: rgba(35, 131, 226, 0.14);
-  color: #2383e2;
-}
-
-.dark .sidebar-item.active {
-  background-color: #094771;
-  color: #4fc3f7;
-}
-
-.app-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 1rem;
-  border-bottom: 1px solid hsl(var(--border));
-}
-
-.plugin-area {
-  height: calc(100vh - 60px);
-  overflow-y: auto;
-}
-
-/* Lighthouse Animation */
-.lighthouse {
-  position: relative;
-  width: 80px;
-  height: 80px;
-}
-
-.lighthouse-beam {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  background: radial-gradient(circle at center, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%);
-  animation: rotate 4s linear infinite;
-  transform-origin: center;
-}
-
-@keyframes rotate {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
+  
+  /* Ensure dark mode is applied by default */
+  body {
+    @apply dark;
   }
 }
 
-/* Command palette */
-.command-palette {
-  position: fixed;
-  top: 20%;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 640px;
-  max-width: 90vw;
-  z-index: 100;
+/* Alexandria Mockup Component Styles */
+@layer components {
+  /* App Shell */
+  .app-shell {
+    height: 100vh;
+    display: flex;
+    overflow: hidden;
+    background: var(--background-color);
+  }
+
+  /* Header */
+  .alexandria-header {
+    background-color: var(--header-bg, var(--surface-color));
+    border-bottom: 1px solid var(--border-color);
+    padding: 0.75rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    z-index: 10;
+  }
+  
+  /* Logo */
+  .alexandria-logo {
+    font-weight: 700;
+    font-size: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--text-color);
+  }
+
+  /* Sidebar */
+  .alexandria-sidebar {
+    width: var(--sidebar-width);
+    background-color: var(--surface-color);
+    border-right: 1px solid var(--border-color);
+    padding: 1rem;
+    overflow-y: auto;
+  }
+  
+  /* Navigation */
+  .nav-section {
+    margin-bottom: 1.5rem;
+  }
+  
+  .nav-section-title {
+    text-transform: uppercase;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    margin-bottom: 0.5rem;
+    padding-left: 0.5rem;
+  }
+  
+  .nav-item {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.375rem;
+    margin-bottom: 0.25rem;
+    color: var(--text-secondary);
+    transition: all 0.2s;
+    position: relative;
+    cursor: pointer;
+  }
+  
+  .nav-item:hover {
+    background-color: var(--hover-bg);
+    color: var(--text-color);
+  }
+  
+  .nav-item.active {
+    background-color: rgba(59, 130, 246, 0.1);
+    color: var(--primary-color);
+    font-weight: 500;
+  }
+  
+  .dark .nav-item.active {
+    color: #60a5fa;
+  }
+  
+  .nav-icon {
+    margin-right: 0.75rem;
+    width: 1.25rem;
+    text-align: center;
+  }
+  
+  /* Main Content */
+  .alexandria-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1.5rem;
+    background-color: var(--background-color);
+  }
+  
+  /* Cards - Mockup Style */
+  .alexandria-card {
+    background-color: var(--card-bg);
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--border-color);
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s;
+  }
+  
+  .alexandria-card:hover {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+  }
+  
+  .dark .alexandria-card:hover {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+    border-color: rgba(59, 130, 246, 0.5);
+  }
+  
+  /* Stats Grid */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  .stat-card {
+    @apply alexandria-card;
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .stat-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .stat-value {
+    font-size: 1.875rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    color: var(--text-color);
+  }
+  
+  .stat-label {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+  }
+  
+  /* Plugin Cards */
+  .plugin-card {
+    @apply alexandria-card;
+    cursor: pointer;
+    transition: all 0.3s;
+    position: relative;
+  }
+  
+  .plugin-card.alfred {
+    border-top: 3px solid var(--alfred-color);
+  }
+  
+  .plugin-card.hadron {
+    border-top: 3px solid var(--hadron-color);
+  }
+  
+  .plugin-card.heimdall {
+    border-top: 3px solid var(--heimdall-color);
+  }
+  
+  .plugin-header {
+    padding: 1.25rem 1.25rem 0.75rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    position: relative;
+  }
+  
+  .plugin-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 3rem;
+    height: 3rem;
+    border-radius: 0.5rem;
+    background-color: var(--hover-bg);
+    font-size: 1.25rem;
+    transition: all 0.3s;
+  }
+  
+  .plugin-title {
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 0.25rem;
+    color: var(--text-color);
+  }
+  
+  .plugin-content {
+    padding: 0 1.25rem 1.25rem;
+  }
+  
+  .plugin-description {
+    color: var(--text-muted);
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+    line-height: 1.5;
+  }
+  
+  /* Badges */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem 0.5rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+  
+  .badge-primary {
+    background-color: rgba(59, 130, 246, 0.1);
+    color: var(--primary-color);
+  }
+  
+  .dark .badge-primary {
+    color: #60a5fa;
+  }
+  
+  .badge-secondary {
+    background-color: var(--hover-bg);
+    color: var(--text-muted);
+  }
+  
+  /* Status Indicators */
+  .status-indicator {
+    display: inline-flex;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 9999px;
+    margin-right: 0.5rem;
+  }
+  
+  .status-indicator.online {
+    background-color: var(--success-color);
+    position: relative;
+  }
+  
+  .status-indicator.online::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background-color: var(--success-color);
+    opacity: 0.4;
+    animation: pulse 2s infinite;
+  }
+  
+  .status-indicator.offline {
+    background-color: var(--text-muted);
+  }
+  
+  @keyframes pulse {
+    0% {
+      transform: scale(1);
+      opacity: 0.4;
+    }
+    50% {
+      transform: scale(1.5);
+      opacity: 0;
+    }
+    100% {
+      transform: scale(1);
+      opacity: 0;
+    }
+  }
+  
+  /* Buttons - Mockup Style */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1rem;
+    font-weight: 500;
+    border-radius: 0.375rem;
+    transition: all 0.2s;
+    cursor: pointer;
+    font-size: 0.875rem;
+  }
+  
+  .btn-sm {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+  }
+  
+  .btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+  }
+  
+  .btn-primary:hover {
+    background-color: var(--primary-dark);
+  }
+  
+  .btn-outline {
+    border: 1px solid var(--border-color);
+    background-color: transparent;
+    color: var(--text-color);
+  }
+  
+  .btn-outline:hover {
+    background-color: var(--hover-bg);
+  }
+  
+  /* Progress Bars */
+  .progress {
+    width: 100%;
+    height: 0.5rem;
+    background-color: var(--border-color);
+    border-radius: 9999px;
+    overflow: hidden;
+  }
+  
+  .progress-bar {
+    height: 100%;
+    border-radius: 9999px;
+    background-color: var(--primary-color);
+    transition: width 0.3s ease;
+  }
+  
+  .progress-bar.warning {
+    background-color: var(--warning-color);
+  }
+  
+  .progress-bar.error {
+    background-color: var(--danger-color);
+  }
+  
+  /* Activity List */
+  .activity-list {
+    max-height: 320px;
+    overflow-y: auto;
+  }
+  
+  .activity-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid var(--border-color);
+  }
+  
+  .activity-item:last-child {
+    border-bottom: none;
+  }
+  
+  .activity-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.375rem;
+    background-color: var(--hover-bg);
+  }
+  
+  .activity-content {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .activity-message {
+    font-size: 0.875rem;
+    margin-bottom: 0.25rem;
+    color: var(--text-color);
+  }
+  
+  .activity-time {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+  
+  /* Tables */
+  .table-container {
+    overflow-x: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+  }
+  
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  th {
+    background-color: var(--hover-bg);
+    font-weight: 500;
+    text-align: left;
+    padding: 0.75rem 1rem;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+    border-bottom: 1px solid var(--border-color);
+  }
+  
+  td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+  }
+  
+  tr:last-child td {
+    border-bottom: none;
+  }
+  
+  tr:hover td {
+    background-color: var(--hover-bg);
+  }
+  
+  /* Theme Switch */
+  .theme-switch {
+    position: relative;
+    width: 48px;
+    height: 24px;
+    margin: 0 8px;
+  }
+  
+  .theme-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: var(--border-color);
+    transition: 0.4s;
+    border-radius: 24px;
+  }
+  
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+  }
+  
+  .dark .slider:before {
+    transform: translateX(24px);
+    background-color: var(--surface-color);
+  }
+  
+  /* Search Input */
+  .search-input {
+    background-color: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border-color);
+    border-radius: 0.375rem;
+    padding: 0.5rem 0.75rem 0.5rem 2.25rem;
+    color: var(--text-color);
+    font-size: 0.875rem;
+    width: 100%;
+    transition: all 0.2s;
+  }
+  
+  .search-input:focus {
+    outline: none;
+    border-color: var(--primary-color);
+    background-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .search-input::placeholder {
+    color: var(--text-muted);
+  }
+  
+  /* Quick Actions */
+  .quick-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  
+  /* User Menu */
+  .user-menu {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  
+  .avatar {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 9999px;
+    background-color: var(--hover-bg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+  
+  /* Chart Container */
+  .chart-container {
+    height: 250px;
+    margin-bottom: 1.5rem;
+  }
+  
+  /* Plugin Metrics */
+  .plugin-metrics {
+    display: flex;
+    gap: 1rem;
+    margin: 0.5rem 0 1rem;
+  }
+  
+  .plugin-metric {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+  }
+  
+  .plugin-metric-value {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-color);
+  }
+  
+  /* Plugin Tag */
+  .plugin-tag {
+    position: absolute;
+    top: 0;
+    right: 0;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    background-color: rgba(0,0,0,0.1);
+    padding: 2px 8px;
+    border-bottom-left-radius: 6px;
+    font-weight: 600;
+  }
+  
+  .dark .plugin-tag {
+    background-color: rgba(255,255,255,0.1);
+  }
+  
+  /* Notification Badge */
+  .notification-badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background-color: var(--danger-color);
+    color: white;
+    font-size: 0.625rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  /* Tooltip */
+  .tooltip {
+    position: relative;
+    display: inline-block;
+  }
+  
+  .tooltip:hover .tooltip-text {
+    visibility: visible;
+    opacity: 1;
+  }
+  
+  .tooltip-text {
+    visibility: hidden;
+    background-color: var(--surface-color);
+    color: var(--text-color);
+    text-align: center;
+    border-radius: 6px;
+    padding: 8px 12px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    transform: translateX(-50%);
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 0.75rem;
+    white-space: nowrap;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--border-color);
+  }
+  
+  .tooltip-text::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: var(--surface-color) transparent transparent transparent;
+  }
 }
 
-/* VSCode/Notion Dashboard styles */
-.notion-card {
-  background: var(--card-bg);
-  border-radius: 3px;
-  box-shadow: rgba(15, 15, 15, 0.05) 0px 0px 0px 1px, rgba(15, 15, 15, 0.1) 0px 3px 6px, rgba(15, 15, 15, 0.2) 0px 9px 24px;
-  overflow: hidden;
-  transition: box-shadow 0.15s ease;
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-.notion-card:hover {
-  box-shadow: rgba(15, 15, 15, 0.05) 0px 0px 0px 1px, rgba(15, 15, 15, 0.1) 0px 6px 12px, rgba(15, 15, 15, 0.2) 0px 15px 30px;
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 
-.vscode-header {
-  height: var(--header-height);
-  background-color: #2c2c2c;
-  color: #cccccc;
-  border-bottom: 1px solid #1e1e1e;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 16px;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  z-index: 50;
+.fade-in {
+  animation: fadeIn 0.3s ease-in-out;
 }
 
-.light .vscode-header {
-  background-color: #ffffff;
-  color: #424242;
-  border-bottom: 1px solid #e7e7e7;
+.slide-up {
+  animation: slideUp 0.5s ease-out;
 }
 
-.vscode-sidebar {
-  position: fixed;
-  top: var(--header-height);
-  left: 0;
-  bottom: 0;
-  width: var(--sidebar-width);
-  background-color: #252526;
-  border-right: 1px solid #1e1e1e;
-  overflow-y: auto;
-  padding: 8px 0;
-  z-index: 40;
+/* Responsive */
+@media (max-width: 1024px) {
+  .stats-grid,
+  .plugins-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
 }
 
-.light .vscode-sidebar {
-  background-color: #f3f3f3;
-  border-right: 1px solid #e7e7e7;
+@media (max-width: 768px) {
+  .alexandria-sidebar {
+    position: fixed;
+    left: -100%;
+    height: 100%;
+    z-index: 999;
+    transition: left 0.3s ease;
+  }
+  
+  .alexandria-sidebar.open {
+    left: 0;
+  }
+  
+  .alexandria-content {
+    margin-left: 0;
+  }
 }
 
-.main-content {
-  margin-left: var(--sidebar-width);
-  margin-top: var(--header-height);
-  padding: 24px;
-  min-height: calc(100vh - var(--header-height));
-  background-color: var(--background-color);
-}
-
-.cci-status-indicator {
-  display: inline-block;
+/* Scrollbar Styling */
+::-webkit-scrollbar {
   width: 8px;
   height: 8px;
-  border-radius: 50%;
-  margin-left: 8px;
 }
 
-.cci-status-green {
-  background-color: #10b981;
+::-webkit-scrollbar-track {
+  background: transparent;
 }
 
-.cci-status-yellow {
-  background-color: #f59e0b;
+::-webkit-scrollbar-thumb {
+  background: var(--border-color);
+  border-radius: 4px;
 }
 
-.cci-status-red {
-  background-color: #ef4444;
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+/* Selection */
+::selection {
+  background-color: rgba(59, 130, 246, 0.3);
+  color: var(--text-color);
+}
+
+/* Focus States */
+*:focus {
+  outline: none;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
 }
