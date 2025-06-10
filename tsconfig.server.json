@@ -2,7 +2,10 @@
   "compilerOptions": {
     "target": "ES2020",
     "module": "commonjs",
-    "lib": ["ES2020", "DOM"],
+    "lib": [
+      "ES2020",
+      "DOM"
+    ],
     "outDir": "./dist",
     "rootDir": "./",
     "strict": true,
@@ -17,20 +20,48 @@
     "emitDecoratorMetadata": true,
     "baseUrl": "./",
     "paths": {
-      "@/*": ["src/*"],
-      "@core/*": ["src/core/*"],
-      "@utils/*": ["src/utils/*"],
-      "@plugins/*": ["src/plugins/*"],
-      "@tools/*": ["tools/*"],
-      "@crash-analyzer/*": ["src/plugins/crash-analyzer/*"],
-      "@log-viz/*": ["src/plugins/log-visualization/*"],
-      "../../../../utils/*": ["src/utils/*"],
-      "../../../../core/*": ["src/core/*"],
-      "../../../utils/*": ["src/utils/*"],
-      "../../../core/*": ["src/core/*"],
-      "../../../../tools/*": ["tools/*"]
+      "@/*": [
+        "src/*"
+      ],
+      "@core/*": [
+        "src/core/*"
+      ],
+      "@utils/*": [
+        "src/utils/*"
+      ],
+      "@plugins/*": [
+        "src/plugins/*"
+      ],
+      "@tools/*": [
+        "tools/*"
+      ],
+      "@crash-analyzer/*": [
+        "src/plugins/crash-analyzer/*"
+      ],
+      "@log-viz/*": [
+        "src/plugins/log-visualization/*"
+      ],
+      "../../../../utils/*": [
+        "src/utils/*"
+      ],
+      "../../../../core/*": [
+        "src/core/*"
+      ],
+      "../../../utils/*": [
+        "src/utils/*"
+      ],
+      "../../../core/*": [
+        "src/core/*"
+      ],
+      "../../../../tools/*": [
+        "tools/*"
+      ]
     },
-    "typeRoots": ["./node_modules/@types", "./src/types"]
+    "typeRoots": [
+      "./node_modules/@types",
+      "./src/types"
+    ],
+    "allowSyntheticDefaultImports": true
   },
   "include": [
     "src/core/**/*",
@@ -38,19 +69,22 @@
     "src/infrastructure/**/*",
     "src/utils/**/*",
     "src/index.ts",
-    "tools/**/*"
+    "tools/**/*",
+    "src/types/**/*",
+    "src/plugins/alfred/src/**/*.ts"
   ],
   "exclude": [
-    "node_modules", 
-    "dist", 
-    "**/*.test.ts", 
-    "**/*.test.tsx", 
-    "**/__tests__/**/*", 
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "**/__tests__/**/*",
     "src/client/**/*",
     "src/ui/**/*",
     "src/plugins/crash-analyzer/ui/**/*",
     "src/plugins/log-visualization/ui/**/*",
     "src/plugins/**/ui/**/*",
+    "src/plugins/alfred/ui/**/*",
     "src/types/client.d.ts"
   ]
 }

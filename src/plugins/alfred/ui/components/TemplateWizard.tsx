@@ -29,7 +29,7 @@ import {
   Layers,
   GitBranch,
   FolderOpen
-} from 'lucide-react';
+} from '../../../../client/components/ui/icon-fallbacks';
 
 export interface ProjectTemplate {
   id: string;

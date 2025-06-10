@@ -1,24 +1,61 @@
 /**
  * Storage Manager Service
- * Manages multi-tier storage for log data
+ * Manages multi-tier storage for log data with intelligent query routing and lifecycle management
  */
 
 import { Logger } from '@utils/logger';
-import { HeimdallPluginContext, StorageTier, StorageStats, HeimdallLogEntry } from '../interfaces';
+import { 
+  HeimdallPluginContext, 
+  StorageTier, 
+  StorageStats, 
+  HeimdallLogEntry,
+  HeimdallQuery,
+  HeimdallQueryResult
+} from '../interfaces';
 import { DataService } from '@core/data/interfaces';
 import { ElasticsearchAdapter } from './storage-adapters/elasticsearch-adapter';
 import { ClickHouseAdapter } from './storage-adapters/clickhouse-adapter';
 import { S3Adapter } from './storage-adapters/s3-adapter';
+import { HyperionResourceManager } from './resource-manager';
+
+interface StorageConfig {
+  lifecycle: {
+    hotRetentionDays: number;
+    warmRetentionDays: number;
+    migrationBatchSize: number;
+    migrationIntervalHours: number;
+  };
+}
+
+interface QueryStrategy {
+  preferredTiers: Array<'hot' | 'warm' | 'cold'>;
+  maxTiers: number;
+  timeRange: { from: Date; to: Date };
+}
 
 export class StorageManager {
   private readonly context: HeimdallPluginContext;
   private readonly logger: Logger;
+  private readonly resourceManager: HyperionResourceManager;
   private readonly tiers: Map<string, StorageTier> = new Map();
   private readonly adapters: Map<string, ElasticsearchAdapter | ClickHouseAdapter | S3Adapter> = new Map();
+  private readonly config: StorageConfig;
+  private migrationTimer?: NodeJS.Timer;
+  private isInitialized = false;
   
-  constructor(context: HeimdallPluginContext, logger: Logger) {
+  constructor(context: HeimdallPluginContext, logger: Logger, resourceManager: HyperionResourceManager, config?: Partial<StorageConfig>) {
     this.context = context;
     this.logger = logger;
+    this.resourceManager = resourceManager;
+    this.config = {
+      lifecycle: {
+        hotRetentionDays: 7,
+        warmRetentionDays: 30,
+        migrationBatchSize: 1000,
+        migrationIntervalHours: 6,
+        ...config?.lifecycle
+      }
+    };
   }
 
   async initialize(): Promise<void> {
@@ -40,8 +77,8 @@ export class StorageManager {
     };
     this.tiers.set('hot', hotTier);
     
-    // Initialize Elasticsearch adapter
-    const elasticsearchAdapter = new ElasticsearchAdapter(hotTier, this.logger);
+    // Initialize Elasticsearch adapter with resource manager
+    const elasticsearchAdapter = new ElasticsearchAdapter(hotTier, this.logger, this.resourceManager);
     await elasticsearchAdapter.initialize();
     this.adapters.set('hot', elasticsearchAdapter);
     
@@ -61,8 +98,8 @@ export class StorageManager {
       };
       this.tiers.set('warm', warmTier);
       
-      // Initialize ClickHouse adapter
-      const clickhouseAdapter = new ClickHouseAdapter(warmTier, this.logger);
+      // Initialize ClickHouse adapter with resource manager
+      const clickhouseAdapter = new ClickHouseAdapter(warmTier, this.logger, this.resourceManager);
       await clickhouseAdapter.initialize();
       this.adapters.set('warm', clickhouseAdapter);
     }
@@ -92,9 +129,14 @@ export class StorageManager {
       this.adapters.set('cold', s3Adapter);
     }
     
+    // Start lifecycle management
+    this.startLifecycleManagement();
+    
+    this.isInitialized = true;
     this.logger.info('Storage manager initialized', {
       tiers: Array.from(this.tiers.keys()),
-      adapters: Array.from(this.adapters.keys())
+      adapters: Array.from(this.adapters.keys()),
+      lifecycleConfig: this.config.lifecycle
     });
   }
 
@@ -212,6 +254,28 @@ export class StorageManager {
   }
 
   /**
+   * Query across multiple storage tiers with intelligent routing
+   */
+  async query(query: HeimdallQuery): Promise<HeimdallQueryResult> {
+    if (!this.isInitialized) {
+      throw new Error('Storage manager not initialized');
+    }
+
+    try {
+      const strategy = this.determineQueryStrategy(query);
+      const results = await this.executeMultiTierQuery(query, strategy);
+      
+      return this.mergeQueryResults(results, query);
+    } catch (error) {
+      this.logger.error('Failed to execute query across tiers', {
+        timeRange: query.timeRange,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
+    }
+  }
+
+  /**
    * Migrate data between tiers
    */
   async migrate(
@@ -225,8 +289,107 @@ export class StorageManager {
       timeRange
     });
     
-    // TODO: Implement migration logic
-    return 0;
+    try {
+      const fromAdapter = this.adapters.get(fromTier);
+      const toAdapter = this.adapters.get(toTier);
+      
+      if (!fromAdapter || !toAdapter) {
+        throw new Error(`Adapters not found for migration: ${fromTier} -> ${toTier}`);
+      }
+
+      // Query logs from source tier
+      const query: HeimdallQuery = {
+        timeRange,
+        structured: { limit: this.config.lifecycle.migrationBatchSize }
+      };
+
+      const sourceResult = await fromAdapter.query(query);
+      
+      if (sourceResult.logs.length === 0) {
+        return 0;
+      }
+
+      // Store in destination tier
+      await toAdapter.storeBatch(sourceResult.logs);
+
+      this.logger.info('Migration completed', {
+        fromTier,
+        toTier,
+        migratedCount: sourceResult.logs.length,
+        timeRange
+      });
+
+      return sourceResult.logs.length;
+    } catch (error) {
+      this.logger.error('Migration failed', {
+        fromTier,
+        toTier,
+        timeRange,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Migrate old hot data to warm storage
+   */
+  async migrateToWarm(timeRange: { from: Date; to: Date }): Promise<number> {
+    return this.migrate('hot', 'warm', timeRange);
+  }
+
+  /**
+   * Migrate old warm data to cold storage
+   */
+  async migrateToCold(timeRange: { from: Date; to: Date }): Promise<number> {
+    return this.migrate('warm', 'cold', timeRange);
+  }
+
+  /**
+   * Restore data from cold storage
+   */
+  async restoreFromCold(timeRange: { from: Date; to: Date }, targetTier: 'hot' | 'warm' = 'warm'): Promise<number> {
+    const coldAdapter = this.adapters.get('cold') as S3Adapter;
+    if (!coldAdapter) {
+      throw new Error('Cold storage adapter not initialized');
+    }
+
+    try {
+      this.logger.info('Starting restore from cold storage', { timeRange, targetTier });
+
+      const restoredCount = await coldAdapter.restore(timeRange, targetTier);
+
+      this.logger.info('Restore from cold storage completed', {
+        restoredCount,
+        timeRange,
+        targetTier
+      });
+
+      return restoredCount;
+    } catch (error) {
+      this.logger.error('Failed to restore from cold storage', {
+        timeRange,
+        targetTier,
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
+    }
+  }
+
+  /**
+   * Close storage manager and cleanup resources
+   */
+  async close(): Promise<void> {
+    if (this.migrationTimer) {
+      clearInterval(this.migrationTimer);
+    }
+
+    await Promise.all([
+      ...Array.from(this.adapters.values()).map(adapter => adapter.close())
+    ]);
+
+    this.isInitialized = false;
+    this.logger.info('Storage manager closed');
   }
 
   /**
@@ -321,5 +484,170 @@ export class StorageManager {
     }
     
     return adapter.getStats();
+  }
+
+  /**
+   * Determine optimal query strategy based on time range and data age
+   */
+  private determineQueryStrategy(query: HeimdallQuery): QueryStrategy {
+    const now = new Date();
+    const ageInDays = (now.getTime() - query.timeRange.from.getTime()) / (1000 * 60 * 60 * 24);
+
+    // Determine which tiers to query based on data age
+    const preferredTiers: Array<'hot' | 'warm' | 'cold'> = [];
+    
+    if (ageInDays <= this.config.lifecycle.hotRetentionDays) {
+      preferredTiers.push('hot');
+    }
+    
+    if (ageInDays <= this.config.lifecycle.warmRetentionDays) {
+      preferredTiers.push('warm');
+    }
+    
+    // Always include cold for older data
+    if (ageInDays > this.config.lifecycle.hotRetentionDays) {
+      preferredTiers.push('cold');
+    }
+
+    // Limit concurrent tier queries for performance
+    const maxTiers = preferredTiers.length <= 2 ? preferredTiers.length : 2;
+
+    return {
+      preferredTiers,
+      maxTiers,
+      timeRange: query.timeRange
+    };
+  }
+
+  /**
+   * Execute query across multiple tiers in parallel
+   */
+  private async executeMultiTierQuery(
+    query: HeimdallQuery, 
+    strategy: QueryStrategy
+  ): Promise<Array<{ tier: string; result: HeimdallQueryResult }>> {
+    const queryPromises: Array<Promise<{ tier: string; result: HeimdallQueryResult }>> = [];
+
+    for (const tier of strategy.preferredTiers.slice(0, strategy.maxTiers)) {
+      const adapter = this.adapters.get(tier);
+      if (adapter) {
+        queryPromises.push(
+          adapter.query(query).then(result => ({ tier, result }))
+        );
+      }
+    }
+
+    return Promise.all(queryPromises);
+  }
+
+  /**
+   * Merge results from multiple tiers into a single result
+   */
+  private mergeQueryResults(
+    results: Array<{ tier: string; result: HeimdallQueryResult }>,
+    originalQuery: HeimdallQuery
+  ): HeimdallQueryResult {
+    if (results.length === 0) {
+      return {
+        logs: [],
+        total: 0,
+        aggregations: {},
+        performance: {
+          took: 0,
+          timedOut: false,
+          cacheHit: false,
+          storageAccessed: []
+        }
+      };
+    }
+
+    if (results.length === 1) {
+      return results[0].result;
+    }
+
+    // Merge results from multiple tiers
+    const allLogs = results.flatMap(r => r.result.logs);
+    
+    // Remove duplicates by ID
+    const uniqueLogs = allLogs.filter((log, index, array) => 
+      array.findIndex(l => l.id === log.id) === index
+    );
+
+    // Sort by timestamp (newest first is typical for logs)
+    uniqueLogs.sort((a, b) => Number(b.timestamp) - Number(a.timestamp));
+
+    // Apply pagination
+    const offset = originalQuery.structured?.offset || 0;
+    const limit = originalQuery.structured?.limit || 1000;
+    const paginatedLogs = uniqueLogs.slice(offset, offset + limit);
+
+    // Merge performance metrics
+    const totalTook = results.reduce((sum, r) => sum + (r.result.performance?.took || 0), 0);
+    const timedOut = results.some(r => r.result.performance?.timedOut);
+    const storageAccessed = results.map(r => r.tier);
+
+    // Merge aggregations (simplified - just take from first result)
+    const aggregations = results[0]?.result.aggregations || {};
+
+    return {
+      logs: paginatedLogs,
+      total: uniqueLogs.length,
+      aggregations,
+      performance: {
+        took: totalTook,
+        timedOut,
+        cacheHit: false,
+        storageAccessed
+      }
+    };
+  }
+
+  /**
+   * Start automated lifecycle management for data migration
+   */
+  private startLifecycleManagement(): void {
+    const intervalMs = this.config.lifecycle.migrationIntervalHours * 60 * 60 * 1000;
+    
+    this.migrationTimer = setInterval(async () => {
+      await this.performLifecycleMigration();
+    }, intervalMs);
+
+    this.logger.info('Lifecycle management started', {
+      intervalHours: this.config.lifecycle.migrationIntervalHours
+    });
+  }
+
+  /**
+   * Perform automated data migration based on retention policies
+   */
+  private async performLifecycleMigration(): Promise<void> {
+    try {
+      const now = new Date();
+      
+      // Migrate old hot data to warm
+      const hotCutoff = new Date(now.getTime() - (this.config.lifecycle.hotRetentionDays * 24 * 60 * 60 * 1000));
+      const warmMigrated = await this.migrateToWarm({
+        from: new Date(0),
+        to: hotCutoff
+      });
+
+      // Migrate old warm data to cold
+      const warmCutoff = new Date(now.getTime() - (this.config.lifecycle.warmRetentionDays * 24 * 60 * 60 * 1000));
+      const coldMigrated = await this.migrateToCold({
+        from: new Date(0),
+        to: warmCutoff
+      });
+
+      this.logger.info('Lifecycle migration completed', {
+        warmMigrated,
+        coldMigrated,
+        hotCutoff,
+        warmCutoff
+      });
+    } catch (error) {
+      this.logger.error('Lifecycle migration failed', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
   }
 }

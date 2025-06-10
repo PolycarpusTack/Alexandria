@@ -1,9 +1,14 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useCallback, useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { CommandPalette } from './command-palette';
 import { useTheme } from './theme-provider';
 import { useAuth } from '../App';
 import { cn } from '../lib/utils';
+import { 
+  useLayoutState, 
+  useKeyboardShortcuts, 
+  useNavigation 
+} from '../hooks';
 import { 
   Activity,
   Brain,
@@ -62,67 +67,32 @@ export function ModernLayout({ children }: ModernLayoutProps) {
   const auth = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  
+  // Use shared layout state
+  const [layoutState, layoutActions] = useLayoutState({
+    sidebarCollapsed: false,
+    commandPaletteOpen: false,
+    searchQuery: ''
+  });
+  
+  // Use shared navigation
+  const { isActiveRoute, getNavigationSections } = useNavigation();
   
   const isDark = theme === 'dark' || 
     (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
 
-  // Navigation sections
-  const coreItems: NavItem[] = [
-    { id: 'dashboard', label: 'Dashboard', icon: <Home className="h-4 w-4" />, path: '/' },
-    { id: 'configuration', label: 'Configuration', icon: <Settings className="h-4 w-4" />, path: '/configuration' },
-    { id: 'data-services', label: 'Data Services', icon: <Database className="h-4 w-4" />, path: '/data-services' },
-    { id: 'security', label: 'Security', icon: <Shield className="h-4 w-4" />, path: '/security' },
-  ];
+  // Get navigation sections from shared hook
+  const navigationSections = getNavigationSections();
+  const [coreItems, pluginItems, aiServiceItems, quickLinks] = navigationSections.map(section => section.items);
 
-  const pluginItems: NavItem[] = [
-    { id: 'alfred', label: 'ALFRED', icon: <Brain className="h-4 w-4" />, path: '/alfred', badge: 'AI', badgeVariant: 'secondary' },
-    { id: 'crash-analyzer', label: 'Hadron', icon: <FileSearch className="h-4 w-4" />, path: '/crash-analyzer', badge: 'Active', badgeVariant: 'default' },
-    { id: 'heimdall', label: 'Heimdall', icon: <BarChart3 className="h-4 w-4" />, path: '/heimdall', badge: 'Beta', badgeVariant: 'outline' },
-    { id: 'ticket-analysis', label: 'Ticket Analysis', icon: <MessageSquare className="h-4 w-4" />, path: '/ticket-analysis' },
-    { id: 'knowledge-base', label: 'Knowledge Base', icon: <Book className="h-4 w-4" />, path: '/knowledge-base' },
-  ];
-
-  const aiServiceItems: NavItem[] = [
-    { id: 'llm-models', label: 'LLM Models', icon: <Brain className="h-4 w-4" />, path: '/llm-models' },
-    { id: 'fine-tuning', label: 'Fine-tuning', icon: <Zap className="h-4 w-4" />, path: '/fine-tuning' },
-    { id: 'api-keys', label: 'API Keys', icon: <Key className="h-4 w-4" />, path: '/api-keys' },
-  ];
-
-  const quickLinks: NavItem[] = [
-    { id: 'settings', label: 'Settings', icon: <Settings className="h-4 w-4" />, path: '/settings' },
-    { id: 'user-settings', label: 'User Settings', icon: <User className="h-4 w-4" />, path: '/user-settings' },
-    { id: 'appearance', label: 'Appearance', icon: <Palette className="h-4 w-4" />, path: '/appearance' },
-    { id: 'documentation', label: 'Documentation', icon: <Book className="h-4 w-4" />, path: '/docs' },
-  ];
-
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      // Cmd/Ctrl + K for command palette
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        setCommandPaletteOpen(true);
-      }
-      
-      // Cmd/Ctrl + B to toggle sidebar
-      if ((e.metaKey || e.ctrlKey) && e.key === 'b') {
-        e.preventDefault();
-        setSidebarCollapsed(prev => !prev);
-      }
-      
-      // Cmd/Ctrl + / for search
-      if ((e.metaKey || e.ctrlKey) && e.key === '/') {
-        e.preventDefault();
-        document.getElementById('global-search')?.focus();
-      }
-    };
-    
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  // Use shared keyboard shortcuts
+  useKeyboardShortcuts({
+    onCommandPalette: () => layoutActions.setCommandPaletteOpen(true),
+    onToggleSidebar: () => layoutActions.setSidebarCollapsed(!layoutState.sidebarCollapsed),
+    onGlobalSearch: () => document.getElementById('global-search')?.focus(),
+    onAlfredLaunch: () => navigate('/alfred'),
+    onCrashAnalyzer: () => navigate('/crash-analyzer')
+  });
 
   const handleLogout = () => {
     auth?.logout();
@@ -135,13 +105,13 @@ export function ModernLayout({ children }: ModernLayoutProps) {
       "flex h-screen overflow-hidden",
       isDark ? "bg-[#1e1e1e] text-[#cccccc]" : "bg-[#fafbfc] text-[#37352f]"
     )}>
-      <CommandPalette open={commandPaletteOpen} onOpenChange={setCommandPaletteOpen} />
+      <CommandPalette open={layoutState.commandPaletteOpen} onOpenChange={layoutActions.setCommandPaletteOpen} />
       
       {/* Sidebar */}
       <aside className={cn(
         "flex flex-col border-r transition-all duration-300",
         isDark ? "bg-[#252526] border-[#3c3c3c]" : "bg-white border-gray-200",
-        sidebarCollapsed ? "w-16" : "w-64"
+        layoutState.sidebarCollapsed ? "w-16" : "w-64"
       )}>
         {/* Logo */}
         <div className={cn(
@@ -156,7 +126,7 @@ export function ModernLayout({ children }: ModernLayoutProps) {
               filter: isDark ? 'invert(1) brightness(0.9)' : 'none'
             }}
           />
-          {!sidebarCollapsed && (
+          {!layoutState.sidebarCollapsed && (
             <span className="ml-3 font-semibold text-lg">Alexandria</span>
           )}
         </div>
@@ -166,14 +136,13 @@ export function ModernLayout({ children }: ModernLayoutProps) {
           <nav className="space-y-6 px-3">
             {/* Core Section */}
             <div>
-              {!sidebarCollapsed && (
+              {!layoutState.sidebarCollapsed && (
                 <p className="px-3 mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Core
                 </p>
               )}
               {coreItems.map((item) => {
-                const isActive = location.pathname === item.path || 
-                  (item.path !== '/' && location.pathname.startsWith(item.path));
+                const isActive = isActiveRoute(item.path);
                 
                 return (
                   <Button
@@ -181,12 +150,12 @@ export function ModernLayout({ children }: ModernLayoutProps) {
                     variant={isActive ? "secondary" : "ghost"}
                     className={cn(
                       "w-full justify-start mb-1",
-                      sidebarCollapsed ? "px-2" : "px-3"
+                      layoutState.sidebarCollapsed ? "px-2" : "px-3"
                     )}
                     onClick={() => navigate(item.path)}
                   >
                     {item.icon}
-                    {!sidebarCollapsed && (
+                    {!layoutState.sidebarCollapsed && (
                       <>
                         <span className="ml-3">{item.label}</span>
                         {item.badge && (
@@ -203,14 +172,13 @@ export function ModernLayout({ children }: ModernLayoutProps) {
 
             {/* Plugins Section */}
             <div>
-              {!sidebarCollapsed && (
+              {!layoutState.sidebarCollapsed && (
                 <p className="px-3 mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Plugins
                 </p>
               )}
               {pluginItems.map((item) => {
-                const isActive = location.pathname === item.path || 
-                  (item.path !== '/' && location.pathname.startsWith(item.path));
+                const isActive = isActiveRoute(item.path);
                 
                 return (
                   <Button
@@ -218,12 +186,12 @@ export function ModernLayout({ children }: ModernLayoutProps) {
                     variant={isActive ? "secondary" : "ghost"}
                     className={cn(
                       "w-full justify-start mb-1",
-                      sidebarCollapsed ? "px-2" : "px-3"
+                      layoutState.sidebarCollapsed ? "px-2" : "px-3"
                     )}
                     onClick={() => navigate(item.path)}
                   >
                     {item.icon}
-                    {!sidebarCollapsed && (
+                    {!layoutState.sidebarCollapsed && (
                       <>
                         <span className="ml-3">{item.label}</span>
                         {item.badge && (
@@ -240,13 +208,13 @@ export function ModernLayout({ children }: ModernLayoutProps) {
 
             {/* AI Services Section */}
             <div>
-              {!sidebarCollapsed && (
+              {!layoutState.sidebarCollapsed && (
                 <p className="px-3 mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   AI Services
                 </p>
               )}
               {aiServiceItems.map((item) => {
-                const isActive = location.pathname === item.path;
+                const isActive = isActiveRoute(item.path);
                 
                 return (
                   <Button
@@ -254,12 +222,12 @@ export function ModernLayout({ children }: ModernLayoutProps) {
                     variant={isActive ? "secondary" : "ghost"}
                     className={cn(
                       "w-full justify-start mb-1",
-                      sidebarCollapsed ? "px-2" : "px-3"
+                      layoutState.sidebarCollapsed ? "px-2" : "px-3"
                     )}
                     onClick={() => navigate(item.path)}
                   >
                     {item.icon}
-                    {!sidebarCollapsed && (
+                    {!layoutState.sidebarCollapsed && (
                       <>
                         <span className="ml-3">{item.label}</span>
                         {item.badge && (
@@ -276,13 +244,13 @@ export function ModernLayout({ children }: ModernLayoutProps) {
 
             {/* Quick Links Section */}
             <div>
-              {!sidebarCollapsed && (
+              {!layoutState.sidebarCollapsed && (
                 <p className="px-3 mb-2 text-xs font-medium text-muted-foreground uppercase tracking-wider">
                   Quick Links
                 </p>
               )}
               {quickLinks.map((item) => {
-                const isActive = location.pathname === item.path;
+                const isActive = isActiveRoute(item.path);
                 
                 return (
                   <Button
@@ -290,12 +258,12 @@ export function ModernLayout({ children }: ModernLayoutProps) {
                     variant={isActive ? "secondary" : "ghost"}
                     className={cn(
                       "w-full justify-start mb-1",
-                      sidebarCollapsed ? "px-2" : "px-3"
+                      layoutState.sidebarCollapsed ? "px-2" : "px-3"
                     )}
                     onClick={() => navigate(item.path)}
                   >
                     {item.icon}
-                    {!sidebarCollapsed && (
+                    {!layoutState.sidebarCollapsed && (
                       <>
                         <span className="ml-3">{item.label}</span>
                         {item.badge && (
@@ -321,10 +289,10 @@ export function ModernLayout({ children }: ModernLayoutProps) {
             variant="ghost"
             size="sm"
             className="w-full justify-center"
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            onClick={() => layoutActions.setSidebarCollapsed(!layoutState.sidebarCollapsed)}
           >
             <Terminal className="h-4 w-4" />
-            {!sidebarCollapsed && <span className="ml-2">Collapse</span>}
+            {!layoutState.sidebarCollapsed && <span className="ml-2">Collapse</span>}
           </Button>
         </div>
       </aside>
@@ -344,8 +312,8 @@ export function ModernLayout({ children }: ModernLayoutProps) {
                 id="global-search"
                 type="text"
                 placeholder="Search everything... (Ctrl+/)"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                value={layoutState.searchQuery}
+                onChange={(e) => layoutActions.setSearchQuery(e.target.value)}
                 className={cn(
                   "w-full pl-10 pr-4 py-2 rounded-lg border text-sm transition-colors",
                   isDark 

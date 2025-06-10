@@ -192,12 +192,19 @@ export class MigrationRunner {
         .filter(file => file.endsWith('.sql'))
         .sort(); // Ensure migrations run in order
 
+      // Read all migration files in parallel for better performance
+      const fileContents = await Promise.all(
+        migrationFiles.map(async (file) => {
+          const filePath = path.join(this.migrationsPath, file);
+          const content = await fs.readFile(filePath, 'utf-8');
+          return { file, content };
+        })
+      );
+
+      // Parse migration files sequentially to maintain order
       const migrations: Migration[] = [];
-
-      for (const file of migrationFiles) {
-        const filePath = path.join(this.migrationsPath, file);
-        const content = await fs.readFile(filePath, 'utf-8');
-
+      
+      for (const { file, content } of fileContents) {
         // Parse migration file
         const [timestamp, ...nameParts] = file.replace('.sql', '').split('_');
         const name = nameParts.join('_');

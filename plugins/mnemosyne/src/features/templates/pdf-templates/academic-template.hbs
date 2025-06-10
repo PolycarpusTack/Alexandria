@@ -1,0 +1,581 @@
+{{!-- 
+  Academic PDF Template
+  Enterprise-grade template for research documents and academic publications
+  Supports TOC, Index, Bibliography, and Knowledge Graphs
+--}}
+<!DOCTYPE html>
+<html lang="en" class="academic-template">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{content.metadata.title}}</title>
+  <style>
+    /* Academic Template Styles */
+    @import url('https://fonts.googleapis.com/css2?family=Charter:ital,wght@0,400;0,700;1,400;1,700&family=Source+Code+Pro:wght@400;600&display=swap');
+    
+    /* Page configuration */
+    @page {
+      size: {{options.format}} {{options.orientation}};
+      margin: {{formatMargins options.margin}};
+      
+      @top-center {
+        content: "{{content.metadata.title}}";
+        font-size: 10pt;
+        color: #666;
+        border-bottom: 1px solid #ddd;
+        padding-bottom: 0.5em;
+      }
+      
+      @bottom-center {
+        content: "Page " counter(page) " of " counter(pages);
+        font-size: 9pt;
+        color: #666;
+      }
+      
+      @bottom-left {
+        content: "{{mnemosyne.knowledgeBase.name}}";
+        font-size: 8pt;
+        color: #999;
+      }
+      
+      @bottom-right {
+        content: "{{formatDate mnemosyne.exportDate}}";
+        font-size: 8pt;
+        color: #999;
+      }
+    }
+    
+    /* Typography */
+    body {
+      font-family: 'Charter', 'Times New Roman', serif;
+      line-height: 1.7;
+      color: #2c3e50;
+      font-size: 11pt;
+      hyphens: auto;
+      text-align: justify;
+    }
+    
+    /* Headings */
+    h1, h2, h3, h4, h5, h6 {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      page-break-after: avoid;
+      margin-top: 2em;
+      margin-bottom: 0.8em;
+      font-weight: 700;
+      color: #1a252f;
+    }
+    
+    h1 { 
+      font-size: 24pt; 
+      page-break-before: always;
+      margin-top: 0;
+      text-align: center;
+      border-bottom: 3px solid #3498db;
+      padding-bottom: 0.5em;
+    }
+    
+    h2 { 
+      font-size: 18pt; 
+      color: #2980b9;
+      border-bottom: 1px solid #bdc3c7;
+      padding-bottom: 0.3em;
+    }
+    
+    h3 { 
+      font-size: 14pt; 
+      color: #34495e;
+    }
+    
+    h4 { font-size: 12pt; }
+    h5 { font-size: 11pt; }
+    h6 { font-size: 10pt; }
+    
+    /* Paragraphs */
+    p {
+      margin: 1.2em 0;
+      text-indent: 1.5em;
+    }
+    
+    p:first-child,
+    h1 + p,
+    h2 + p,
+    h3 + p,
+    h4 + p,
+    h5 + p,
+    h6 + p {
+      text-indent: 0;
+    }
+    
+    /* Code blocks */
+    pre, code {
+      font-family: 'Source Code Pro', 'Monaco', 'Consolas', monospace;
+    }
+    
+    pre {
+      background: #f8f9fa;
+      border: 1px solid #e9ecef;
+      border-radius: 6px;
+      padding: 1.5em;
+      margin: 2em 0;
+      page-break-inside: avoid;
+      font-size: 9pt;
+      line-height: 1.4;
+      overflow-x: auto;
+    }
+    
+    code {
+      background: #f1f3f4;
+      padding: 0.2em 0.4em;
+      border-radius: 3px;
+      font-size: 0.9em;
+    }
+    
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 2em 0;
+      page-break-inside: avoid;
+      font-size: 10pt;
+    }
+    
+    th, td {
+      border: 1px solid #bdc3c7;
+      padding: 0.8em;
+      text-align: left;
+      vertical-align: top;
+    }
+    
+    th {
+      background: #ecf0f1;
+      font-weight: 600;
+      color: #2c3e50;
+    }
+    
+    /* Blockquotes */
+    blockquote {
+      border-left: 4px solid #3498db;
+      margin: 2em 0;
+      padding: 1em 0 1em 2em;
+      color: #34495e;
+      font-style: italic;
+      background: #f8f9fa;
+      border-radius: 0 4px 4px 0;
+    }
+    
+    /* Lists */
+    ul, ol {
+      margin: 1.5em 0;
+      padding-left: 2.5em;
+    }
+    
+    li {
+      margin-bottom: 0.8em;
+      line-height: 1.6;
+    }
+    
+    /* Images */
+    figure {
+      margin: 2em 0;
+      text-align: center;
+      page-break-inside: avoid;
+    }
+    
+    figure img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    figcaption {
+      margin-top: 1em;
+      font-size: 9pt;
+      color: #7f8c8d;
+      font-style: italic;
+      font-weight: 500;
+    }
+    
+    /* Links */
+    a {
+      color: #3498db;
+      text-decoration: none;
+      border-bottom: 1px dotted #3498db;
+    }
+    
+    a:hover {
+      color: #2980b9;
+      border-bottom-color: #2980b9;
+    }
+    
+    .external-link::after {
+      content: " ↗";
+      font-size: 0.8em;
+      opacity: 0.7;
+    }
+    
+    /* Academic-specific styles */
+    .abstract {
+      background: #f8f9fa;
+      border: 1px solid #dee2e6;
+      border-radius: 6px;
+      padding: 2em;
+      margin: 2em 0;
+      font-size: 10pt;
+      line-height: 1.6;
+    }
+    
+    .abstract h2 {
+      margin-top: 0;
+      font-size: 14pt;
+      text-align: center;
+      border: none;
+      padding: 0;
+    }
+    
+    .keywords {
+      margin-top: 1.5em;
+      font-size: 9pt;
+      color: #6c757d;
+    }
+    
+    .keywords strong {
+      color: #495057;
+    }
+    
+    /* Footnotes */
+    .footnote {
+      font-size: 8pt;
+      color: #6c757d;
+      border-top: 1px solid #dee2e6;
+      margin-top: 3em;
+      padding-top: 1em;
+    }
+    
+    .footnote-ref {
+      font-size: 0.8em;
+      vertical-align: super;
+      color: #3498db;
+    }
+    
+    /* Citations */
+    .citation {
+      color: #3498db;
+      font-weight: 500;
+    }
+    
+    /* Page breaks */
+    .page-break {
+      page-break-after: always;
+    }
+    
+    .no-break {
+      page-break-inside: avoid;
+    }
+  </style>
+</head>
+<body>
+  {{!-- Title Page --}}
+  <div class="title-page page-break">
+    <div style="text-align: center; margin-top: 25%;">
+      <h1 style="font-size: 28pt; margin-bottom: 2em; border: none; page-break-before: auto;">
+        {{content.metadata.title}}
+      </h1>
+      
+      {{#if content.metadata.subtitle}}
+      <h2 style="font-size: 18pt; color: #7f8c8d; font-weight: 400; margin-bottom: 3em; border: none;">
+        {{content.metadata.subtitle}}
+      </h2>
+      {{/if}}
+      
+      <div style="font-size: 14pt; color: #2c3e50; margin-bottom: 2em;">
+        {{#if content.metadata.author}}
+          <strong>{{content.metadata.author}}</strong>
+        {{else}}
+          <strong>{{mnemosyne.user.name}}</strong>
+        {{/if}}
+      </div>
+      
+      <div style="font-size: 12pt; color: #7f8c8d; margin-bottom: 3em;">
+        {{mnemosyne.knowledgeBase.name}}
+      </div>
+      
+      <div style="font-size: 11pt; color: #95a5a6;">
+        {{formatDate mnemosyne.exportDate "MMMM YYYY"}}
+      </div>
+      
+      {{#if analytics}}
+      <div style="margin-top: 4em; font-size: 10pt; color: #7f8c8d;">
+        <p>{{analytics.totalWords}} words • {{analytics.totalPages}} pages • {{analytics.readingTime}} min read</p>
+        <p>{{content.documents.length}} documents • {{analytics.crossReferenceCount}} cross-references</p>
+      </div>
+      {{/if}}
+    </div>
+  </div>
+  
+  {{!-- Abstract (if available) --}}
+  {{#if content.abstract}}
+  <div class="abstract page-break">
+    <h2>Abstract</h2>
+    <p>{{content.abstract}}</p>
+    
+    {{#if analytics.topicDistribution}}
+    <div class="keywords">
+      <strong>Keywords:</strong> 
+      {{#each (topWords analytics.topicDistribution 10)}}
+        {{this}}{{#unless @last}}, {{/unless}}
+      {{/each}}
+    </div>
+    {{/if}}
+  </div>
+  {{/if}}
+  
+  {{!-- Table of Contents --}}
+  {{#if content.tableOfContents}}
+  <div class="table-of-contents page-break">
+    <h1 style="page-break-before: auto;">Table of Contents</h1>
+    
+    {{#each content.tableOfContents.sections}}
+    <div class="toc-entry toc-level-{{level}}">
+      <a href="#{{anchor}}">
+        <span class="toc-title">{{title}}</span>
+        <span class="toc-dots"></span>
+        <span class="toc-page">{{page}}</span>
+      </a>
+    </div>
+    {{/each}}
+  </div>
+  {{/if}}
+  
+  {{!-- Knowledge Graph (if enabled) --}}
+  {{#if content.knowledgeGraph}}
+  <div class="knowledge-graph-container page-break">
+    <h1 style="page-break-before: auto;">Knowledge Map</h1>
+    
+    <div class="knowledge-graph">
+      {{!-- Knowledge graph visualization would be rendered here --}}
+      <svg width="100%" height="400" viewBox="0 0 800 400">
+        <defs>
+          <marker id="arrowhead" markerWidth="10" markerHeight="7" 
+                  refX="10" refY="3.5" orient="auto">
+            <polygon points="0 0, 10 3.5, 0 7" fill="#bdc3c7" />
+          </marker>
+        </defs>
+        
+        {{!-- Render edges --}}
+        {{#each content.knowledgeGraph.edges}}
+        <line x1="{{../nodes.[from].x}}" y1="{{../nodes.[from].y}}"
+              x2="{{../nodes.[to].x}}" y2="{{../nodes.[to].y}}"
+              stroke="{{color}}" stroke-width="2" marker-end="url(#arrowhead)" />
+        {{/each}}
+        
+        {{!-- Render nodes --}}
+        {{#each content.knowledgeGraph.nodes}}
+        <circle cx="{{x}}" cy="{{y}}" r="{{size}}" fill="{{color}}" 
+                stroke="#fff" stroke-width="2" opacity="0.8" />
+        <text x="{{x}}" y="{{add y 4}}" text-anchor="middle" 
+              font-size="9" fill="#2c3e50" font-weight="500">
+          {{truncate label 12}}
+        </text>
+        {{/each}}
+      </svg>
+    </div>
+    
+    <div class="graph-metadata">
+      <p><strong>Network Analysis:</strong> {{content.knowledgeGraph.metadata.nodeCount}} concepts, 
+         {{content.knowledgeGraph.metadata.edgeCount}} connections, 
+         {{content.knowledgeGraph.metadata.clusters}} clusters</p>
+    </div>
+    
+    <div class="graph-legend">
+      <div class="legend-item">
+        <span class="legend-color" style="background-color: #4A90E2;"></span>
+        Documents
+      </div>
+      <div class="legend-item">
+        <span class="legend-color" style="background-color: #7ED321;"></span>
+        Concepts
+      </div>
+      <div class="legend-item">
+        <span class="legend-color" style="background-color: #F5A623;"></span>
+        Authors
+      </div>
+    </div>
+  </div>
+  {{/if}}
+  
+  {{!-- Main Content --}}
+  <div class="main-content">
+    {{#each content.documents}}
+    <section class="document-section" id="doc-{{id}}">
+      {{#unless @first}}<div class="page-break"></div>{{/unless}}
+      
+      <h1>{{title}}</h1>
+      
+      {{!-- Document metadata --}}
+      <div class="document-metadata" style="font-size: 9pt; color: #7f8c8d; margin-bottom: 2em; border: 1px solid #dee2e6; padding: 1em; background: #f8f9fa; border-radius: 4px;">
+        <div style="display: flex; justify-content: space-between; flex-wrap: wrap;">
+          <div>
+            <strong>Word Count:</strong> {{metadata.wordCount}} | 
+            <strong>Reading Time:</strong> {{readingTime}} min | 
+            <strong>Complexity:</strong> {{percentage complexity}}%
+          </div>
+          <div>
+            {{#if metadata.author}}<strong>Author:</strong> {{metadata.author}}{{/if}}
+            {{#if metadata.created}} | <strong>Created:</strong> {{formatDate metadata.created}}{{/if}}
+          </div>
+        </div>
+        
+        {{#if keywords.length}}
+        <div style="margin-top: 0.5em;">
+          <strong>Key Terms:</strong> 
+          {{#each (take keywords 8)}}
+            {{this}}{{#unless @last}}, {{/unless}}
+          {{/each}}
+        </div>
+        {{/if}}
+      </div>
+      
+      {{!-- Document content --}}
+      <div class="document-content">
+        {{{htmlContent}}}
+      </div>
+      
+      {{!-- Backlinks --}}
+      {{#if backlinks.length}}
+      <div class="backlinks" style="margin-top: 3em; padding-top: 1em; border-top: 1px solid #dee2e6;">
+        <h3>Referenced By</h3>
+        <ul style="font-size: 10pt;">
+          {{#each backlinks}}
+          <li><a href="#{{id}}">{{title}}</a>{{#if context}} - {{context}}{{/if}}</li>
+          {{/each}}
+        </ul>
+      </div>
+      {{/if}}
+      
+      {{!-- Footnotes --}}
+      {{#if footnotes.length}}
+      <div class="footnotes" style="margin-top: 2em; padding-top: 1em; border-top: 1px solid #dee2e6;">
+        {{#each footnotes}}
+        <div class="footnote" id="fn-{{id}}">
+          <sup>{{@index}}</sup> {{text}}
+        </div>
+        {{/each}}
+      </div>
+      {{/if}}
+    </section>
+    {{/each}}
+  </div>
+  
+  {{!-- Glossary --}}
+  {{#if content.glossary}}
+  <div class="glossary page-break">
+    <h1 style="page-break-before: auto;">Glossary</h1>
+    
+    {{#each content.glossary.categories}}
+    <h2>{{this}}</h2>
+    {{#each (filterByCategory ../content.glossary.terms this)}}
+    <div class="glossary-entry" style="margin-bottom: 1em;">
+      <strong>{{term}}</strong>: {{definition}}
+      {{#if source}}<em style="font-size: 9pt; color: #7f8c8d;"> ({{source}})</em>{{/if}}
+    </div>
+    {{/each}}
+    {{/each}}
+  </div>
+  {{/if}}
+  
+  {{!-- Bibliography --}}
+  {{#if content.bibliography}}
+  <div class="bibliography page-break">
+    <h1 style="page-break-before: auto;">References</h1>
+    
+    {{#each content.bibliography.sources}}
+    <div class="bibliography-entry" style="margin-bottom: 1em; padding-left: 2em; text-indent: -2em;">
+      {{#if authors}}{{join authors ", "}}. {{/if}}
+      {{#if year}}({{year}}). {{/if}}
+      <em>{{title}}</em>. 
+      {{#if url}}<a href="{{url}}">{{url}}</a>{{/if}}
+    </div>
+    {{/each}}
+  </div>
+  {{/if}}
+  
+  {{!-- Index --}}
+  {{#if content.index}}
+  <div class="content-index page-break">
+    <h1 style="page-break-before: auto;">Index</h1>
+    
+    {{#each content.index.categories}}
+    <h2>{{name}}</h2>
+    {{#each (filterByCategory ../content.index.entries name)}}
+    <div class="index-entry">
+      <span class="index-term">{{term}}</span>
+      <span class="index-pages">{{join pages ", "}}</span>
+    </div>
+    {{/each}}
+    {{/each}}
+  </div>
+  {{/if}}
+  
+  {{!-- Analytics Summary --}}
+  {{#if analytics}}
+  <div class="analytics-summary page-break">
+    <h1 style="page-break-before: auto;">Document Analytics</h1>
+    
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2em; margin: 2em 0;">
+      <div>
+        <h3>Content Statistics</h3>
+        <ul style="list-style: none; padding: 0;">
+          <li><strong>Total Words:</strong> {{numberFormat analytics.totalWords}}</li>
+          <li><strong>Total Pages:</strong> {{analytics.totalPages}}</li>
+          <li><strong>Reading Time:</strong> {{analytics.readingTime}} minutes</li>
+          <li><strong>Complexity Score:</strong> {{percentage analytics.complexityScore}}%</li>
+          <li><strong>Vocabulary Richness:</strong> {{percentage analytics.vocabularyRichness}}%</li>
+          <li><strong>Knowledge Density:</strong> {{percentage analytics.knowledgeDensity}}%</li>
+        </ul>
+      </div>
+      
+      <div>
+        <h3>Media Elements</h3>
+        <ul style="list-style: none; padding: 0;">
+          <li><strong>Images:</strong> {{analytics.mediaCount.images}}</li>
+          <li><strong>Tables:</strong> {{analytics.mediaCount.tables}}</li>
+          <li><strong>Code Blocks:</strong> {{analytics.mediaCount.codeBlocks}}</li>
+          <li><strong>Cross References:</strong> {{analytics.crossReferenceCount}}</li>
+        </ul>
+      </div>
+    </div>
+    
+    <div>
+      <h3>Sentiment Analysis</h3>
+      <p><strong>Overall Tone:</strong> {{capitalize analytics.sentimentAnalysis.overall}} 
+         ({{percentage analytics.sentimentAnalysis.confidence}}% confidence)</p>
+    </div>
+    
+    {{#if analytics.topicDistribution}}
+    <div>
+      <h3>Topic Distribution</h3>
+      <div style="font-size: 10pt;">
+        {{#each (topWords analytics.topicDistribution 15)}}
+          <span style="display: inline-block; background: #ecf0f1; padding: 0.3em 0.6em; margin: 0.2em; border-radius: 3px;">{{this}}</span>
+        {{/each}}
+      </div>
+    </div>
+    {{/if}}
+  </div>
+  {{/if}}
+  
+  {{!-- Export Information --}}
+  <div class="export-info" style="margin-top: 4em; padding-top: 2em; border-top: 2px solid #3498db; font-size: 9pt; color: #7f8c8d;">
+    <div style="text-align: center;">
+      <p><strong>Generated by {{mnemosyne.knowledgeBase.name}}</strong></p>
+      <p>Export Date: {{formatDate mnemosyne.exportDate "LLLL"}} | 
+         Version: {{mnemosyne.version}} | 
+         Template: Academic</p>
+      <p>This document contains {{content.documents.length}} source documents with 
+         {{analytics.crossReferenceCount}} cross-references and 
+         {{analytics.mediaCount.images}} media elements.</p>
+    </div>
+  </div>
+</body>
+</html>

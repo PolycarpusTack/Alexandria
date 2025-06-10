@@ -1,0 +1,473 @@
+{
+  "id": "mnemosyne",
+  "name": "Mnemosyne",
+  "version": "1.0.0",
+  "description": "Advanced knowledge management and documentation plugin with AI-enhanced templates, intelligent import/export, and comprehensive knowledge graph visualization",
+  "author": "Alexandria Team",
+  "license": "MIT",
+  "category": "knowledge-management",
+  "type": "full-featured",
+  "entryPoint": "src/index.ts",
+  "uiComponent": "ui/index.tsx",
+  
+  "capabilities": {
+    "knowledgeManagement": {
+      "enabled": true,
+      "features": [
+        "document-management",
+        "knowledge-graph",
+        "relationship-tracking",
+        "version-control",
+        "collaboration"
+      ]
+    },
+    "templates": {
+      "enabled": true,
+      "features": [
+        "handlebars-engine",
+        "ai-generation",
+        "snippet-management",
+        "variable-resolution",
+        "template-inheritance"
+      ]
+    },
+    "importExport": {
+      "enabled": true,
+      "features": [
+        "obsidian-import",
+        "notion-import",
+        "markdown-import",
+        "pdf-export",
+        "static-site-export",
+        "provenance-tracking"
+      ]
+    },
+    "aiIntegration": {
+      "enabled": true,
+      "features": [
+        "alfred-integration",
+        "content-enhancement",
+        "template-generation",
+        "intelligent-suggestions"
+      ]
+    },
+    "visualization": {
+      "enabled": true,
+      "features": [
+        "knowledge-graph-d3",
+        "relationship-visualization",
+        "analytics-dashboard",
+        "export-visualization"
+      ]
+    }
+  },
+
+  "permissions": {
+    "dataAccess": {
+      "read": [
+        "documents",
+        "relationships",
+        "templates",
+        "user-preferences",
+        "analytics"
+      ],
+      "write": [
+        "documents",
+        "relationships",
+        "templates",
+        "user-preferences",
+        "import-sessions"
+      ],
+      "delete": [
+        "documents",
+        "relationships",
+        "templates"
+      ]
+    },
+    "systemAccess": {
+      "filesystem": {
+        "read": true,
+        "write": false,
+        "scope": ["import-sources"]
+      },
+      "network": {
+        "http": true,
+        "websocket": true,
+        "scope": ["ai-services", "external-apis"]
+      },
+      "database": {
+        "read": true,
+        "write": true,
+        "transactions": true
+      }
+    },
+    "apiAccess": {
+      "alexandria": {
+        "core": ["event-bus", "data-service", "user-context"],
+        "plugins": ["alfred"]
+      },
+      "external": [
+        "ai-services",
+        "export-services"
+      ]
+    }
+  },
+
+  "dependencies": {
+    "core": {
+      "@alexandria/core": "^1.0.0",
+      "@alexandria/plugin-interface": "^1.0.0"
+    },
+    "plugins": {
+      "alfred": {
+        "required": false,
+        "version": "^1.0.0",
+        "reason": "AI-enhanced template generation and content improvement"
+      }
+    },
+    "external": {
+      "handlebars": "^4.7.8",
+      "d3": "^7.8.5",
+      "gray-matter": "^4.0.3",
+      "fuse.js": "^6.6.2",
+      "uuid": "^9.0.1",
+      "puppeteer": "^21.0.0"
+    }
+  },
+
+  "configuration": {
+    "schema": {
+      "knowledgeBase": {
+        "type": "object",
+        "properties": {
+          "defaultIndexing": {
+            "type": "boolean",
+            "default": true,
+            "description": "Automatically index new documents in knowledge graph"
+          },
+          "autoLinking": {
+            "type": "boolean",
+            "default": true,
+            "description": "Automatically detect and create relationships between documents"
+          },
+          "maxRelationshipDepth": {
+            "type": "number",
+            "default": 3,
+            "minimum": 1,
+            "maximum": 10,
+            "description": "Maximum depth for relationship traversal"
+          }
+        }
+      },
+      "templates": {
+        "type": "object",
+        "properties": {
+          "aiGeneration": {
+            "type": "boolean",
+            "default": true,
+            "description": "Enable AI-powered template generation"
+          },
+          "autoSave": {
+            "type": "boolean",
+            "default": true,
+            "description": "Automatically save template drafts"
+          },
+          "suggestionEngine": {
+            "type": "boolean",
+            "default": true,
+            "description": "Show template suggestions based on context"
+          }
+        }
+      },
+      "importExport": {
+        "type": "object",
+        "properties": {
+          "preserveSourceStructure": {
+            "type": "boolean",
+            "default": true,
+            "description": "Maintain original folder structure during import"
+          },
+          "trackProvenance": {
+            "type": "boolean",
+            "default": true,
+            "description": "Track origin and transformation history"
+          },
+          "enableSync": {
+            "type": "boolean",
+            "default": false,
+            "description": "Enable bidirectional synchronization with source"
+          }
+        }
+      },
+      "ui": {
+        "type": "object",
+        "properties": {
+          "defaultView": {
+            "type": "string",
+            "enum": ["grid", "list", "graph"],
+            "default": "grid",
+            "description": "Default view mode for document browser"
+          },
+          "enableMinimap": {
+            "type": "boolean",
+            "default": true,
+            "description": "Show knowledge graph minimap"
+          },
+          "autoCollapseNodes": {
+            "type": "boolean",
+            "default": false,
+            "description": "Automatically collapse distant nodes in graph view"
+          }
+        }
+      }
+    },
+    "defaults": {
+      "knowledgeBase": {
+        "defaultIndexing": true,
+        "autoLinking": true,
+        "maxRelationshipDepth": 3
+      },
+      "templates": {
+        "aiGeneration": true,
+        "autoSave": true,
+        "suggestionEngine": true
+      },
+      "importExport": {
+        "preserveSourceStructure": true,
+        "trackProvenance": true,
+        "enableSync": false
+      },
+      "ui": {
+        "defaultView": "grid",
+        "enableMinimap": true,
+        "autoCollapseNodes": false
+      }
+    }
+  },
+
+  "lifecycle": {
+    "install": {
+      "hooks": ["createDatabase", "setupTemplates", "initializeKnowledgeGraph"],
+      "migrations": ["001_initial_schema", "002_knowledge_graph", "003_template_system"]
+    },
+    "activate": {
+      "hooks": ["registerEventHandlers", "startServices", "loadUserPreferences"],
+      "warmup": ["templateEngine", "knowledgeGraphIndex"]
+    },
+    "deactivate": {
+      "hooks": ["cleanupServices", "saveState"],
+      "cleanup": ["temporaryFiles", "cacheData"]
+    },
+    "uninstall": {
+      "hooks": ["backupUserData", "cleanDatabase"],
+      "preserve": ["userDocuments", "templates", "preferences"]
+    }
+  },
+
+  "routes": {
+    "api": {
+      "/api/mnemosyne/documents": {
+        "methods": ["GET", "POST", "PUT", "DELETE"],
+        "auth": "required",
+        "description": "Document management endpoints"
+      },
+      "/api/mnemosyne/knowledge-graph": {
+        "methods": ["GET", "POST"],
+        "auth": "required",
+        "description": "Knowledge graph query and manipulation"
+      },
+      "/api/mnemosyne/templates": {
+        "methods": ["GET", "POST", "PUT", "DELETE"],
+        "auth": "required",
+        "description": "Template management endpoints"
+      },
+      "/api/mnemosyne/import": {
+        "methods": ["POST"],
+        "auth": "required",
+        "description": "Import operations from external sources"
+      },
+      "/api/mnemosyne/export": {
+        "methods": ["POST"],
+        "auth": "required",
+        "description": "Export operations to various formats"
+      },
+      "/api/mnemosyne/search": {
+        "methods": ["GET", "POST"],
+        "auth": "required",
+        "description": "Advanced search across knowledge base"
+      }
+    },
+    "ui": {
+      "/mnemosyne": {
+        "component": "Dashboard",
+        "title": "Knowledge Base",
+        "icon": "brain"
+      },
+      "/mnemosyne/documents": {
+        "component": "DocumentBrowser",
+        "title": "Documents",
+        "icon": "file-text"
+      },
+      "/mnemosyne/graph": {
+        "component": "KnowledgeGraphExplorer",
+        "title": "Knowledge Graph",
+        "icon": "network"
+      },
+      "/mnemosyne/templates": {
+        "component": "TemplateManager",
+        "title": "Templates",
+        "icon": "template"
+      },
+      "/mnemosyne/import": {
+        "component": "ImportWizard",
+        "title": "Import",
+        "icon": "download"
+      },
+      "/mnemosyne/settings": {
+        "component": "SettingsPanel",
+        "title": "Settings",
+        "icon": "settings"
+      }
+    }
+  },
+
+  "events": {
+    "emits": [
+      "mnemosyne:document:created",
+      "mnemosyne:document:updated",
+      "mnemosyne:document:deleted",
+      "mnemosyne:relationship:created",
+      "mnemosyne:relationship:updated",
+      "mnemosyne:template:generated",
+      "mnemosyne:import:started",
+      "mnemosyne:import:completed",
+      "mnemosyne:export:started",
+      "mnemosyne:export:completed"
+    ],
+    "listens": [
+      "alexandria:user:changed",
+      "alexandria:system:startup",
+      "alexandria:system:shutdown",
+      "alfred:generation:completed",
+      "alfred:enhancement:available"
+    ]
+  },
+
+  "storage": {
+    "collections": [
+      {
+        "name": "documents",
+        "indexes": ["title", "tags", "created", "modified", "author"],
+        "fullText": ["title", "content"]
+      },
+      {
+        "name": "relationships",
+        "indexes": ["sourceId", "targetId", "type", "created"],
+        "constraints": ["unique:sourceId-targetId-type"]
+      },
+      {
+        "name": "templates",
+        "indexes": ["name", "category", "created", "author"],
+        "fullText": ["name", "description", "content"]
+      },
+      {
+        "name": "import_sessions",
+        "indexes": ["source", "status", "created"],
+        "ttl": "30d"
+      },
+      {
+        "name": "knowledge_nodes",
+        "indexes": ["type", "weight", "created", "updated"],
+        "spatial": ["coordinates"]
+      }
+    ]
+  },
+
+  "search": {
+    "enabled": true,
+    "engines": ["fulltext", "semantic", "graph"],
+    "indexes": [
+      {
+        "name": "document_content",
+        "fields": ["title", "content", "tags"],
+        "weights": [3, 1, 2]
+      },
+      {
+        "name": "template_search",
+        "fields": ["name", "description", "variables"],
+        "weights": [3, 2, 1]
+      }
+    ]
+  },
+
+  "monitoring": {
+    "metrics": [
+      "documents_created",
+      "relationships_formed",
+      "templates_used",
+      "imports_completed",
+      "exports_generated",
+      "search_queries",
+      "ai_generations"
+    ],
+    "alerts": [
+      {
+        "name": "high_error_rate",
+        "condition": "error_rate > 0.05",
+        "severity": "warning"
+      },
+      {
+        "name": "large_import_failure",
+        "condition": "import_size > 1000 AND import_status = 'failed'",
+        "severity": "critical"
+      }
+    ]
+  },
+
+  "security": {
+    "dataClassification": "sensitive",
+    "encryption": {
+      "atRest": true,
+      "inTransit": true
+    },
+    "auditLog": {
+      "enabled": true,
+      "events": ["create", "update", "delete", "export", "import"],
+      "retention": "1y"
+    },
+    "accessControl": {
+      "model": "rbac",
+      "roles": ["viewer", "editor", "admin", "owner"],
+      "permissions": {
+        "viewer": ["read"],
+        "editor": ["read", "write"],
+        "admin": ["read", "write", "manage"],
+        "owner": ["read", "write", "manage", "delete"]
+      }
+    }
+  },
+
+  "performance": {
+    "caching": {
+      "enabled": true,
+      "strategies": ["memory", "redis"],
+      "ttl": {
+        "documents": "1h",
+        "templates": "24h",
+        "knowledge_graph": "30m"
+      }
+    },
+    "optimization": {
+      "lazyLoading": true,
+      "chunkedProcessing": true,
+      "batchOperations": true
+    }
+  },
+
+  "development": {
+    "hotReload": true,
+    "debugMode": true,
+    "testingFramework": "jest",
+    "coverageThreshold": 80
+  }
+}

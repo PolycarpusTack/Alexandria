@@ -96,7 +96,7 @@ export class TemplateManagerService implements ITemplateManagerService {
       this.templatesCache.set(template.id, template);
 
       // Emit event
-      this.eventBus.emit('alfred:template-created', {
+      this.eventBus.publish('alfred:template-created', {
         templateId: template.id,
         name: template.name,
         language: template.language
@@ -136,7 +136,7 @@ export class TemplateManagerService implements ITemplateManagerService {
       this.templatesCache.set(id, updated);
 
       // Emit event
-      this.eventBus.emit('alfred:template-updated', {
+      this.eventBus.publish('alfred:template-updated', {
         templateId: id,
         changes: Object.keys(updates)
       });
@@ -158,7 +158,7 @@ export class TemplateManagerService implements ITemplateManagerService {
       await this.templateRepository.deleteTemplate(id);
       this.templatesCache.delete(id);
 
-      this.eventBus.emit('alfred:template-deleted', { templateId: id });
+      this.eventBus.publish('alfred:template-deleted', { templateId: id });
     } catch (error) {
       this.logger.error('Failed to delete template', { error, id });
       throw error;

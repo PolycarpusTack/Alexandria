@@ -1,6 +1,6 @@
 /**
  * Elasticsearch Storage Adapter
- * Handles hot tier storage with Elasticsearch
+ * Handles hot tier storage with Elasticsearch using connection pooling
  */
 
 import { Logger } from '@utils/logger';
@@ -11,6 +11,8 @@ import {
   StorageTier,
   StorageStats
 } from '../../interfaces';
+import { HyperionResourceManager, Priority } from '../resource-manager';
+import { Connection } from '../connection-pool/types';
 
 // Mock Elasticsearch client interface until @elastic/elasticsearch is installed
 interface MockElasticsearchClient {
@@ -31,13 +33,15 @@ interface MockElasticsearchClient {
 export class ElasticsearchAdapter {
   private readonly logger: Logger;
   private readonly config: StorageTier;
-  private client?: MockElasticsearchClient;
+  private readonly resourceManager: HyperionResourceManager;
   private indexPrefix: string;
   private isConnected = false;
+  private poolName = 'elasticsearch-hot';
 
-  constructor(config: StorageTier, logger: Logger) {
+  constructor(config: StorageTier, logger: Logger, resourceManager: HyperionResourceManager) {
     this.config = config;
     this.logger = logger;
+    this.resourceManager = resourceManager;
     this.indexPrefix = config.config?.indexPrefix || 'heimdall-';
   }
 
@@ -47,14 +51,22 @@ export class ElasticsearchAdapter {
     });
 
     try {
-      // TODO: Replace with actual Elasticsearch client when installed
-      // const { Client } = require('@elastic/elasticsearch');
-      // this.client = new Client({
-      //   node: this.config.engine.connectionString,
-      //   auth: this.config.engine.options?.auth
-      // });
-      
-      this.client = this.createMockElasticsearchClient();
+      // Try to use actual Elasticsearch client if available, fall back to mock
+      try {
+        const { Client } = require('@elastic/elasticsearch');
+        this.client = new Client({
+          node: this.config.engine.connectionString,
+          auth: this.config.engine.options?.auth,
+          requestTimeout: 30000,
+          pingTimeout: 3000
+        });
+        this.logger.info('Using real Elasticsearch client');
+      } catch (requireError) {
+        this.logger.warn('Elasticsearch client not available, using mock implementation', {
+          error: requireError instanceof Error ? requireError.message : String(requireError)
+        });
+        this.client = this.createMockElasticsearchClient();
+      }
       
       // Test connection
       await this.client.ping();
@@ -73,20 +85,29 @@ export class ElasticsearchAdapter {
   }
 
   async store(log: HeimdallLogEntry): Promise<void> {
-    if (!this.isConnected || !this.client) {
-      throw new Error('Elasticsearch client not connected');
+    if (!this.isConnected) {
+      throw new Error('Elasticsearch adapter not connected');
     }
 
+    let connection: Connection | null = null;
     try {
+      // Get connection from pool
+      connection = await this.resourceManager.getConnection(
+        this.poolName, 
+        Priority.NORMAL, 
+        30000
+      );
+
       const index = this.getIndexName(log.timestamp);
       const document = this.convertToElasticsearchDocument(log);
       
-      await this.client.index({
+      // Execute using pooled connection
+      await connection.execute(JSON.stringify({
         index,
         id: log.id,
         body: document,
-        refresh: 'false' // Don't wait for refresh for better performance
-      });
+        refresh: 'false'
+      }));
       
       this.logger.debug('Log stored in Elasticsearch', {
         logId: log.id,
@@ -98,19 +119,32 @@ export class ElasticsearchAdapter {
         error: error instanceof Error ? error.message : String(error)
       });
       throw error;
+    } finally {
+      // Always release connection back to pool
+      if (connection) {
+        await this.resourceManager.releaseConnection(this.poolName, connection);
+      }
     }
   }
 
   async storeBatch(logs: HeimdallLogEntry[]): Promise<void> {
-    if (!this.isConnected || !this.client) {
-      throw new Error('Elasticsearch client not connected');
+    if (!this.isConnected) {
+      throw new Error('Elasticsearch adapter not connected');
     }
 
     if (logs.length === 0) {
       return;
     }
 
+    let connection: Connection | null = null;
     try {
+      // Get high priority connection for batch operations
+      connection = await this.resourceManager.getConnection(
+        this.poolName, 
+        Priority.HIGH, 
+        45000
+      );
+
       // Group logs by index
       const indexGroups = this.groupLogsByIndex(logs);
       
@@ -120,12 +154,14 @@ export class ElasticsearchAdapter {
           this.convertToElasticsearchDocument(log)
         ]);
         
-        const response = await this.client.bulk({
+        const bulkQuery = JSON.stringify({
           body: operations,
           refresh: false
         });
         
-        if (response.body.errors) {
+        const response = await connection.execute(bulkQuery);
+        
+        if (response?.body?.errors) {
           const failedCount = response.body.items.filter((item: any) => 
             item.index?.error
           ).length;
@@ -148,25 +184,44 @@ export class ElasticsearchAdapter {
         error: error instanceof Error ? error.message : String(error)
       });
       throw error;
+    } finally {
+      // Always release connection back to pool
+      if (connection) {
+        await this.resourceManager.releaseConnection(this.poolName, connection);
+      }
     }
   }
 
   async query(query: HeimdallQuery): Promise<HeimdallQueryResult> {
-    if (!this.isConnected || !this.client) {
-      throw new Error('Elasticsearch client not connected');
+    if (!this.isConnected) {
+      throw new Error('Elasticsearch adapter not connected');
     }
 
+    let connection: Connection | null = null;
     try {
+      // Get connection with priority based on query urgency
+      const priority = query.hints?.timeout && query.hints.timeout < 5000 
+        ? Priority.HIGH 
+        : Priority.NORMAL;
+        
+      connection = await this.resourceManager.getConnection(
+        this.poolName, 
+        priority, 
+        query.hints?.timeout || 30000
+      );
+
       const esQuery = this.buildElasticsearchQuery(query);
       const indices = this.getIndicesForTimeRange(query.timeRange);
       
-      const response = await this.client.search({
+      const searchQuery = JSON.stringify({
         index: indices,
         body: esQuery,
         size: query.structured?.limit || 1000,
         from: query.structured?.offset || 0,
         track_total_hits: true
       });
+
+      const response = await connection.execute(searchQuery);
       
       const result: HeimdallQueryResult = {
         logs: response.body.hits.hits.map((hit: any) => 
@@ -194,18 +249,32 @@ export class ElasticsearchAdapter {
         error: error instanceof Error ? error.message : String(error)
       });
       throw error;
+    } finally {
+      // Always release connection back to pool
+      if (connection) {
+        await this.resourceManager.releaseConnection(this.poolName, connection);
+      }
     }
   }
 
   async getStats(): Promise<StorageStats> {
-    if (!this.isConnected || !this.client) {
-      throw new Error('Elasticsearch client not connected');
+    if (!this.isConnected) {
+      throw new Error('Elasticsearch adapter not connected');
     }
 
+    let connection: Connection | null = null;
     try {
-      const response = await this.client.indices.stats({
+      connection = await this.resourceManager.getConnection(
+        this.poolName, 
+        Priority.LOW, 
+        30000
+      );
+
+      const statsQuery = JSON.stringify({
         index: `${this.indexPrefix}*`
       });
+
+      const response = await connection.execute(statsQuery);
       
       const stats = response.body.indices;
       let totalDocs = 0;
@@ -241,15 +310,17 @@ export class ElasticsearchAdapter {
         error: error instanceof Error ? error.message : String(error)
       });
       throw error;
+    } finally {
+      // Always release connection back to pool
+      if (connection) {
+        await this.resourceManager.releaseConnection(this.poolName, connection);
+      }
     }
   }
 
   async close(): Promise<void> {
-    if (this.client) {
-      await this.client.close();
-      this.isConnected = false;
-      this.logger.info('Elasticsearch adapter closed');
-    }
+    this.isConnected = false;
+    this.logger.info('Elasticsearch adapter closed - connections managed by resource manager');
   }
 
   /**

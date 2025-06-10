@@ -10,6 +10,7 @@ import { spawn, ChildProcess } from 'child_process';
 import { EventEmitter } from 'events';
 import * as path from 'path';
 import { Logger } from '../../../../utils/logger';
+import { PluginError, ServiceUnavailableError, TimeoutError, ErrorHandler } from '../../../../core/errors';
 
 export interface PythonMessage {
   type: 'chat' | 'project' | 'structure' | 'error' | 'status';
@@ -65,8 +66,25 @@ export class PythonBridge extends EventEmitter {
       
       this.logger.info('Python bridge started successfully');
     } catch (error) {
-      this.logger.error('Failed to start Python bridge', { error });
-      throw error;
+      const standardError = ErrorHandler.toStandardError(error);
+      this.logger.error('Failed to start Python bridge', {
+        error: standardError.message,
+        code: standardError.code,
+        context: standardError.context,
+        pythonPath: this.pythonPath,
+        alfredPath: this.alfredPath
+      });
+      
+      throw new PluginError(
+        'alfred',
+        'start-python-bridge',
+        `Failed to initialize Python bridge: ${standardError.message}`,
+        {
+          pythonPath: this.pythonPath,
+          alfredPath: this.alfredPath,
+          originalError: standardError.message
+        }
+      );
     }
   }
 
@@ -100,11 +118,44 @@ export class PythonBridge extends EventEmitter {
    */
   async sendMessage(message: PythonMessage): Promise<void> {
     if (!this.isRunning || !this.process?.stdin) {
-      throw new Error('Python bridge not running');
+      throw new ServiceUnavailableError(
+        'alfred-python-bridge',
+        'Bridge is not running or stdin is unavailable',
+        {
+          isRunning: this.isRunning,
+          hasStdin: !!this.process?.stdin,
+          messageType: message.type
+        }
+      );
     }
 
-    const messageStr = JSON.stringify(message) + '\n';
-    this.process.stdin.write(messageStr);
+    try {
+      const messageStr = JSON.stringify(message) + '\n';
+      this.process.stdin.write(messageStr);
+      
+      this.logger.debug('Message sent to Python bridge', {
+        messageType: message.type,
+        messageId: message.id
+      });
+    } catch (error) {
+      const standardError = ErrorHandler.toStandardError(error);
+      this.logger.error('Failed to send message to Python bridge', {
+        error: standardError.message,
+        messageType: message.type,
+        messageId: message.id
+      });
+      
+      throw new PluginError(
+        'alfred',
+        'send-python-message',
+        `Failed to send message to Python bridge: ${standardError.message}`,
+        {
+          messageType: message.type,
+          messageId: message.id,
+          originalError: standardError.message
+        }
+      );
+    }
   }
 
   /**
@@ -116,15 +167,57 @@ export class PythonBridge extends EventEmitter {
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         this.removeAllListeners(`response:${id}`);
-        reject(new Error(`Timeout calling method: ${method}`));
+        
+        const timeoutError = new TimeoutError(
+          `python-bridge-call-${method}`,
+          30000,
+          {
+            method,
+            params,
+            callId: id
+          }
+        );
+        
+        this.logger.error('Python bridge call timeout', {
+          error: timeoutError.message,
+          method,
+          callId: id,
+          timeoutMs: 30000
+        });
+        
+        reject(timeoutError);
       }, 30000);
 
       this.once(`response:${id}`, (response: any) => {
         clearTimeout(timeout);
         
         if (response.error) {
-          reject(new Error(response.error));
+          const error = new PluginError(
+            'alfred',
+            'python-bridge-call',
+            `Python bridge method '${method}' failed: ${response.error}`,
+            {
+              method,
+              params,
+              callId: id,
+              pythonError: response.error
+            }
+          );
+          
+          this.logger.error('Python bridge method failed', {
+            error: error.message,
+            method,
+            callId: id,
+            pythonError: response.error
+          });
+          
+          reject(error);
         } else {
+          this.logger.debug('Python bridge call successful', {
+            method,
+            callId: id
+          });
+          
           resolve(response.result);
         }
       });
@@ -185,9 +278,18 @@ export class PythonBridge extends EventEmitter {
         const message = JSON.parse(line) as PythonMessage;
         this.handleMessage(message);
       } catch (error) {
-        this.logger.error('Failed to parse Python message', { 
-          error, 
-          line 
+        const standardError = ErrorHandler.toStandardError(error);
+        this.logger.error('Failed to parse Python message', {
+          error: standardError.message,
+          code: standardError.code,
+          rawLine: line,
+          lineLength: line.length
+        });
+        
+        // Emit error event for monitoring
+        this.emit('parse-error', {
+          error: standardError,
+          rawLine: line
         });
       }
     }

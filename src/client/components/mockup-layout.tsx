@@ -1,7 +1,13 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../App';
 import { useTheme } from './theme-provider';
+import { 
+  useLayoutState, 
+  useKeyboardShortcuts, 
+  useChartLoader, 
+  useNavigation 
+} from '../hooks';
 import '../styles/enhanced-mockup.css';
 
 export default function MockupLayout({ children }: { children?: React.ReactNode }) {
@@ -9,109 +15,27 @@ export default function MockupLayout({ children }: { children?: React.ReactNode 
   const navigate = useNavigate();
   const auth = useAuth();
   const { theme, setTheme } = useTheme();
-  const [activeNav, setActiveNav] = useState('dashboard');
-  const [logsChart, setLogsChart] = useState<any>(null);
+  
+  // Use shared layout state
+  const [layoutState, layoutActions] = useLayoutState({
+    activeNav: 'dashboard'
+  });
+  
+  // Use shared chart loader
+  const { createChart, isChartLibraryLoaded } = useChartLoader();
+  
+  // Use shared navigation
+  const { isActiveRoute, getNavigationSections } = useNavigation();
 
+  // Initialize chart
   useEffect(() => {
-    // Load Chart.js for the logs chart
-    const loadChart = async () => {
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js';
-      script.async = true;
-      script.onload = () => {
-        const canvas = document.getElementById('logsChart') as HTMLCanvasElement;
-        if (canvas && (window as any).Chart) {
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            const gradient = ctx.createLinearGradient(0, 0, 0, 200);
-            gradient.addColorStop(0, 'rgba(59, 130, 246, 0.5)');
-            gradient.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
-            
-            const labels = [];
-            const data = [];
-            
-            // Generate last 30 days
-            for (let i = 30; i >= 0; i--) {
-              const date = new Date();
-              date.setDate(date.getDate() - i);
-              labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-              data.push(Math.floor(Math.random() * 50) + 30);
-            }
-            
-            const chart = new (window as any).Chart(ctx, {
-              type: 'line',
-              data: {
-                labels: labels,
-                datasets: [{
-                  label: 'Logs Processed',
-                  data: data,
-                  backgroundColor: gradient,
-                  borderColor: '#3b82f6',
-                  borderWidth: 2,
-                  tension: 0.4,
-                  pointRadius: 0,
-                  pointHoverRadius: 4,
-                  pointBackgroundColor: '#3b82f6',
-                  fill: true
-                }]
-              },
-              options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                  y: {
-                    beginAtZero: true,
-                    grid: {
-                      color: 'rgba(75, 85, 99, 0.2)'
-                    },
-                    ticks: {
-                      color: '#9ca3af'
-                    }
-                  },
-                  x: {
-                    grid: {
-                      display: false
-                    },
-                    ticks: {
-                      color: '#9ca3af',
-                      maxRotation: 0,
-                      autoSkip: true,
-                      maxTicksLimit: 7
-                    }
-                  }
-                },
-                plugins: {
-                  legend: {
-                    display: false
-                  },
-                  tooltip: {
-                    mode: 'index',
-                    intersect: false,
-                    backgroundColor: '#1f2937',
-                    titleColor: '#f9fafb',
-                    bodyColor: '#f3f4f6',
-                    borderColor: '#374151',
-                    borderWidth: 1,
-                    padding: 10,
-                    displayColors: false
-                  }
-                },
-                interaction: {
-                  mode: 'nearest',
-                  intersect: false,
-                  axis: 'x'
-                }
-              }
-            });
-            setLogsChart(chart);
-          }
-        }
-      };
-      document.body.appendChild(script);
-    };
-
-    loadChart();
-  }, []);
+    if (isChartLibraryLoaded) {
+      createChart({
+        type: 'line',
+        canvasId: 'logsChart'
+      });
+    }
+  }, [isChartLibraryLoaded, createChart]);
 
   const handleThemeToggle = () => {
     const input = document.getElementById('themeToggle') as HTMLInputElement;
@@ -123,11 +47,19 @@ export default function MockupLayout({ children }: { children?: React.ReactNode 
   };
 
   const handleNavClick = (item: string, path?: string) => {
-    setActiveNav(item);
+    layoutActions.setActiveNav(item);
     if (path) {
       navigate(path);
     }
   };
+
+  // Use shared keyboard shortcuts
+  useKeyboardShortcuts({
+    onCommandPalette: () => console.log('Command palette not implemented in mockup layout'),
+    onGlobalSearch: () => document.querySelector('input[placeholder="Search..."]')?.focus(),
+    onAlfredLaunch: () => navigate('/alfred'),
+    onCrashAnalyzer: () => navigate('/crash-analyzer')
+  });
 
   // Ensure dark mode is set
   useEffect(() => {
@@ -224,94 +156,81 @@ export default function MockupLayout({ children }: { children?: React.ReactNode 
           <div className="mockup-sidebar" style={{ backgroundColor: '#1f2937', borderRight: '1px solid #404040' }}>
             <div style={{ marginBottom: '1.5rem' }}>
               <div style={{ textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 600, color: '#9ca3af', marginBottom: '0.5rem', paddingLeft: '0.5rem' }}>Core</div>
-              <div 
-                className={`mockup-nav-item ${activeNav === 'dashboard' ? 'active' : ''}`}
-                onClick={() => handleNavClick('dashboard', '/dashboard')}
-                style={activeNav === 'dashboard' ? { backgroundColor: 'rgba(59, 130, 246, 0.1)', color: '#60a5fa' } : {}}
-              >
-                <i className="fa-solid fa-gauge-high" style={{ marginRight: '0.75rem', width: '1.25rem', textAlign: 'center' }}></i>
-                <span>Dashboard</span>
-              </div>
-              <div 
-                className={`mockup-nav-item ${activeNav === 'settings' ? 'active' : ''}`}
-                onClick={() => handleNavClick('settings', '/settings')}
-              >
-                <i className="fa-solid fa-gear" style={{ marginRight: '0.75rem', width: '1.25rem', textAlign: 'center' }}></i>
-                <span>Settings</span>
-              </div>
-              <div className="mockup-nav-item">
-                <i className="fa-solid fa-user" style={{ marginRight: '0.75rem', width: '1.25rem', textAlign: 'center' }}></i>
-                <span>Users</span>
-              </div>
+              {getNavigationSections()[0].items.map((item) => (
+                <div 
+                  key={item.id}
+                  className={`mockup-nav-item ${layoutState.activeNav === item.id ? 'active' : ''}`}
+                  onClick={() => handleNavClick(item.id, item.path)}
+                  style={layoutState.activeNav === item.id ? { backgroundColor: 'rgba(59, 130, 246, 0.1)', color: '#60a5fa' } : {}}
+                >
+                  {item.id === 'dashboard' && <i className="fa-solid fa-gauge-high" style={{ marginRight: '0.75rem', width: '1.25rem', textAlign: 'center' }}></i>}
+                  {item.id === 'settings' && <i className="fa-solid fa-gear" style={{ marginRight: '0.75rem', width: '1.25rem', textAlign: 'center' }}></i>}
+                  {item.id === 'users' && <i className="fa-solid fa-user" style={{ marginRight: '0.75rem', width: '1.25rem', textAlign: 'center' }}></i>}
+                  <span>{item.label}</span>
+                </div>
+              ))}
             </div>
             
             <div style={{ marginBottom: '1.5rem' }}>
               <div style={{ textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 600, color: '#9ca3af', marginBottom: '0.5rem', paddingLeft: '0.5rem' }}>Plugins</div>
-              <div 
-                className={`mockup-nav-item ${activeNav === 'alfred' ? 'active' : ''}`}
-                onClick={() => handleNavClick('alfred', '/alfred')}
-              >
-                <i className="fa-solid fa-code" style={{ marginRight: '0.75rem', width: '1.25rem', textAlign: 'center', color: '#38bdf8' }}></i>
-                <span>ALFRED</span>
-                <span className="mockup-status-indicator online" style={{ marginLeft: 'auto' }}></span>
-              </div>
-              <div 
-                className={`mockup-nav-item ${activeNav === 'crash' ? 'active' : ''}`}
-                onClick={() => handleNavClick('crash', '/crash-analyzer')}
-              >
-                <i className="fa-solid fa-file-lines" style={{ marginRight: '0.75rem', width: '1.25rem', textAlign: 'center', color: '#f43f5e' }}></i>
-                <span>Crash Analyzer</span>
-                <span className="mockup-status-indicator online" style={{ marginLeft: 'auto' }}></span>
-              </div>
-              <div className="mockup-nav-item">
-                <i className="fa-solid fa-chart-line" style={{ marginRight: '0.75rem', width: '1.25rem', textAlign: 'center', color: '#a78bfa' }}></i>
-                <span>Heimdall</span>
-                <span className="mockup-status-indicator offline" style={{ marginLeft: 'auto' }}></span>
-              </div>
+              {getNavigationSections()[1].items.map((item) => (
+                <div 
+                  key={item.id}
+                  className={`mockup-nav-item ${layoutState.activeNav === item.id ? 'active' : ''}`}
+                  onClick={() => handleNavClick(item.id, item.path)}
+                >
+                  {item.id === 'alfred' && <i className="fa-solid fa-code" style={{ marginRight: '0.75rem', width: '1.25rem', textAlign: 'center', color: '#38bdf8' }}></i>}
+                  {item.id === 'crash-analyzer' && <i className="fa-solid fa-file-lines" style={{ marginRight: '0.75rem', width: '1.25rem', textAlign: 'center', color: '#f43f5e' }}></i>}
+                  {item.id === 'heimdall' && <i className="fa-solid fa-chart-line" style={{ marginRight: '0.75rem', width: '1.25rem', textAlign: 'center', color: '#a78bfa' }}></i>}
+                  <span>{item.label}</span>
+                  {item.statusIndicator && (
+                    <span className={`mockup-status-indicator ${item.statusIndicator}`} style={{ marginLeft: 'auto' }}></span>
+                  )}
+                </div>
+              ))}
             </div>
             
             <div style={{ marginBottom: '1.5rem' }}>
               <div style={{ textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 600, color: '#9ca3af', marginBottom: '0.5rem', paddingLeft: '0.5rem' }}>AI Services</div>
-              <div 
-                className={`mockup-nav-item ${activeNav === 'llm' ? 'active' : ''}`}
-                onClick={() => handleNavClick('llm', '/llm-models')}
-              >
-                <i className="fa-solid fa-brain" style={{ marginRight: '0.75rem', width: '1.25rem', textAlign: 'center' }}></i>
-                <span>Ollama</span>
-                <span className="mockup-status-indicator online" style={{ marginLeft: 'auto' }}></span>
-              </div>
-              <div className="mockup-nav-item">
-                <i className="fa-solid fa-database" style={{ marginRight: '0.75rem', width: '1.25rem', textAlign: 'center' }}></i>
-                <span>Vector Store</span>
-                <span className="mockup-status-indicator online" style={{ marginLeft: 'auto' }}></span>
-              </div>
+              {getNavigationSections()[2].items.map((item) => (
+                <div 
+                  key={item.id}
+                  className={`mockup-nav-item ${layoutState.activeNav === item.id ? 'active' : ''}`}
+                  onClick={() => handleNavClick(item.id, item.path)}
+                >
+                  {item.id === 'llm-models' && <i className="fa-solid fa-brain" style={{ marginRight: '0.75rem', width: '1.25rem', textAlign: 'center' }}></i>}
+                  {item.id === 'vector-store' && <i className="fa-solid fa-database" style={{ marginRight: '0.75rem', width: '1.25rem', textAlign: 'center' }}></i>}
+                  <span>{item.label}</span>
+                  {item.statusIndicator && (
+                    <span className={`mockup-status-indicator ${item.statusIndicator}`} style={{ marginLeft: 'auto' }}></span>
+                  )}
+                </div>
+              ))}
             </div>
 
             <div>
               <div style={{ textTransform: 'uppercase', fontSize: '0.75rem', fontWeight: 600, color: '#9ca3af', marginBottom: '0.5rem', paddingLeft: '0.5rem' }}>Quick Links</div>
-              <div className="mockup-nav-item">
-                <i className="fa-solid fa-book" style={{ marginRight: '0.75rem', width: '1.25rem', textAlign: 'center' }}></i>
-                <span>Documentation</span>
-              </div>
-              <div className="mockup-nav-item">
-                <i className="fa-solid fa-life-ring" style={{ marginRight: '0.75rem', width: '1.25rem', textAlign: 'center' }}></i>
-                <span>Support</span>
-              </div>
-              <div className="mockup-nav-item">
-                <i className="fa-solid fa-puzzle-piece" style={{ marginRight: '0.75rem', width: '1.25rem', textAlign: 'center' }}></i>
-                <span>Plugin Store</span>
-                <span style={{
-                  position: 'absolute',
-                  top: '4px',
-                  right: '4px',
-                  backgroundColor: '#3b82f6',
-                  color: 'white',
-                  fontSize: '0.625rem',
-                  padding: '1px 4px',
-                  borderRadius: '10px',
-                  fontWeight: 600
-                }}>2</span>
-              </div>
+              {getNavigationSections()[3].items.map((item) => (
+                <div key={item.id} className="mockup-nav-item" onClick={() => navigate(item.path)}>
+                  {item.id === 'documentation' && <i className="fa-solid fa-book" style={{ marginRight: '0.75rem', width: '1.25rem', textAlign: 'center' }}></i>}
+                  {item.id === 'support' && <i className="fa-solid fa-life-ring" style={{ marginRight: '0.75rem', width: '1.25rem', textAlign: 'center' }}></i>}
+                  {item.id === 'plugin-store' && <i className="fa-solid fa-puzzle-piece" style={{ marginRight: '0.75rem', width: '1.25rem', textAlign: 'center' }}></i>}
+                  <span>{item.label}</span>
+                  {item.badge && (
+                    <span style={{
+                      position: 'absolute',
+                      top: '4px',
+                      right: '4px',
+                      backgroundColor: '#3b82f6',
+                      color: 'white',
+                      fontSize: '0.625rem',
+                      padding: '1px 4px',
+                      borderRadius: '10px',
+                      fontWeight: 600
+                    }}>{item.badge}</span>
+                  )}
+                </div>
+              ))}
             </div>
           </div>
           

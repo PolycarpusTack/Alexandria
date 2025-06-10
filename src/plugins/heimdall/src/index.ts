@@ -9,7 +9,7 @@ import { Plugin, PluginContext, PluginManifest, PluginState } from '@core/plugin
 import { Logger } from '@utils/logger';
 import { EventBus, Subscription } from '@core/event-bus/interfaces';
 import { DataService } from '@core/data/interfaces';
-import { HeimdallService } from './services/heimdall-service';
+import { EnhancedHeimdallService as HeimdallService } from './services/heimdall-service-enhanced';
 import { HeimdallAPI } from './api';
 import { HeimdallUI } from '../ui';
 import { 

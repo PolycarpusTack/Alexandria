@@ -6,13 +6,15 @@
 
 import { AIService, AIServiceConfig } from './interfaces';
 import { OllamaService } from './ollama-service';
+import { OpenAIService } from './openai-service';
+import { AnthropicService } from './anthropic-service';
 import { CachedAIService } from './cached-ai-service';
 import { AIServiceFactory, DynamicAIServiceOptions } from './AIServiceFactory';
 import { Logger } from '../../../utils/logger';
 
 export * from './interfaces';
 export * from './config';
-export { AIServiceFactory };
+export { AIServiceFactory, OllamaService, OpenAIService, AnthropicService, CachedAIService };
 
 /**
  * Create a dynamic AI service that auto-detects available models
@@ -84,6 +86,12 @@ export function createAIService(
   switch (fullConfig.provider) {
     case 'ollama':
       baseService = new OllamaService(fullConfig, logger);
+      break;
+    case 'openai':
+      baseService = new OpenAIService(fullConfig, logger);
+      break;
+    case 'anthropic':
+      baseService = new AnthropicService(fullConfig, logger);
       break;
     default:
       throw new Error(`Unknown AI provider: ${fullConfig.provider}`);

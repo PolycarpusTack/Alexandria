@@ -1,6 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../App';
+import { 
+  useLayoutState, 
+  useKeyboardShortcuts, 
+  useNavigation 
+} from '../hooks';
 import { 
   FileCode2, Search, Puzzle, Brain, LineChart, Bug, Settings, User,
   Plus, FolderPlus, RefreshCw, ChevronRight, ChevronDown, 
@@ -14,28 +19,29 @@ export default function EnhancedMockupLayout({ children }: { children?: React.Re
   const location = useLocation();
   const navigate = useNavigate();
   const auth = useAuth();
-  const [activeActivityItem, setActiveActivityItem] = useState('explorer');
-  const [sidebarExpanded, setSidebarExpanded] = useState(true);
-  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
-  const [quickAccessOpen, setQuickAccessOpen] = useState(false);
-  const [selectedTreeItem, setSelectedTreeItem] = useState('dashboard');
+  
+  // Use shared layout state
+  const [layoutState, layoutActions] = useLayoutState({
+    activeView: 'explorer',
+    sidebarOpen: true,
+    commandPaletteOpen: false,
+    quickAccessOpen: false,
+    activeNav: 'dashboard'
+  });
+  
+  // Use shared navigation
+  const { isActiveRoute, getNavigationSections } = useNavigation();
 
-  // Handle keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        setCommandPaletteOpen(!commandPaletteOpen);
-      }
-      if (e.key === 'Escape') {
-        setCommandPaletteOpen(false);
-        setQuickAccessOpen(false);
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [commandPaletteOpen]);
+  // Use shared keyboard shortcuts
+  useKeyboardShortcuts({
+    onCommandPalette: layoutActions.toggleCommandPalette,
+    onEscape: () => {
+      layoutActions.setCommandPaletteOpen(false);
+      layoutActions.setQuickAccessOpen(false);
+    },
+    onAlfredLaunch: () => navigate('/alfred'),
+    onCrashAnalyzer: () => navigate('/crash-analyzer')
+  });
 
   // Initialize chart - simplified to avoid CSP issues
   useEffect(() => {
@@ -52,7 +58,7 @@ export default function EnhancedMockupLayout({ children }: { children?: React.Re
 
   const navigateToPage = (path: string) => {
     navigate(path);
-    setSelectedTreeItem(path.split('/')[1] || 'dashboard');
+    layoutActions.setActiveNav(path.split('/')[1] || 'dashboard');
   };
 
   const activityItems = [
@@ -76,7 +82,7 @@ export default function EnhancedMockupLayout({ children }: { children?: React.Re
           </div>
           <div className="titlebar-title">Alexandria Platform - Enhanced Workspace</div>
           <div className="titlebar-controls">
-            <button className="btn btn-ghost" onClick={() => setCommandPaletteOpen(true)}>
+            <button className="btn btn-ghost" onClick={() => layoutActions.setCommandPaletteOpen(true)}>
               <Search size={14} />
               <span className="shortcut-text">⌘K</span>
             </button>
@@ -90,8 +96,8 @@ export default function EnhancedMockupLayout({ children }: { children?: React.Re
             {activityItems.map((item) => (
               <div
                 key={item.id}
-                className={`activity-item ${activeActivityItem === item.id ? 'active' : ''}`}
-                onClick={() => setActiveActivityItem(item.id)}
+                className={`activity-item ${layoutState.activeView === item.id ? 'active' : ''}`}
+                onClick={() => layoutActions.setActiveView(item.id)}
               >
                 <item.icon size={20} />
                 {item.badge && <span className="activity-badge">{item.badge}</span>}
@@ -103,16 +109,16 @@ export default function EnhancedMockupLayout({ children }: { children?: React.Re
             <div className="activity-item" onClick={() => navigate('/settings')}>
               <Settings size={20} />
             </div>
-            <div className="activity-item" onClick={() => setQuickAccessOpen(!quickAccessOpen)}>
+            <div className="activity-item" onClick={() => layoutActions.setQuickAccessOpen(!layoutState.quickAccessOpen)}>
               <User size={20} />
             </div>
           </div>
 
           {/* Sidebar */}
-          {sidebarExpanded && (
+          {layoutState.sidebarOpen && (
             <div className="sidebar">
               <div className="sidebar-header">
-                <span>{activityItems.find(item => item.id === activeActivityItem)?.view || 'EXPLORER'}</span>
+                <span>{activityItems.find(item => item.id === layoutState.activeView)?.view || 'EXPLORER'}</span>
                 <div className="sidebar-actions">
                   <Plus size={14} />
                   <FolderPlus size={14} />
@@ -127,14 +133,14 @@ export default function EnhancedMockupLayout({ children }: { children?: React.Re
                 </div>
                 <div className="tree-indent">
                   <div 
-                    className={`tree-item ${selectedTreeItem === 'dashboard' ? 'selected' : ''}`}
+                    className={`tree-item ${layoutState.activeNav === 'dashboard' ? 'selected' : ''}`}
                     onClick={() => navigateToPage('/dashboard')}
                   >
                     <Activity size={14} className="tree-item-icon tree-icon-dashboard" />
                     <span className="tree-item-label">Dashboard</span>
                   </div>
                   <div 
-                    className={`tree-item ${selectedTreeItem === 'plugins' ? 'selected' : ''}`}
+                    className={`tree-item ${layoutState.activeNav === 'plugins' ? 'selected' : ''}`}
                     onClick={() => navigateToPage('/plugins')}
                   >
                     <Puzzle size={14} className="tree-item-icon tree-icon-plugins" />
@@ -142,7 +148,7 @@ export default function EnhancedMockupLayout({ children }: { children?: React.Re
                     <span className="tree-item-badge">3</span>
                   </div>
                   <div 
-                    className={`tree-item ${selectedTreeItem === 'llm-models' ? 'selected' : ''}`}
+                    className={`tree-item ${layoutState.activeNav === 'llm-models' ? 'selected' : ''}`}
                     onClick={() => navigateToPage('/llm-models')}
                   >
                     <Brain size={14} className="tree-item-icon tree-icon-ai" />
@@ -159,7 +165,7 @@ export default function EnhancedMockupLayout({ children }: { children?: React.Re
                     <span className="tree-item-label">Analytics</span>
                   </div>
                   <div 
-                    className={`tree-item ${selectedTreeItem === 'settings' ? 'selected' : ''}`}
+                    className={`tree-item ${layoutState.activeNav === 'settings' ? 'selected' : ''}`}
                     onClick={() => navigateToPage('/settings')}
                   >
                     <Cog size={14} className="tree-item-icon tree-icon-settings" />
@@ -242,7 +248,7 @@ export default function EnhancedMockupLayout({ children }: { children?: React.Re
       </div>
 
       {/* Command Palette */}
-      {commandPaletteOpen && (
+      {layoutState.commandPaletteOpen && (
         <div className="command-palette active">
           <input 
             type="text" 
@@ -304,10 +310,10 @@ export default function EnhancedMockupLayout({ children }: { children?: React.Re
       )}
 
       {/* Quick Access Panel */}
-      <div className={`quick-access ${quickAccessOpen ? 'active' : ''}`}>
+      <div className={`quick-access ${layoutState.quickAccessOpen ? 'active' : ''}`}>
         <div className="quick-access-header">
           <h3 className="quick-access-title">Quick Access</h3>
-          <button className="btn btn-ghost" onClick={() => setQuickAccessOpen(false)}>
+          <button className="btn btn-ghost" onClick={() => layoutActions.setQuickAccessOpen(false)}>
             <X size={16} />
           </button>
         </div>

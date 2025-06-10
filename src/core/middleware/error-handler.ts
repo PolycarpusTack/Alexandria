@@ -1,3 +1,4 @@
+/// <reference path="../../types/express-custom.d.ts" />
 import { Request, Response, NextFunction } from 'express';
 import { Logger } from '../../utils/logger';
 import { 
@@ -13,8 +14,8 @@ import {
 export function createErrorHandlerMiddleware(logger: Logger) {
   return (err: any, req: Request, res: Response, next: NextFunction) => {
     // If response was already sent, delegate to default Express error handler
-    if (res.headersSent) {
-      return next(err);
+    if ((res as any).headersSent) {
+      return (next as any)(err);
     }
     
     // Convert to standard Alexandria error
@@ -23,15 +24,15 @@ export function createErrorHandlerMiddleware(logger: Logger) {
     
     // Log the error with appropriate level
     const logContext = {
-      method: req.method,
-      path: req.path,
+      method: (req as any).method,
+      path: (req as any).path,
       statusCode,
       errorCode: standardError.code,
       errorName: standardError.name,
       userId: (req as any).user?.id,
       requestId: (req as any).id,
-      ip: req.ip,
-      userAgent: req.get('user-agent')
+      ip: (req as any).ip,
+      userAgent: (req as any).get('user-agent')
     };
     
     if (statusCode >= 500) {
@@ -65,7 +66,7 @@ export function createErrorHandlerMiddleware(logger: Logger) {
     
     // Add retry-after header for rate limit errors
     if (standardError.code === 'RATE_LIMIT_EXCEEDED' && 'retryAfter' in standardError) {
-      res.set('Retry-After', String((standardError as any).retryAfter));
+      (res as any).set('Retry-After', String((standardError as any).retryAfter));
     }
     
     // In development, include stack trace
@@ -75,7 +76,7 @@ export function createErrorHandlerMiddleware(logger: Logger) {
     }
     
     // Send error response
-    res.status(statusCode).json(errorResponse);
+    (res as any).status(statusCode).json(errorResponse);
   };
 }
 
@@ -85,7 +86,7 @@ export function createErrorHandlerMiddleware(logger: Logger) {
  */
 export function asyncHandler(fn: Function) {
   return (req: Request, res: Response, next: NextFunction) => {
-    Promise.resolve(fn(req, res, next)).catch(next);
+    Promise.resolve(fn(req, res, next)).catch((err) => (next as any)(err));
   };
 }
 
@@ -93,10 +94,10 @@ export function asyncHandler(fn: Function) {
  * Not found handler middleware
  */
 export function notFoundHandler(req: Request, res: Response) {
-  res.status(404).json({
+  ((res as any).status(404) as any).json({
     error: {
       code: 'ROUTE_NOT_FOUND',
-      message: `Route ${req.method} ${req.path} not found`,
+      message: `Route ${(req as any).method} ${(req as any).path} not found`,
       timestamp: new Date()
     }
   });

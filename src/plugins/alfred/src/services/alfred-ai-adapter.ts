@@ -230,11 +230,49 @@ export class AlfredAIAdapter extends EventEmitter {
    */
   async loadModel(modelId: string): Promise<void> {
     try {
-      await this.aiService.loadModel(modelId);
-      this.logger.info(`Model ${modelId} loaded successfully`);
+      // Check if the method exists on the AI service
+      if (typeof this.aiService.loadModel === 'function') {
+        await this.aiService.loadModel(modelId);
+        this.logger.info(`Model ${modelId} loaded successfully`);
+      } else {
+        this.logger.warn(`loadModel not available on AI service, skipping load of ${modelId}`);
+      }
     } catch (error) {
       this.logger.error(`Failed to load model ${modelId}`, { error });
       throw error;
     }
+  }
+
+  /**
+   * Get current model information
+   */
+  getCurrentModel(): string {
+    return this.defaultModel;
+  }
+
+  /**
+   * Set default model
+   */
+  setDefaultModel(modelId: string): void {
+    this.defaultModel = modelId;
+    this.logger.info(`Default model set to ${modelId}`);
+  }
+
+  /**
+   * Set code model
+   */
+  setCodeModel(modelId: string): void {
+    this.codeModel = modelId;
+    this.logger.info(`Code model set to ${modelId}`);
+  }
+
+  /**
+   * Get model configuration
+   */
+  getModelConfig(): { defaultModel: string; codeModel: string } {
+    return {
+      defaultModel: this.defaultModel,
+      codeModel: this.codeModel
+    };
   }
 }

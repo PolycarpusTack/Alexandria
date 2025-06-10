@@ -1,0 +1,375 @@
+{{!-- 
+  Minimal Site Template
+  Clean, responsive template for static site generation
+--}}
+<!DOCTYPE html>
+<html lang="{{site.language}}" class="minimal-theme">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{#if page.title}}{{page.title}} - {{/if}}{{site.title}}</title>
+  
+  {{!-- SEO Meta Tags --}}
+  {{#if document.metadata.description}}
+  <meta name="description" content="{{document.metadata.description}}">
+  {{/if}}
+  {{#if document.metadata.keywords}}
+  <meta name="keywords" content="{{join document.metadata.keywords ', '}}">
+  {{/if}}
+  {{#if document.metadata.author}}
+  <meta name="author" content="{{document.metadata.author}}">
+  {{/if}}
+  
+  {{!-- Open Graph Tags --}}
+  {{#if options.generateOpenGraph}}
+  <meta property="og:title" content="{{page.title}}">
+  <meta property="og:description" content="{{document.metadata.description}}">
+  <meta property="og:type" content="article">
+  <meta property="og:url" content="{{site.baseUrl}}{{page.path}}.html">
+  {{#if site.image}}
+  <meta property="og:image" content="{{site.baseUrl}}{{site.image}}">
+  {{/if}}
+  {{/if}}
+  
+  {{!-- Twitter Card Tags --}}
+  {{#if options.generateTwitterCards}}
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="{{page.title}}">
+  <meta name="twitter:description" content="{{document.metadata.description}}">
+  {{/if}}
+  
+  {{!-- Canonical URL --}}
+  <link rel="canonical" href="{{site.baseUrl}}{{page.path}}.html">
+  
+  {{!-- Stylesheets --}}
+  <link rel="stylesheet" href="{{site.baseUrl}}assets/css/main.css">
+  
+  {{!-- PWA Manifest --}}
+  {{#if options.generatePWA}}
+  <link rel="manifest" href="{{site.baseUrl}}manifest.json">
+  <meta name="theme-color" content="#ffffff">
+  {{/if}}
+  
+  {{!-- RSS Feed --}}
+  {{#if options.generateRSS}}
+  <link rel="alternate" type="application/rss+xml" title="{{site.title}}" href="{{site.baseUrl}}rss.xml">
+  {{/if}}
+  
+  {{!-- Preconnect to external domains --}}
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  
+  {{!-- Fonts --}}
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body class="minimal-layout">
+  {{!-- Skip to main content for accessibility --}}
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+  
+  {{!-- Header --}}
+  <header class="site-header">
+    <div class="header-container">
+      <div class="site-branding">
+        <a href="{{site.baseUrl}}" class="site-title">{{site.title}}</a>
+        {{#if site.description}}
+        <p class="site-description">{{site.description}}</p>
+        {{/if}}
+      </div>
+      
+      {{!-- Navigation --}}
+      {{#if options.includeNavigation}}
+      <nav class="main-navigation" aria-label="Main navigation">
+        <ul class="nav-menu">
+          <li><a href="{{site.baseUrl}}" {{#if page.isHome}}aria-current="page"{{/if}}>Home</a></li>
+          {{#if options.groupByTags}}
+          <li><a href="{{site.baseUrl}}tags/">Tags</a></li>
+          {{/if}}
+          {{#if options.generateSearch}}
+          <li><a href="{{site.baseUrl}}search/">Search</a></li>
+          {{/if}}
+          {{#if options.includeKnowledgeGraph}}
+          <li><a href="{{site.baseUrl}}graph/">Knowledge Graph</a></li>
+          {{/if}}
+          {{#each navigation}}
+          <li><a href="{{path}}" {{#if children}}class="has-children"{{/if}}>{{title}}</a>
+            {{#if children}}
+            <ul class="sub-menu">
+              {{#each children}}
+              <li><a href="{{path}}">{{title}}</a></li>
+              {{/each}}
+            </ul>
+            {{/if}}
+          </li>
+          {{/each}}
+        </ul>
+      </nav>
+      {{/if}}
+      
+      {{!-- Search Toggle --}}
+      {{#if options.generateSearch}}
+      <button class="search-toggle" aria-label="Open search">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M21.53 20.47l-3.66-3.66C19.195 15.24 20 13.214 20 11c0-4.97-4.03-9-9-9s-9 4.03-9 9 4.03 9 9 9c2.215 0 4.24-.804 5.808-2.13l3.66 3.66c.147.146.34.22.53.22s.385-.073.53-.22c.295-.293.295-.767.002-1.06zM3.5 11c0-4.135 3.365-7.5 7.5-7.5s7.5 3.365 7.5 7.5-3.365 7.5-7.5 7.5-7.5-3.365-7.5-7.5z"/>
+        </svg>
+      </button>
+      {{/if}}
+    </div>
+  </header>
+  
+  {{!-- Breadcrumbs --}}
+  {{#if options.includeBreadcrumbs}}
+  {{#if page.breadcrumbs}}
+  <nav class="breadcrumbs" aria-label="Breadcrumb">
+    <ol class="breadcrumb-list">
+      {{#each page.breadcrumbs}}
+      <li class="breadcrumb-item">
+        {{#if @last}}
+        <span aria-current="page">{{title}}</span>
+        {{else}}
+        <a href="{{path}}">{{title}}</a>
+        {{/if}}
+      </li>
+      {{/each}}
+    </ol>
+  </nav>
+  {{/if}}
+  {{/if}}
+  
+  {{!-- Main Content --}}
+  <main id="main-content" class="main-content">
+    <div class="content-container">
+      {{!-- Article Header --}}
+      <header class="article-header">
+        <h1 class="article-title">{{document.title}}</h1>
+        
+        {{!-- Article Meta --}}
+        <div class="article-meta">
+          {{#if document.metadata.author}}
+          <span class="author">By {{document.metadata.author}}</span>
+          {{/if}}
+          
+          {{#if document.metadata.created}}
+          <time class="created-date" datetime="{{isoDate document.metadata.created}}">
+            {{formatDate document.metadata.created "MMMM d, yyyy"}}
+          </time>
+          {{/if}}
+          
+          {{#if document.metadata.modified}}
+          {{#unless (eq document.metadata.created document.metadata.modified)}}
+          <time class="modified-date" datetime="{{isoDate document.metadata.modified}}">
+            Updated {{formatDate document.metadata.modified "MMMM d, yyyy"}}
+          </time>
+          {{/unless}}
+          {{/if}}
+          
+          {{#if document.readingTime}}
+          <span class="reading-time">{{document.readingTime}} min read</span>
+          {{/if}}
+          
+          {{#if document.wordCount}}
+          <span class="word-count">{{numberFormat document.wordCount}} words</span>
+          {{/if}}
+        </div>
+        
+        {{!-- Tags --}}
+        {{#if options.includeTagCloud}}
+        {{#if document.metadata.tags}}
+        <div class="article-tags">
+          {{#each document.metadata.tags}}
+          <a href="{{../site.baseUrl}}tags/{{slugify this}}/" class="tag">{{this}}</a>
+          {{/each}}
+        </div>
+        {{/if}}
+        {{/if}}
+      </header>
+      
+      {{!-- Table of Contents --}}
+      {{#if options.tableOfContents}}
+      {{#if document.headings}}
+      <aside class="table-of-contents">
+        <h2>Table of Contents</h2>
+        <nav class="toc-nav">
+          <ul class="toc-list">
+            {{#each document.headings}}
+            <li class="toc-item toc-level-{{level}}">
+              <a href="#{{anchor}}">{{text}}</a>
+            </li>
+            {{/each}}
+          </ul>
+        </nav>
+      </aside>
+      {{/if}}
+      {{/if}}
+      
+      {{!-- Article Content --}}
+      <article class="article-content">
+        {{{document.content}}}
+      </article>
+      
+      {{!-- Backlinks --}}
+      {{#if options.includeBacklinks}}
+      {{#if document.backlinks}}
+      <section class="backlinks">
+        <h2>Referenced by</h2>
+        <ul class="backlink-list">
+          {{#each document.backlinks}}
+          <li class="backlink-item">
+            <a href="{{path}}.html" class="backlink">{{title}}</a>
+            {{#if context}}
+            <span class="backlink-context">{{context}}</span>
+            {{/if}}
+          </li>
+          {{/each}}
+        </ul>
+      </section>
+      {{/if}}
+      {{/if}}
+      
+      {{!-- Related Pages --}}
+      {{#if document.related}}
+      <section class="related-pages">
+        <h2>Related Pages</h2>
+        <ul class="related-list">
+          {{#each document.related}}
+          <li class="related-item">
+            <a href="{{path}}.html" class="related-link">
+              <h3>{{title}}</h3>
+              {{#if description}}
+              <p>{{description}}</p>
+              {{/if}}
+            </a>
+          </li>
+          {{/each}}
+        </ul>
+      </section>
+      {{/if}}
+    </div>
+  </main>
+  
+  {{!-- Sidebar --}}
+  {{#if options.includeSidebar}}
+  <aside class="sidebar">
+    {{!-- Recent Pages --}}
+    {{#if site.recentPages}}
+    <section class="sidebar-section">
+      <h3>Recent Pages</h3>
+      <ul class="recent-list">
+        {{#each site.recentPages}}
+        <li><a href="{{path}}.html">{{title}}</a></li>
+        {{/each}}
+      </ul>
+    </section>
+    {{/if}}
+    
+    {{!-- Popular Tags --}}
+    {{#if options.includeTagCloud}}
+    {{#if site.popularTags}}
+    <section class="sidebar-section">
+      <h3>Popular Tags</h3>
+      <div class="tag-cloud">
+        {{#each site.popularTags}}
+        <a href="{{../site.baseUrl}}tags/{{slugify name}}/" class="tag tag-{{weight}}">{{name}}</a>
+        {{/each}}
+      </div>
+    </section>
+    {{/if}}
+    {{/if}}
+    
+    {{!-- Knowledge Graph Preview --}}
+    {{#if options.includeKnowledgeGraph}}
+    {{#if site.knowledgeGraph}}
+    <section class="sidebar-section">
+      <h3>Knowledge Graph</h3>
+      <div class="mini-graph">
+        <svg width="200" height="150" class="graph-preview">
+          {{!-- Mini knowledge graph visualization --}}
+          {{#each site.knowledgeGraph.nodes}}
+          {{#if (lt @index 10)}}
+          <circle cx="{{x}}" cy="{{y}}" r="{{size}}" fill="{{color}}" opacity="0.7"/>
+          {{/if}}
+          {{/each}}
+          {{#each site.knowledgeGraph.edges}}
+          {{#if (lt @index 8)}}
+          <line x1="{{../nodes.[from].x}}" y1="{{../nodes.[from].y}}" 
+                x2="{{../nodes.[to].x}}" y2="{{../nodes.[to].y}}" 
+                stroke="{{color}}" stroke-width="1" opacity="0.5"/>
+          {{/if}}
+          {{/each}}
+        </svg>
+        <a href="{{site.baseUrl}}graph/" class="graph-link">View full graph</a>
+      </div>
+    </section>
+    {{/if}}
+    {{/if}}
+  </aside>
+  {{/if}}
+  
+  {{!-- Footer --}}
+  <footer class="site-footer">
+    <div class="footer-container">
+      <div class="footer-content">
+        <p class="footer-text">
+          Generated by <a href="https://github.com/alexandria/mnemosyne" target="_blank" rel="noopener">Mnemosyne</a>
+          on {{formatDate site.buildDate "MMMM d, yyyy"}}
+        </p>
+        
+        {{#if options.generateRSS}}
+        <p class="footer-links">
+          <a href="{{site.baseUrl}}rss.xml" class="rss-link">RSS Feed</a>
+        </p>
+        {{/if}}
+        
+        {{#if site.contact}}
+        <p class="footer-contact">
+          Contact: <a href="mailto:{{site.contact}}">{{site.contact}}</a>
+        </p>
+        {{/if}}
+      </div>
+    </div>
+  </footer>
+  
+  {{!-- Search Modal --}}
+  {{#if options.generateSearch}}
+  <div id="search-modal" class="search-modal" aria-hidden="true">
+    <div class="search-modal-content">
+      <div class="search-modal-header">
+        <input type="search" id="search-input" class="search-input" placeholder="Search..." aria-label="Search">
+        <button class="search-close" aria-label="Close search">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+          </svg>
+        </button>
+      </div>
+      <div class="search-results" id="search-results">
+        <p class="search-instruction">Start typing to search...</p>
+      </div>
+    </div>
+  </div>
+  {{/if}}
+  
+  {{!-- Scripts --}}
+  <script src="{{site.baseUrl}}assets/js/main.js"></script>
+  
+  {{!-- Analytics --}}
+  {{#if options.analyticsId}}
+  {{#if (eq options.analyticsProvider "google")}}
+  <script async src="https://www.googletagmanager.com/gtag/js?id={{options.analyticsId}}"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', '{{options.analyticsId}}');
+  </script>
+  {{/if}}
+  {{/if}}
+  
+  {{!-- PWA Service Worker --}}
+  {{#if options.generatePWA}}
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('{{site.baseUrl}}sw.js');
+    }
+  </script>
+  {{/if}}
+</body>
+</html>

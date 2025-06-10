@@ -285,4 +285,275 @@ describe('EventBus', () => {
       expect(eventBus.getSubscriberCount('test.topic2')).toBe(0);
     });
   });
+
+  describe('Performance and Concurrency', () => {
+    it('should handle many subscribers efficiently', async () => {
+      const handlers = Array(100).fill(null).map(() => jest.fn());
+      handlers.forEach(handler => eventBus.subscribe('test.topic', handler));
+      
+      const start = Date.now();
+      await eventBus.publish('test.topic', { value: 'test' });
+      const duration = Date.now() - start;
+      
+      expect(duration).toBeLessThan(100); // Should complete in < 100ms
+      handlers.forEach(handler => expect(handler).toHaveBeenCalledTimes(1));
+    });
+
+    it('should handle concurrent publishes', async () => {
+      const handler = jest.fn();
+      eventBus.subscribe('test.topic', handler);
+      
+      const promises = Array(50).fill(null).map((_, i) => 
+        eventBus.publish('test.topic', { value: i })
+      );
+      
+      const results = await Promise.all(promises);
+      
+      expect(handler).toHaveBeenCalledTimes(50);
+      results.forEach(result => {
+        expect(result.deliveredToCount).toBe(1);
+        expect(result.errors).toHaveLength(0);
+      });
+    });
+
+    it('should handle many different topics', async () => {
+      const topics = Array(50).fill(null).map((_, i) => `test.topic.${i}`);
+      const handlers = new Map();
+      
+      topics.forEach(topic => {
+        const handler = jest.fn();
+        handlers.set(topic, handler);
+        eventBus.subscribe(topic, handler);
+      });
+      
+      const promises = topics.map(topic => 
+        eventBus.publish(topic, { value: topic })
+      );
+      
+      await Promise.all(promises);
+      
+      handlers.forEach((handler, topic) => {
+        expect(handler).toHaveBeenCalledWith(
+          expect.objectContaining({
+            topic,
+            data: { value: topic }
+          })
+        );
+      });
+    });
+  });
+
+  describe('Memory Management', () => {
+    it('should clean up expired subscriptions', async () => {
+      const handler = jest.fn();
+      
+      // Create multiple expiring subscriptions
+      for (let i = 0; i < 10; i++) {
+        eventBus.subscribe('test.topic', handler, { expiresIn: 50 });
+      }
+      
+      expect(eventBus.getSubscriberCount('test.topic')).toBe(10);
+      
+      // Wait for expiration
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Trigger cleanup by publishing
+      await eventBus.publish('test.topic', { value: 'test' });
+      
+      expect(eventBus.getSubscriberCount('test.topic')).toBe(0);
+      expect(handler).not.toHaveBeenCalled();
+    });
+
+    it('should handle subscription lifecycle correctly', () => {
+      const handler = jest.fn();
+      const subscription = eventBus.subscribe('test.topic', handler);
+      
+      // Subscription should have correct properties
+      expect(subscription.id).toBeDefined();
+      expect(subscription.topic).toBe('test.topic');
+      expect(subscription.unsubscribe).toBeInstanceOf(Function);
+      
+      // Double unsubscribe should be safe
+      subscription.unsubscribe();
+      subscription.unsubscribe(); // Should not throw
+      
+      expect(eventBus.getSubscriberCount('test.topic')).toBe(0);
+    });
+  });
+
+  describe('Edge Cases', () => {
+    it('should handle undefined data gracefully', async () => {
+      const handler = jest.fn();
+      eventBus.subscribe('test.topic', handler);
+      
+      const result = await eventBus.publish('test.topic', undefined as any);
+      
+      expect(result.deliveredToCount).toBe(1);
+      expect(handler).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: undefined
+        })
+      );
+    });
+
+    it('should handle circular reference in event data', async () => {
+      const handler = jest.fn();
+      eventBus.subscribe('test.topic', handler);
+      
+      const data: any = { a: 1 };
+      data.circular = data;
+      
+      const result = await eventBus.publish('test.topic', data);
+      
+      expect(result.deliveredToCount).toBe(1);
+      expect(handler).toHaveBeenCalled();
+    });
+
+    it('should handle pattern with special regex characters', async () => {
+      const handler = jest.fn();
+      eventBus.subscribePattern('test.*.end', handler);
+      
+      await eventBus.publish('test.middle.end', { value: 'match' });
+      await eventBus.publish('test.other.notend', { value: 'nomatch' });
+      
+      expect(handler).toHaveBeenCalledTimes(1);
+      expect(handler).toHaveBeenCalledWith(
+        expect.objectContaining({
+          topic: 'test.middle.end'
+        })
+      );
+    });
+
+    it('should handle subscription removal during event handling', async () => {
+      let subscription: Subscription;
+      
+      const handler1 = jest.fn(() => {
+        subscription.unsubscribe();
+      });
+      const handler2 = jest.fn();
+      
+      subscription = eventBus.subscribe('test.topic', handler1);
+      eventBus.subscribe('test.topic', handler2);
+      
+      await eventBus.publish('test.topic', { value: 'test' });
+      
+      expect(handler1).toHaveBeenCalledTimes(1);
+      expect(handler2).toHaveBeenCalledTimes(1);
+      expect(eventBus.getSubscriberCount('test.topic')).toBe(1);
+    });
+  });
+
+  describe('Priority and Filtering', () => {
+    it('should execute filters before handlers', async () => {
+      const handler = jest.fn();
+      const filter = jest.fn((event: Event) => event.data.value > 5);
+      
+      eventBus.subscribe('test.topic', handler, { filter });
+      
+      await eventBus.publish('test.topic', { value: 3 });
+      expect(filter).toHaveBeenCalledTimes(1);
+      expect(handler).not.toHaveBeenCalled();
+      
+      await eventBus.publish('test.topic', { value: 10 });
+      expect(filter).toHaveBeenCalledTimes(2);
+      expect(handler).toHaveBeenCalledTimes(1);
+    });
+
+    it('should handle errors in filter functions', async () => {
+      const handler = jest.fn();
+      const filter = jest.fn(() => {
+        throw new Error('Filter error');
+      });
+      
+      eventBus.subscribe('test.topic', handler, { filter, isolateErrors: true });
+      
+      const result = await eventBus.publish('test.topic', { value: 'test' });
+      
+      expect(result.errors).toHaveLength(1);
+      expect(handler).not.toHaveBeenCalled();
+      expect(mockLogger.error).toHaveBeenCalled();
+    });
+
+    it('should respect priority with mixed subscription types', async () => {
+      const executionOrder: string[] = [];
+      
+      const handler1 = () => executionOrder.push('pattern');
+      const handler2 = () => executionOrder.push('high');
+      const handler3 = () => executionOrder.push('low');
+      
+      eventBus.subscribePattern('test.*', handler1, { priority: 5 });
+      eventBus.subscribe('test.topic', handler2, { priority: 10 });
+      eventBus.subscribe('test.topic', handler3, { priority: 1 });
+      
+      await eventBus.publish('test.topic', { value: 'test' });
+      
+      expect(executionOrder).toEqual(['high', 'pattern', 'low']);
+    });
+  });
+
+  describe('Metadata and Context', () => {
+    it('should include metadata in events', async () => {
+      const handler = jest.fn();
+      eventBus.subscribe('test.topic', handler);
+      
+      await eventBus.publish('test.topic', { value: 'test' });
+      
+      expect(handler).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: expect.any(String),
+          topic: 'test.topic',
+          timestamp: expect.any(Date),
+          data: { value: 'test' }
+        })
+      );
+    });
+
+    it('should propagate source information', async () => {
+      const handler = jest.fn();
+      eventBus.subscribe('test.topic', handler);
+      
+      const source = { component: 'TestComponent', version: '1.0.0' };
+      await eventBus.publish('test.topic', { value: 'test' }, { source });
+      
+      expect(handler).toHaveBeenCalledWith(
+        expect.objectContaining({
+          source
+        })
+      );
+    });
+  });
+
+  describe('Wildcard Patterns', () => {
+    it('should support complex wildcard patterns', async () => {
+      const handler = jest.fn();
+      
+      // Test various wildcard patterns
+      eventBus.subscribePattern('system.*.error', handler);
+      
+      await eventBus.publish('system.auth.error', { value: 'auth error' });
+      await eventBus.publish('system.db.error', { value: 'db error' });
+      await eventBus.publish('system.auth.success', { value: 'not error' });
+      await eventBus.publish('app.auth.error', { value: 'wrong prefix' });
+      
+      expect(handler).toHaveBeenCalledTimes(2);
+      expect(handler).toHaveBeenCalledWith(
+        expect.objectContaining({ topic: 'system.auth.error' })
+      );
+      expect(handler).toHaveBeenCalledWith(
+        expect.objectContaining({ topic: 'system.db.error' })
+      );
+    });
+
+    it('should handle multiple wildcards', async () => {
+      const handler = jest.fn();
+      
+      eventBus.subscribePattern('*.*.info', handler);
+      
+      await eventBus.publish('app.module.info', { value: 'match' });
+      await eventBus.publish('system.auth.info', { value: 'match' });
+      await eventBus.publish('app.info', { value: 'no match' });
+      
+      expect(handler).toHaveBeenCalledTimes(2);
+    });
+  });
 });

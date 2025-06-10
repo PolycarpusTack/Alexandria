@@ -56,14 +56,22 @@ export class S3Adapter {
     });
 
     try {
-      // TODO: Replace with actual S3 client when installed
-      // const { S3Client } = require('@aws-sdk/client-s3');
-      // this.client = new S3Client({
-      //   region: this.config.engine.options?.region,
-      //   credentials: this.config.engine.options?.credentials
-      // });
-      
-      this.client = this.createMockS3Client();
+      // Try to use actual S3 client if available, fall back to mock
+      try {
+        const { S3Client } = require('@aws-sdk/client-s3');
+        this.client = new S3Client({
+          region: this.config.engine.options?.region || 'us-east-1',
+          credentials: this.config.engine.options?.credentials,
+          maxAttempts: 3,
+          retryMode: 'adaptive'
+        });
+        this.logger.info('Using real S3 client');
+      } catch (requireError) {
+        this.logger.warn('S3 client not available, using mock implementation', {
+          error: requireError instanceof Error ? requireError.message : String(requireError)
+        });
+        this.client = this.createMockS3Client();
+      }
       
       // Check if bucket exists
       try {

@@ -8,6 +8,8 @@ import { EventEmitter } from 'events';
 import { Logger } from '../../../utils/logger';
 import { AIService, AIServiceConfig } from './interfaces';
 import { OllamaService } from './ollama-service';
+import { OpenAIService } from './openai-service';
+import { AnthropicService } from './anthropic-service';
 import { ConfigManager, ModelRegistry, DetectedModel } from './config';
 import { CachedAIService } from './cached-ai-service';
 
@@ -78,23 +80,55 @@ export class AIServiceFactory extends EventEmitter {
   private async createServices(): Promise<void> {
     const models = this.modelRegistry.getAvailableModels();
     
-    for (const model of models) {
-      try {
-        const service = await this.createServiceForModel(model);
-        if (service) {
+    // Create all services in parallel using Promise.allSettled for better error handling
+    const serviceCreationResults = await Promise.allSettled(
+      models.map(async (model) => {
+        try {
+          const service = await this.createServiceForModel(model);
+          return { model, service, success: true };
+        } catch (error) {
+          this.logger.error('Failed to create service for model', {
+            modelId: model.id,
+            provider: model.provider,
+            error
+          });
+          return { model, service: null, success: false, error };
+        }
+      })
+    );
+    
+    // Process results and register successful services
+    let successfulServices = 0;
+    let failedServices = 0;
+    
+    for (const result of serviceCreationResults) {
+      if (result.status === 'fulfilled') {
+        const { model, service, success } = result.value;
+        
+        if (success && service) {
           this.services.set(model.id, service);
           this.logger.info('Created service for model', {
             modelId: model.id,
             provider: model.provider
           });
+          successfulServices++;
+        } else {
+          failedServices++;
         }
-      } catch (error) {
-        this.logger.error('Failed to create service for model', {
-          modelId: model.id,
-          error
+      } else {
+        // This should rarely happen due to our try-catch above
+        this.logger.error('Service creation promise rejected', {
+          reason: result.reason
         });
+        failedServices++;
       }
     }
+    
+    this.logger.info('Service creation completed', {
+      total: models.length,
+      successful: successfulServices,
+      failed: failedServices
+    });
   }
 
   /**
@@ -116,14 +150,75 @@ export class AIServiceFactory extends EventEmitter {
       return new OllamaService(config, this.logger);
     }
     
-    // TODO: Implement API services (OpenAI, Anthropic, etc.)
-    // For now, we'll log that these need implementation
+    // Create API services for OpenAI and Anthropic
     if (model.type === 'api') {
-      this.logger.warn('API model service not yet implemented', {
-        modelId: model.id,
-        provider: model.provider
-      });
-      return null;
+      switch (model.provider) {
+        case 'openai': {
+          const config: AIServiceConfig = {
+            provider: 'openai',
+            baseUrl: process.env.OPENAI_BASE_URL || 'https://api.openai.com/v1',
+            apiKey: process.env.OPENAI_API_KEY,
+            defaultModel: model.name || 'gpt-3.5-turbo',
+            defaultEmbeddingModel: 'text-embedding-ada-002',
+            maxConcurrentRequests: 3,
+            requestTimeout: 30000,
+            retryAttempts: 2,
+            retryDelay: 1000
+          };
+          
+          const service = new OpenAIService(config, this.logger);
+          
+          // Auto-load the model if API key is available
+          if (config.apiKey) {
+            try {
+              await service.loadModel(model.name || 'gpt-3.5-turbo');
+            } catch (error) {
+              this.logger.warn('Failed to auto-load OpenAI model', {
+                modelId: model.id,
+                error: error instanceof Error ? error.message : String(error)
+              });
+            }
+          }
+          
+          return service;
+        }
+        
+        case 'anthropic': {
+          const config: AIServiceConfig = {
+            provider: 'anthropic',
+            baseUrl: process.env.ANTHROPIC_BASE_URL || 'https://api.anthropic.com/v1',
+            apiKey: process.env.ANTHROPIC_API_KEY,
+            defaultModel: model.name || 'claude-3-sonnet-20240229',
+            maxConcurrentRequests: 2,
+            requestTimeout: 30000,
+            retryAttempts: 2,
+            retryDelay: 1000
+          };
+          
+          const service = new AnthropicService(config, this.logger);
+          
+          // Auto-load the model if API key is available
+          if (config.apiKey) {
+            try {
+              await service.loadModel(model.name || 'claude-3-sonnet-20240229');
+            } catch (error) {
+              this.logger.warn('Failed to auto-load Anthropic model', {
+                modelId: model.id,
+                error: error instanceof Error ? error.message : String(error)
+              });
+            }
+          }
+          
+          return service;
+        }
+        
+        default:
+          this.logger.warn('Unsupported API model provider', {
+            modelId: model.id,
+            provider: model.provider
+          });
+          return null;
+      }
     }
     
     return null;

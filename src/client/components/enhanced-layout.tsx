@@ -1,24 +1,24 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { cn } from '../lib/utils';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { 
-  Brain, Bug, ChartLine, Code, Copy, Database, FileExport, 
-  FolderOpen, Gauge, Gear, Plus, PuzzlePiece, RotateCw, Search, 
-  Terminal, User, Wifi, X, ChevronDown, ChevronRight, FileCode,
-  File as FileIcon, Cog, Check, CheckCircle, CodeBranch, Plug,
-  Command, ArrowUp, ArrowDown, Bell, Menu, Moon, Sun, Monitor,
-  Folder, FolderPlus, FilePlus, Eye, EyeOff, Maximize2, Minimize2,
-  Layers, Users, MessageSquare, FileText, Activity, LifeBuoy, Book,
-  ArrowsRotate, Box
+  Brain, Bug, ChartLine, Code, Gauge, Gear, Search, 
+  Terminal, User, Bell, File as FileIcon, Activity, LifeBuoy, Book,
+  ArrowsRotate, Box, Database, Layers, Users, MessageSquare, 
+  FileText, CheckCircle, PuzzlePiece
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
-import { Progress } from './ui/progress';
-import { ScrollArea } from './ui/scroll-area';
 import { useAuth } from '../App';
 import { useTheme } from './theme-provider';
+import { 
+  useLayoutState, 
+  useKeyboardShortcuts, 
+  useChartLoader, 
+  useNavigation 
+} from '../hooks';
 
 interface EnhancedLayoutProps {
   children?: React.ReactNode;
@@ -31,10 +31,17 @@ export default function EnhancedLayout({ children, className }: EnhancedLayoutPr
   const auth = useAuth();
   const { theme, setTheme } = useTheme();
   
-  const [activeView, setActiveView] = useState('explorer');
-  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
-  const [commandSearch, setCommandSearch] = useState('');
-  const [logsChart, setLogsChart] = useState<any>(null);
+  // Use shared layout state
+  const [layoutState, layoutActions] = useLayoutState({
+    activeView: 'explorer',
+    searchQuery: ''
+  });
+  
+  // Use shared chart loader
+  const { createChart, isChartLibraryLoaded } = useChartLoader();
+  
+  // Use shared navigation
+  const { isActiveRoute, getNavigationSections, getCommandPaletteItems } = useNavigation();
 
   // Initialize dark mode
   useEffect(() => {
@@ -43,122 +50,22 @@ export default function EnhancedLayout({ children, className }: EnhancedLayoutPr
 
   // Initialize chart
   useEffect(() => {
-    const loadChart = async () => {
-      const script = document.createElement('script');
-      script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js';
-      script.async = true;
-      script.onload = () => {
-        const canvas = document.getElementById('logsChart') as HTMLCanvasElement;
-        if (canvas && (window as any).Chart) {
-          const ctx = canvas.getContext('2d');
-          if (ctx) {
-            const gradient = ctx.createLinearGradient(0, 0, 0, 200);
-            gradient.addColorStop(0, 'rgba(59, 130, 246, 0.5)');
-            gradient.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
-            
-            const labels = [];
-            const data = [];
-            
-            // Generate last 30 days
-            for (let i = 30; i >= 0; i--) {
-              const date = new Date();
-              date.setDate(date.getDate() - i);
-              labels.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-              data.push(Math.floor(Math.random() * 50) + 30);
-            }
-            
-            const chart = new (window as any).Chart(ctx, {
-              type: 'line',
-              data: {
-                labels: labels,
-                datasets: [{
-                  label: 'Logs Processed',
-                  data: data,
-                  backgroundColor: gradient,
-                  borderColor: '#3b82f6',
-                  borderWidth: 2,
-                  tension: 0.4,
-                  pointRadius: 0,
-                  pointHoverRadius: 4,
-                  pointBackgroundColor: '#3b82f6',
-                  fill: true
-                }]
-              },
-              options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                  y: {
-                    beginAtZero: true,
-                    grid: {
-                      color: 'rgba(75, 85, 99, 0.2)'
-                    },
-                    ticks: {
-                      color: '#9ca3af'
-                    }
-                  },
-                  x: {
-                    grid: {
-                      display: false
-                    },
-                    ticks: {
-                      color: '#9ca3af',
-                      maxRotation: 0,
-                      autoSkip: true,
-                      maxTicksLimit: 7
-                    }
-                  }
-                },
-                plugins: {
-                  legend: {
-                    display: false
-                  },
-                  tooltip: {
-                    mode: 'index',
-                    intersect: false,
-                    backgroundColor: '#1f2937',
-                    titleColor: '#f9fafb',
-                    bodyColor: '#f3f4f6',
-                    borderColor: '#374151',
-                    borderWidth: 1,
-                    padding: 10,
-                    displayColors: false
-                  }
-                },
-                interaction: {
-                  mode: 'nearest',
-                  intersect: false,
-                  axis: 'x'
-                }
-              }
-            });
-            setLogsChart(chart);
-          }
-        }
-      };
-      document.body.appendChild(script);
-    };
-
-    if (location.pathname === '/' || location.pathname === '/dashboard') {
-      loadChart();
+    if ((location.pathname === '/' || location.pathname === '/dashboard') && isChartLibraryLoaded) {
+      createChart({
+        type: 'line',
+        canvasId: 'logsChart'
+      });
     }
-  }, [location]);
+  }, [location, isChartLibraryLoaded, createChart]);
 
-  // Keyboard shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
-        e.preventDefault();
-        setIsCommandPaletteOpen(!isCommandPaletteOpen);
-      }
-      if (e.key === 'Escape') {
-        setIsCommandPaletteOpen(false);
-      }
-    };
-
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isCommandPaletteOpen]);
+  // Use shared keyboard shortcuts
+  useKeyboardShortcuts({
+    onCommandPalette: layoutActions.toggleCommandPalette,
+    onEscape: () => layoutActions.setCommandPaletteOpen(false),
+    onGlobalSearch: () => document.getElementById('global-search')?.focus(),
+    onAlfredLaunch: () => navigate('/alfred'),
+    onCrashAnalyzer: () => navigate('/crash-analyzer')
+  });
 
   const renderDashboard = () => (
     <div className="fade-in">
@@ -559,8 +466,11 @@ export default function EnhancedLayout({ children, className }: EnhancedLayoutPr
             <div className="relative w-60">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <input 
+                id="global-search"
                 type="text" 
                 placeholder="Search..." 
+                value={layoutState.searchQuery}
+                onChange={(e) => layoutActions.setSearchQuery(e.target.value)}
                 className="search-input"
               />
             </div>
@@ -595,68 +505,76 @@ export default function EnhancedLayout({ children, className }: EnhancedLayoutPr
           <aside className="alexandria-sidebar">
             <div className="nav-section">
               <div className="nav-section-title">Core</div>
-              <div className={cn("nav-item", location.pathname === '/dashboard' && "active")} onClick={() => navigate('/dashboard')}>
-                <Gauge className="nav-icon h-5 w-5" />
-                <span>Dashboard</span>
-              </div>
-              <div className={cn("nav-item", location.pathname === '/settings' && "active")} onClick={() => navigate('/settings')}>
-                <Gear className="nav-icon h-5 w-5" />
-                <span>Settings</span>
-              </div>
-              <div className="nav-item">
-                <User className="nav-icon h-5 w-5" />
-                <span>Users</span>
-              </div>
+              {getNavigationSections()[0].items.map((item) => (
+                <div 
+                  key={item.id}
+                  className={cn("nav-item", isActiveRoute(item.path) && "active")} 
+                  onClick={() => navigate(item.path)}
+                >
+                  {item.id === 'dashboard' && <Gauge className="nav-icon h-5 w-5" />}
+                  {item.id === 'settings' && <Gear className="nav-icon h-5 w-5" />}
+                  {item.id === 'users' && <User className="nav-icon h-5 w-5" />}
+                  <span>{item.label}</span>
+                </div>
+              ))}
             </div>
             
             <div className="nav-section">
               <div className="nav-section-title">Plugins</div>
-              <div className={cn("nav-item", location.pathname.startsWith('/alfred') && "active")} onClick={() => navigate('/alfred')}>
-                <Code className="nav-icon h-5 w-5 text-cyan-500" />
-                <span>ALFRED</span>
-                <span className="status-indicator online ml-auto"></span>
-              </div>
-              <div className={cn("nav-item", location.pathname.startsWith('/crash-analyzer') && "active")} onClick={() => navigate('/crash-analyzer')}>
-                <FileText className="nav-icon h-5 w-5 text-rose-500" />
-                <span>Crash Analyzer</span>
-                <span className="status-indicator online ml-auto"></span>
-              </div>
-              <div className="nav-item">
-                <ChartLine className="nav-icon h-5 w-5 text-purple-500" />
-                <span>Heimdall</span>
-                <span className="status-indicator offline ml-auto"></span>
-              </div>
+              {getNavigationSections()[1].items.map((item) => (
+                <div 
+                  key={item.id}
+                  className={cn("nav-item", isActiveRoute(item.path) && "active")} 
+                  onClick={() => navigate(item.path)}
+                >
+                  {item.id === 'alfred' && <Code className="nav-icon h-5 w-5 text-cyan-500" />}
+                  {item.id === 'crash-analyzer' && <FileText className="nav-icon h-5 w-5 text-rose-500" />}
+                  {item.id === 'heimdall' && <ChartLine className="nav-icon h-5 w-5 text-purple-500" />}
+                  <span>{item.label}</span>
+                  {item.statusIndicator && (
+                    <span className={`status-indicator ${item.statusIndicator} ml-auto`}></span>
+                  )}
+                </div>
+              ))}
             </div>
             
             <div className="nav-section">
               <div className="nav-section-title">AI Services</div>
-              <div className={cn("nav-item", location.pathname === '/llm-models' && "active")} onClick={() => navigate('/llm-models')}>
-                <Brain className="nav-icon h-5 w-5" />
-                <span>Ollama</span>
-                <span className="status-indicator online ml-auto"></span>
-              </div>
-              <div className="nav-item">
-                <Database className="nav-icon h-5 w-5" />
-                <span>Vector Store</span>
-                <span className="status-indicator online ml-auto"></span>
-              </div>
+              {getNavigationSections()[2].items.map((item) => (
+                <div 
+                  key={item.id}
+                  className={cn("nav-item", isActiveRoute(item.path) && "active")} 
+                  onClick={() => navigate(item.path)}
+                >
+                  {item.id === 'llm-models' && <Brain className="nav-icon h-5 w-5" />}
+                  {item.id === 'vector-store' && <Database className="nav-icon h-5 w-5" />}
+                  <span>{item.label}</span>
+                  {item.statusIndicator && (
+                    <span className={`status-indicator ${item.statusIndicator} ml-auto`}></span>
+                  )}
+                </div>
+              ))}
             </div>
 
             <div className="nav-section">
               <div className="nav-section-title">Quick Links</div>
-              <div className="nav-item">
-                <Book className="nav-icon h-5 w-5" />
-                <span>Documentation</span>
-              </div>
-              <div className="nav-item">
-                <LifeBuoy className="nav-icon h-5 w-5" />
-                <span>Support</span>
-              </div>
-              <div className="nav-item">
-                <PuzzlePiece className="nav-icon h-5 w-5" />
-                <span>Plugin Store</span>
-                <span className="ml-auto bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded-full font-semibold">2</span>
-              </div>
+              {getNavigationSections()[3].items.map((item) => (
+                <div 
+                  key={item.id}
+                  className="nav-item" 
+                  onClick={() => navigate(item.path)}
+                >
+                  {item.id === 'documentation' && <Book className="nav-icon h-5 w-5" />}
+                  {item.id === 'support' && <LifeBuoy className="nav-icon h-5 w-5" />}
+                  {item.id === 'plugin-store' && <PuzzlePiece className="nav-icon h-5 w-5" />}
+                  <span>{item.label}</span>
+                  {item.badge && (
+                    <span className="ml-auto bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded-full font-semibold">
+                      {item.badge}
+                    </span>
+                  )}
+                </div>
+              ))}
             </div>
           </aside>
           
@@ -668,46 +586,37 @@ export default function EnhancedLayout({ children, className }: EnhancedLayoutPr
       </div>
 
       {/* Command Palette */}
-      {isCommandPaletteOpen && (
-        <div className="fixed inset-0 z-50 bg-black/50" onClick={() => setIsCommandPaletteOpen(false)}>
+      {layoutState.commandPaletteOpen && (
+        <div className="fixed inset-0 z-50 bg-black/50" onClick={() => layoutActions.setCommandPaletteOpen(false)}>
           <div className="fixed top-20 left-1/2 transform -translate-x-1/2 w-full max-w-2xl bg-card border border-border rounded-lg shadow-lg" onClick={e => e.stopPropagation()}>
             <Input
               type="text"
               placeholder="Type a command or search..."
-              value={commandSearch}
-              onChange={(e) => setCommandSearch(e.target.value)}
+              value={layoutState.searchQuery}
+              onChange={(e) => layoutActions.setSearchQuery(e.target.value)}
               className="border-0 text-lg px-6 py-4"
               autoFocus
             />
             <div className="max-h-96 overflow-y-auto p-2">
-              <div className="p-2 hover:bg-muted rounded cursor-pointer">
-                <div className="flex items-center gap-3">
-                  <FileIcon className="h-4 w-4 text-muted-foreground" />
-                  <span>Open File...</span>
-                  <kbd className="ml-auto text-xs bg-muted px-2 py-1 rounded">⌘O</kbd>
+              {getCommandPaletteItems().map((item) => (
+                <div 
+                  key={item.id}
+                  className="p-2 hover:bg-muted rounded cursor-pointer" 
+                  onClick={() => { 
+                    item.action(); 
+                    layoutActions.setCommandPaletteOpen(false); 
+                  }}
+                >
+                  <div className="flex items-center gap-3">
+                    {item.icon === 'file' && <FileIcon className="h-4 w-4 text-muted-foreground" />}
+                    {item.icon === 'terminal' && <Terminal className="h-4 w-4 text-muted-foreground" />}
+                    {item.icon === 'code' && <Code className="h-4 w-4 text-muted-foreground" />}
+                    {item.icon === 'bug' && <Bug className="h-4 w-4 text-muted-foreground" />}
+                    <span>{item.title}</span>
+                    <kbd className="ml-auto text-xs bg-muted px-2 py-1 rounded">{item.shortcut}</kbd>
+                  </div>
                 </div>
-              </div>
-              <div className="p-2 hover:bg-muted rounded cursor-pointer">
-                <div className="flex items-center gap-3">
-                  <Terminal className="h-4 w-4 text-muted-foreground" />
-                  <span>Toggle Terminal</span>
-                  <kbd className="ml-auto text-xs bg-muted px-2 py-1 rounded">⌘`</kbd>
-                </div>
-              </div>
-              <div className="p-2 hover:bg-muted rounded cursor-pointer" onClick={() => { navigate('/alfred'); setIsCommandPaletteOpen(false); }}>
-                <div className="flex items-center gap-3">
-                  <Code className="h-4 w-4 text-muted-foreground" />
-                  <span>Launch ALFRED</span>
-                  <kbd className="ml-auto text-xs bg-muted px-2 py-1 rounded">⌘⇧A</kbd>
-                </div>
-              </div>
-              <div className="p-2 hover:bg-muted rounded cursor-pointer" onClick={() => { navigate('/crash-analyzer'); setIsCommandPaletteOpen(false); }}>
-                <div className="flex items-center gap-3">
-                  <Bug className="h-4 w-4 text-muted-foreground" />
-                  <span>Analyze Crash Log</span>
-                  <kbd className="ml-auto text-xs bg-muted px-2 py-1 rounded">⌘⇧C</kbd>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         </div>

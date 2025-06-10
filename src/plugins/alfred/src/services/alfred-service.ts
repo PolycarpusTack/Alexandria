@@ -170,13 +170,12 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
   async sendMessage(sessionId: string, content: string): Promise<AlfredMessage> {
     const session = this.sessions.get(sessionId);
     if (!session) {
-      throw new Error('Session not found');
+      throw new Error(`Session with ID ${sessionId} not found`);
     }
 
     // Create user message
     const userMessage: AlfredMessage = {
       id: uuidv4(),
-      sessionId,
       role: 'user',
       content,
       timestamp: new Date()
@@ -186,52 +185,79 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
     session.messages.push(userMessage);
     session.updatedAt = new Date();
 
-    try {
-      // Get chat history for context
-      const history = session.messages.slice(-10).map(msg => ({
-        role: msg.role,
-        content: msg.content
-      }));
+    // Emit user message event immediately
+    this.eventBus.emit('alfred:message', userMessage);
 
-      // Get response from AI using shared service
-      const response = await this.aiAdapter.chat(content, history);
+    let assistantMessage: AlfredMessage;
+    let retryCount = 0;
+    const maxRetries = 3;
 
-      // Create assistant message
-      const assistantMessage: AlfredMessage = {
-        id: uuidv4(),
-        sessionId,
-        role: 'assistant',
-        content: response,
-        timestamp: new Date()
-      };
+    while (retryCount < maxRetries) {
+      try {
+        // Get chat history for context (last 10 messages)
+        const history = session.messages.slice(-11, -1).map(msg => ({
+          role: msg.role,
+          content: msg.content
+        }));
 
-      session.messages.push(assistantMessage);
-      
-      // Save to database
-      await this.saveSession(session);
+        // Get response from AI using shared service
+        const response = await this.aiAdapter.chat(content, history);
 
-      // Emit events
-      this.eventBus.emit('alfred:message', userMessage);
-      this.eventBus.emit('alfred:message', assistantMessage);
+        // Create assistant message
+        assistantMessage = {
+          id: uuidv4(),
+          role: 'assistant',
+          content: response,
+          timestamp: new Date(),
+          metadata: {
+            model: session.metadata.model,
+            processingTime: Date.now() - userMessage.timestamp.getTime()
+          }
+        };
 
-      return assistantMessage;
-    } catch (error) {
-      this.logger.error('Failed to get AI response', { error });
-      
-      // Return error message
-      const errorMessage: AlfredMessage = {
-        id: uuidv4(),
-        sessionId,
-        role: 'assistant',
-        content: 'I apologize, but I encountered an error processing your request. Please try again.',
-        timestamp: new Date()
-      };
-      
-      session.messages.push(errorMessage);
-      await this.saveSession(session);
-      
-      return errorMessage;
+        session.messages.push(assistantMessage);
+        session.metadata.totalTokens += this.estimateTokens(content) + this.estimateTokens(response);
+        
+        // Save to database
+        await this.saveSession(session);
+
+        // Emit assistant message event
+        this.eventBus.emit('alfred:message', assistantMessage);
+
+        return assistantMessage;
+      } catch (error) {
+        retryCount++;
+        this.logger.warn(`AI response attempt ${retryCount} failed`, { error, sessionId });
+        
+        if (retryCount >= maxRetries) {
+          // Create error message after all retries failed
+          assistantMessage = {
+            id: uuidv4(),
+            role: 'assistant',
+            content: 'I apologize, but I encountered an error processing your request. Please try again later.',
+            timestamp: new Date(),
+            metadata: {
+              error: true,
+              errorMessage: error instanceof Error ? error.message : 'Unknown error'
+            }
+          };
+          
+          session.messages.push(assistantMessage);
+          await this.saveSession(session);
+          
+          this.eventBus.emit('alfred:message', assistantMessage);
+          this.eventBus.emit('alfred:error', { sessionId, error });
+          
+          return assistantMessage;
+        }
+        
+        // Wait before retry (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
+      }
     }
+
+    // This should never be reached, but TypeScript requires it
+    throw new Error('Unexpected error in sendMessage');
   }
 
   async getSession(sessionId: string): Promise<AlfredSession | undefined> {
@@ -333,99 +359,126 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
     this.logger.info('Analyzing project', { projectPath });
 
     try {
-      let structure = {};
-      let insights: string[] = [];
-
-      // Try to use Python bridge for project analysis if available
-      if (this.pythonBridge && this.pythonBridge.running) {
-        try {
-          structure = await this.pythonBridge.call('get_project_structure', { path: projectPath });
-          
-          // Load the project to get more details
-          const project = await this.pythonBridge.call('load_project', { path: projectPath });
-          
-          if (project) {
-            insights.push(`Project type: ${project.project_type || 'Unknown'}`);
-            insights.push(`Created: ${new Date(project.created_at).toLocaleDateString()}`);
-            insights.push(`Chat sessions: ${Object.keys(project.chat_sessions || {}).length}`);
-          }
-        } catch (error) {
-          this.logger.warn('Failed to use Python bridge for project analysis', { error });
-        }
-      }
-
-      // If no structure from Python, do basic analysis
-      if (Object.keys(structure).length === 0) {
-        // Use storage service to check for common files
-        const fs = await import('fs/promises');
-        const path = await import('path');
-        
-        try {
-          const files = await fs.readdir(projectPath);
-          structure['/'] = {
-            type: 'directory',
-            children: {}
-          };
-          
-          for (const file of files) {
-            const filePath = path.join(projectPath, file);
-            const stats = await fs.stat(filePath);
-            
-            if (stats.isDirectory()) {
-              structure['/'].children[file] = { type: 'directory' };
-            } else {
-              structure['/'].children[file] = { 
-                type: 'file', 
-                size: stats.size 
-              };
-            }
-          }
-          
-          // Generate insights based on files
-          if (files.includes('package.json')) {
-            insights.push('This appears to be a Node.js/TypeScript project');
-          }
-          if (files.includes('requirements.txt') || files.includes('setup.py')) {
-            insights.push('This appears to be a Python project');
-          }
-          if (!files.includes('README.md')) {
-            insights.push('Consider adding a README.md file');
-          }
-          if (!files.includes('tests') && !files.includes('test') && !files.includes('__tests__')) {
-            insights.push('No tests directory found - consider adding unit tests');
-          }
-        } catch (error) {
-          this.logger.error('Failed to analyze project structure', { error });
-        }
-      }
-
-      const analysis: ProjectAnalysis = {
-        id: uuidv4(),
-        projectPath,
-        structure,
-        insights,
-        timestamp: new Date()
-      };
-
-      // Store analysis in storage
+      // Use the dedicated project analyzer service for comprehensive analysis
+      const projectAnalyzer = await this.getProjectAnalyzer();
+      const projectContext = await projectAnalyzer.analyzeProject(projectPath);
+      
+      // Store analysis in storage for future reference
       await this.storageService.indexDocument({
-        title: `Project Analysis: ${projectPath}`,
-        content: JSON.stringify(analysis, null, 2),
+        title: `Project Analysis: ${projectContext.projectName}`,
+        content: JSON.stringify(projectContext, null, 2),
         type: 'analysis',
         metadata: {
-          projectPath,
-          analysisId: analysis.id
+          projectPath: projectContext.projectPath,
+          projectType: projectContext.projectType,
+          fileCount: projectContext.structure.statistics.totalFiles,
+          analysisId: uuidv4()
         }
       });
 
       // Emit event
-      this.eventBus.emit('alfred:project:analyzed', analysis);
+      this.eventBus.emit('alfred:project:analyzed', {
+        projectPath: projectContext.projectPath,
+        projectType: projectContext.projectType,
+        fileCount: projectContext.structure.statistics.totalFiles,
+        languages: Object.keys(projectContext.structure.statistics.languageBreakdown)
+      });
+
+      return projectContext;
+    } catch (error) {
+      this.logger.error('Project analysis failed', { error });
+      
+      // Fallback to basic analysis
+      try {
+        const fallbackAnalysis = await this.basicProjectAnalysis(projectPath);
+        return fallbackAnalysis;
+      } catch (fallbackError) {
+        this.logger.error('Fallback project analysis also failed', { fallbackError });
+        throw new Error(`Project analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      }
+    }
+  }
+
+  // Fallback basic project analysis
+  private async basicProjectAnalysis(projectPath: string): Promise<ProjectAnalysis> {
+    const fs = await import('fs/promises');
+    const path = await import('path');
+    
+    try {
+      const files = await fs.readdir(projectPath);
+      const projectName = path.basename(projectPath);
+      
+      // Basic project type detection
+      let projectType = 'unknown';
+      if (files.includes('package.json')) projectType = 'javascript/typescript';
+      else if (files.includes('requirements.txt')) projectType = 'python';
+      else if (files.includes('pom.xml')) projectType = 'java';
+      else if (files.includes('go.mod')) projectType = 'go';
+      else if (files.includes('Cargo.toml')) projectType = 'rust';
+
+      // Basic structure (parallel processing for better performance)
+      const structure: any = { '/': { type: 'directory', children: {} } };
+      const insights: string[] = [];
+      
+      // Process files in parallel instead of sequentially
+      const fileStatsPromises = files.map(async (file) => {
+        const filePath = path.join(projectPath, file);
+        const stats = await fs.stat(filePath);
+        
+        return {
+          file,
+          stats,
+          isDirectory: stats.isDirectory()
+        };
+      });
+      
+      const fileStats = await Promise.allSettled(fileStatsPromises);
+      
+      // Build structure from results
+      for (const result of fileStats) {
+        if (result.status === 'fulfilled') {
+          const { file, stats, isDirectory } = result.value;
+          
+          if (isDirectory) {
+            structure['/'].children[file] = { type: 'directory' };
+          } else {
+            structure['/'].children[file] = { type: 'file', size: stats.size };
+          }
+        }
+      }
+      
+      // Generate insights
+      insights.push(`Detected project type: ${projectType}`);
+      insights.push(`Contains ${files.length} items in root directory`);
+      
+      const analysis: ProjectAnalysis = {
+        projectPath,
+        projectName,
+        projectType: projectType as any,
+        structure: {
+          rootPath: projectPath,
+          files: [],
+          statistics: {
+            totalFiles: files.filter(f => !require('fs').lstatSync(path.join(projectPath, f)).isDirectory()).length,
+            totalDirectories: files.filter(f => require('fs').lstatSync(path.join(projectPath, f)).isDirectory()).length,
+            totalSize: 0,
+            languageBreakdown: {},
+            largestFiles: []
+          }
+        },
+        analyzedAt: new Date()
+      };
 
       return analysis;
     } catch (error) {
-      this.logger.error('Project analysis failed', { error });
-      throw error;
+      throw new Error(`Basic project analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
+  }
+
+  // Get or create project analyzer instance
+  private async getProjectAnalyzer() {
+    const { ProjectAnalyzerService } = await import('./project-analyzer');
+    return new ProjectAnalyzerService(this.logger, this.eventBus, this.storageService);
   }
   
   // Private helper methods
@@ -442,10 +495,10 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
             projectPath: chatSession.projectId || 'default',
             messages: chatSession.messages.map(msg => ({
               id: msg.id,
+              role: msg.role, // Keep the role field as-is
               content: msg.content,
               timestamp: msg.timestamp,
-              type: msg.role === 'user' ? 'user' : 'response',
-              context: msg.metadata
+              metadata: msg.metadata
             })),
             createdAt: chatSession.createdAt,
             updatedAt: chatSession.updatedAt,
@@ -470,10 +523,10 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
           projectId: session.projectPath,
           messages: session.messages.map(msg => ({
             id: msg.id,
-            role: msg.type === 'user' ? 'user' : 'assistant',
+            role: msg.role, // Use role field directly
             content: msg.content,
             timestamp: msg.timestamp,
-            metadata: msg.context
+            metadata: msg.metadata
           })),
           createdAt: session.createdAt,
           updatedAt: session.updatedAt,
@@ -483,6 +536,7 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
       }
     } catch (error) {
       this.logger.error('Failed to save session', { error });
+      // Don't rethrow to avoid breaking the chat flow
     }
   }
   
@@ -674,5 +728,194 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
     };
 
     return extension ? languageMap[extension] : undefined;
+  }
+
+  // Token estimation helper (rough approximation)
+  private estimateTokens(text: string): number {
+    // Rough approximation: 1 token ≈ 4 characters for English text
+    return Math.ceil(text.length / 4);
+  }
+
+  // Streaming message support
+  async sendMessageStream(
+    sessionId: string, 
+    content: string
+  ): Promise<AsyncGenerator<{ type: 'chunk' | 'complete'; data: string | AlfredMessage }>> {
+    const session = this.sessions.get(sessionId);
+    if (!session) {
+      throw new Error(`Session with ID ${sessionId} not found`);
+    }
+
+    // Create user message
+    const userMessage: AlfredMessage = {
+      id: uuidv4(),
+      role: 'user',
+      content,
+      timestamp: new Date()
+    };
+
+    // Add to session and emit immediately
+    session.messages.push(userMessage);
+    session.updatedAt = new Date();
+    this.eventBus.emit('alfred:message', userMessage);
+
+    return this.streamAIResponse(session, content);
+  }
+
+  private async *streamAIResponse(
+    session: AlfredSession, 
+    userMessage: string
+  ): AsyncGenerator<{ type: 'chunk' | 'complete'; data: string | AlfredMessage }> {
+    try {
+      // Get chat history for context
+      const history = session.messages.slice(-11, -1).map(msg => ({
+        role: msg.role,
+        content: msg.content
+      }));
+
+      let fullResponse = '';
+      const startTime = Date.now();
+
+      // Stream response from AI adapter
+      for await (const chunk of this.aiAdapter.streamChat(userMessage, history)) {
+        fullResponse += chunk;
+        yield { type: 'chunk', data: chunk };
+      }
+
+      // Create final assistant message
+      const assistantMessage: AlfredMessage = {
+        id: uuidv4(),
+        role: 'assistant',
+        content: fullResponse,
+        timestamp: new Date(),
+        metadata: {
+          model: session.metadata.model,
+          processingTime: Date.now() - startTime,
+          tokensUsed: this.estimateTokens(fullResponse)
+        }
+      };
+
+      // Add to session and save
+      session.messages.push(assistantMessage);
+      session.metadata.totalTokens += this.estimateTokens(userMessage) + this.estimateTokens(fullResponse);
+      await this.saveSession(session);
+
+      // Emit final message event
+      this.eventBus.emit('alfred:message', assistantMessage);
+      
+      yield { type: 'complete', data: assistantMessage };
+
+    } catch (error) {
+      this.logger.error('Streaming AI response failed', { error });
+      
+      // Create error message
+      const errorMessage: AlfredMessage = {
+        id: uuidv4(),
+        role: 'assistant',
+        content: 'I apologize, but I encountered an error while processing your request.',
+        timestamp: new Date(),
+        metadata: {
+          error: true,
+          errorMessage: error instanceof Error ? error.message : 'Unknown error'
+        }
+      };
+
+      session.messages.push(errorMessage);
+      await this.saveSession(session);
+      
+      this.eventBus.emit('alfred:message', errorMessage);
+      this.eventBus.emit('alfred:error', { sessionId: session.id, error });
+      
+      yield { type: 'complete', data: errorMessage };
+    }
+  }
+
+  // Enhanced session management with better error handling
+  async updateSession(sessionId: string, updates: Partial<AlfredSession>): Promise<AlfredSession> {
+    const session = this.sessions.get(sessionId);
+    if (!session) {
+      throw new Error(`Session with ID ${sessionId} not found`);
+    }
+
+    // Apply updates
+    Object.assign(session, updates, { updatedAt: new Date() });
+    
+    // Save to database
+    await this.saveSession(session);
+    
+    // Emit update event
+    this.eventBus.emit('alfred:session:updated', session);
+    
+    return session;
+  }
+
+  // Session cleanup and management
+  async cleanupInactiveSessions(maxAge: number = 7 * 24 * 60 * 60 * 1000): Promise<number> {
+    const cutoffDate = new Date(Date.now() - maxAge);
+    let cleanedCount = 0;
+
+    for (const [sessionId, session] of this.sessions.entries()) {
+      if (session.updatedAt < cutoffDate && !this.activeSessions.has(sessionId)) {
+        try {
+          await this.deleteSession(sessionId);
+          cleanedCount++;
+        } catch (error) {
+          this.logger.warn(`Failed to cleanup session ${sessionId}`, { error });
+        }
+      }
+    }
+
+    this.logger.info(`Cleaned up ${cleanedCount} inactive sessions`);
+    return cleanedCount;
+  }
+
+  // Project context integration
+  async createSessionWithContext(projectPath: string, projectContext?: ProjectContext): Promise<AlfredSession> {
+    const session = await this.createSession(projectPath);
+    
+    if (projectContext) {
+      session.metadata.context = projectContext;
+      await this.saveSession(session);
+    }
+    
+    return session;
+  }
+
+  // Health check for the service
+  async checkHealth(): Promise<{ 
+    status: 'healthy' | 'unhealthy'; 
+    aiService: boolean; 
+    repository: boolean; 
+    activeSessions: number 
+  }> {
+    const health = {
+      status: 'healthy' as const,
+      aiService: false,
+      repository: false,
+      activeSessions: this.activeSessions.size
+    };
+
+    try {
+      // Check AI service
+      health.aiService = await this.aiAdapter.checkHealth();
+    } catch (error) {
+      this.logger.warn('AI service health check failed', { error });
+    }
+
+    try {
+      // Check repository by attempting to load sessions
+      if (this.sessionRepository) {
+        await this.sessionRepository.getAllSessions();
+        health.repository = true;
+      }
+    } catch (error) {
+      this.logger.warn('Repository health check failed', { error });
+    }
+
+    if (!health.aiService || !health.repository) {
+      health.status = 'unhealthy';
+    }
+
+    return health;
   }
 }

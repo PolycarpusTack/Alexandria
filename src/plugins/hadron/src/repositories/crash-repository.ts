@@ -168,10 +168,26 @@ export class CrashRepository implements ICrashRepository {
    * Delete a crash log and its associated analyses
    */
   async deleteCrashLog(id: string): Promise<boolean> {
-    // First, delete all analyses for this crash log
+    // First, delete all analyses for this crash log in parallel
     const analyses = await this.getAnalysesByCrashLogId(id);
-    for (const analysis of analyses) {
-      await this.dataService.delete(this.analysisCollection, analysis.id);
+    
+    if (analyses.length > 0) {
+      // Delete all analyses in parallel using Promise.allSettled for better error handling
+      const deletionResults = await Promise.allSettled(
+        analyses.map(analysis => 
+          this.dataService.delete(this.analysisCollection, analysis.id)
+        )
+      );
+      
+      // Log any failed deletions but don't fail the entire operation
+      const failed = deletionResults.filter(result => result.status === 'rejected');
+      if (failed.length > 0) {
+        console.warn(`Failed to delete ${failed.length} of ${analyses.length} analyses for crash log ${id}`, {
+          failedCount: failed.length,
+          totalCount: analyses.length,
+          crashLogId: id
+        });
+      }
     }
     
     // Then delete the crash log itself

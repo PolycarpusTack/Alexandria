@@ -1,6 +1,6 @@
 /**
  * ClickHouse Storage Adapter
- * Handles warm tier storage with ClickHouse for cost-effective analytics
+ * Handles warm tier storage with ClickHouse using connection pooling
  */
 
 import { Logger } from '@utils/logger';
@@ -18,6 +18,8 @@ import {
   buildSafeOrderBy,
   parseRetentionInterval
 } from './clickhouse-security';
+import { HyperionResourceManager, Priority } from '../resource-manager';
+import { Connection } from '../connection-pool/types';
 
 // Mock ClickHouse client interface until @clickhouse/client is installed
 interface MockClickHouseClient {
@@ -30,13 +32,15 @@ interface MockClickHouseClient {
 export class ClickHouseAdapter {
   private readonly logger: Logger;
   private readonly config: StorageTier;
-  private client?: MockClickHouseClient;
+  private readonly resourceManager: HyperionResourceManager;
   private tableName: string;
   private isConnected = false;
+  private poolName = 'clickhouse-warm';
 
-  constructor(config: StorageTier, logger: Logger) {
+  constructor(config: StorageTier, logger: Logger, resourceManager: HyperionResourceManager) {
     this.config = config;
     this.logger = logger;
+    this.resourceManager = resourceManager;
     // Validate table name to prevent SQL injection
     const rawTableName = config.config?.table || 'heimdall_logs_warm';
     this.tableName = validateClickHouseTable(rawTableName);
@@ -48,15 +52,22 @@ export class ClickHouseAdapter {
     });
 
     try {
-      // TODO: Replace with actual ClickHouse client when installed
-      // const { createClient } = require('@clickhouse/client');
-      // this.client = createClient({
-      //   url: this.config.engine.connectionString,
-      //   username: this.config.engine.options?.username,
-      //   password: this.config.engine.options?.password
-      // });
-      
-      this.client = this.createMockClickHouseClient();
+      // Try to use actual ClickHouse client if available, fall back to mock
+      try {
+        const { createClient } = require('@clickhouse/client');
+        this.client = createClient({
+          url: this.config.engine.connectionString,
+          username: this.config.engine.options?.username,
+          password: this.config.engine.options?.password,
+          database: this.config.engine.options?.database || 'default'
+        });
+        this.logger.info('Using real ClickHouse client');
+      } catch (requireError) {
+        this.logger.warn('ClickHouse client not available, using mock implementation', {
+          error: requireError instanceof Error ? requireError.message : String(requireError)
+        });
+        this.client = this.createMockClickHouseClient();
+      }
       
       // Test connection
       const pingResult = await this.client.ping();
@@ -78,17 +89,27 @@ export class ClickHouseAdapter {
   }
 
   async store(log: HeimdallLogEntry): Promise<void> {
-    if (!this.isConnected || !this.client) {
-      throw new Error('ClickHouse client not connected');
+    if (!this.isConnected) {
+      throw new Error('ClickHouse adapter not connected');
     }
 
+    let connection: Connection | null = null;
     try {
+      // Get connection from pool
+      connection = await this.resourceManager.getConnection(
+        this.poolName, 
+        Priority.NORMAL, 
+        30000
+      );
+
       const row = this.convertToClickHouseRow(log);
       
-      await this.client.insert({
+      const insertQuery = JSON.stringify({
         table: escapeClickHouseIdentifier(this.tableName),
         values: [row]
       });
+
+      await connection.execute(insertQuery);
       
       this.logger.debug('Log stored in ClickHouse', {
         logId: log.id,
@@ -100,6 +121,11 @@ export class ClickHouseAdapter {
         error: error instanceof Error ? error.message : String(error)
       });
       throw error;
+    } finally {
+      // Always release connection back to pool
+      if (connection) {
+        await this.resourceManager.releaseConnection(this.poolName, connection);
+      }
     }
   }
 

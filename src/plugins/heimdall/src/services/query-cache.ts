@@ -1,21 +1,40 @@
 /**
- * Query Cache Service
+ * Enhanced Query Cache Service
  * 
- * Implements intelligent caching for log query results to improve performance
+ * Implements intelligent caching with multi-level storage and predictive pre-caching
  */
 
-import { Logger } from '../../../../utils/logger';
-import { LogQuery, LogQueryResult } from '../interfaces';
+import { Logger } from '@utils/logger';
+import { HeimdallQuery, HeimdallQueryResult } from '../interfaces';
 import { PerformanceMonitor } from './performance-monitor';
+import { HyperionResourceManager } from './resource-manager';
 
 interface CacheEntry {
   key: string;
-  query: LogQuery;
-  result: LogQueryResult;
+  query: HeimdallQuery;
+  result: HeimdallQueryResult;
   timestamp: Date;
   accessCount: number;
   lastAccessed: Date;
   size: number; // Estimated size in bytes
+  priority: CachePriority;
+  tags: string[];
+}
+
+enum CachePriority {
+  LOW = 0,
+  NORMAL = 1,
+  HIGH = 2,
+  CRITICAL = 3
+}
+
+interface CacheConfiguration {
+  maxSizeBytes: number;
+  maxEntries: number;
+  ttlMs: number;
+  cleanupIntervalMs: number;
+  enablePredictiveCache: boolean;
+  compressionThreshold: number;
 }
 
 interface CacheStats {
@@ -26,8 +45,12 @@ interface CacheStats {
   entryCount: number;
 }
 
-export class QueryCache {
-  private cache = new Map<string, CacheEntry>();
+export class EnhancedQueryCache {
+  private l1Cache = new Map<string, CacheEntry>(); // Memory cache
+  private l2Cache = new Map<string, CacheEntry>(); // Compressed cache
+  private queryPatterns = new Map<string, number>(); // Query frequency tracking
+  private predictiveQueue = new Set<string>(); // Queries to pre-cache
+  
   private stats: CacheStats = {
     hits: 0,
     misses: 0,
@@ -36,22 +59,25 @@ export class QueryCache {
     entryCount: 0
   };
 
-  private readonly maxSize: number;
-  private readonly maxEntries: number;
-  private readonly ttlMs: number;
+  private readonly config: CacheConfiguration;
   private cleanupInterval?: NodeJS.Timeout;
+  private resourceManager: HyperionResourceManager;
 
   constructor(
     private logger: Logger,
+    resourceManager: HyperionResourceManager,
     private performanceMonitor?: PerformanceMonitor,
-    options: {
-      maxSizeBytes?: number;
-      maxEntries?: number;
-      ttlMs?: number;
-      cleanupIntervalMs?: number;
-    } = {}
+    options: Partial<CacheConfiguration> = {}
   ) {
-    this.maxSize = options.maxSizeBytes || 100 * 1024 * 1024; // 100MB default
+    this.resourceManager = resourceManager;
+    this.config = {
+      maxSizeBytes: options.maxSizeBytes || 100 * 1024 * 1024, // 100MB default
+      maxEntries: options.maxEntries || 1000,
+      ttlMs: options.ttlMs || 5 * 60 * 1000, // 5 minutes default
+      cleanupIntervalMs: options.cleanupIntervalMs || 60 * 1000, // 1 minute
+      enablePredictiveCache: options.enablePredictiveCache ?? true,
+      compressionThreshold: options.compressionThreshold || 1024 * 1024 // 1MB
+    };
     this.maxEntries = options.maxEntries || 1000;
     this.ttlMs = options.ttlMs || 5 * 60 * 1000; // 5 minutes default
 

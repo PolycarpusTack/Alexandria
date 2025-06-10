@@ -230,15 +230,33 @@ export type AlfredMessage = ChatMessage;
 export type AlfredSession = ChatSession;
 export type ProjectAnalysis = ProjectContext;
 
+// Streaming response types
+export interface StreamChunk {
+  type: 'chunk' | 'complete';
+  data: string | AlfredMessage;
+}
+
+// Health check response
+export interface ServiceHealth {
+  status: 'healthy' | 'unhealthy';
+  aiService: boolean;
+  repository: boolean;
+  activeSessions: number;
+}
+
 // Main service interface
 export interface AlfredServiceInterface {
   initialize(): Promise<void>;
   shutdown(): Promise<void>;
-  createSession(name?: string, projectPath?: string): Promise<AlfredSession>;
+  createSession(projectPath?: string): Promise<AlfredSession>;
+  createSessionWithContext(projectPath: string, projectContext?: ProjectContext): Promise<AlfredSession>;
   sendMessage(sessionId: string, message: string): Promise<AlfredMessage>;
+  sendMessageStream(sessionId: string, content: string): Promise<AsyncGenerator<StreamChunk>>;
   getSession(sessionId: string): Promise<AlfredSession | undefined>;
   getSessions(): Promise<AlfredSession[]>;
+  updateSession(sessionId: string, updates: Partial<AlfredSession>): Promise<AlfredSession>;
   deleteSession(sessionId: string): Promise<void>;
+  cleanupInactiveSessions(maxAge?: number): Promise<number>;
   generateCode(request: CodeGenerationRequest): Promise<CodeGenerationResponse>;
   analyzeProject(projectPath: string): Promise<ProjectAnalysis>;
   getProjectFiles(projectPath: string): Promise<Array<{
@@ -253,4 +271,5 @@ export interface AlfredServiceInterface {
   createFile(projectPath: string, filePath: string, content: string): Promise<void>;
   updateFile(projectPath: string, filePath: string, content: string): Promise<void>;
   deleteFile(projectPath: string, filePath: string): Promise<void>;
+  checkHealth(): Promise<ServiceHealth>;
 }

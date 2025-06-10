@@ -6,8 +6,8 @@
 
 // Core System exports
 export * from './system/interfaces';
-export { CoreSystem } from './system/core-system';
-export { CoreSystemRefactored } from './system/core-system-refactored';
+export { CoreSystemRefactored as CoreSystem } from './system/core-system-refactored';
+export { CoreSystem as CoreSystemLegacy } from './system/core-system';
 export * from './system/services';
 
 // Event Bus exports
@@ -54,7 +54,6 @@ export interface CoreServices {
 export { createLogger, Logger } from '../utils/logger';
 
 // Main initialization function
-import { CoreSystem } from './system/core-system';
 import { CoreSystemRefactored } from './system/core-system-refactored';
 import { EventBusImpl } from './event-bus/event-bus';
 import { PluginRegistryImpl } from './plugin-registry/plugin-registry';
@@ -183,11 +182,12 @@ export async function initializeCore(options: {
     // Discover plugins
     await pluginRegistry.discoverPlugins(pluginsDir);
     
-    // Auto-activate plugins
+    // Auto-activate plugins (parallel processing for better performance)
     const discoveredPlugins = pluginRegistry.getAllPlugins();
     logger.info(`Found ${discoveredPlugins.length} plugins, auto-activating...`);
     
-    for (const plugin of discoveredPlugins) {
+    // Process plugins in parallel for better performance
+    const pluginActivationPromises = discoveredPlugins.map(async (plugin) => {
       try {
         // Install plugin first if not installed
         if (plugin.state === 'discovered') {
@@ -199,12 +199,23 @@ export async function initializeCore(options: {
           await pluginRegistry.activatePlugin(plugin.manifest.id);
           logger.info(`Auto-activated plugin: ${plugin.manifest.name}`);
         }
+        
+        return { success: true, pluginId: plugin.manifest.id };
       } catch (error) {
         logger.error(`Failed to auto-activate plugin ${plugin.manifest.id}`, {
           error: error instanceof Error ? error.message : String(error)
         });
+        return { success: false, pluginId: plugin.manifest.id, error };
       }
-    }
+    });
+    
+    // Wait for all plugin activations to complete
+    const activationResults = await Promise.allSettled(pluginActivationPromises);
+    const successfulActivations = activationResults.filter(
+      result => result.status === 'fulfilled' && result.value.success
+    ).length;
+    
+    logger.info(`Plugin activation completed: ${successfulActivations}/${discoveredPlugins.length} successful`);
     
     // AI service will dynamically detect available models
     if (aiService) {

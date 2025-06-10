@@ -2,8 +2,9 @@
  * Project Analyzer Service - Analyzes project structure and detects project types
  */
 
-import { Logger } from '@utils/logger';
-import { EventBus } from '@core/event-bus/event-bus';
+import { Logger } from '../../../../utils/logger';
+import { EventBus } from '../../../../core/event-bus/interfaces';
+import { StorageService } from '../../../../core/services/storage/interfaces';
 import { 
   ProjectContext, 
   ProjectType, 
@@ -31,7 +32,8 @@ export class ProjectAnalyzerService implements IProjectAnalyzerService {
 
   constructor(
     private logger: Logger,
-    private eventBus: EventBus
+    private eventBus: EventBus,
+    private storageService: StorageService
   ) {}
 
   async analyzeProject(projectPath: string): Promise<ProjectContext> {
@@ -230,35 +232,40 @@ export class ProjectAnalyzerService implements IProjectAnalyzerService {
   private async buildFileTree(dirPath: string, basePath?: string): Promise<FileNode[]> {
     if (!basePath) basePath = dirPath;
 
-    const items = await this.fileService.listDirectory(dirPath);
-    const nodes: FileNode[] = [];
+    try {
+      const items = await this.storageService.listFiles(dirPath, { includeStats: true });
+      const nodes: FileNode[] = [];
 
-    for (const item of items) {
-      const fullPath = path.join(dirPath, item.name);
-      const relativePath = path.relative(basePath, fullPath);
+      for (const item of items) {
+        const fullPath = path.join(dirPath, item.name);
+        const relativePath = path.relative(basePath, fullPath);
 
-      const node: FileNode = {
-        name: item.name,
-        path: relativePath,
-        type: item.isDirectory ? 'directory' : 'file'
-      };
+        const node: FileNode = {
+          name: item.name,
+          path: relativePath,
+          type: item.isDirectory ? 'directory' : 'file'
+        };
 
-      if (item.isDirectory) {
-        // Skip common ignored directories
-        if (this.shouldIgnoreDirectory(item.name)) {
-          continue;
+        if (item.isDirectory) {
+          // Skip common ignored directories
+          if (this.shouldIgnoreDirectory(item.name)) {
+            continue;
+          }
+          node.children = await this.buildFileTree(fullPath, basePath);
+        } else {
+          node.size = item.size;
+          node.extension = path.extname(item.name).toLowerCase();
+          node.language = this.detectLanguageFromExtension(node.extension);
         }
-        node.children = await this.buildFileTree(fullPath, basePath);
-      } else {
-        node.size = item.size;
-        node.extension = path.extname(item.name).toLowerCase();
-        node.language = this.detectLanguageFromExtension(node.extension);
+
+        nodes.push(node);
       }
 
-      nodes.push(node);
+      return nodes;
+    } catch (error) {
+      this.logger.warn(`Failed to build file tree for ${dirPath}`, { error });
+      return [];
     }
-
-    return nodes;
   }
 
   private async calculateStatistics(structure: ProjectStructure): Promise<void> {
@@ -301,9 +308,9 @@ export class ProjectAnalyzerService implements IProjectAnalyzerService {
 
     // Check for package.json (Node.js)
     const packageJsonPath = path.join(projectPath, 'package.json');
-    if (await this.fileService.exists(packageJsonPath)) {
-      try {
-        const content = await this.fileService.readFile(packageJsonPath);
+    try {
+      if (await fs.access(packageJsonPath).then(() => true).catch(() => false)) {
+        const content = await this.storageService.readFile(packageJsonPath);
         const pkg = JSON.parse(content);
         
         // Runtime dependencies
@@ -329,16 +336,16 @@ export class ProjectAnalyzerService implements IProjectAnalyzerService {
             });
           }
         }
-      } catch (error) {
-        this.logger.warn('Failed to parse package.json', { error });
       }
+    } catch (error) {
+      this.logger.warn('Failed to parse package.json', { error });
     }
 
     // Check for requirements.txt (Python)
     const requirementsPath = path.join(projectPath, 'requirements.txt');
-    if (await this.fileService.exists(requirementsPath)) {
-      try {
-        const content = await this.fileService.readFile(requirementsPath);
+    try {
+      if (await fs.access(requirementsPath).then(() => true).catch(() => false)) {
+        const content = await this.storageService.readFile(requirementsPath);
         const lines = content.split('\n').filter(line => line.trim() && !line.startsWith('#'));
         
         for (const line of lines) {
@@ -352,9 +359,9 @@ export class ProjectAnalyzerService implements IProjectAnalyzerService {
             });
           }
         }
-      } catch (error) {
-        this.logger.warn('Failed to parse requirements.txt', { error });
       }
+    } catch (error) {
+      this.logger.warn('Failed to parse requirements.txt', { error });
     }
 
     // Add more dependency file parsers as needed...

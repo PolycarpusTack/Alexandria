@@ -40,6 +40,14 @@ import { DataService } from '../data/interfaces';
  */
 /**
  * @deprecated Use CoreSystemRefactored instead. This class will be removed in v0.2.0
+ * 
+ * MIGRATION STATUS: 
+ * - ✅ CoreSystemRefactored is now the default export as 'CoreSystem' in core/index.ts
+ * - ✅ initializeCore() uses CoreSystemRefactored by default
+ * - ⚠️  Legacy tests and some plugins may still reference this class
+ * 
+ * This class violates the Single Responsibility Principle and has grown to 505+ lines.
+ * Use CoreSystemRefactored which delegates to specialized services instead.
  */
 export class CoreSystem implements ICoreSystem {
   private routes: Map<string, Route> = new Map();

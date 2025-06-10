@@ -6,9 +6,9 @@ import { PluginLifecycle, PluginContext, PluginAPI } from '../../../core/plugin-
 import { AlfredService } from './services/alfred-service';
 import { StreamingService } from './services/streaming-service';
 import { AlfredAIAdapter } from './services/alfred-ai-adapter';
-import { ProjectAnalyzer } from './services/project-analyzer';
-import { CodeGenerator } from './services/code-generator';
-import { TemplateManager } from './services/template-manager';
+import { ProjectAnalyzerService } from './services/project-analyzer';
+import { CodeGeneratorService } from './services/code-generator';
+import { TemplateManagerService } from './services/template-manager';
 import { SessionRepository } from './repositories/session-repository';
 import { TemplateRepository } from './repositories/template-repository';
 import { createAlfredRouter } from './api/alfred-api';
@@ -21,9 +21,9 @@ export class AlfredPlugin implements PluginLifecycle {
   private alfredService?: AlfredService;
   private streamingService?: StreamingService;
   private aiAdapter?: AlfredAIAdapter;
-  private projectAnalyzer?: ProjectAnalyzer;
-  private codeGenerator?: CodeGenerator;
-  private templateManager?: TemplateManager;
+  private projectAnalyzer?: ProjectAnalyzerService;
+  private codeGenerator?: CodeGeneratorService;
+  private templateManager?: TemplateManagerService;
   private sessionRepository?: SessionRepository;
   private templateRepository?: TemplateRepository;
 
@@ -61,21 +61,11 @@ export class AlfredPlugin implements PluginLifecycle {
     
     this.streamingService = new StreamingService(logger, this.aiAdapter);
     
-    this.projectAnalyzer = new ProjectAnalyzer({
-      logger,
-      eventBus
-    });
+    this.projectAnalyzer = new ProjectAnalyzerService(logger, eventBus, storageService);
     
-    this.codeGenerator = new CodeGenerator({
-      logger,
-      eventBus
-    });
+    this.codeGenerator = new CodeGeneratorService(logger, eventBus);
     
-    this.templateManager = new TemplateManager({
-      logger,
-      repository: this.templateRepository,
-      eventBus
-    });
+    this.templateManager = new TemplateManagerService(logger, this.templateRepository, eventBus);
     
     // Register API routes
     const api = context.api as PluginAPI & { registerRouter?: (path: string, router: Router) => void };

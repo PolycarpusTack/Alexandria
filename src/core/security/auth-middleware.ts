@@ -1,3 +1,4 @@
+/// <reference path="../../types/express-custom.d.ts" />
 /**
  * Authentication Middleware for the Alexandria Platform
  * 
@@ -10,19 +11,13 @@ import { AuthenticationService } from './interfaces';
 import { createLogger, Logger } from '../../utils/logger';
 import { DataService } from '../data/interfaces';
 
-// Extend Express Request to include user property
-declare global {
-  namespace Express {
-    interface Request {
-      user?: {
-        id: string;
-        username: string;
-        email?: string;
-        roles: string[];
-        permissions: string[];
-      };
-    }
-  }
+// User interface is already declared in express-custom.d.ts
+interface AlexandriaUser {
+  id: string;
+  username: string;
+  email?: string;
+  roles: string[];
+  permissions: string[];
 }
 
 // Extend Express types
@@ -118,7 +113,7 @@ export function createAuthMiddleware(
         }
         
         // Attach user to request
-        req.user = user;
+        req.user = user as any;
         
         logger.debug('User authenticated successfully', {
           component: 'AuthMiddleware',

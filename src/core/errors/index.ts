@@ -283,6 +283,25 @@ export class UnknownError extends AlexandriaError {
 }
 
 /**
+ * Error for UI operations and client-side issues
+ */
+export class UIOperationError extends AlexandriaError {
+  constructor(
+    operation: string,
+    reason: string,
+    context?: Record<string, any>
+  ) {
+    const message = `UI operation '${operation}' failed: ${reason}`;
+    
+    super(message, 'UI_OPERATION_FAILED', {
+      operation,
+      reason,
+      ...context
+    });
+  }
+}
+
+/**
  * Error handler utility
  */
 export class ErrorHandler {

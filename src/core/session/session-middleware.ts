@@ -1,3 +1,4 @@
+/// <reference path="../../types/express-custom.d.ts" />
 /**
  * Session Middleware for Alexandria Platform
  * 
@@ -41,15 +42,43 @@ export function createSessionMiddleware(options: SessionMiddlewareOptions) {
   // Periodically touch active sessions
   const activeSessions = new Set<string>();
   
-  setInterval(() => {
-    activeSessions.forEach(async (sessionId) => {
-      try {
-        await sessionStore.touch(sessionId);
-      } catch (error) {
-        logger.error('Failed to touch session', { sessionId, error });
-      }
-    });
+  setInterval(async () => {
+    if (activeSessions.size === 0) {
+      return;
+    }
+
+    // Convert to array and process in parallel
+    const sessionIds = Array.from(activeSessions);
     activeSessions.clear();
+
+    // Touch all sessions in parallel using Promise.allSettled
+    const results = await Promise.allSettled(
+      sessionIds.map(async (sessionId) => {
+        try {
+          await sessionStore.touch(sessionId);
+          logger.debug('Session touched successfully', { sessionId });
+        } catch (error) {
+          logger.error('Failed to touch session', { sessionId, error });
+          throw error;
+        }
+      })
+    );
+
+    // Log summary of touch operations
+    const successful = results.filter(r => r.status === 'fulfilled').length;
+    const failed = results.filter(r => r.status === 'rejected').length;
+    
+    if (failed > 0) {
+      logger.warn('Session touch operation completed with failures', {
+        total: sessionIds.length,
+        successful,
+        failed
+      });
+    } else if (successful > 0) {
+      logger.debug('All session touch operations successful', {
+        total: successful
+      });
+    }
   }, checkInterval);
 
   return async (req: Request, res: Response, next: NextFunction) => {
