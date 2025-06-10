@@ -34,14 +34,24 @@ export default defineConfig({
   },
   server: {
     port: 3000,
+    host: true,
     fs: {
       strict: false,
       allow: ['..']
     },
+    hmr: {
+      port: 3000,
+      host: 'localhost'
+    },
     proxy: {
       '/api': {
         target: 'http://localhost:4000',
-        changeOrigin: true
+        changeOrigin: true,
+        configure: (proxy, options) => {
+          proxy.on('error', (err, req, res) => {
+            console.log('proxy error', err);
+          });
+        }
       }
     }
   },

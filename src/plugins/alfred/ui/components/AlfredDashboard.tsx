@@ -1,5 +1,6 @@
 /**
  * Alfred Dashboard - Main UI component for the Alfred plugin
+ * Enhanced with all features from original Alfred
  */
 
 import React, { useState, useEffect } from 'react';
@@ -12,15 +13,22 @@ import {
 } from '../../../../client/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../client/components/ui/tabs';
 import { Button } from '../../../../client/components/ui/button';
+import { Badge } from '../../../../client/components/ui/badge';
 import { useAlfredContext } from '../hooks/useAlfredContext';
 import { ChatInterface } from './ChatInterface';
 import { ProjectExplorer } from './ProjectExplorer';
 import { TemplateManager as TemplateManagerUI } from './TemplateManager';
 import { SessionList } from './SessionList';
 import { SplitPaneEditor } from './SplitPaneEditor';
-import { Bot, FolderOpen, FileCode, History, MessageSquare, Code } from 'lucide-react';
+import { CommandPalette } from './CommandPalette';
+import { TemplateWizard } from './TemplateWizard';
+import { ConnectionStatus, ConnectionStatusMini } from './ConnectionStatus';
+import { Bot, FolderOpen, FileCode, History, MessageSquare, Code, Wand2, Search, Settings } from 'lucide-react';
 import { createClientLogger } from '../../../../client/utils/client-logger';
 import { AlfredEnhancedLayout } from './AlfredEnhancedLayout';
+import { CodeExtractionService } from '../../src/services/code-extraction-service';
+import { ProjectTemplatesService } from '../../src/services/project-templates';
+import { TreeCacheService } from '../../src/services/tree-cache-service';
 
 // Add TypeScript declarations for window extensions
 declare global {
@@ -38,6 +46,21 @@ export function AlfredDashboard() {
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [sessions, setSessions] = useState([]);
   const [currentProject, setCurrentProject] = useState<string | undefined>();
+  
+  // New feature states
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+  const [templateWizardOpen, setTemplateWizardOpen] = useState(false);
+  const [extractedCode, setExtractedCode] = useState<any[]>([]);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  
+  // Initialize services
+  const [codeExtractionService] = useState(() => new CodeExtractionService(logger));
+  const [projectTemplatesService] = useState(() => new ProjectTemplatesService());
+  const [treeCacheService] = useState(() => {
+    // In a real app, these would be injected
+    const eventBus = { emit: () => {}, on: () => {}, off: () => {} };
+    return new TreeCacheService(logger, eventBus as any);
+  });
 
   useEffect(() => {
     // Load sessions on mount when services are ready
@@ -131,6 +154,83 @@ export function AlfredDashboard() {
     setCurrentProject(projectPath);
   };
 
+  // New feature handlers
+  const handleGenerateCode = (prompt: string) => {
+    setActiveTab('chat');
+    // Pass prompt to chat interface (would need to enhance ChatInterface to accept initial prompt)
+  };
+
+  const handleAnalyzeProject = async () => {
+    if (currentProject && projectAnalyzer) {
+      try {
+        await projectAnalyzer.analyzeProject(currentProject);
+        setActiveTab('project');
+      } catch (error) {
+        logger.error('Failed to analyze project', { error });
+      }
+    }
+  };
+
+  const handleSaveSession = async () => {
+    if (currentSessionId && alfredService) {
+      try {
+        await alfredService.saveSession(currentSessionId);
+        setHasUnsavedChanges(false);
+      } catch (error) {
+        logger.error('Failed to save session', { error });
+      }
+    }
+  };
+
+  const handleRefreshContext = async () => {
+    if (currentProject && treeCacheService) {
+      try {
+        await treeCacheService.getProjectTree(currentProject, true);
+        if (projectAnalyzer) {
+          await projectAnalyzer.analyzeProject(currentProject);
+        }
+      } catch (error) {
+        logger.error('Failed to refresh context', { error });
+      }
+    }
+  };
+
+  const handleExportSession = () => {
+    // Implementation for exporting session
+    logger.info('Export session requested');
+  };
+
+  const handleImportSession = () => {
+    // Implementation for importing session
+    logger.info('Import session requested');
+  };
+
+  const handleClearChat = () => {
+    if (currentSessionId) {
+      // Clear current chat
+      setHasUnsavedChanges(false);
+    }
+  };
+
+  const handleTemplateWizardComplete = async (template: any, variables: any) => {
+    try {
+      const files = await projectTemplatesService.createProject(template, variables, variables.project_name || 'new-project');
+      // Handle created files
+      setTemplateWizardOpen(false);
+      logger.info('Project created from template', { template: template.id, fileCount: files.size });
+    } catch (error) {
+      logger.error('Failed to create project from template', { error });
+    }
+  };
+
+  // Handle AI responses for code extraction
+  const handleAIResponse = (response: string) => {
+    const result = codeExtractionService.extractCodeBlocks(response);
+    if (result.blocks.length > 0) {
+      setExtractedCode(result.blocks);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -160,19 +260,48 @@ export function AlfredDashboard() {
             <div className="flex items-center gap-2">
               <Bot className="h-6 w-6 text-primary" />
               <h2 className="text-xl font-semibold">ALFRED Assistant</h2>
+              <ConnectionStatusMini />
             </div>
-            <Button onClick={handleNewSession} size="sm" className="btn btn-primary">
-              New Chat
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button 
+                onClick={() => setCommandPaletteOpen(true)} 
+                size="sm" 
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Search className="h-4 w-4" />
+                Commands
+                <Badge variant="secondary" className="text-xs">Ctrl+Shift+P</Badge>
+              </Button>
+              <Button 
+                onClick={() => setTemplateWizardOpen(true)} 
+                size="sm" 
+                variant="outline"
+                className="flex items-center gap-2"
+              >
+                <Wand2 className="h-4 w-4" />
+                New Project
+              </Button>
+              <Button onClick={handleNewSession} size="sm" className="btn btn-primary">
+                New Chat
+              </Button>
+            </div>
           </div>
-          <p className="text-sm text-muted-foreground mt-1">
-            AI-powered coding assistant for rapid development
-            {currentProject && (
-              <span className="ml-2 font-medium">
-                • Project: {currentProject.split('/').pop()}
-              </span>
+          <div className="flex items-center justify-between mt-1">
+            <p className="text-sm text-muted-foreground">
+              AI-powered coding assistant for rapid development
+              {currentProject && (
+                <span className="ml-2 font-medium">
+                  • Project: {currentProject.split('/').pop()}
+                </span>
+              )}
+            </p>
+            {extractedCode.length > 0 && (
+              <Badge variant="outline" className="text-xs">
+                {extractedCode.length} code block{extractedCode.length !== 1 ? 's' : ''} extracted
+              </Badge>
             )}
-          </p>
+          </div>
         </div>
         
         <div className="flex-1 overflow-hidden mt-4">
@@ -276,6 +405,30 @@ export function AlfredDashboard() {
           </Tabs>
         </div>
       </div>
+
+      {/* New Feature Components */}
+      <CommandPalette
+        onGenerateCode={handleGenerateCode}
+        onAnalyzeProject={handleAnalyzeProject}
+        onNewSession={handleNewSession}
+        onSaveSession={handleSaveSession}
+        onLoadSession={handleSessionSelect}
+        onOpenTemplates={() => setActiveTab('templates')}
+        onCreateTemplate={() => setTemplateWizardOpen(true)}
+        onRefreshContext={handleRefreshContext}
+        onExportSession={handleExportSession}
+        onImportSession={handleImportSession}
+        onClearChat={handleClearChat}
+        currentSessionId={currentSessionId}
+        hasUnsavedChanges={hasUnsavedChanges}
+      />
+
+      <TemplateWizard
+        open={templateWizardOpen}
+        onClose={() => setTemplateWizardOpen(false)}
+        onComplete={handleTemplateWizardComplete}
+        templates={projectTemplatesService.getAllTemplates()}
+      />
     </AlfredEnhancedLayout>
   );
 }

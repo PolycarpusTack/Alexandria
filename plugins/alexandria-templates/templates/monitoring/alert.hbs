@@ -1,0 +1,43 @@
+# Heimdall Alert: {{alertType}}
+
+**Alert ID**: {{alertId}}  
+**Triggered**: {{timestamp}}  
+**Status**: {{status}}
+
+## Alert Details
+- **Metric**: {{metricName}}
+- **Threshold**: {{threshold}}
+- **Current Value**: {{currentValue}}
+- **Duration**: {{duration}}
+
+## Affected Systems
+{{#each affectedSystems}}
+- **{{this.name}}**: {{this.status}}
+{{/each}}
+
+## Historical Context
+```chart
+{{chartData}}
+```
+
+## Impact Analysis
+- **Services Affected**: {{impactedServices}}
+- **Users Affected**: {{affectedUsers}}
+- **Business Impact**: {{businessImpact}}
+
+## Recommended Actions
+{{#each recommendations}}
+1. {{this.action}}
+   - Priority: {{this.priority}}
+   - ETA: {{this.eta}}
+{{/each}}
+
+## Escalation Path
+{{#if requiresEscalation}}
+- Primary: {{escalation.primary}}
+- Secondary: {{escalation.secondary}}
+- Manager: {{escalation.manager}}
+{{/if}}
+
+---
+*Monitored by Heimdall v{{heimdall.version}} | Alexandria Platform*

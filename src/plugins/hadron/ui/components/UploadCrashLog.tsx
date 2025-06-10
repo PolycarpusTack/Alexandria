@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from 'react';
-import { useUIContext } from '../../../../ui/ui-context';
-import { Button, Input, Spinner, toast, Progress } from '../../../../ui/components';
+import { useToast } from '../../../../client/components/ui/use-toast';
+
 import { OllamaStatusIndicator } from './OllamaStatusIndicator';
 
 interface UploadCrashLogProps {
@@ -14,7 +14,7 @@ export const UploadCrashLog: React.FC<UploadCrashLogProps> = ({
   onLogUploaded,
   modalId = 'upload-crash-log'
 }) => {
-  const { closeModal } = useUIContext();
+  const { toast } = useToast();
   const [logContent, setLogContent] = useState('');
   const [fileName, setFileName] = useState('');
   const [loading, setLoading] = useState(false);
@@ -124,7 +124,7 @@ export const UploadCrashLog: React.FC<UploadCrashLogProps> = ({
         }
 
         // Show success message
-        toast?.({ 
+        toast({ 
           title: 'File Uploaded', 
           description: `${file.name} (${(file.size / 1024).toFixed(1)}KB) has been loaded` 
         });
@@ -133,7 +133,7 @@ export const UploadCrashLog: React.FC<UploadCrashLogProps> = ({
       console.error('Error reading file:', err);
       setError('Failed to read file. Please try again.');
       setUploadStage('idle');
-      toast?.({ 
+      toast({ 
         title: 'Upload Failed', 
         description: 'Failed to read file. Please try again.',
         variant: 'destructive'
@@ -197,7 +197,7 @@ export const UploadCrashLog: React.FC<UploadCrashLogProps> = ({
           }
           
           // Show success message
-          toast?.({ 
+          toast({ 
             title: 'File Uploaded', 
             description: `${file.name} (${(file.size / 1024).toFixed(1)}KB) has been loaded` 
           });
@@ -209,7 +209,7 @@ export const UploadCrashLog: React.FC<UploadCrashLogProps> = ({
       clearInterval(progressInterval);
       setUploadStage('idle');
       setError('Failed to read file. Please try again.');
-      toast?.({ 
+      toast({ 
         title: 'Upload Failed', 
         description: 'Failed to read file. Please try again.',
         variant: 'destructive'
@@ -232,7 +232,7 @@ export const UploadCrashLog: React.FC<UploadCrashLogProps> = ({
   const handleUpload = async () => {
     if (!logContent.trim()) {
       setError('Please enter or upload crash log content.');
-      toast?.({ 
+      toast({ 
         title: 'Error', 
         description: 'Please enter or upload crash log content.',
         variant: 'destructive'
@@ -280,14 +280,14 @@ export const UploadCrashLog: React.FC<UploadCrashLogProps> = ({
       setUploadStage('complete');
       
       // Show success message
-      toast?.({ 
+      toast({ 
         title: 'Analysis Complete', 
         description: 'Crash log has been uploaded and analyzed successfully'
       });
       
       // Close the modal and notify parent after a short delay
       setTimeout(() => {
-        closeModal(modalId);
+        // Modal will be closed by parent component
         onLogUploaded(logId);
       }, 500);
     } catch (err) {
@@ -295,7 +295,7 @@ export const UploadCrashLog: React.FC<UploadCrashLogProps> = ({
       const errorMsg = 'Failed to upload and analyze crash log. Please try again.';
       setError(errorMsg);
       setUploadStage('idle');
-      toast?.({ 
+      toast({ 
         title: 'Analysis Failed', 
         description: errorMsg,
         variant: 'destructive'
@@ -450,7 +450,7 @@ export const UploadCrashLog: React.FC<UploadCrashLogProps> = ({
         </div>
         {loadingModels ? (
           <div className="flex items-center text-sm text-gray-500">
-            <Spinner size="small" className="mr-2" />
+            <Loader2 className="animate-spin" size="small" className="mr-2" />
             Loading available models...
           </div>
         ) : availableModels.length > 0 ? (
@@ -488,7 +488,7 @@ export const UploadCrashLog: React.FC<UploadCrashLogProps> = ({
       )}
       
       <div className="flex justify-end space-x-3">
-        <Button variant="secondary" onClick={() => closeModal(modalId)} disabled={loading || uploadStage === 'analyzing'}>
+        <Button variant="secondary" onClick={() => {}} disabled={loading || uploadStage === 'analyzing'}>
           Cancel
         </Button>
         <Button 
@@ -496,7 +496,7 @@ export const UploadCrashLog: React.FC<UploadCrashLogProps> = ({
           onClick={handleUpload} 
           disabled={loading || uploadStage === 'analyzing' || !logContent.trim()}
         >
-          {loading ? <Spinner size="small" className="mr-2" /> : null}
+          {loading ? <Loader2 className="animate-spin" size="small" className="mr-2" /> : null}
           {uploadStage === 'analyzing' ? 'Analyzing...' : 'Upload & Analyze'}
         </Button>
       </div>
@@ -511,4 +511,9 @@ export const UploadCrashLog: React.FC<UploadCrashLogProps> = ({
       </div>
     </div>
   );
+import { Button } from '../../../../client/components/ui/button';
+import { Input } from '../../../../client/components/ui/input';
+import { Loader2 } from 'lucide-react';
+import { useToast } from '../../../../client/components/ui/use-toast';
+import { Progress } from '../../../../client/components/ui/progress'
 };

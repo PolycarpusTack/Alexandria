@@ -1,0 +1,45 @@
+# Crash Analysis Report
+
+**Incident ID**: {{crashId}}  
+**Timestamp**: {{crashTimestamp}}  
+**Severity**: <span style="color: {{severityColor}}">{{severity}}</span>
+
+## Summary
+{{crashSummary}}
+
+## Environment
+- **Platform**: {{platform}}
+- **Version**: {{appVersion}}
+- **OS**: {{osInfo}}
+- **Memory**: {{memoryUsage}}
+- **CPU**: {{cpuUsage}}
+
+## Stack Trace
+```
+{{stackTrace}}
+```
+
+## Root Cause Analysis
+{{#if analysisAvailable}}
+**Confidence**: {{analysis.confidence}}%
+
+### Identified Issues:
+{{#each analysis.issues}}
+- **{{this.type}}**: {{this.description}}
+{{/each}}
+
+### Recommended Actions:
+{{#each analysis.recommendations}}
+1. {{this}}
+{{/each}}
+{{else}}
+*Awaiting AI analysis...*
+{{/if}}
+
+## Related Crashes
+{{#each relatedCrashes}}
+- [{{this.id}}]({{this.link}}) - {{this.similarity}}% similar
+{{/each}}
+
+---
+*Analyzed by Alexandria Crash Analyzer v{{plugin.version}}*

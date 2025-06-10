@@ -3,7 +3,7 @@ import { TimeSeriesData } from '../../../src/interfaces/analytics';
 import { useChartInteractions, useChartCustomization } from '../ChartInteractions';
 import { ChartCustomization } from '../ChartCustomization';
 import { DrillDownModal } from '../DrillDownModal';
-import { Button } from '../../../../../ui/components/button';
+import { Button } from '../../../../../client/components/ui/button'
 import { ZoomIn } from 'lucide-react';
 import { getChartTheme } from '../../utils/theme';
 

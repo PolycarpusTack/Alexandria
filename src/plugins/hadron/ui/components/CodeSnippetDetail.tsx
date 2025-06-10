@@ -1,16 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { 
-  Card, 
-  Button, 
-  Spinner, 
-  Tabs,
-  Tab,
-  Badge,
-  toast
-} from '../../../../ui/components';
 
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../../client/components/ui/card';
+import { Button } from '../../../../client/components/ui/button';
+import { Loader2 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../client/components/ui/tabs';
+import { Badge } from '../../../../client/components/ui/badge';
+import { useToast } from '../../../../client/components/ui/use-toast'
 interface CodeSnippetDetailProps {
   crashAnalyzerService: any;
 }
@@ -135,7 +133,7 @@ export const CodeSnippetDetail: React.FC<CodeSnippetDetailProps> = ({ crashAnaly
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <Spinner size="large" />
+        <Loader2 className="animate-spin" size="large" />
       </div>
     );
   }

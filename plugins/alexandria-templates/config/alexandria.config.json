@@ -1,0 +1,35 @@
+{
+  "alexandria-templates": {
+    "version": "1.0.0",
+    "engine": {
+      "default": "handlebars",
+      "available": ["handlebars", "liquid", "ejs"]
+    },
+    "integrations": {
+      "alfred": {
+        "enabled": true,
+        "model": "codellama",
+        "features": {
+          "autoGenerate": true,
+          "contextAware": true,
+          "learningMode": true
+        }
+      },
+      "crashAnalyzer": {
+        "enabled": true,
+        "autoTemplate": true,
+        "severityThreshold": "medium"
+      },
+      "heimdall": {
+        "enabled": true,
+        "alertTemplates": true,
+        "dashboardIntegration": true
+      }
+    },
+    "ui": {
+      "theme": "alexandria-dark",
+      "showInActivityBar": true,
+      "commandPaletteIntegration": true
+    }
+  }
+}

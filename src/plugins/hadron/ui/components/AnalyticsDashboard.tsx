@@ -1,15 +1,6 @@
 import React, { useMemo, useCallback } from 'react';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Button,
-  Spinner,
-  Badge,
-  toast
-} from '../../../../ui/components';
-import { useUIContext } from '../../../../ui/ui-context';
+
+// UI context removed - using component-specific styling
 import { useAnalytics } from '../hooks/useAnalytics';
 import {
   BarChart3,
@@ -40,6 +31,11 @@ import { exportToCSV, exportToJSON } from '../../src/utils/export';
 import { exportAnalyticsToPDF } from '../../src/utils/export-pdf';
 import { DateRangePicker } from './DateRangePicker';
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../../client/components/ui/card';
+import { Button } from '../../../../client/components/ui/button';
+import { Loader2 } from 'lucide-react';
+import { Badge } from '../../../../client/components/ui/badge';
+import { useToast } from '../../../../client/components/ui/use-toast'
 interface AnalyticsDashboardProps {
   analyticsService?: any; // Optional for backwards compatibility
   crashAnalyzerService?: any;
@@ -49,7 +45,8 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
   analyticsService,
   crashAnalyzerService
 }) => {
-  const { theme } = useUIContext();
+  const { toast } = useToast();
+  // Remove theme dependency - use default styling
 
   // Initial time range
   const initialTimeRange: TimeRange = {
@@ -81,7 +78,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
     refreshInterval: 5 * 60 * 1000, // 5 minutes
     enableRealtime: true,
     onError: (err) => {
-      toast?.({
+      toast({
         title: 'Error',
         description: err.message,
         variant: 'destructive'
@@ -183,7 +180,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
     }));
 
     exportToCSV(data, 'crash-analytics');
-    toast?.({
+    toast({
       title: 'Export Successful',
       description: 'Analytics data exported to CSV'
     });
@@ -199,7 +196,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
     };
 
     exportToJSON(exportData, 'crash-analytics');
-    toast?.({
+    toast({
       title: 'Export Successful',
       description: 'Analytics data exported to JSON'
     });
@@ -221,12 +218,12 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
         }
       );
       
-      toast?.({
+      toast({
         title: 'Export Successful',
         description: `Report exported to ${filename}`
       });
     } catch (error) {
-      toast?.({
+      toast({
         title: 'Export Failed',
         description: 'Failed to generate PDF report',
         variant: 'destructive'
@@ -237,7 +234,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
   if (loading && !isRefreshing) {
     return (
       <div className="flex items-center justify-center h-full">
-        <Spinner size="large" />
+        <Loader2 className="animate-spin" size="large" />
       </div>
     );
   }
@@ -427,7 +424,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               <TimeSeriesChart
                 data={timeSeriesData}
                 height={300}
-                isDark={theme === 'dark'}
+                isDark={false}
                 enableInteractions={true}
                 onDrillDown={(dataPoint) => {
                   // Handle drill-down navigation
@@ -451,7 +448,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               <RootCauseChart
                 data={rootCauseData}
                 height={300}
-                isDark={theme === 'dark'}
+                isDark={false}
               />
             )}
           </CardContent>
@@ -470,7 +467,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               <ModelPerformanceChart
                 data={modelPerformance}
                 height={300}
-                isDark={theme === 'dark'}
+                isDark={false}
               />
             )}
           </CardContent>
@@ -489,7 +486,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
               <SeverityTrendChart
                 data={severityTrends}
                 height={300}
-                isDark={theme === 'dark'}
+                isDark={false}
               />
             )}
           </CardContent>

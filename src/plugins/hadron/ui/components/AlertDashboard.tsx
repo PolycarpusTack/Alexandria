@@ -4,28 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  Button,
-  Badge,
-  Table,
-  Input,
-  Select,
-  Switch,
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  toast
-} from '../../../../ui/components';
+
 import {
   Bell,
   BellOff,
@@ -47,7 +26,18 @@ import { AlertRule, AlertEvent, AlertSeverity } from '../../src/interfaces/alert
 import { format } from 'date-fns';
 import { cn } from '../../../../client/lib/utils';
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../../client/components/ui/card';
+import { Button } from '../../../../client/components/ui/button';
+import { Badge } from '../../../../client/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../../client/components/ui/table';
+import { Input } from '../../../../client/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../../client/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../client/components/ui/tabs';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '../../../../client/components/ui/dialog';
+import { Switch } from '../../../../client/components/ui/switch';
+import { useToast } from '../../../../client/components/ui/use-toast'
 export const AlertDashboard: React.FC = () => {
+  const { toast } = useToast();
   const {
     activeAlerts,
     alertHistory,

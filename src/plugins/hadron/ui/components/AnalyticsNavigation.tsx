@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Button } from '../../../../ui/components';
+
 import {
   BarChart3,
   FileText,
@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { cn } from '../../../../client/lib/utils';
 
+import { Button } from '../../../../client/components/ui/button'
 interface NavigationItem {
   path: string;
   label: string;

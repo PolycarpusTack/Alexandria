@@ -1,8 +1,9 @@
 import React from 'react';
-import { Card, CardContent } from '../../../../ui/components';
+
 import { TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
 import { cn } from '../../../../client/lib/utils';
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../../client/components/ui/card'
 interface MetricCardProps {
   title: string;
   value: string | number;

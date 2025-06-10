@@ -1,0 +1,75 @@
+{
+  "name": "alexandria-templates",
+  "displayName": "Alexandria Templates & Snippets",
+  "version": "1.0.0",
+  "author": "Alexandria Platform Team",
+  "description": "Advanced template and snippet management system for Alexandria Platform",
+  "icon": "fa-solid fa-file-code",
+  "color": "#a78bfa",
+  "main": "./dist/index.js",
+  "activationEvents": [
+    "onStartup",
+    "onCommand:templates.*",
+    "onView:templatesExplorer"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "templates.createFromTemplate",
+        "title": "Create from Template",
+        "icon": "fa-solid fa-file-plus"
+      },
+      {
+        "command": "templates.insertSnippet",
+        "title": "Insert Snippet",
+        "icon": "fa-solid fa-code"
+      },
+      {
+        "command": "templates.generateWithAlfred",
+        "title": "Generate with ALFRED",
+        "icon": "fa-solid fa-brain"
+      }
+    ],
+    "views": {
+      "explorer": [
+        {
+          "id": "templatesExplorer",
+          "name": "Templates",
+          "icon": "fa-solid fa-folder-tree"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Alexandria Templates",
+      "properties": {
+        "alexandria-templates.defaultEngine": {
+          "type": "string",
+          "default": "handlebars",
+          "enum": ["handlebars", "liquid", "ejs"],
+          "description": "Default template engine"
+        },
+        "alexandria-templates.enableAlfredIntegration": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable ALFRED AI integration for template generation"
+        }
+      }
+    }
+  },
+  "dependencies": {
+    "handlebars": "^4.7.7",
+    "liquidjs": "^10.4.0",
+    "ejs": "^3.1.9"
+  },
+  "alexandriaPlugin": {
+    "category": "productivity",
+    "requiredPlugins": ["alfred"],
+    "optionalPlugins": ["crash-analyzer", "heimdall"],
+    "permissions": [
+      "workspace.read",
+      "workspace.write",
+      "alfred.generate",
+      "analytics.track"
+    ]
+  }
+}

@@ -1,7 +1,8 @@
 import React, { useMemo } from 'react';
-import { Card } from '../../../../ui/components';
+
 import { CrashLog } from '../../src/interfaces';
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../../client/components/ui/card'
 interface StatsSummaryProps {
   crashLogs: CrashLog[];
 }

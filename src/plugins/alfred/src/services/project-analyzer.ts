@@ -2,8 +2,8 @@
  * Project Analyzer Service - Analyzes project structure and detects project types
  */
 
-import { Injectable } from '@alexandria/common';
-import { Logger, FileService, EventBus } from '@alexandria/core';
+import { Logger } from '@utils/logger';
+import { EventBus } from '@core/event-bus/event-bus';
 import { 
   ProjectContext, 
   ProjectType, 
@@ -16,7 +16,6 @@ import {
 import * as path from 'path';
 import * as fs from 'fs/promises';
 
-@Injectable()
 export class ProjectAnalyzerService implements IProjectAnalyzerService {
   private projectCache: Map<string, ProjectContext> = new Map();
   private filePatterns: Map<string, string[]> = new Map([
@@ -32,7 +31,6 @@ export class ProjectAnalyzerService implements IProjectAnalyzerService {
 
   constructor(
     private logger: Logger,
-    private fileService: FileService,
     private eventBus: EventBus
   ) {}
 
@@ -47,7 +45,7 @@ export class ProjectAnalyzerService implements IProjectAnalyzerService {
       }
 
       // Verify path exists
-      const exists = await this.fileService.exists(projectPath);
+      const exists = await fs.access(projectPath).then(() => true).catch(() => false);
       if (!exists) {
         throw new Error(`Project path does not exist: ${projectPath}`);
       }
@@ -91,7 +89,7 @@ export class ProjectAnalyzerService implements IProjectAnalyzerService {
 
   async analyzeCurrentProject(): Promise<ProjectContext | null> {
     // Get current project from Alexandria's project service
-    const currentProjectPath = await this.fileService.getCurrentWorkingDirectory();
+    const currentProjectPath = process.cwd();
     if (!currentProjectPath) {
       return null;
     }
@@ -120,7 +118,7 @@ export class ProjectAnalyzerService implements IProjectAnalyzerService {
   }
 
   async detectProjectType(projectPath: string): Promise<ProjectType> {
-    const fileList = await this.fileService.listDirectory(projectPath, { recursive: true });
+    const fileList = await this.listDirectoryRecursive(projectPath);
     const fileExtensions = new Map<string, number>();
     const markers = new Map<string, string[]>();
 
@@ -416,7 +414,7 @@ export class ProjectAnalyzerService implements IProjectAnalyzerService {
       const markers = ['.git', 'package.json', 'requirements.txt', 'pom.xml', 'go.mod'];
       
       for (const marker of markers) {
-        if (await this.fileService.exists(path.join(currentPath, marker))) {
+        if (await fs.access(path.join(currentPath, marker)).then(() => true).catch(() => false)) {
           return currentPath;
         }
       }
@@ -431,5 +429,31 @@ export class ProjectAnalyzerService implements IProjectAnalyzerService {
     // Cache is valid for 5 minutes
     const cacheTimeout = 5 * 60 * 1000;
     return (Date.now() - context.analyzedAt.getTime()) < cacheTimeout;
+  }
+
+  private async listDirectoryRecursive(dirPath: string): Promise<Array<{ name: string; isDirectory: boolean }>> {
+    const results: Array<{ name: string; isDirectory: boolean }> = [];
+    
+    async function* walk(dir: string): AsyncGenerator<{ name: string; isDirectory: boolean }> {
+      const entries = await fs.readdir(dir, { withFileTypes: true });
+      
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        const relativePath = path.relative(dirPath, fullPath);
+        
+        if (entry.isDirectory()) {
+          yield { name: relativePath, isDirectory: true };
+          yield* walk(fullPath);
+        } else {
+          yield { name: relativePath, isDirectory: false };
+        }
+      }
+    }
+    
+    for await (const item of walk(dirPath)) {
+      results.push(item);
+    }
+    
+    return results;
   }
 }

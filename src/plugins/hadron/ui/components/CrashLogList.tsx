@@ -1,8 +1,10 @@
 import React from 'react';
 import { format } from 'date-fns';
 import { CrashLog } from '../../src/interfaces';
-import { Badge, Button } from '../../../../ui/components';
 
+
+import { Badge } from '../../../../client/components/ui/badge';
+import { Button } from '../../../../client/components/ui/button'
 interface CrashLogListProps {
   crashLogs: CrashLog[];
   onLogClick: (logId: string) => void;

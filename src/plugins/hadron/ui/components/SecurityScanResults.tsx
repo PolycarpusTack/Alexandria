@@ -16,15 +16,12 @@ import {
   TableBody,
   TableCell,
 } from "../../../../ui/components/ui/table";
-import {
-  Badge,
-  Button,
-  Alert,
-  AlertTitle,
-  AlertDescription,
-} from "../../../../ui/components";
+
 import { Shield, ShieldCheck, ShieldAlert, ShieldX } from "lucide-react";
 
+import { Badge } from '../../../../client/components/ui/badge';
+import { Button } from '../../../../client/components/ui/button';
+import { Alert, AlertDescription, AlertTitle } from '../../../../client/components/ui/alert'
 interface FileScanResult {
   fileId: string;
   filename: string;

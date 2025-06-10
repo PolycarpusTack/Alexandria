@@ -46,6 +46,22 @@ const MockupLogin: React.FC = () => {
     setIsLoading(true);
     
     try {
+      // Temporary: Allow demo login without backend
+      if (username === 'demo' && password === 'demo') {
+        const demoUser = {
+          id: 'demo-user',
+          email: 'demo@alexandria.local',
+          username: 'demo',
+          name: 'Demo User',
+          role: 'admin'
+        };
+        const demoToken = 'demo-token-' + Date.now();
+        
+        auth?.login(demoToken, demoUser);
+        navigate(from, { replace: true });
+        return;
+      }
+      
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {

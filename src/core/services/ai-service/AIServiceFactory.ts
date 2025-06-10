@@ -147,7 +147,7 @@ export class AIServiceFactory extends EventEmitter {
     
     // If no default service, use first available
     if (!this.defaultService && this.services.size > 0) {
-      this.defaultService = this.services.values().next().value;
+      this.defaultService = this.services.values().next().value || null;
       this.logger.info('Using first available service as default');
     }
   }

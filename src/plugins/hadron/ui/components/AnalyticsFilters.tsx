@@ -1,7 +1,8 @@
 import React from 'react';
-import { Card } from '../../../../ui/components';
+
 import { Filter } from 'lucide-react';
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../../client/components/ui/card'
 interface AnalyticsFiltersProps {
   selectedPlatform: string;
   selectedSeverity: string;

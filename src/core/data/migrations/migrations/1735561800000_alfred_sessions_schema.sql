@@ -10,9 +10,7 @@ CREATE TABLE IF NOT EXISTS alfred_sessions (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   user_id VARCHAR(36),
-  
-  -- Foreign key constraint (optional, depends on your user table)
-  -- CONSTRAINT fk_alfred_sessions_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+  CONSTRAINT fk_alfred_sessions_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Create indexes for performance
@@ -24,7 +22,7 @@ CREATE INDEX IF NOT EXISTS idx_alfred_sessions_updated_at ON alfred_sessions(upd
 -- Full text search index for message content
 CREATE INDEX IF NOT EXISTS idx_alfred_sessions_messages_gin ON alfred_sessions USING gin(messages);
 
--- Function to update the updated_at timestamp
+-- Function to update the updated_at timestamp for alfred_sessions
 CREATE OR REPLACE FUNCTION update_alfred_sessions_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -52,7 +50,8 @@ CREATE TABLE IF NOT EXISTS alfred_templates (
   is_public BOOLEAN DEFAULT true,
   user_id VARCHAR(36),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_alfred_templates_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
 -- Create indexes for templates
@@ -66,12 +65,17 @@ CREATE INDEX IF NOT EXISTS idx_alfred_templates_search ON alfred_templates USING
   to_tsvector('english', name || ' ' || COALESCE(description, '') || ' ' || content)
 );
 
+-- Function to update the updated_at timestamp for alfred_templates
+CREATE OR REPLACE FUNCTION update_alfred_templates_updated_at()
+RETURNS TRIGGER AS $$
+BEGIN
+  NEW.updated_at = CURRENT_TIMESTAMP;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 -- Trigger for template updated_at
 CREATE TRIGGER alfred_templates_updated_at_trigger
   BEFORE UPDATE ON alfred_templates
   FOR EACH ROW
-  EXECUTE FUNCTION update_alfred_sessions_updated_at();
-
--- Grant permissions (adjust based on your user roles)
--- GRANT SELECT, INSERT, UPDATE, DELETE ON alfred_sessions TO alexandria_app;
--- GRANT SELECT, INSERT, UPDATE, DELETE ON alfred_templates TO alexandria_app;
+  EXECUTE FUNCTION update_alfred_templates_updated_at();

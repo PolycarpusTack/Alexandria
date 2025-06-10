@@ -7,7 +7,7 @@ import { Router } from 'express';
 import os from 'os';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import { getDataService } from '../core/data/data-service-factory';
+import { createDataService } from '../core/data/data-service-factory';
 
 const execAsync = promisify(exec);
 const router = Router();
@@ -99,27 +99,48 @@ router.get('/system/metrics', async (req, res) => {
 // Get platform statistics summary
 router.get('/stats/summary', async (req, res) => {
   try {
-    const dataService = getDataService();
+    const logger = req.app.locals.logger;
+    const dataService = createDataService({}, logger);
     
-    // Get stats from database or calculate from logs
+    // Initialize data service
+    await dataService.initialize();
+    
     const endTime = new Date();
     const startTime = new Date(endTime.getTime() - 24 * 60 * 60 * 1000); // Last 24 hours
     
-    // These would be actual queries in production
-    const totalRequests = await dataService.query('SELECT COUNT(*) as count FROM requests WHERE timestamp > ?', [startTime]);
-    const totalErrors = await dataService.query('SELECT COUNT(*) as count FROM requests WHERE timestamp > ? AND status >= 400', [startTime]);
-    const activeUsers = await dataService.query('SELECT COUNT(DISTINCT user_id) as count FROM sessions WHERE last_activity > ?', [new Date(Date.now() - 30 * 60 * 1000)]);
-    const avgResponseTime = await dataService.query('SELECT AVG(response_time) as avg FROM requests WHERE timestamp > ?', [startTime]);
+    // Use LogEntryRepository to get request/error stats
+    const requestLogs = await dataService.logs.findByTimeRange(startTime, endTime);
+    
+    // Calculate stats from logs
+    const totalRequests = requestLogs.filter(log => 
+      log.source === 'api' && log.context?.type === 'request'
+    ).length;
+    
+    const totalErrors = requestLogs.filter(log => 
+      log.level === 'error' || (log.context?.statusCode && log.context.statusCode >= 400)
+    ).length;
+    
+    // Get active users count
+    const activeUsers = await dataService.users.count();
+    
+    // Calculate average response time from request logs
+    const responseTimes = requestLogs
+      .filter(log => log.context?.responseTime)
+      .map(log => log.context.responseTime);
+    const avgResponseTime = responseTimes.length > 0 
+      ? responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length 
+      : 0;
 
     res.json({
-      totalRequests: totalRequests?.[0]?.count || 0,
-      totalErrors: totalErrors?.[0]?.count || 0,
-      activeUsers: activeUsers?.[0]?.count || 0,
-      avgResponseTime: Math.round(avgResponseTime?.[0]?.avg || 0),
+      totalRequests,
+      totalErrors,
+      activeUsers,
+      avgResponseTime: Math.round(avgResponseTime),
       period: '24h',
       timestamp: new Date()
     });
   } catch (error) {
+    console.error('Failed to get stats summary:', error);
     // Return zeros if database is not set up yet
     res.json({
       totalRequests: 0,
@@ -162,17 +183,33 @@ router.get('/stats/timeline', async (req, res) => {
 router.get('/activities', async (req, res) => {
   try {
     const limit = parseInt(req.query.limit as string) || 10;
-    const dataService = getDataService();
+    const logger = req.app.locals.logger;
+    const dataService = createDataService({}, logger);
     
-    // Fetch recent activities from database
-    const activities = await dataService.query(
-      'SELECT * FROM activities ORDER BY timestamp DESC LIMIT ?',
-      [limit]
-    );
+    // Initialize data service
+    await dataService.initialize();
     
-    res.json(activities || []);
+    // Fetch recent activities from logs
+    const allLogs = await dataService.logs.findAll({
+      limit,
+      orderBy: 'timestamp',
+      orderDirection: 'desc'
+    });
+    
+    // Transform logs into activities format
+    const activities = allLogs.map(log => ({
+      id: log.id,
+      timestamp: log.timestamp,
+      type: log.level,
+      description: log.message,
+      source: log.source,
+      metadata: log.context
+    }));
+    
+    res.json(activities);
   } catch (error) {
-    // Return empty array if no activities table exists yet
+    console.error('Failed to get activities:', error);
+    // Return empty array if database is not ready
     res.json([]);
   }
 });
@@ -180,32 +217,66 @@ router.get('/activities', async (req, res) => {
 // Get plugin information
 router.get('/plugins', async (req, res) => {
   try {
-    const dataService = getDataService();
+    const logger = req.app.locals.logger;
+    const dataService = createDataService({}, logger);
     
-    // Get registered plugins
-    const plugins = await dataService.query('SELECT * FROM plugins WHERE enabled = true');
+    // Initialize data service
+    await dataService.initialize();
     
-    // Add metrics for each plugin if available
+    // Get plugin data from plugin storage
+    const pluginIds = ['alfred', 'hadron', 'heimdall'];
     const pluginsWithMetrics = await Promise.all(
-      (plugins || []).map(async (plugin: any) => {
+      pluginIds.map(async (pluginId) => {
         try {
-          const metrics = await dataService.query(
-            'SELECT COUNT(*) as requests, SUM(CASE WHEN status >= 400 THEN 1 ELSE 0 END) as errors, AVG(response_time) as latency FROM plugin_requests WHERE plugin_id = ? AND timestamp > ?',
-            [plugin.id, new Date(Date.now() - 60 * 60 * 1000)]
-          );
+          // Get plugin info from storage
+          const pluginInfo = await dataService.pluginStorage.get(pluginId, 'info') || {
+            id: pluginId,
+            name: pluginId.charAt(0).toUpperCase() + pluginId.slice(1),
+            version: '1.0.0',
+            status: 'active'
+          };
+          
+          // Get plugin metrics from logs
+          const pluginLogs = await dataService.logs.findBySource(`plugin:${pluginId}`);
+          const errorLogs = pluginLogs.filter(log => log.level === 'error').length;
+          const requestLogs = pluginLogs.filter(log => log.context?.type === 'request').length;
+          
+          // Calculate average latency
+          const latencies = pluginLogs
+            .filter(log => log.context?.latency)
+            .map(log => log.context.latency);
+          const avgLatency = latencies.length > 0
+            ? latencies.reduce((a, b) => a + b, 0) / latencies.length
+            : 0;
           
           return {
-            ...plugin,
-            metrics: metrics?.[0] || {}
+            ...pluginInfo,
+            metrics: {
+              requests: requestLogs,
+              errors: errorLogs,
+              latency: Math.round(avgLatency)
+            }
           };
-        } catch {
-          return plugin;
+        } catch (error) {
+          // Return default plugin info if error
+          return {
+            id: pluginId,
+            name: pluginId.charAt(0).toUpperCase() + pluginId.slice(1),
+            version: '1.0.0',
+            status: 'active',
+            metrics: {
+              requests: 0,
+              errors: 0,
+              latency: 0
+            }
+          };
         }
       })
     );
     
     res.json(pluginsWithMetrics);
   } catch (error) {
+    console.error('Failed to get plugin information:', error);
     // Return hardcoded plugins if database is not ready
     res.json([
       {

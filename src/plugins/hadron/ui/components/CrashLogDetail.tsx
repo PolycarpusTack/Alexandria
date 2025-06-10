@@ -1,23 +1,22 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
-import { 
-  Card, 
-  Button, 
-  Spinner, 
-  Tabs,
-  Tab,
-  Badge,
-  toast,
+import { Card, CardContent, CardHeader, CardTitle } from '../../../../client/components/ui/card';
+import { Button } from '../../../../client/components/ui/button';
+import { Badge } from '../../../../client/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../client/components/ui/tabs';
+import {
   Dialog,
-  DialogTrigger,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
   DialogClose
-} from '../../../../ui/components';
+} from '../../../../client/components/ui/dialog';
+import { useToast } from '../../../../client/components/ui/use-toast';
+import { Loader2 } from 'lucide-react';
 import { CrashLog, CrashAnalysisResult } from '../../src/interfaces';
 import { RootCauseList } from './RootCauseList';
 import { LogViewer } from './LogViewer';
@@ -274,7 +273,7 @@ export const CrashLogDetail: React.FC<CrashLogDetailProps> = ({ crashAnalyzerSer
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <Spinner size="large" />
+        <Loader2 className="animate-spin" size="large" />
       </div>
     );
   }
@@ -318,7 +317,7 @@ export const CrashLogDetail: React.FC<CrashLogDetailProps> = ({ crashAnalyzerSer
               onClick={handleConfirmDelete}
               disabled={loading}
             >
-              {loading ? <Spinner size="small" className="mr-2" /> : null}
+              {loading ? <Loader2 className="animate-spin" size="small" className="mr-2" /> : null}
               Delete
             </Button>
           </DialogFooter>

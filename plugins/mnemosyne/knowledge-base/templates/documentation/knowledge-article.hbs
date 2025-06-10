@@ -1,0 +1,116 @@
+# {{title}}
+
+**Knowledge ID**: {{mnemosyne.id}}  
+**Created**: {{mnemosyne.created}}  
+**Last Updated**: {{mnemosyne.updated}}  
+**Author**: {{author.name}} ({{author.email}})  
+**Version**: {{mnemosyne.version}}
+
+## Tags
+{{#each tags}}
+<span class="tag">{{this}}</span> 
+{{/each}}
+
+## Summary
+{{summary}}
+
+## Table of Contents
+{{#if mnemosyne.toc}}
+{{mnemosyne.toc}}
+{{else}}
+1. [Overview](#overview)
+2. [Details](#details)
+3. [Related Knowledge](#related-knowledge)
+4. [References](#references)
+{{/if}}
+
+## Overview
+{{overview}}
+
+## Details
+{{content}}
+
+## Knowledge Graph Connections
+
+### Prerequisites
+{{#if mnemosyne.prerequisites}}
+{{#each mnemosyne.prerequisites}}
+- [{{this.title}}](mnemosyne://{{this.id}}) - {{this.description}}
+{{/each}}
+{{else}}
+*No prerequisites identified*
+{{/if}}
+
+### Related Concepts
+{{#each mnemosyne.related}}
+- [{{this.title}}](mnemosyne://{{this.id}}) 
+  - **Relevance**: {{this.relevance}}%
+  - **Type**: {{this.relationType}}
+  - **Summary**: {{this.summary}}
+{{/each}}
+
+### Derived Knowledge
+{{#if mnemosyne.derived}}
+Documents that build upon this knowledge:
+{{#each mnemosyne.derived}}
+- [{{this.title}}](mnemosyne://{{this.id}}) - {{this.description}}
+{{/each}}
+{{/if}}
+
+## Learning Path
+{{#if mnemosyne.learningPath}}
+### Suggested Reading Order
+{{#each mnemosyne.learningPath.steps}}
+{{@index}}. **[{{this.title}}](mnemosyne://{{this.id}})**
+   - Estimated Time: {{this.estimatedTime}}
+   - Difficulty: {{this.difficulty}}
+   - Key Concepts: {{#each this.concepts}}{{this}}{{#unless @last}}, {{/unless}}{{/each}}
+{{/each}}
+
+### Total Learning Time: {{mnemosyne.learningPath.totalTime}}
+{{/if}}
+
+## Collaborative Notes
+{{#if mnemosyne.collaborativeNotes}}
+{{#each mnemosyne.collaborativeNotes}}
+### {{this.author}} - {{this.timestamp}}
+{{this.note}}
+
+{{#if this.references}}
+**References**: {{#each this.references}}[{{@index}}]({{this}}) {{/each}}
+{{/if}}
+{{/each}}
+{{else}}
+*Be the first to add a collaborative note*
+{{/if}}
+
+## Version History
+{{#each mnemosyne.versions}}
+- **v{{this.version}}** ({{this.date}}) by {{this.author}}
+  - {{this.summary}}
+  {{#if this.changes}}
+  - Changes: {{#each this.changes}}{{this}}; {{/each}}
+  {{/if}}
+{{/each}}
+
+## Analytics
+- **Views**: {{mnemosyne.analytics.views}}
+- **Average Reading Time**: {{mnemosyne.analytics.avgReadingTime}}
+- **Helpfulness Score**: {{mnemosyne.analytics.helpfulness}}/5
+- **Last Accessed**: {{mnemosyne.analytics.lastAccessed}}
+
+## References
+{{#if references}}
+{{#each references}}
+{{@index}}. {{this.title}}. {{this.author}}. {{this.year}}. {{#if this.url}}[Link]({{this.url}}){{/if}}
+{{/each}}
+{{else}}
+*No external references*
+{{/if}}
+
+---
+*This document is part of the {{mnemosyne.knowledgeBase}} knowledge base, managed by Mnemosyne v{{mnemosyne.systemVersion}}*
+
+<!-- Mnemosyne Metadata
+{{mnemosyne.metadata}}
+-->

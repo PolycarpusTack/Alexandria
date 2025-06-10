@@ -2,8 +2,9 @@
  * Code Generator Service - AI-powered code generation with templates
  */
 
-import { Injectable } from '@alexandria/common';
-import { Logger, EventBus, AIService } from '@alexandria/core';
+import { Logger } from '@utils/logger';
+import { EventBus } from '@core/event-bus/event-bus';
+import { AIService } from '@core/services/ai-service';
 import { 
   CodeGenerationRequest,
   CodeGenerationResponse,
@@ -13,7 +14,6 @@ import {
 } from '../interfaces';
 import { TemplateManagerService } from './template-manager';
 
-@Injectable()
 export class CodeGeneratorService implements ICodeGeneratorService {
   private generationHistory: Map<string, CodeGenerationResponse> = new Map();
 

@@ -1,7 +1,8 @@
 import React from 'react';
-import { Card } from '../../../../ui/components';
+
 import { SystemInfo as SystemInfoType } from '../../src/interfaces';
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../../client/components/ui/card'
 interface SystemInfoProps {
   systemInfo: SystemInfoType;
   metadata: Record<string, any>;

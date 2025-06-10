@@ -351,6 +351,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               <span>{action.label}</span>
             </button>
           ))}
+        </div>
       )}
 
       {/* Input */}

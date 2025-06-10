@@ -1,14 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { 
-  Card, 
-  Button, 
-  Spinner, 
-  Select,
-  TextArea,
-  Input,
-  toast
-} from '../../../../ui/components';
 
+
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../../client/components/ui/card';
+import { Button } from '../../../../client/components/ui/button';
+import { Loader2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../../client/components/ui/select';
+import { Input } from '../../../../client/components/ui/input';
+import { useToast } from '../../../../client/components/ui/use-toast'
 /**
  * Interface for the crash analyzer service
  * Defines the methods available on the service for type safety
@@ -370,7 +368,7 @@ export const CodeSnippetUpload: React.FC<CodeSnippetUploadProps> = ({
           >
             {loading ? (
               <>
-                <Spinner size="small" className="mr-2" />
+                <Loader2 className="animate-spin" size="small" className="mr-2" />
                 Analyzing...
               </>
             ) : (

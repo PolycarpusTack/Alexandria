@@ -1,9 +1,12 @@
+import { Button } from '../../../../client/components/ui/button';
+import { useToast } from '../../../../client/components/ui/use-toast'
+
 "use client"
 
 import React, { useEffect, useState, useCallback } from 'react'
 import { StatusIndicator } from '../../../../client/components/ui/status-indicator'
 import { CrashAnalyzerService } from '../../src/services/crash-analyzer-service'
-import { Button, toast } from '../../../../ui/components'
+
 
 interface OllamaStatusIndicatorProps {
   crashAnalyzerService: CrashAnalyzerService

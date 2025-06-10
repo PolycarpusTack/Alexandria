@@ -2,15 +2,22 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Card, 
-  Button, 
-  Spinner, 
-  EmptyState,
-  toast,
-  Pagination,
-  Input,
-  Select 
-} from '../../../../client/components/ui';
-import { useUIContext } from '../../../../client/context/ui-context';
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from '../../../../client/components/ui/card';
+import { Button } from '../../../../client/components/ui/button';
+import { Input } from '../../../../client/components/ui/input';
+import { 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue 
+} from '../../../../client/components/ui/select';
+import { useToast } from '../../../../client/components/ui/use-toast';
+// UI context import removed - using proper component imports
 import { CrashLog } from '../../src/interfaces';
 import { CrashLogList } from './CrashLogList';
 import { StatsSummary } from './StatsSummary';
@@ -20,6 +27,54 @@ import { HadronEnhancedLayout } from './HadronEnhancedLayout';
 interface DashboardProps {
   crashAnalyzerService: any;
 }
+
+
+const EmptyState = ({ title, description, icon: Icon, action }: { 
+  title: string; 
+  description?: string; 
+  icon?: any;
+  action?: React.ReactNode;
+}) => (
+  <div className="flex flex-col items-center justify-center py-12 text-center">
+    {Icon && <Icon className="h-12 w-12 text-muted-foreground mb-4" />}
+    <h3 className="text-lg font-medium mb-2">{title}</h3>
+    {description && <p className="text-sm text-muted-foreground mb-4">{description}</p>}
+    {action}
+  </div>
+);
+
+
+const Pagination = ({ 
+  currentPage, 
+  totalPages, 
+  onPageChange 
+}: { 
+  currentPage: number; 
+  totalPages: number; 
+  onPageChange: (page: number) => void;
+}) => (
+  <div className="flex items-center justify-center gap-2 mt-4">
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={() => onPageChange(currentPage - 1)}
+      disabled={currentPage === 1}
+    >
+      Previous
+    </Button>
+    <span className="text-sm text-muted-foreground">
+      Page {currentPage} of {totalPages}
+    </span>
+    <Button
+      variant="outline"
+      size="sm"
+      onClick={() => onPageChange(currentPage + 1)}
+      disabled={currentPage === totalPages}
+    >
+      Next
+    </Button>
+  </div>
+);
 
 export const Dashboard: React.FC<DashboardProps> = ({ crashAnalyzerService }) => {
   const [loading, setLoading] = useState(true);
@@ -35,11 +90,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ crashAnalyzerService }) =>
   const [refreshing, setRefreshing] = useState(false);
   const navigate = useNavigate();
   
+  const { toast } = useToast();
+  
   // Handle UI context safely - it might not be available when loaded as a plugin
   let showModal: ((modalId: string, props?: any) => void) | undefined;
   try {
-    const uiContext = useUIContext();
-    showModal = uiContext?.showModal;
+    // Remove UI context dependency for now
+    showModal = undefined;
   } catch (error) {
     // UI context not available - we'll handle modals differently
     console.warn('UI context not available in Hadron Dashboard, using fallback modal handling');
@@ -110,7 +167,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ crashAnalyzerService }) =>
     } catch (err) {
       const errorMsg = 'Failed to load crash logs. Please try again.';
       setError(errorMsg);
-      toast?.({ title: 'Error', description: errorMsg, variant: 'destructive' });
+      toast({ title: 'Error', description: errorMsg, variant: 'destructive' });
       console.error('Error loading crash logs:', err);
     } finally {
       setLoading(false);
@@ -188,7 +245,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ crashAnalyzerService }) =>
   if (loading && !refreshing) {
     return (
       <div className="flex items-center justify-center h-full">
-        <Spinner size="large" />
+        <Loader2 className="animate-spin" size="large" />
       </div>
     );
   }
@@ -213,7 +270,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ crashAnalyzerService }) =>
                   onClick={handleRefresh}
                   disabled={refreshing}
                 >
-                  {refreshing ? <Spinner size="small" /> : '↻'}
+                  {refreshing ? <Loader2 className="animate-spin" size="small" /> : '↻'}
                 </Button>
               </div>
             )}

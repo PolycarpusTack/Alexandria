@@ -1,0 +1,54 @@
+{
+  "alfred_api_endpoint": {
+    "prefix": "alfred-api",
+    "body": [
+      "// ALFRED API Endpoint",
+      "app.post('/api/alfred/{{endpoint}}', async (req, res) => {",
+      "  try {",
+      "    const { prompt, context } = req.body;",
+      "    const result = await alfred.generate({",
+      "      prompt,",
+      "      context,",
+      "      model: '{{model|codellama}}',",
+      "      temperature: {{temperature|0.3}}",
+      "    });",
+      "    res.json({ success: true, result });",
+      "  } catch (error) {",
+      "    res.status(500).json({ success: false, error: error.message });",
+      "  }",
+      "});"
+    ],
+    "description": "Create an ALFRED API endpoint"
+  },
+  
+  "alfred_react_hook": {
+    "prefix": "use-alfred",
+    "body": [
+      "import { useState, useCallback } from 'react';",
+      "import { useAlfred } from '@alexandria/alfred-sdk';",
+      "",
+      "export const use{{hookName}} = () => {",
+      "  const alfred = useAlfred();",
+      "  const [loading, setLoading] = useState(false);",
+      "  const [result, setResult] = useState(null);",
+      "  ",
+      "  const generate = useCallback(async (prompt) => {",
+      "    setLoading(true);",
+      "    try {",
+      "      const response = await alfred.generate({",
+      "        prompt,",
+      "        context: { {{context}} }",
+      "      });",
+      "      setResult(response);",
+      "      return response;",
+      "    } finally {",
+      "      setLoading(false);",
+      "    }",
+      "  }, [alfred]);",
+      "  ",
+      "  return { generate, result, loading };",
+      "};"
+    ],
+    "description": "Create a React hook for ALFRED integration"
+  }
+}

@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
-import { Card, Badge } from '../../../../ui/components';
+
 import { RootCause } from '../../src/interfaces';
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../../client/components/ui/card';
+import { Badge } from '../../../../client/components/ui/badge'
 interface RootCauseListProps {
   rootCauses: RootCause[];
 }

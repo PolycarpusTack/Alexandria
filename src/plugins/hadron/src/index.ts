@@ -1,7 +1,8 @@
 import { PluginContext, PluginLifecycle } from '../../../core/plugin-registry/interfaces';
 import { EnhancedCrashAnalyzerService } from './services/enhanced-crash-analyzer-service';
 import { EnhancedLogParser } from './services/enhanced-log-parser';
-import { EnhancedLlmService } from './services/enhanced-llm-service';
+import { AIServiceFactory } from './services/ai-service-factory';
+import { ILlmService } from './interfaces';
 import { CrashRepository } from './repositories/crash-repository';
 import { HadronRepository } from './repositories/hadron-repository';
 import { EnhancedFileStorageService } from './services/enhanced-file-storage-service';
@@ -27,7 +28,7 @@ export default class CrashAnalyzerPlugin implements PluginLifecycle {
   private context: PluginContext | null = null;
   private crashAnalyzerService: EnhancedCrashAnalyzerService | null = null;
   private logParser: EnhancedLogParser | null = null;
-  private llmService: EnhancedLlmService | null = null;
+  private llmService: ILlmService | null = null;
   private crashRepository: CrashRepository | null = null;
   private hadronRepository: HadronRepository | null = null;
   private fileStorage: EnhancedFileStorageService | null = null;
@@ -85,13 +86,14 @@ export default class CrashAnalyzerPlugin implements PluginLifecycle {
     
     // Initialize enhanced services
     this.logParser = new EnhancedLogParser(context.services.logger);
-    this.llmService = new EnhancedLlmService(
-      context.services.featureFlags, 
-      context.services.logger, 
-      context.services.eventBus,
-      undefined, // ollamaBaseUrl
-      context.services.cache // Add cache service
-    );
+    
+    // Create AI service using the factory (centralized by default)
+    const aiServiceFactory = new AIServiceFactory(context.services.logger, context.services.eventBus);
+    this.llmService = await aiServiceFactory.createAIService({
+      preferCentralized: true,
+      cacheService: context.services.cache,
+      featureFlagService: context.services.featureFlags
+    });
     
     // Create enhanced analyzer service
     this.crashAnalyzerService = new EnhancedCrashAnalyzerService(

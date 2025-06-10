@@ -1,14 +1,82 @@
-# Crash Analyzer Plugin
+# Hadron Plugin - AI-Powered Crash Analysis
 
-A plugin for Alexandria platform that analyzes software crash files to reduce debugging time.
+The Hadron plugin is a comprehensive crash analysis solution for the Alexandria platform that uses AI to provide intelligent insights into software crashes, reducing debugging time and improving software quality.
 
-## Features
+## 🚀 Features
 
-- Secure file upload for crash logs and code snippets
-- AI-powered analysis using locally deployed Ollama LLM
-- Various analysis options (explain crash, suggest fixes)
-- Storage of analysis history
-- Database integration for persistent storage
+### Core Capabilities
+- **🔍 AI-Powered Analysis**: Advanced crash log analysis using large language models
+- **📊 Real-time Analytics**: Comprehensive dashboards with crash trends and patterns  
+- **⚠️ Intelligent Alerts**: Configurable alerts for crash patterns and anomalies
+- **🔒 Enterprise Security**: File scanning, encryption, and access controls
+- **🧪 Code Analysis**: Static analysis for security, performance, and quality issues
+- **📈 Performance Monitoring**: Real-time system health and performance metrics
+
+### Advanced Features
+- **Multi-Platform Support**: iOS, Android, Web, Desktop crash log formats
+- **Centralized AI Integration**: Uses Alexandria's shared AI service for optimal performance
+- **Batch Processing**: Efficient handling of large crash log volumes
+- **Export Capabilities**: PDF, CSV, JSON export for reporting and integration
+- **API Integration**: RESTful APIs for external tool integration
+- **Real-time Updates**: WebSocket support for live dashboard updates
+
+## 📚 Documentation
+
+### For Users
+- **[User Guide](docs/USER_GUIDE.md)** - Complete guide for using the Hadron plugin
+- **[FAQ](docs/USER_GUIDE.md#faq)** - Frequently asked questions and troubleshooting
+
+### For Developers  
+- **[API Reference](docs/API_REFERENCE.md)** - Complete API documentation with examples
+- **[Plugin Development](../../../docs/development/plugin-development.md)** - Alexandria plugin development guide
+
+### For Administrators
+- **[Administrator Guide](docs/ADMINISTRATOR_GUIDE.md)** - Installation, configuration, and maintenance
+- **[Centralized AI Integration](CENTRALIZED_AI_INTEGRATION.md)** - AI service architecture and benefits
+
+## 🛠 Quick Start
+
+### Prerequisites
+- Alexandria platform v2.0+
+- AI service (Ollama or compatible) configured
+- Appropriate user permissions
+
+### Basic Usage
+1. **Upload Crash Log**: Use the "Upload Crash Log" button in the Hadron dashboard
+2. **Wait for Analysis**: AI analysis typically completes in 1-3 minutes
+3. **Review Results**: Examine root causes, confidence scores, and troubleshooting steps
+4. **Take Action**: Follow recommended fixes and monitor trends
+
+### API Example
+```bash
+# Upload crash log via API
+curl -X POST https://your-instance.com/api/hadron/crash-analyzer/logs \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -F "file=@crash.log" \
+  -F 'metadata={"platform":"iOS","appVersion":"1.2.3"}'
+```
+
+## 🏗 Architecture
+
+### System Components
+```
+Alexandria Platform
+├── Hadron Plugin
+│   ├── 🔄 Centralized AI Adapter
+│   ├── 🔍 Crash Analysis Service  
+│   ├── 📊 Analytics Service
+│   ├── 🔒 Security Service
+│   └── 📁 File Storage Service
+├── 🤖 Core AI Service
+├── 🗃️ Database Service
+└── 💾 File Storage System
+```
+
+### Key Improvements
+- **Centralized AI Integration**: Moved from direct Ollama integration to Alexandria's centralized AI service
+- **Enhanced Security**: Comprehensive file scanning and threat detection
+- **Improved Performance**: Caching, batch processing, and resource optimization
+- **Better Scalability**: Horizontal scaling support and load balancing
 
 ## Code Coverage
 

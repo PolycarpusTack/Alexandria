@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import DOMPurify from 'dompurify';
-import { Card, Button, Input } from '../../../../ui/components';
+
 import { ParsedCrashData } from '../../src/interfaces';
 
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../../client/components/ui/card';
+import { Button } from '../../../../client/components/ui/button';
+import { Input } from '../../../../client/components/ui/input'
 interface LogViewerProps {
   content: string;
   parsedData?: ParsedCrashData;
