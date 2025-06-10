@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Dialog } from '../../../../client/components/ui/dialog';
+import DialogCompound from '../../../../client/components/ui/dialog';
 import { Button } from '../../../../client/components/ui/button';
 import { Input } from '../../../../client/components/ui/input';
 import { Label } from '../../../../client/components/ui/label';
@@ -483,14 +483,14 @@ export const TemplateWizard: React.FC<TemplateWizardProps> = ({
   const progress = ((currentStep + 1) / wizardSteps.length) * 100;
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
-      <Dialog.Content className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
-        <Dialog.Header>
-          <Dialog.Title className="flex items-center gap-2">
+    <DialogCompound open={open} onOpenChange={onClose}>
+      <DialogCompound.Content className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogCompound.Header>
+          <DialogCompound.Title className="flex items-center gap-2">
             <Wand2 className="h-5 w-5" />
             Project Template Wizard
-          </Dialog.Title>
-        </Dialog.Header>
+          </DialogCompound.Title>
+        </DialogCompound.Header>
         
         <div className="px-6 py-2">
           <Progress value={progress} className="h-2" />
@@ -519,7 +519,7 @@ export const TemplateWizard: React.FC<TemplateWizardProps> = ({
           {currentStep === 2 && renderReview()}
         </div>
         
-        <Dialog.Footer className="px-6 py-4 border-t">
+        <DialogCompound.Footer className="px-6 py-4 border-t">
           <div className="flex justify-between w-full">
             <Button
               variant="outline"
@@ -549,8 +549,8 @@ export const TemplateWizard: React.FC<TemplateWizardProps> = ({
               </Button>
             </div>
           </div>
-        </Dialog.Footer>
-      </Dialog.Content>
-    </Dialog>
+        </DialogCompound.Footer>
+      </DialogCompound.Content>
+    </DialogCompound>
   );
 };

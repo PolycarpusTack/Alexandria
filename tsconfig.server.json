@@ -61,7 +61,8 @@
       "./node_modules/@types",
       "./src/types"
     ],
-    "allowSyntheticDefaultImports": true
+    "allowSyntheticDefaultImports": true,
+    "moduleResolution": "node"
   },
   "include": [
     "src/core/**/*",

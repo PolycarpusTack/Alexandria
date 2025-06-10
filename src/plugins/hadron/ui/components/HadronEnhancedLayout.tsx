@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { FileSearch, Upload, BarChart3, AlertCircle, Shield, Settings, User, LogOut, ChevronRight, Zap, Code, TrendingUp } from 'lucide-react';
+import {       FileSearch, Upload, BarChart3, AlertTriangle, Shield, Settings, User, LogOut, ChevronRight, Zap, Code, TrendingUp       } from 'lucide-react';
 import '../../../../client/styles/enhanced-mockup-layout.css';
 
 interface HadronEnhancedLayoutProps {
@@ -26,7 +26,7 @@ export function HadronEnhancedLayout({ children, activeView = 'dashboard', onVie
     { id: 'dashboard', icon: <Zap size={16} />, label: 'Crash Dashboard' },
     { id: 'upload', icon: <Upload size={16} />, label: 'Upload Logs' },
     { id: 'analytics', icon: <BarChart3 size={16} />, label: 'Analytics' },
-    { id: 'alerts', icon: <AlertCircle size={16} />, label: 'Alert Manager' },
+    { id: 'alerts', icon: <AlertTriangle size={16} />, label: 'Alert Manager' },
     { id: 'security', icon: <Shield size={16} />, label: 'Security Scans' },
   ];
 
@@ -79,7 +79,7 @@ export function HadronEnhancedLayout({ children, activeView = 'dashboard', onVie
               onClick={() => handleActivityClick('alerts')}
               title="Alerts"
             >
-              <AlertCircle size={20} />
+              <AlertTriangle size={20} />
               <span className="activity-badge">2</span>
             </div>
             <div 
@@ -161,7 +161,7 @@ export function HadronEnhancedLayout({ children, activeView = 'dashboard', onVie
                     <span className="activity-text">Analytics report generated</span>
                   </div>
                   <div className="activity-item-small">
-                    <AlertCircle size={14} className="text-warning" />
+                    <AlertTriangle size={14} className="text-warning" />
                     <span className="activity-text">High severity alert</span>
                   </div>
                 </div>

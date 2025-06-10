@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation, NavLink } from 'react-router-dom';
-import {
+import {     
   Home,
   Package,
   Settings,
@@ -12,7 +12,7 @@ import {
   Plus,
   ChevronDown,
   ChevronRight,
-} from 'lucide-react';
+     } from 'lucide-react';
 import { Button } from './ui/button';
 import {
   Collapsible,

@@ -13,7 +13,7 @@ import { useAuth } from '../App';
 import { createClientLogger } from '../utils/client-logger';
 import { useTheme } from '../components/theme-provider';
 import { cn } from '../lib/utils';
-import { 
+import {            
   Lightbulb, 
   Lock, 
   User, 
@@ -34,7 +34,7 @@ import {
   Terminal,
   Database,
   ChevronRight
-} from 'lucide-react';
+           } from 'lucide-react';
 
 const logger = createClientLogger({ serviceName: 'login-page' });
 

@@ -10,9 +10,9 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { useToast } from '../components/ui/use-toast';
-import { 
+import {       
   Activity, 
-  AlertCircle,
+  AlertTriangle,
   Brain,
   CheckCircle,
   Clock,
@@ -31,7 +31,7 @@ import {
   TrendingUp,
   Users,
   Zap
-} from 'lucide-react';
+      } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { SimpleChart, SimpleBarChart } from '../components/SimpleChart';
 
@@ -306,7 +306,7 @@ const LiveDashboard: React.FC = () => {
       {/* API Status Alert */}
       {!systemMetrics && (
         <Alert>
-          <AlertCircle className="h-4 w-4" />
+          <AlertTriangle className="h-4 w-4" />
           <AlertDescription>
             Some backend APIs are not available. Showing available data only.
           </AlertDescription>
@@ -426,7 +426,7 @@ const LiveDashboard: React.FC = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Error Rate</CardTitle>
-            <AlertCircle className="h-4 w-4 text-muted-foreground" />
+            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
@@ -691,7 +691,7 @@ const LiveDashboard: React.FC = () => {
                         activity.severity === 'warning' ? 'text-yellow-500' :
                         'text-blue-500'
                       }`}>
-                        {activity.severity === 'error' ? <AlertCircle className="h-4 w-4" /> :
+                        {activity.severity === 'error' ? <AlertTriangle className="h-4 w-4" /> :
                          activity.severity === 'warning' ? <Info className="h-4 w-4" /> :
                          <CheckCircle className="h-4 w-4" />}
                       </div>

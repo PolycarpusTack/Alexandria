@@ -19,7 +19,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '../../../../../client/components/ui/select';
-import { 
+import {   
   Sparkles, 
   CheckCircle, 
   AlertTriangle, 
@@ -27,7 +27,7 @@ import {
   Lightbulb,
   RefreshCw,
   Copy
-} from 'lucide-react';
+  } from 'lucide-react';
 
 export interface VariableInputProps {
   variable: VariableSchema;

@@ -16,6 +16,7 @@ import dotenv from 'dotenv';
 import { initializeCore, CoreServices } from './core';
 import { createLogger } from './utils/logger';
 import { AuditEventType } from './core/security/interfaces';
+import { createRequestLogger } from './core/middleware/request-logger';
 // import { validateRequest, validationSchemas } from './core/middleware/validation-middleware'; // TODO: Re-enable when Joi is available
 
 // Import Node.js crypto module
@@ -159,7 +160,7 @@ const authLimiter = rateLimit({
       ip: req.ip,
       path: req.path
     });
-    (res.status(429) as any).json({
+    res.status(429).json({
       error: 'TOO_MANY_REQUESTS',
       message: 'Too many authentication attempts, please try again later'
     });
@@ -181,9 +182,12 @@ app.use('/api/', apiLimiter);
 // Apply stricter rate limiting to auth endpoints
 app.use('/api/auth', authLimiter);
 
+// Request logging middleware (after rate limiting, before routes)
+app.use(createRequestLogger(logger));
+
 // API Routes
 app.get('/api/health', (req, res) => {
-  (res as any).json({ status: 'ok', version: '1.0.0' });
+  res.json({ status: 'ok', version: '1.0.0' });
 });
 
 // Test endpoint for debugging
@@ -193,7 +197,7 @@ app.post('/api/test', (req, res) => {
     headers: req.headers,
     contentType: req.headers['content-type']
   });
-  (res as any).json({ 
+  res.json({ 
     received: req.body,
     message: 'Test successful'
   });
@@ -202,7 +206,7 @@ app.post('/api/test', (req, res) => {
 // Mount core service API routes after initialization
 app.use((req, res, next) => {
   if (!coreServices) {
-    return (res.status(503) as any).json({ error: 'Service not ready' });
+    return res.status(503).json({ error: 'Service not ready' });
   }
   next();
 });
@@ -222,7 +226,7 @@ app.post('/api/auth/login', async (req, res) => {
     
     if (!username || !password) {
       logger.warn('Login attempt with missing credentials');
-      return (res.status(400) as any).json({
+      return res.status(400).json({
         error: 'Missing username or password'
       });
     }
@@ -231,7 +235,7 @@ app.post('/api/auth/login', async (req, res) => {
     if (username === 'demo' && password === 'demo') {
       logger.info('Demo login successful');
       const demoToken = 'demo-token-' + Date.now();
-      return (res.status(200) as any).json({
+      return res.status(200).json({
         token: demoToken,
         user: {
           id: 'demo-user-id',
@@ -244,7 +248,7 @@ app.post('/api/auth/login', async (req, res) => {
     
     // Wait for core services to be initialized
     if (!coreServices || !coreServices.securityService) {
-      return (res.status(503) as any).json({
+      return res.status(503).json({
         error: 'Service unavailable',
         message: 'Core services not yet initialized'
       });
@@ -257,7 +261,7 @@ app.post('/api/auth/login', async (req, res) => {
     });
     
     if (!result) {
-      return (res.status(401) as any).json({
+      return res.status(401).json({
         error: 'Authentication failed',
         message: 'Invalid credentials'
       });
@@ -286,7 +290,7 @@ app.post('/api/auth/login', async (req, res) => {
       status: 'success'
     });
     
-    return (res.status(200) as any).json({
+    return res.status(200).json({
       token,
       user: {
         id: user.id,
@@ -359,7 +363,7 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
     method: req.method
   } as Record<string, any>);
   
-  (res.status(500) as any).json({
+  res.status(500).json({
     error: 'Internal Server Error',
     message: process.env.NODE_ENV === 'production' ? undefined : err.message
   });
@@ -369,6 +373,14 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
 async function start() {
   try {
     logger.info('Initializing Alexandria core system...');
+    
+    // Initialize network monitoring
+    const { initializeNetworkMonitoring } = await import('./utils/network-monitor');
+    await initializeNetworkMonitoring();
+    
+    // Initialize AI model monitoring
+    const { initializeAIModelMonitoring } = await import('./utils/ai-model-monitor');
+    await initializeAIModelMonitoring();
     
     // Determine which data service to use from environment variables
     const usePostgres = process.env.USE_POSTGRES === 'true';

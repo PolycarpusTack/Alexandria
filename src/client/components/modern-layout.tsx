@@ -9,7 +9,7 @@ import {
   useKeyboardShortcuts, 
   useNavigation 
 } from '../hooks';
-import { 
+import {                
   Activity,
   Brain,
   Code,
@@ -35,7 +35,7 @@ import {
   Zap,
   Key,
   Palette
-} from 'lucide-react';
+               } from 'lucide-react';
 import { Button } from './ui/button';
 import { 
   DropdownMenu,

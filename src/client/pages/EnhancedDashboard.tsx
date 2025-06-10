@@ -1,12 +1,12 @@
 import React, { useEffect, useRef } from 'react';
 import { cn } from '../lib/utils';
 import { useNavigate } from 'react-router-dom';
-import {
+import {        
   ArrowUp,
   ArrowDown,
   Brain,
   Bug,
-  ChartLine,
+  TrendingUp,
   Code,
   Database,
   FileExport,
@@ -17,7 +17,7 @@ import {
   FileCode,
   File as FileIcon,
   Check
-} from 'lucide-react';
+        } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
@@ -118,7 +118,7 @@ const EnhancedDashboard: React.FC = () => {
       name: 'Heimdall',
       version: 'v1.0.0',
       status: 'Inactive',
-      icon: <ChartLine className="w-5 h-5" />,
+      icon: <TrendingUp className="w-5 h-5" />,
       description: 'Advanced log visualization and pattern detection platform for system monitoring.',
       color: 'bg-purple-500',
       badge: 'Monitoring',

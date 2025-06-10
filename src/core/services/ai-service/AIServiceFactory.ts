@@ -12,6 +12,7 @@ import { OpenAIService } from './openai-service';
 import { AnthropicService } from './anthropic-service';
 import { ConfigManager, ModelRegistry, DetectedModel } from './config';
 import { CachedAIService } from './cached-ai-service';
+import { MetricsAIService } from './metrics-ai-service';
 
 export interface DynamicAIServiceOptions {
   configPath?: string;
@@ -20,6 +21,7 @@ export interface DynamicAIServiceOptions {
     ttl?: number;
     maxSize?: number;
   };
+  enableMetrics?: boolean;
 }
 
 export class AIServiceFactory extends EventEmitter {
@@ -28,11 +30,13 @@ export class AIServiceFactory extends EventEmitter {
   private services: Map<string, AIService>;
   private logger: Logger;
   private defaultService: AIService | null = null;
+  private options: DynamicAIServiceOptions;
 
   constructor(logger: Logger, options: DynamicAIServiceOptions = {}) {
     super();
     this.logger = logger;
     this.services = new Map();
+    this.options = options;
     
     // Initialize configuration manager
     const configPath = options.configPath || 
@@ -135,6 +139,8 @@ export class AIServiceFactory extends EventEmitter {
    * Create a service for a specific model
    */
   private async createServiceForModel(model: DetectedModel): Promise<AIService | null> {
+    let service: AIService | null = null;
+
     if (model.type === 'local' && model.provider === 'ollama') {
       // Create Ollama service
       const config: AIServiceConfig = {
@@ -147,7 +153,7 @@ export class AIServiceFactory extends EventEmitter {
         retryDelay: 1000
       };
       
-      return new OllamaService(config, this.logger);
+      service = new OllamaService(config, this.logger);
     }
     
     // Create API services for OpenAI and Anthropic
@@ -166,7 +172,7 @@ export class AIServiceFactory extends EventEmitter {
             retryDelay: 1000
           };
           
-          const service = new OpenAIService(config, this.logger);
+          service = new OpenAIService(config, this.logger);
           
           // Auto-load the model if API key is available
           if (config.apiKey) {
@@ -180,7 +186,7 @@ export class AIServiceFactory extends EventEmitter {
             }
           }
           
-          return service;
+          break;
         }
         
         case 'anthropic': {
@@ -195,7 +201,7 @@ export class AIServiceFactory extends EventEmitter {
             retryDelay: 1000
           };
           
-          const service = new AnthropicService(config, this.logger);
+          service = new AnthropicService(config, this.logger);
           
           // Auto-load the model if API key is available
           if (config.apiKey) {
@@ -209,7 +215,7 @@ export class AIServiceFactory extends EventEmitter {
             }
           }
           
-          return service;
+          break;
         }
         
         default:
@@ -221,7 +227,16 @@ export class AIServiceFactory extends EventEmitter {
       }
     }
     
-    return null;
+    // Wrap service with metrics if enabled and service was created
+    if (service && this.options.enableMetrics !== false) {
+      service = new MetricsAIService(service, this.logger);
+      this.logger.debug('Service wrapped with metrics tracking', {
+        modelId: model.id,
+        provider: model.provider
+      });
+    }
+    
+    return service;
   }
 
   /**

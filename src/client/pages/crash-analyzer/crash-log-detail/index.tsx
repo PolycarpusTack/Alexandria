@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useCrashAnalyzer } from '../crash-analyzer-context';
 import { Card, CardHeader, CardTitle, CardContent } from '../../../components/ui/card';
 import { Button } from '../../../components/ui/button';
-import { ArrowLeft, RefreshCw, Trash2, MessageSquare } from 'lucide-react';
+import {  ArrowLeft, RefreshCw, Trash2, MessageSquare  } from 'lucide-react';
 import { FeedbackDialog } from '../../../../plugins/hadron/ui/components/FeedbackDialog';
 import { apiClient } from '../../../../utils/api-client';
 import { createClientLogger } from '../../../utils/client-logger';

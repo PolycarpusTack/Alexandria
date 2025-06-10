@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {
+import {          
   Activity, Brain, Code, FileText, Bug, CheckCircle,
   ArrowUp, ArrowDown, Plus, BarChart3, Users, Database,
   Server, Cpu, HardDrive, Network, Terminal, Settings,
   FileExport, Rotate3D
-} from 'lucide-react';
+          } from 'lucide-react';
 
 const EnhancedMockupDashboard: React.FC = () => {
   const navigate = useNavigate();

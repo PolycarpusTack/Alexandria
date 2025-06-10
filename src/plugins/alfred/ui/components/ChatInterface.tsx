@@ -12,7 +12,7 @@ import { Textarea } from '../../../../client/components/ui/textarea';
 import { ScrollArea } from '../../../../client/components/ui/scroll-area';
 import { Badge } from '../../../../client/components/ui/badge';
 import { useToast } from '../../../../client/components/ui/use-toast';
-import { 
+import {      
   Send, 
   Copy, 
   Download, 
@@ -28,7 +28,7 @@ import {
   Zap,
   BookOpen,
   Settings
-} from 'lucide-react';
+     } from 'lucide-react';
 import { ChatMessage, ChatSession, ProjectContext } from '../../src/interfaces';
 import { useAlfredContext } from '../hooks/useAlfredContext';
 import { CodeBlock } from './CodeBlock';

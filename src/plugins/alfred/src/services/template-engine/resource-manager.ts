@@ -649,7 +649,7 @@ export class ResourceManager {
       current: string;
       peak: string;
     };
-    gcStats: typeof this.gcStats;
+    gcStats: any;
     quotas: Array<{
       id: string;
       status: string;

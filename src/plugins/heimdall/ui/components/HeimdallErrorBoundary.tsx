@@ -6,7 +6,7 @@
 import React, { Component, ReactNode } from 'react';
 import { Card, CardHeader, CardContent, CardTitle } from '@/client/components/ui/card';
 import { Button } from '@/client/components/ui/button';
-import { AlertTriangle, RefreshCw, FileText, Home } from 'lucide-react';
+import {  AlertTriangle, RefreshCw, FileText, Home  } from 'lucide-react';
 
 interface Props {
   children: ReactNode;

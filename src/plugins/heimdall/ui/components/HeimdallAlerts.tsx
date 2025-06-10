@@ -7,7 +7,7 @@ import React, { useState } from 'react';
 import { Card } from '@/client/components/ui/card';
 import { Button } from '@/client/components/ui/button';
 import { Badge } from '@/client/components/ui/badge';
-import { Bell, Plus } from 'lucide-react';
+import {  Bell, Plus  } from 'lucide-react';
 
 const HeimdallAlerts: React.FC = () => {
   const [alerts] = useState([

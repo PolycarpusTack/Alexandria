@@ -6,13 +6,13 @@ import {
   useKeyboardShortcuts, 
   useNavigation 
 } from '../hooks';
-import { 
+import {                
   FileCode2, Search, Puzzle, Brain, LineChart, Bug, Settings, User,
   Plus, FolderPlus, RefreshCw, ChevronRight, ChevronDown, 
   Activity, FolderOpen, Folder, File, Code, FileText, Cog,
   X, ArrowUp, ArrowDown, Check, Terminal, Database, FileExport,
   RotateCcw, GitBranch, CheckCircle, Plug, Wifi
-} from 'lucide-react';
+               } from 'lucide-react';
 import '../styles/enhanced-mockup-layout.css';
 
 export default function EnhancedMockupLayout({ children }: { children?: React.ReactNode }) {

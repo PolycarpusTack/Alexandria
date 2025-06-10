@@ -6,7 +6,7 @@
  */
 
 import { ProjectTemplate, TemplateFile } from '../../ui/components/TemplateWizard';
-import { Code, Globe, Server, Database, Layers, FileCode, GitBranch, BookOpen, Cpu, Package } from 'lucide-react';
+import {    Code, Globe, Server, Database, Layers, FileCode, GitBranch, BookOpen, Cpu, Package    } from 'lucide-react';
 
 export class ProjectTemplatesService {
   private templates: Map<string, ProjectTemplate> = new Map();

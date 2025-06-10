@@ -17,20 +17,20 @@ import { Button } from '../../../../client/components/ui/button';
 import { Textarea } from '../../../../client/components/ui/textarea';
 import { Badge } from '../../../../client/components/ui/badge';
 import { Card } from '../../../../client/components/ui/card';
-import {
+import {    
   Star,
   ThumbsUp,
   ThumbsDown,
   CheckCircle,
   XCircle,
-  AlertCircle,
+  AlertTriangle,
   MessageSquare,
   Lightbulb,
   Clock,
   BookOpen,
   RefreshCw,
   BarChart3
-} from 'lucide-react';
+    } from 'lucide-react';
 import { CrashAnalysisResult } from '../../src/interfaces';
 import { 
   FeedbackRating,
@@ -369,7 +369,7 @@ export const FeedbackDialog: React.FC<FeedbackDialogProps> = ({
           {/* Analysis Summary */}
           <div className="bg-muted/50 rounded-lg p-4 space-y-2">
             <h4 className="text-sm font-medium flex items-center gap-2">
-              <AlertCircle className="h-4 w-4" />
+              <AlertTriangle className="h-4 w-4" />
               Analysis Summary
             </h4>
             <div className="text-sm text-muted-foreground space-y-1">

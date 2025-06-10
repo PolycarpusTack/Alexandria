@@ -67,36 +67,3 @@ export const pluginThemes = {
     icon: 'fa-solid fa-chart-bar'
   }
 };
-// Function to apply theme class to a plugin container
-export function applyPluginTheme(element: HTMLElement, pluginName: 'alfred' | 'hadron' | 'heimdall'): void {
-  element.classList.add('plugin-container', `theme-${pluginName}`);
-}
-
-// Function to get CSS variables programmatically
-export function getThemeVariable(variableName: string): string {
-  return getComputedStyle(document.documentElement).getPropertyValue(`--${variableName}`).trim();
-}
-
-// Function to set CSS variables dynamically
-export function setThemeVariable(variableName: string, value: string): void {
-  document.documentElement.style.setProperty(`--${variableName}`, value);
-}
-
-// Predefined theme configurations for plugins
-export const pluginThemes = {
-  alfred: {
-    name: 'ALFRED',
-    primaryColor: 'var(--color-alfred)',
-    icon: 'fa-solid fa-code'
-  },
-  hadron: {
-    name: 'Hadron',
-    primaryColor: 'var(--color-hadron)',
-    icon: 'fa-solid fa-file-magnifying-glass'
-  },
-  heimdall: {
-    name: 'Heimdall',
-    primaryColor: 'var(--color-heimdall)',
-    icon: 'fa-solid fa-chart-bar'
-  }
-};

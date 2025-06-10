@@ -2,7 +2,7 @@ import React, { useMemo, useCallback } from 'react';
 
 // UI context removed - using component-specific styling
 import { useAnalytics } from '../hooks/useAnalytics';
-import {
+import {    
   BarChart3,
   TrendingUp,
   TrendingDown,
@@ -17,8 +17,8 @@ import {
   Clock,
   Cpu,
   ChevronRight,
-  AlertCircle
-} from 'lucide-react';
+  AlertTriangle
+    } from 'lucide-react';
 import { TimeRange } from '../../src/interfaces/analytics';
 import { TimeSeriesChart } from './charts/TimeSeriesChart';
 import { RootCauseChart } from './charts/RootCauseChart';
@@ -245,7 +245,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
         <Card className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+              <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
               <div>
                 <h3 className="font-semibold text-red-800 dark:text-red-200">
                   Failed to load analytics data

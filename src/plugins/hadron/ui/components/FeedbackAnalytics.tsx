@@ -24,17 +24,17 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
-import {
+import {  
   Star,
   TrendingUp,
   TrendingDown,
-  AlertCircle,
+  AlertTriangle,
   CheckCircle,
   XCircle,
   Download,
   RefreshCw,
   Calendar
-} from 'lucide-react';
+  } from 'lucide-react';
 import { apiClient } from '@/utils/api-client';
 import { FeedbackStats, FeedbackAnalysis } from '../../src/services/feedback/feedback-service';
 import { createClientLogger } from '@/client/utils/client-logger';
@@ -235,7 +235,7 @@ export const FeedbackAnalytics: React.FC<FeedbackAnalyticsProps> = ({
               <div>
                 <p className="text-sm text-muted-foreground">Total Feedback</p>
                 <div className="flex items-center gap-2 mt-2">
-                  <AlertCircle className="h-5 w-5 text-purple-500" />
+                  <AlertTriangle className="h-5 w-5 text-purple-500" />
                   <span className="text-2xl font-bold">{stats.totalFeedback}</span>
                 </div>
               </div>
@@ -299,7 +299,7 @@ export const FeedbackAnalytics: React.FC<FeedbackAnalyticsProps> = ({
                   <ul className="space-y-2">
                     {analysis.recommendations.map((rec, index) => (
                       <li key={index} className="flex items-start gap-2">
-                        <AlertCircle className="h-5 w-5 text-blue-500 mt-0.5" />
+                        <AlertTriangle className="h-5 w-5 text-blue-500 mt-0.5" />
                         <span className="text-sm">{rec}</span>
                       </li>
                     ))}

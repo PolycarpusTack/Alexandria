@@ -12,10 +12,10 @@ import { Progress } from '../../components/ui/progress';
 import { useTheme } from '../../components/theme-provider';
 import { useNavigate } from 'react-router-dom';
 import { cn } from '../../lib/utils';
-import {
+import {  
   Upload,
   FileText,
-  AlertCircle,
+  AlertTriangle,
   CheckCircle2,
   FileSearch,
   Loader2,
@@ -27,7 +27,7 @@ import {
   Clock,
   Info,
   ArrowLeft
-} from 'lucide-react';
+  } from 'lucide-react';
 import { crashAnalyzerAPI } from '../../services/crash-analyzer-api';
 import { createClientLogger } from '../../utils/client-logger';
 

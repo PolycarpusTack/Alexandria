@@ -4,7 +4,8 @@
  * Provides HTTP endpoints for AI functionality
  */
 
-import { Router } from 'express';
+/// <reference path="../../../types/express-custom.d.ts" />
+import { Router, Request, Response, NextFunction } from 'express';
 import { AIService } from './interfaces';
 import { Logger } from '../../../utils/logger';
 
@@ -12,7 +13,7 @@ export function createAIRouter(aiService: AIService, logger: Logger): Router {
   const router = Router();
   
   // List available models
-  router.get('/models', async (req, res, next) => {
+  router.get('/models', async (req: Request, res: Response, next: NextFunction) => {
     try {
       const models = await aiService.listModels();
       res.json({ models });
@@ -23,7 +24,7 @@ export function createAIRouter(aiService: AIService, logger: Logger): Router {
   });
   
   // Get model status
-  router.get('/models/:modelId/status', async (req, res, next) => {
+  router.get('/models/:modelId/status', async (req: Request, res: Response, next: NextFunction) => {
     try {
       const status = await aiService.getModelStatus(req.params.modelId);
       res.json(status);
@@ -34,7 +35,7 @@ export function createAIRouter(aiService: AIService, logger: Logger): Router {
   });
   
   // Load a model
-  router.post('/models/:modelId/load', async (req, res, next) => {
+  router.post('/models/:modelId/load', async (req: Request, res: Response, next: NextFunction) => {
     try {
       await aiService.loadModel(req.params.modelId);
       res.json({ status: 'loaded', modelId: req.params.modelId });
@@ -45,7 +46,7 @@ export function createAIRouter(aiService: AIService, logger: Logger): Router {
   });
   
   // Unload a model
-  router.post('/models/:modelId/unload', async (req, res, next) => {
+  router.post('/models/:modelId/unload', async (req: Request, res: Response, next: NextFunction) => {
     try {
       await aiService.unloadModel(req.params.modelId);
       res.json({ status: 'unloaded', modelId: req.params.modelId });
@@ -56,7 +57,7 @@ export function createAIRouter(aiService: AIService, logger: Logger): Router {
   });
   
   // Generate completion
-  router.post('/complete', async (req, res, next) => {
+  router.post('/complete', async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { prompt, ...options } = req.body;
       
@@ -73,7 +74,7 @@ export function createAIRouter(aiService: AIService, logger: Logger): Router {
   });
   
   // Chat completion
-  router.post('/chat', async (req, res, next) => {
+  router.post('/chat', async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { messages, ...options } = req.body;
       
@@ -90,7 +91,7 @@ export function createAIRouter(aiService: AIService, logger: Logger): Router {
   });
   
   // Stream completion
-  router.post('/stream', async (req, res, next) => {
+  router.post('/stream', async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { prompt, ...options } = req.body;
       
@@ -119,7 +120,7 @@ export function createAIRouter(aiService: AIService, logger: Logger): Router {
   });
   
   // Generate embeddings
-  router.post('/embed', async (req, res, next) => {
+  router.post('/embed', async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { text, texts, ...options } = req.body;
       
@@ -141,7 +142,7 @@ export function createAIRouter(aiService: AIService, logger: Logger): Router {
   });
   
   // Health check
-  router.get('/health', async (req, res) => {
+  router.get('/health', async (req: Request, res: Response) => {
     try {
       const healthy = await aiService.isHealthy();
       res.json({ 

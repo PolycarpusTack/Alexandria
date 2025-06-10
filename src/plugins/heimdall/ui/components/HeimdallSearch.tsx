@@ -12,7 +12,7 @@ import { Textarea } from '@/client/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/client/components/ui/select';
 import { Badge } from '@/client/components/ui/badge';
 import { useToast } from '@/client/components/ui/use-toast';
-import { 
+import {        
   Search, 
   Filter, 
   Download,
@@ -34,7 +34,7 @@ import {
   FileText,
   Code,
   Settings
-} from 'lucide-react';
+       } from 'lucide-react';
 import { 
   HeimdallQuery,
   HeimdallQueryResult,

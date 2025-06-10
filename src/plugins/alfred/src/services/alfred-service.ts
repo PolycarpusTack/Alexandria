@@ -870,7 +870,7 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
   }
 
   // Project context integration
-  async createSessionWithContext(projectPath: string, projectContext?: ProjectContext): Promise<AlfredSession> {
+  async createSessionWithContext(projectPath: string, projectContext?: any): Promise<AlfredSession> {
     const session = await this.createSession(projectPath);
     
     if (projectContext) {

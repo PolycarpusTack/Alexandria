@@ -13,10 +13,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '.
 import { Badge } from '../../../../client/components/ui/badge';
 import { useToast } from '../../../../client/components/ui/use-toast';
 import { HeimdallEnhancedLayout } from './HeimdallEnhancedLayout';
-import { 
+import {         
   Loader2, 
   Search, 
-  AlertCircle, 
+  AlertTriangle, 
   TrendingUp, 
   Activity, 
   Database,
@@ -38,7 +38,7 @@ import {
   Brain,
   Target,
   Layers
-} from 'lucide-react';
+        } from 'lucide-react';
 import { usePluginContext } from '../../../../client/context/plugin-context';
 import { 
   HeimdallQuery,

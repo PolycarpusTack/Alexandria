@@ -7,7 +7,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
-import { AlertCircle, CheckCircle, XCircle, Activity, Database, Cpu, Memory } from 'lucide-react';
+import {     AlertTriangle, CheckCircle, XCircle, Activity, Database, Cpu, Memory     } from 'lucide-react';
 
 interface ResourceUsage {
   memoryMB: number;
@@ -121,7 +121,7 @@ export const ResourceDashboard: React.FC<ResourceDashboardProps> = ({
         return <CheckCircle className="h-4 w-4 text-green-500" />;
       case 'degraded':
       case 'half-open':
-        return <AlertCircle className="h-4 w-4 text-yellow-500" />;
+        return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
       case 'unhealthy':
       case 'down':
       case 'open':
@@ -312,7 +312,7 @@ export const ResourceDashboard: React.FC<ResourceDashboardProps> = ({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <AlertCircle className="h-5 w-5" />
+            <AlertTriangle className="h-5 w-5" />
             Circuit Breakers
           </CardTitle>
         </CardHeader>

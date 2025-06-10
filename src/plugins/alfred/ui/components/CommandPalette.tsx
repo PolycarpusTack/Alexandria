@@ -8,7 +8,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Command } from '../../../../client/components/ui/command';
 import { Dialog } from '../../../../client/components/ui/dialog';
-import {
+import {      
   Code,
   FileText,
   FolderOpen,
@@ -29,7 +29,7 @@ import {
   Copy,
   Download,
   Upload
-} from 'lucide-react';
+      } from 'lucide-react';
 
 interface CommandItem {
   id: string;

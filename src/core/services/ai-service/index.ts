@@ -9,12 +9,13 @@ import { OllamaService } from './ollama-service';
 import { OpenAIService } from './openai-service';
 import { AnthropicService } from './anthropic-service';
 import { CachedAIService } from './cached-ai-service';
+import { MetricsAIService } from './metrics-ai-service';
 import { AIServiceFactory, DynamicAIServiceOptions } from './AIServiceFactory';
 import { Logger } from '../../../utils/logger';
 
 export * from './interfaces';
 export * from './config';
-export { AIServiceFactory, OllamaService, OpenAIService, AnthropicService, CachedAIService };
+export { AIServiceFactory, OllamaService, OpenAIService, AnthropicService, CachedAIService, MetricsAIService };
 
 /**
  * Create a dynamic AI service that auto-detects available models
@@ -95,6 +96,11 @@ export function createAIService(
       break;
     default:
       throw new Error(`Unknown AI provider: ${fullConfig.provider}`);
+  }
+  
+  // Always wrap with metrics (can be disabled with AI_METRICS_ENABLED=false)
+  if (process.env.AI_METRICS_ENABLED !== 'false') {
+    baseService = new MetricsAIService(baseService, logger);
   }
   
   if (fullConfig.cache?.enabled) {

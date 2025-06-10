@@ -4,10 +4,17 @@
  * Provides HTTP endpoints for file and document storage
  */
 
-import { Router } from 'express';
+/// <reference path="../../../types/express-custom.d.ts" />
+import { Router, Request, Response, NextFunction } from 'express';
 import multer from 'multer';
 import { StorageService } from './interfaces';
 import { Logger } from '../../../utils/logger';
+
+// Extend Request for multer file uploads
+interface RequestWithFile extends Request {
+  file?: Express.Multer.File;
+  files?: Express.Multer.File[];
+}
 
 // Configure multer for file uploads
 const upload = multer({
@@ -28,7 +35,7 @@ export function createStorageRouter(
   // The requireAuth parameter is maintained for future use
   
   // File upload
-  router.post('/files', upload.single('file'), async (req: any, res, next) => {
+  router.post('/files', upload.single('file'), async (req: RequestWithFile, res: Response, next: NextFunction) => {
     try {
       if (!req.file) {
         return res.status(400).json({ error: 'No file provided' });

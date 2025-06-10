@@ -19,7 +19,7 @@ import { Badge } from '../../../../../client/components/ui/badge';
 import { Alert, AlertDescription } from '../../../../../client/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../../client/components/ui/tabs';
 import { ScrollArea } from '../../../../../client/components/ui/scroll-area';
-import { 
+import {      
   ChevronLeft, 
   ChevronRight, 
   Search, 
@@ -29,7 +29,7 @@ import {
   CheckCircle,
   AlertTriangle,
   Loader2
-} from 'lucide-react';
+     } from 'lucide-react';
 
 export interface TemplateWizardProps {
   templates: TemplateManifest[];

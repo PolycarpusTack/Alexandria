@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Eye, Search, BarChart3, AlertTriangle, Shield, Activity, Settings, User, LogOut, ChevronRight, Database, Zap } from 'lucide-react';
+import {        Eye, Search, BarChart3, AlertTriangle, Shield, Activity, Settings, User, LogOut, ChevronRight, Database, Zap        } from 'lucide-react';
 import '../../../../client/styles/enhanced-mockup-layout.css';
 
 interface HeimdallEnhancedLayoutProps {

@@ -11,7 +11,7 @@ import { AIService } from '../../../../core/services/ai-service/interfaces';
 import { StorageService } from '../../../../core/services/storage/interfaces';
 import { TemplateEngine } from './template-engine/template-engine';
 import { TemplateDiscoveryService } from './template-discovery';
-import { VariableResolver } from './template-engine/variable-resolver';
+import { ContextAwareVariableResolver } from './template-engine/variable-resolver';
 import { 
   TemplateManifest, 
   VariableMap, 
@@ -55,7 +55,7 @@ export class TemplateWizardService {
   private eventBus: EventBus;
   private templateEngine: TemplateEngine;
   private discoveryService: TemplateDiscoveryService;
-  private variableResolver: VariableResolver;
+  private variableResolver: any;
   private aiService?: AIService;
   private storageService: StorageService;
   private activeGenerations = new Map<string, AbortController>();
@@ -65,7 +65,7 @@ export class TemplateWizardService {
     eventBus: EventBus,
     templateEngine: TemplateEngine,
     discoveryService: TemplateDiscoveryService,
-    variableResolver: VariableResolver,
+    variableResolver: any,
     storageService: StorageService,
     aiService?: AIService
   ) {
@@ -286,14 +286,14 @@ export class TemplateWizardService {
 
       const prompt = this.buildSuggestionPrompt(template, projectContext);
       
-      const response = await this.aiService.query(prompt, {
+      const response = await this.aiService.complete(prompt, {
         model: 'default',
         maxTokens: 500,
         temperature: 0.3
       });
 
       // Parse AI response into variable suggestions
-      return this.parseAISuggestions(response, template.variables || []);
+      return this.parseAISuggestions(response.text, template.variables || []);
 
     } catch (error) {
       this.logger.warn('Failed to get AI suggestions', { error });
@@ -404,12 +404,7 @@ export class TemplateWizardService {
         filePath,
         existingContent,
         newContent,
-        conflictType: 'overwrite',
-        fileSize: {
-          existing: Buffer.byteLength(existingContent),
-          new: Buffer.byteLength(newContent)
-        },
-        lastModified: (await fs.stat(filePath)).mtime
+        conflictType: 'overwrite'
       };
 
       switch (strategy) {

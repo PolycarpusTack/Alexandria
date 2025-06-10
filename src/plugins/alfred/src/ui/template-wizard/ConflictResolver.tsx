@@ -12,7 +12,7 @@ import { Badge } from '../../../../../client/components/ui/badge';
 import { Alert, AlertDescription } from '../../../../../client/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../../client/components/ui/tabs';
 import { ScrollArea } from '../../../../../client/components/ui/scroll-area';
-import { 
+import {   
   FileX, 
   GitMerge, 
   Copy, 
@@ -23,7 +23,7 @@ import {
   Save,
   Eye,
   Download
-} from 'lucide-react';
+  } from 'lucide-react';
 
 export interface FileConflict {
   filePath: string;

@@ -1,13 +1,13 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-import {
+import { 
   BarChart3,
   FileText,
   TrendingUp,
   Home,
   FileSearch
-} from 'lucide-react';
+ } from 'lucide-react';
 import { cn } from '../../../../client/lib/utils';
 
 import { Button } from '../../../../client/components/ui/button'

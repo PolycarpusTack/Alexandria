@@ -168,3 +168,21 @@ export interface RenderMetadata {
   variables: VariableMap;
   performance: PerformanceMetrics;
 }
+
+// Add missing interfaces for Alfred integration
+export interface GenerationResult {
+  success: boolean;
+  filesGenerated: string[];
+  conflicts: FileConflict[];
+  errors: string[];
+  warnings: string[];
+  duration: number;
+  metadata?: RenderMetadata;
+}
+
+export interface TemplateEngineOptions {
+  maxFileSize: number;
+  allowedExtensions: string[];
+  securityLevel: 'strict' | 'normal' | 'permissive';
+  enableCaching: boolean;
+}

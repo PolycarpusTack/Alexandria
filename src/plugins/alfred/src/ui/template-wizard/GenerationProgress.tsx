@@ -13,7 +13,7 @@ import { Button } from '../../../../../client/components/ui/button';
 import { Badge } from '../../../../../client/components/ui/badge';
 import { Alert, AlertDescription } from '../../../../../client/components/ui/alert';
 import { ScrollArea } from '../../../../../client/components/ui/scroll-area';
-import {
+import {  
   FileText,
   Loader2,
   CheckCircle,
@@ -22,7 +22,7 @@ import {
   X,
   FolderOpen,
   FileCode
-} from 'lucide-react';
+  } from 'lucide-react';
 
 export interface GenerationProgressProps {
   progress: ProgressType | null;

@@ -8,16 +8,16 @@
 import React, { useState, useEffect } from 'react';
 import { Badge } from '../../../../client/components/ui/badge';
 import { Tooltip } from '../../../../client/components/ui/tooltip';
-import { 
+import {   
   Wifi, 
   WifiOff, 
-  AlertCircle, 
+  AlertTriangle, 
   CheckCircle,
   Clock,
   Loader2,
   Server,
   Zap
-} from 'lucide-react';
+  } from 'lucide-react';
 import { useAlfredService } from '../hooks/useAlfredService';
 
 export interface ConnectionInfo {
@@ -151,7 +151,7 @@ export const ConnectionStatus: React.FC<ConnectionStatusProps> = ({
       case 'connecting':
         return <Loader2 className="h-4 w-4 animate-spin text-blue-500" />;
       case 'error':
-        return <AlertCircle className="h-4 w-4 text-red-500" />;
+        return <AlertTriangle className="h-4 w-4 text-red-500" />;
     }
   };
 

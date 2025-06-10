@@ -11,7 +11,7 @@ import { Input } from '@/client/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/client/components/ui/select';
 import { Badge } from '@/client/components/ui/badge';
 import { useToast } from '@/client/components/ui/use-toast';
-import { 
+import {        
   Target,
   Brain,
   Sparkles,
@@ -41,7 +41,7 @@ import {
   Play,
   Pause,
   RotateCcw
-} from 'lucide-react';
+       } from 'lucide-react';
 import { 
   TimeRange
 } from '../../src/interfaces';

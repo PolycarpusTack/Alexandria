@@ -39,7 +39,7 @@ import { MnemosyneEventHandlers } from './core/events/EventHandlers';
 import { MnemosyneSecurityManager } from './core/security/SecurityManager';
 import { MnemosyneDatabaseMigrations } from './core/data/migrations/DatabaseMigrations';
 import { MnemosyneUIProvider } from './ui/providers/UIProvider';
-import { MnemosyneAPIProvider } from './api/providers/APIProvider';
+import { MnemosyneAPI } from './api';
 
 // Core Services
 import { KnowledgeGraphService } from './core/services/KnowledgeGraphService';
@@ -576,13 +576,29 @@ export class MnemosynePlugin implements AlexandriaPlugin, IMnemosynePlugin {
   }
 
   private async registerAPIRoutes(): Promise<void> {
-    const apiProvider = new MnemosyneAPIProvider({
-      context: this.context!,
-      services: this.services,
-      logger: this.logger!
-    });
+    try {
+      const api = new MnemosyneAPI(this.core!, this.logger!, {
+        basePath: '/api/mnemosyne',
+        enableDocs: true,
+        enableMetrics: true,
+        enableCors: true,
+        rateLimiting: { enabled: true, store: 'memory' },
+        authentication: { required: true }
+      });
 
-    await apiProvider.register();
+      // Mount API routes on Alexandria's Express app
+      const expressApp = this.context!.expressApp;
+      if (expressApp) {
+        api.mount(expressApp);
+        this.logger?.info('Mnemosyne API routes registered successfully');
+      } else {
+        this.logger?.warn('Express app not available, API routes not mounted');
+      }
+
+    } catch (error) {
+      this.logger?.error('Failed to register API routes', { error: error.message });
+      throw error;
+    }
   }
 
   private async registerUIComponents(): Promise<void> {

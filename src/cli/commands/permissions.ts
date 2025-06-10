@@ -119,7 +119,7 @@ export class PermissionsCommand {
       }
       
       console.log(`\nRequested permissions: ${permissions.length}`);
-      permissions.forEach(p => console.log(`  • ${p}`));
+      permissions.forEach((p: string) => console.log(`  • ${p}`));
       
       const result = this.permissionValidator.validatePluginPermissions(
         manifest.id,

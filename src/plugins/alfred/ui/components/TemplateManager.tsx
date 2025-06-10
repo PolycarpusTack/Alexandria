@@ -16,7 +16,7 @@ import { Badge } from '../../../../client/components/ui/badge';
 import { ScrollArea } from '../../../../client/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../client/components/ui/tabs';
 import { useToast } from '../../../../client/components/ui/use-toast';
-import { 
+import {   
   Plus,
   Search,
   Code,
@@ -26,7 +26,7 @@ import {
   Upload,
   FileCode,
   Star
-} from 'lucide-react';
+  } from 'lucide-react';
 import { CodeTemplate } from '../../src/interfaces';
 import { useAlfredContext } from '../hooks/useAlfredContext';
 // CSS imported at app level

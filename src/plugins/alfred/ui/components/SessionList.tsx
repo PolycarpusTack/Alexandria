@@ -25,13 +25,13 @@ import {
   AlertDialogTitle,
 } from '../../../../client/components/ui/alert-dialog';
 import { useToast } from '../../../../client/components/ui/use-toast';
-import { 
+import {    
   Search, 
   MessageSquare, 
   Trash2, 
   Clock,
   FileText
-} from 'lucide-react';
+   } from 'lucide-react';
 import { ChatSession } from '../../src/interfaces';
 import { useAlfredContext } from '../hooks/useAlfredContext';
 import { format, formatDistanceToNow } from 'date-fns';

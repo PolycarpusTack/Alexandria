@@ -10,7 +10,7 @@ import { Input } from '@/client/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/client/components/ui/select';
 import { Badge } from '@/client/components/ui/badge';
 import { useToast } from '@/client/components/ui/use-toast';
-import { 
+import {           
   ChevronDown,
   ChevronRight,
   Eye,
@@ -42,7 +42,7 @@ import {
   Brain,
   Activity,
   Shield
-} from 'lucide-react';
+          } from 'lucide-react';
 import { HeimdallLogEntry, TableColumn, FilterState, SortState } from '../../src/interfaces';
 
 interface LogTableProps {

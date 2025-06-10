@@ -1,7 +1,7 @@
 import React, { Component, ErrorInfo, ReactNode } from 'react';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
-import { AlertCircle } from 'lucide-react';
+import { AlertTriangle } from 'lucide-react';
 import { logger } from '../utils/client-logger';
 
 interface Props {
@@ -146,7 +146,7 @@ export class ErrorBoundary extends Component<Props, State> {
           <Card className="w-full max-w-md p-6">
             <div className="flex flex-col items-center text-center space-y-4">
               <div className="p-3 bg-red-100 rounded-full">
-                <AlertCircle className="h-8 w-8 text-red-600" />
+                <AlertTriangle className="h-8 w-8 text-red-600" />
               </div>
               
               <div className="space-y-2">
@@ -253,7 +253,7 @@ export const PluginErrorBoundary: React.FC<{ children: ReactNode; pluginName: st
     fallback={
       <Card className="p-4 border-red-200 bg-red-50">
         <div className="flex items-center space-x-2">
-          <AlertCircle className="h-5 w-5 text-red-600" />
+          <AlertTriangle className="h-5 w-5 text-red-600" />
           <p className="text-sm text-red-800">
             Plugin "{pluginName}" failed to load
           </p>

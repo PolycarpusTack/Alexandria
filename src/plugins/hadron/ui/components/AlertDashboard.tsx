@@ -5,11 +5,11 @@
 
 import React, { useState, useEffect } from 'react';
 
-import {
+import {    
   Bell,
   BellOff,
   AlertTriangle,
-  AlertCircle,
+  AlertTriangle,
   Info,
   CheckCircle,
   Clock,
@@ -20,7 +20,7 @@ import {
   RefreshCw,
   Download,
   Filter
-} from 'lucide-react';
+    } from 'lucide-react';
 import { useAlertService } from '../hooks/useAlertService';
 import { AlertRule, AlertEvent, AlertSeverity } from '../../src/interfaces/alerts';
 import { format } from 'date-fns';

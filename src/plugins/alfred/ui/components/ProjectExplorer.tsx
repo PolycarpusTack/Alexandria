@@ -15,7 +15,7 @@ import { Badge } from '../../../../client/components/ui/badge';
 import { ScrollArea } from '../../../../client/components/ui/scroll-area';
 import { Progress } from '../../../../client/components/ui/progress';
 import { useToast } from '../../../../client/components/ui/use-toast';
-import { 
+import {   
   FolderOpen,
   File,
   ChevronRight,
@@ -24,7 +24,7 @@ import {
   FileCode,
   Folder,
   Info
-} from 'lucide-react';
+  } from 'lucide-react';
 import { 
   ProjectContext, 
   FileNode, 

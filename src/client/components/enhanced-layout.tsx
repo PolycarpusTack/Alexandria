@@ -1,12 +1,12 @@
 import React, { useEffect } from 'react';
 import { cn } from '../lib/utils';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { 
-  Brain, Bug, ChartLine, Code, Gauge, Gear, Search, 
+import {                         
+  Brain, Bug, TrendingUp, Code, Gauge, Settings, Search, 
   Terminal, User, Bell, File as FileIcon, Activity, LifeBuoy, Book,
-  ArrowsRotate, Box, Database, Layers, Users, MessageSquare, 
-  FileText, CheckCircle, PuzzlePiece
-} from 'lucide-react';
+  RotateCcw, Box, Database, Layers, Users, MessageSquare, 
+  FileText, CheckCircle, Puzzle
+                        } from 'lucide-react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Card } from './ui/card';
@@ -132,7 +132,7 @@ export default function EnhancedLayout({ children, className }: EnhancedLayoutPr
             <h2 className="text-xl font-semibold">Installed Plugins</h2>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" className="btn-sm btn-outline">
-                <ArrowsRotate className="w-4 h-4 mr-2" />
+                <RotateCcw className="w-4 h-4 mr-2" />
                 Refresh
               </Button>
               <Button variant="outline" size="sm" className="btn-sm btn-outline">
@@ -180,7 +180,7 @@ export default function EnhancedLayout({ children, className }: EnhancedLayoutPr
                   <span className="badge badge-secondary">AI Assistant</span>
                   <div className="flex gap-2">
                     <Button variant="ghost" size="sm" className="btn-ghost btn-sm tooltip">
-                      <Gear className="w-4 h-4" />
+                      <Settings className="w-4 h-4" />
                       <span className="tooltip-text">Configure</span>
                     </Button>
                     <Button size="sm" className="btn-primary btn-sm">
@@ -228,7 +228,7 @@ export default function EnhancedLayout({ children, className }: EnhancedLayoutPr
                   <span className="badge badge-secondary">Analysis</span>
                   <div className="flex gap-2">
                     <Button variant="ghost" size="sm" className="btn-ghost btn-sm tooltip">
-                      <Gear className="w-4 h-4" />
+                      <Settings className="w-4 h-4" />
                       <span className="tooltip-text">Configure</span>
                     </Button>
                     <Button size="sm" className="btn-primary btn-sm">
@@ -244,7 +244,7 @@ export default function EnhancedLayout({ children, className }: EnhancedLayoutPr
               <div className="plugin-tag text-purple-500">Monitoring</div>
               <div className="plugin-header">
                 <div className="plugin-icon text-purple-500">
-                  <ChartLine />
+                  <TrendingUp />
                 </div>
                 <div className="flex-1">
                   <h3 className="plugin-title">Heimdall - Log Intelligence</h3>
@@ -351,7 +351,7 @@ export default function EnhancedLayout({ children, className }: EnhancedLayoutPr
               </div>
 
               <Button variant="outline" size="sm" className="w-full mt-4 btn-outline">
-                <ArrowsRotate className="w-4 h-4 mr-2" />
+                <RotateCcw className="w-4 h-4 mr-2" />
                 Refresh Metrics
               </Button>
             </div>
@@ -424,7 +424,7 @@ export default function EnhancedLayout({ children, className }: EnhancedLayoutPr
               
               <div className="quick-actions">
                 <Button variant="outline" className="w-full btn-outline justify-start">
-                  <Gear className="w-4 h-4 mr-2" />
+                  <Settings className="w-4 h-4 mr-2" />
                   System Settings
                 </Button>
                 <Button variant="outline" className="w-full btn-outline justify-start">
@@ -512,7 +512,7 @@ export default function EnhancedLayout({ children, className }: EnhancedLayoutPr
                   onClick={() => navigate(item.path)}
                 >
                   {item.id === 'dashboard' && <Gauge className="nav-icon h-5 w-5" />}
-                  {item.id === 'settings' && <Gear className="nav-icon h-5 w-5" />}
+                  {item.id === 'settings' && <Settings className="nav-icon h-5 w-5" />}
                   {item.id === 'users' && <User className="nav-icon h-5 w-5" />}
                   <span>{item.label}</span>
                 </div>
@@ -529,7 +529,7 @@ export default function EnhancedLayout({ children, className }: EnhancedLayoutPr
                 >
                   {item.id === 'alfred' && <Code className="nav-icon h-5 w-5 text-cyan-500" />}
                   {item.id === 'crash-analyzer' && <FileText className="nav-icon h-5 w-5 text-rose-500" />}
-                  {item.id === 'heimdall' && <ChartLine className="nav-icon h-5 w-5 text-purple-500" />}
+                  {item.id === 'heimdall' && <TrendingUp className="nav-icon h-5 w-5 text-purple-500" />}
                   <span>{item.label}</span>
                   {item.statusIndicator && (
                     <span className={`status-indicator ${item.statusIndicator} ml-auto`}></span>
@@ -566,7 +566,7 @@ export default function EnhancedLayout({ children, className }: EnhancedLayoutPr
                 >
                   {item.id === 'documentation' && <Book className="nav-icon h-5 w-5" />}
                   {item.id === 'support' && <LifeBuoy className="nav-icon h-5 w-5" />}
-                  {item.id === 'plugin-store' && <PuzzlePiece className="nav-icon h-5 w-5" />}
+                  {item.id === 'plugin-store' && <Puzzle className="nav-icon h-5 w-5" />}
                   <span>{item.label}</span>
                   {item.badge && (
                     <span className="ml-auto bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded-full font-semibold">

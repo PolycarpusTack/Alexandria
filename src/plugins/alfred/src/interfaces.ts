@@ -273,3 +273,22 @@ export interface AlfredServiceInterface {
   deleteFile(projectPath: string, filePath: string): Promise<void>;
   checkHealth(): Promise<ServiceHealth>;
 }
+
+// Additional interfaces for template engine compatibility
+export interface TemplateFile {
+  name: string;
+  path: string;
+  content?: string;
+  type?: string;
+}
+
+export interface CompletionOptions {
+  model?: string;
+  maxTokens?: number;
+  temperature?: number;
+  stream?: boolean;
+}
+
+export interface TemplateEngine {
+  generateTemplate?(request: any): Promise<any>;
+}

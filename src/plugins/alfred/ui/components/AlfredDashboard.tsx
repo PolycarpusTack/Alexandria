@@ -23,7 +23,7 @@ import { SplitPaneEditor } from './SplitPaneEditor';
 import { CommandPalette } from './CommandPalette';
 import { TemplateWizard } from './TemplateWizard';
 import { ConnectionStatus, ConnectionStatusMini } from './ConnectionStatus';
-import { Bot, FolderOpen, FileCode, History, MessageSquare, Code, Wand2, Search, Settings } from 'lucide-react';
+import {     Bot, FolderOpen, FileCode, History, MessageSquare, Code, Wand2, Search, Settings     } from 'lucide-react';
 import { createClientLogger } from '../../../../client/utils/client-logger';
 import { AlfredEnhancedLayout } from './AlfredEnhancedLayout';
 import { CodeExtractionService } from '../../src/services/code-extraction-service';

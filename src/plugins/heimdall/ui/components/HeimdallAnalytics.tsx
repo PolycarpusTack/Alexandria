@@ -10,7 +10,7 @@ import { Button } from '@/client/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/client/components/ui/select';
 import { Badge } from '@/client/components/ui/badge';
 import { useToast } from '@/client/components/ui/use-toast';
-import { 
+import {      
   TrendingUp, 
   Brain,
   Target,
@@ -37,7 +37,7 @@ import {
   Server,
   HardDrive,
   Gauge
-} from 'lucide-react';
+     } from 'lucide-react';
 import { 
   HeimdallQueryResult,
   TimeRange

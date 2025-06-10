@@ -11,7 +11,7 @@ import { ScrollArea } from '../../../../../client/components/ui/scroll-area';
 import { Badge } from '../../../../../client/components/ui/badge';
 import { Button } from '../../../../../client/components/ui/button';
 import { Input } from '../../../../../client/components/ui/input';
-import {
+import {    
   ChevronRight,
   ChevronDown,
   File,
@@ -26,7 +26,7 @@ import {
   Archive,
   Eye,
   EyeOff
-} from 'lucide-react';
+    } from 'lucide-react';
 
 export interface FileNode {
   path: string;

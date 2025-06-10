@@ -1,25 +1,28 @@
 /**
- * Heimdall Service Tests
+ * Enhanced Heimdall Service Tests
  */
 
-import { HeimdallService } from '../heimdall-service';
+import { EnhancedHeimdallService as HeimdallService } from '../heimdall-service-enhanced';
 import { HeimdallPluginContext, HeimdallQuery, HeimdallLogEntry, LogLevel } from '../../interfaces';
 import { Logger } from '@utils/logger';
 import { KafkaService } from '../kafka-service';
 import { StorageManager } from '../storage-manager';
 import { MLService } from '../ml-service';
+import { HyperionResourceManager } from '../resource-manager';
 
 jest.mock('../kafka-service');
 jest.mock('../storage-manager');
 jest.mock('../ml-service');
+jest.mock('../resource-manager');
 
-describe('HeimdallService', () => {
+describe('EnhancedHeimdallService', () => {
   let heimdallService: HeimdallService;
   let mockContext: jest.Mocked<HeimdallPluginContext>;
   let mockLogger: jest.Mocked<Logger>;
   let mockKafkaService: jest.Mocked<KafkaService>;
   let mockStorageManager: jest.Mocked<StorageManager>;
   let mockMLService: jest.Mocked<MLService>;
+  let mockResourceManager: jest.Mocked<HyperionResourceManager>;
 
   beforeEach(() => {
     mockLogger = {
@@ -71,14 +74,53 @@ describe('HeimdallService', () => {
       health: jest.fn().mockReturnValue({ status: 'up', details: {} })
     } as any;
 
+    mockResourceManager = {
+      getConnection: jest.fn().mockResolvedValue({ id: 'test-connection' }),
+      releaseConnection: jest.fn().mockResolvedValue(undefined),
+      getResourceUsage: jest.fn().mockReturnValue({
+        total: {
+          memoryMB: 100,
+          connections: 5,
+          cacheSize: 50,
+          activeQueries: 2,
+          streamSubscriptions: 1,
+          cpuPercent: 25
+        },
+        resources: new Map()
+      }),
+      getStatistics: jest.fn().mockResolvedValue({
+        limits: {
+          maxMemoryMB: 1024,
+          maxConnections: 100,
+          maxCacheSize: 512,
+          maxConcurrentQueries: 50,
+          maxStreamSubscriptions: 20
+        }
+      }),
+      addResourcePool: jest.fn(),
+      removeResourcePool: jest.fn(),
+      getConnectionPool: jest.fn().mockReturnValue({
+        getPoolStatus: jest.fn().mockReturnValue({
+          idleConnections: 5,
+          activeConnections: 2,
+          totalConnections: 7,
+          waitingRequests: 0,
+          availablePermits: 93
+        })
+      }),
+      shutdown: jest.fn().mockResolvedValue(undefined)
+    } as any;
+
     (KafkaService as jest.MockedClass<typeof KafkaService>)
       .mockImplementation(() => mockKafkaService);
     (StorageManager as jest.MockedClass<typeof StorageManager>)
       .mockImplementation(() => mockStorageManager);
     (MLService as jest.MockedClass<typeof MLService>)
       .mockImplementation(() => mockMLService);
+    (HyperionResourceManager as jest.MockedClass<typeof HyperionResourceManager>)
+      .mockImplementation(() => mockResourceManager);
 
-    heimdallService = new HeimdallService(mockContext);
+    heimdallService = new HeimdallService(mockContext, mockLogger);
   });
 
   afterEach(() => {
@@ -86,13 +128,15 @@ describe('HeimdallService', () => {
   });
 
   describe('initialize', () => {
-    it('should initialize all services', async () => {
+    it('should initialize all services including resource manager', async () => {
       await heimdallService.initialize();
 
-      expect(mockKafkaService.initialize).toHaveBeenCalled();
+      expect(mockResourceManager.addResourcePool).toHaveBeenCalled();
       expect(mockStorageManager.initialize).toHaveBeenCalled();
       expect(mockMLService.initialize).toHaveBeenCalled();
-      expect(mockLogger.info).toHaveBeenCalledWith('Heimdall service initialized');
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        expect.stringContaining('Enhanced Heimdall service initialized')
+      );
     });
 
     it('should initialize without optional services', async () => {
@@ -315,6 +359,92 @@ describe('HeimdallService', () => {
       await expect(
         heimdallService.unsubscribe(subscription.id)
       ).rejects.toThrow('Subscription not found');
+    });
+  });
+
+  describe('resource management', () => {
+    it('should provide resource usage statistics', async () => {
+      await heimdallService.initialize();
+
+      const resourceManager = heimdallService.getResourceManager();
+      const usage = resourceManager.getResourceUsage();
+
+      expect(usage).toEqual({
+        total: {
+          memoryMB: 100,
+          connections: 5,
+          cacheSize: 50,
+          activeQueries: 2,
+          streamSubscriptions: 1,
+          cpuPercent: 25
+        },
+        resources: expect.any(Map)
+      });
+    });
+
+    it('should handle connection pooling', async () => {
+      await heimdallService.initialize();
+
+      const resourceManager = heimdallService.getResourceManager();
+      const connection = await resourceManager.getConnection('test-pool', 'NORMAL', 5000);
+
+      expect(connection).toEqual({ id: 'test-connection' });
+      expect(mockResourceManager.getConnection).toHaveBeenCalledWith('test-pool', 'NORMAL', 5000);
+    });
+
+    it('should provide circuit breaker statistics', async () => {
+      await heimdallService.initialize();
+
+      const kafkaService = heimdallService.getKafkaService();
+      if (kafkaService) {
+        const circuitStats = kafkaService.getCircuitBreakerStats();
+        expect(circuitStats).toBeDefined();
+      }
+    });
+
+    it('should shutdown resources properly', async () => {
+      await heimdallService.initialize();
+      await heimdallService.stop();
+
+      expect(mockResourceManager.shutdown).toHaveBeenCalled();
+    });
+  });
+
+  describe('performance monitoring', () => {
+    it('should track query performance', async () => {
+      await heimdallService.initialize();
+
+      const mockQuery: HeimdallQuery = {
+        timeRange: {
+          from: new Date(Date.now() - 3600000),
+          to: new Date()
+        },
+        structured: {
+          levels: [LogLevel.INFO],
+          limit: 100
+        }
+      };
+
+      // Mock internal query implementation with performance tracking
+      jest.spyOn(heimdallService as any, 'executeQuery')
+        .mockResolvedValue({
+          logs: [],
+          total: 0,
+          aggregations: {},
+          insights: [],
+          performance: {
+            queryTime: 150,
+            cacheHit: false,
+            resourcesUsed: {
+              connections: 2,
+              memory: 50
+            }
+          }
+        });
+
+      const result = await heimdallService.query(mockQuery);
+      expect(result.performance).toBeDefined();
+      expect(result.performance.queryTime).toBeGreaterThan(0);
     });
   });
 });

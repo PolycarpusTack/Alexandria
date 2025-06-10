@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Bot, Code, FileCode, FolderOpen, History, MessageSquare, Settings, User, LogOut, ChevronRight } from 'lucide-react';
+import {       Bot, Code, FileCode, FolderOpen, History, MessageSquare, Settings, User, LogOut, ChevronRight       } from 'lucide-react';
 import '../../../../client/styles/enhanced-mockup-layout.css';
 
 interface AlfredEnhancedLayoutProps {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import {
+import {        
   Bell,
   Search,
   Settings,
@@ -9,7 +9,7 @@ import {
   Monitor,
   LogOut,
   Lightbulb,
-} from 'lucide-react';
+        } from 'lucide-react';
 import { Button } from './ui/button';
 import { 
   DropdownMenu,

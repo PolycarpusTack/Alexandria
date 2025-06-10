@@ -11,7 +11,7 @@ import { useTheme } from '../components/theme-provider';
 import { createClientLogger } from '../utils/client-logger';
 import { cn } from '../lib/utils';
 import { useNavigate } from 'react-router-dom';
-import {
+import {            
   Brain,
   Code,
   FileSearch,
@@ -25,7 +25,7 @@ import {
   GitBranch,
   Clock,
   CheckCircle2,
-  AlertCircle,
+  AlertTriangle,
   TrendingUp,
   Server,
   Cpu,
@@ -43,7 +43,7 @@ import {
   Calendar,
   Filter,
   Download
-} from 'lucide-react';
+            } from 'lucide-react';
 import { Progress } from '../components/ui/progress';
 import { StatusIndicator } from '../components/ui/status-indicator';
 import { Avatar, AvatarImage, AvatarFallback } from '../components/ui/avatar';

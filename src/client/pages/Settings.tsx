@@ -14,7 +14,7 @@ import { useTheme } from '../components/theme-provider';
 import { useLayout } from '../components/layout-selector';
 import { useAuth } from '../App';
 import { cn } from '../lib/utils';
-import {
+import {        
   Bell,
   Globe,
   Key,
@@ -32,7 +32,7 @@ import {
   Code,
   Database,
   Lock
-} from 'lucide-react';
+        } from 'lucide-react';
 import {
   Select,
   SelectContent,

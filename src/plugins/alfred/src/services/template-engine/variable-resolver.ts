@@ -318,14 +318,14 @@ export class ContextAwareVariableResolver {
     try {
       const prompt = this.buildAIPrompt(schema, templateContext, projectContext);
       
-      const response = await this.aiService.query(prompt, {
+      const response = await this.aiService.complete(prompt, {
         model: 'default',
         maxTokens: 200,
         temperature: 0.3, // Lower temperature for more deterministic results
         timeout: 5000
       });
 
-      const suggestion = this.parseAIResponse(schema, response);
+      const suggestion = this.parseAIResponse(schema, response.text);
       
       if (suggestion) {
         // Cache the suggestion
@@ -752,7 +752,9 @@ export class ContextAwareVariableResolver {
     }
 
     // Return the most common pattern
-    return Object.entries(patterns).reduce((a, b) => patterns[a[0]] > patterns[b[0]] ? a : b)[0] as any;
+    return Object.entries(patterns).reduce((a, b) => 
+      (patterns as any)[a[0]] > (patterns as any)[b[0]] ? a : b
+    )[0] as any;
   }
 
   /**

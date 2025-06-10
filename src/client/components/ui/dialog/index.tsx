@@ -116,6 +116,9 @@ const DialogDescription = React.forwardRef<
 ))
 DialogDescription.displayName = DialogPrimitive.Description.displayName
 
+// Create a compound component with sub-components
+// Removed duplicate DialogCompound export to fix TypeScript redeclaration error
+
 export {
   Dialog,
   DialogTrigger,
@@ -125,3 +128,6 @@ export {
   DialogTitle,
   DialogDescription,
 }
+
+// Export as default for easier compound usage
+export default Dialog;
