@@ -30,9 +30,10 @@ import {
   Settings
 } from 'lucide-react';
 import { ChatMessage, ChatSession, ProjectContext } from '../../src/interfaces';
-import { useAlfredService } from '../hooks/useAlfredService';
+import { useAlfredContext } from '../hooks/useAlfredContext';
 import { CodeBlock } from './CodeBlock';
 import { format } from 'date-fns';
+// CSS will be imported at the app level
 
 interface ChatInterfaceProps {
   sessionId: string;
@@ -43,7 +44,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   sessionId, 
   projectContext 
 }) => {
-  const alfredService = useAlfredService();
+  const { alfredService } = useAlfredContext();
   const { toast } = useToast();
   const [session, setSession] = useState<ChatSession | null>(null);
   const [message, setMessage] = useState('');
@@ -74,6 +75,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   }, [session?.messages]);
 
   const loadSession = async () => {
+    if (!alfredService) return;
     setIsLoading(true);
     try {
       const loadedSession = await alfredService.getSession(sessionId);
@@ -90,7 +92,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   };
 
   const sendMessage = async () => {
-    if (!message.trim() || isSending) return;
+    if (!message.trim() || isSending || !alfredService) return;
 
     const userMessage = message.trim();
     setMessage('');
@@ -224,24 +226,26 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="h-8 w-8 animate-spin" />
+      <div className="alfred-loading">
+        <Loader2 className="h-8 w-8 alfred-loading-spinner" />
       </div>
     );
   }
 
   if (!session) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <p className="text-muted-foreground">Session not found</p>
+      <div className="alfred-empty-state">
+        <Bot className="alfred-empty-state-icon" />
+        <h3 className="alfred-empty-state-title">Session not found</h3>
+        <p className="alfred-empty-state-description">The requested session could not be loaded.</p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="alfred-chat-interface">
       {/* Header */}
-      <div className="border-b px-6 py-3 flex items-center justify-between">
+      <div className="chat-header">
         <div>
           <h3 className="font-medium">{session.name}</h3>
           {projectContext && (
@@ -256,6 +260,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             size="sm"
             onClick={downloadSession}
             title="Download chat"
+            className="btn btn-ghost"
           >
             <Download className="h-4 w-4" />
           </Button>
@@ -264,6 +269,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             size="sm"
             onClick={loadSession}
             title="Refresh"
+            className="btn btn-ghost"
           >
             <RotateCcw className="h-4 w-4" />
           </Button>
@@ -271,164 +277,105 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       </div>
 
       {/* Messages */}
-      <ScrollArea className="flex-1 p-6">
+      <div className="alfred-chat-messages">
         <div className="space-y-4">
           {session.messages.map((msg) => (
             <div
               key={msg.id}
-              className={`flex gap-3 ${
-                msg.role === 'user' ? 'justify-end' : 'justify-start'
-              }`}
+              className={`alfred-chat-message ${msg.role}`}
             >
-              {msg.role !== 'user' && (
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                    <Bot className="h-5 w-5 text-primary" />
-                  </div>
-                </div>
-              )}
-              
-              <div
-                className={`max-w-[80%] ${
-                  msg.role === 'user' ? 'order-1' : ''
-                }`}
-              >
-                <Card>
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-2 mb-2">
-                      <Badge variant={msg.role === 'user' ? 'default' : 'secondary'}>
-                        {msg.role === 'user' ? 'You' : 'Alfred'}
-                      </Badge>
-                      <div className="flex items-center gap-1">
-                        <span className="text-xs text-muted-foreground">
-                          {format(new Date(msg.timestamp), 'HH:mm')}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 w-6 p-0"
-                          onClick={() => copyMessage(msg.content)}
-                        >
-                          <Copy className="h-3 w-3" />
-                        </Button>
-                      </div>
-                    </div>
-                    
-                    {msg.role === 'assistant' ? (
-                      <div className="prose prose-sm dark:prose-invert max-w-none">
-                        <CodeBlock content={msg.content} />
-                      </div>
-                    ) : (
-                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                    )}
-
-                    {msg.metadata && (
-                      <div className="mt-2 pt-2 border-t">
-                        <p className="text-xs text-muted-foreground">
-                          Model: {msg.metadata.model} • 
-                          Tokens: {msg.metadata.tokensUsed} • 
-                          Time: {msg.metadata.processingTime}ms
-                        </p>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
+              <div className={`alfred-chat-avatar ${msg.role}`}>
+                {msg.role === 'user' ? (
+                  <User className="h-5 w-5 text-white" />
+                ) : (
+                  <Bot className="h-5 w-5 text-white" />
+                )}
               </div>
-
-              {msg.role === 'user' && (
-                <div className="flex-shrink-0 order-2">
-                  <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
-                    <User className="h-5 w-5" />
+              
+              <div className="alfred-chat-content">
+                <div className="alfred-chat-bubble">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <Badge variant={msg.role === 'user' ? 'default' : 'secondary'}>
+                      {msg.role === 'user' ? 'You' : 'Alfred'}
+                    </Badge>
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-muted-foreground">
+                        {format(new Date(msg.timestamp), 'HH:mm')}
+                      </span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-6 w-6 p-0"
+                        onClick={() => copyMessage(msg.content)}
+                      >
+                        <Copy className="h-3 w-3" />
+                      </Button>
+                    </div>
                   </div>
+                  
+                  {msg.role === 'assistant' ? (
+                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                      <CodeBlock content={msg.content} />
+                    </div>
+                  ) : (
+                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                  )}
+
+                  {msg.metadata && (
+                    <div className="mt-2 pt-2 border-t">
+                      <p className="text-xs text-muted-foreground">
+                        Model: {msg.metadata.model} • 
+                        Tokens: {msg.metadata.tokensUsed} • 
+                        Time: {msg.metadata.processingTime}ms
+                      </p>
+                    </div>
+                  )}
                 </div>
-              )}
+              </div>
             </div>
           ))}
           <div ref={messagesEndRef} />
         </div>
-      </ScrollArea>
+      </div>
 
       {/* Quick Actions */}
       {message.length === 0 && (
-        <div className="border-t border-b px-4 py-3 bg-muted/30">
-          <div className="flex items-center gap-2 mb-2">
-            <Zap className="h-4 w-4 text-primary" />
-            <span className="text-sm font-medium">Quick Actions</span>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {quickActions.map((action) => (
-              <Button
-                key={action.label}
-                variant="outline"
-                size="sm"
-                onClick={() => handleQuickAction(action.prompt)}
-                className="text-xs"
-              >
-                <action.icon className="h-3 w-3 mr-1" />
-                {action.label}
-              </Button>
-            ))}
-          </div>
-          
-          {/* Smart Suggestions */}
-          {smartSuggestions.length > 0 && (
-            <div className="mt-3">
-              <div className="flex items-center gap-2 mb-2">
-                <Lightbulb className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium">Suggestions</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowSuggestions(!showSuggestions)}
-                  className="ml-auto h-6 w-6 p-0"
-                >
-                  <Settings className="h-3 w-3" />
-                </Button>
-              </div>
-              
-              {showSuggestions && (
-                <div className="space-y-1">
-                  {smartSuggestions.map((suggestion, index) => (
-                    <button
-                      key={index}
-                      onClick={() => handleSuggestionClick(suggestion)}
-                      className="block w-full text-left text-xs px-2 py-1 rounded hover:bg-muted/50 transition-colors"
-                    >
-                      "{suggestion}"
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+        <div className="alfred-quick-actions">
+          {quickActions.map((action) => (
+            <button
+              key={action.label}
+              onClick={() => handleQuickAction(action.prompt)}
+              className="alfred-quick-action"
+            >
+              <action.icon className="h-4 w-4" />
+              <span>{action.label}</span>
+            </button>
+          ))}
       )}
 
       {/* Input */}
-      <div className="border-t p-4">
-        <div className="flex gap-2">
-          <Textarea
+      <div className="alfred-chat-input">
+        <div className="alfred-chat-input-wrapper">
+          <textarea
             ref={textareaRef}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyPress}
             placeholder="Type your message... (Shift+Enter for new line)"
-            className="min-h-[80px] resize-none"
+            className="alfred-chat-textarea"
             disabled={isSending}
           />
-          <div className="flex flex-col gap-2">
-            <Button
-              onClick={sendMessage}
-              disabled={!message.trim() || isSending}
-              className="h-full"
-            >
-              {isSending ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <Send className="h-4 w-4" />
-              )}
-            </Button>
-          </div>
+          <Button
+            onClick={sendMessage}
+            disabled={!message.trim() || isSending}
+            className="btn btn-primary"
+          >
+            {isSending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
+          </Button>
         </div>
         
         {projectContext && (

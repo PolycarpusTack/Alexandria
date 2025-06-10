@@ -15,10 +15,12 @@ import {
   AlfredMessage, 
   CodeGenerationRequest,
   CodeGenerationResponse,
-  ProjectAnalysis
+  ProjectAnalysis,
+  ChatSession
 } from '../interfaces';
 import { PythonBridge, createBridgeScript } from '../bridge/python-bridge';
 import { AlfredAIAdapter } from './alfred-ai-adapter';
+import { SessionRepository } from '../repositories/session-repository';
 
 export interface AlfredServiceOptions {
   logger: Logger;
@@ -26,6 +28,7 @@ export interface AlfredServiceOptions {
   eventBus: EventBus;
   aiService: AIService;
   storageService: StorageService;
+  sessionRepository?: SessionRepository;
   alfredPath?: string;
 }
 
@@ -35,6 +38,7 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
   private eventBus: EventBus;
   private aiService: AIService;
   private storageService: StorageService;
+  private sessionRepository?: SessionRepository;
   private sessions: Map<string, AlfredSession> = new Map();
   private activeSessions: Set<string> = new Set();
   private pythonBridge?: PythonBridge;
@@ -48,6 +52,7 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
     this.eventBus = options.eventBus;
     this.aiService = options.aiService;
     this.storageService = options.storageService;
+    this.sessionRepository = options.sessionRepository;
     this.alfredPath = options.alfredPath || '/mnt/c/Projects/alfred';
     
     // Create AI adapter to use shared AI service
@@ -141,7 +146,7 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
     this.sessions.set(sessionId, session);
     this.activeSessions.add(sessionId);
     
-    // Save to database
+    // Save to repository immediately
     await this.saveSession(session);
 
     // If Python bridge is available, create session there too
@@ -234,6 +239,8 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
   }
 
   async getSessions(): Promise<AlfredSession[]> {
+    // Always reload sessions from repository to get latest data
+    await this.loadSessions();
     return Array.from(this.sessions.values());
   }
 
@@ -243,13 +250,14 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
       throw new Error('Session not found');
     }
 
+    // Delete from repository
+    if (this.sessionRepository) {
+      await this.sessionRepository.deleteSession(sessionId);
+    }
+
+    // Delete from memory
     this.sessions.delete(sessionId);
     this.activeSessions.delete(sessionId);
-    
-    // Delete from database
-    if (this.dataService.deleteSession) {
-      await this.dataService.deleteSession(sessionId);
-    }
 
     // Emit event
     this.eventBus.emit('alfred:session:deleted', { sessionId });
@@ -424,13 +432,28 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
   
   private async loadSessions(): Promise<void> {
     try {
-      // Load sessions from data service if available
-      if (this.dataService.getSessions) {
-        const sessions = await this.dataService.getSessions();
-        sessions.forEach(session => {
-          this.sessions.set(session.id, session);
+      // Load sessions from repository if available
+      if (this.sessionRepository) {
+        const chatSessions = await this.sessionRepository.getAllSessions();
+        chatSessions.forEach(chatSession => {
+          // Convert ChatSession to AlfredSession
+          const alfredSession: AlfredSession = {
+            id: chatSession.id,
+            projectPath: chatSession.projectId || 'default',
+            messages: chatSession.messages.map(msg => ({
+              id: msg.id,
+              content: msg.content,
+              timestamp: msg.timestamp,
+              type: msg.role === 'user' ? 'user' : 'response',
+              context: msg.metadata
+            })),
+            createdAt: chatSession.createdAt,
+            updatedAt: chatSession.updatedAt,
+            metadata: chatSession.metadata
+          };
+          this.sessions.set(alfredSession.id, alfredSession);
         });
-        this.logger.info(`Loaded ${sessions.length} sessions`);
+        this.logger.info(`Loaded ${chatSessions.length} sessions from repository`);
       }
     } catch (error) {
       this.logger.error('Failed to load sessions', { error });
@@ -439,8 +462,24 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
   
   private async saveSession(session: AlfredSession): Promise<void> {
     try {
-      if (this.dataService.saveSession) {
-        await this.dataService.saveSession(session);
+      if (this.sessionRepository) {
+        // Convert AlfredSession to ChatSession
+        const chatSession: ChatSession = {
+          id: session.id,
+          name: `Session ${session.createdAt.toLocaleDateString()}`,
+          projectId: session.projectPath,
+          messages: session.messages.map(msg => ({
+            id: msg.id,
+            role: msg.type === 'user' ? 'user' : 'assistant',
+            content: msg.content,
+            timestamp: msg.timestamp,
+            metadata: msg.context
+          })),
+          createdAt: session.createdAt,
+          updatedAt: session.updatedAt,
+          metadata: session.metadata
+        };
+        await this.sessionRepository.saveSession(chatSession);
       }
     } catch (error) {
       this.logger.error('Failed to save session', { error });

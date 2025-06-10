@@ -2,24 +2,25 @@
  * Session Repository - Handles persistence of chat sessions
  */
 
-import { DataService } from '../../../../core/data/interfaces';
 import { Logger } from '../../../../utils/logger';
 import { ChatSession, ChatMessage } from '../interfaces';
+import { CollectionDataService } from '../../../../core/data/collection-adapter';
 
 export class SessionRepository {
   private readonly COLLECTION_NAME = 'alfred_sessions';
 
   constructor(
-    private dataService: DataService,
+    private dataService: CollectionDataService,
     private logger: Logger
   ) {}
 
   async saveSession(session: ChatSession): Promise<void> {
     try {
-      await this.dataService.upsert(this.COLLECTION_NAME, {
-        id: session.id,
-        ...this.serializeSession(session)
-      });
+      await this.dataService.upsert(
+        this.COLLECTION_NAME, 
+        session.id,
+        this.serializeSession(session)
+      );
     } catch (error) {
       this.logger.error('Failed to save session', { error, sessionId: session.id });
       throw error;

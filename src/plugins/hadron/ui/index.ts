@@ -3,6 +3,7 @@ import { UIComponentDefinition, UIComponentType, UIComponentPosition, UIComponen
 import { CrashAnalyzerService } from '../src/services/crash-analyzer-service';
 import { EnhancedCrashAnalyzerService } from '../src/services/enhanced-crash-analyzer-service';
 import { Dashboard } from './components/Dashboard';
+import { HadronEnhancedLayout } from './components/HadronEnhancedLayout';
 import { CrashLogDetail } from './components/CrashLogDetail';
 import { UploadCrashLog } from './components/UploadCrashLog';
 import { SecurityScanResults } from './components/SecurityScanResults';

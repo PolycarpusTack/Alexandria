@@ -31,6 +31,7 @@ import {
   ProjectStatistics 
 } from '../../src/interfaces';
 import { useProjectContext } from '../hooks/useProjectContext';
+// CSS imported at app level
 
 interface FileTreeNodeProps {
   node: FileNode;
@@ -62,7 +63,7 @@ const FileTreeNode: React.FC<FileTreeNodeProps> = ({ node, level }) => {
   return (
     <div>
       <div 
-        className={`flex items-center gap-1 py-1 px-2 hover:bg-accent rounded cursor-pointer`}
+        className="alfred-file-item"
         style={{ paddingLeft: `${level * 20}px` }}
         onClick={() => isDirectory && setIsExpanded(!isExpanded)}
       >

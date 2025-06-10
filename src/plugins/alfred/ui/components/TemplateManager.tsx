@@ -28,7 +28,8 @@ import {
   Star
 } from 'lucide-react';
 import { CodeTemplate } from '../../src/interfaces';
-import { useAlfredService } from '../hooks/useAlfredService';
+import { useAlfredContext } from '../hooks/useAlfredContext';
+// CSS imported at app level
 
 export const TemplateManager: React.FC = () => {
   const { toast } = useToast();

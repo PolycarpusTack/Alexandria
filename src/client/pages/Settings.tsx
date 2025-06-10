@@ -221,6 +221,30 @@ const Settings: React.FC = () => {
                 <label className="text-sm font-medium">Layout</label>
                 <div className="grid grid-cols-2 gap-2">
                   <Button
+                    variant={layoutMode === 'enhanced' ? 'default' : 'outline'}
+                    className="w-full"
+                    onClick={() => setLayoutMode('enhanced')}
+                  >
+                    <Zap className="h-4 w-4 mr-2" />
+                    Enhanced
+                  </Button>
+                  <Button
+                    variant={layoutMode === 'enhanced-mockup' ? 'default' : 'outline'}
+                    className="w-full"
+                    onClick={() => setLayoutMode('enhanced-mockup')}
+                  >
+                    <Layout className="h-4 w-4 mr-2" />
+                    Enhanced Mockup
+                  </Button>
+                  <Button
+                    variant={layoutMode === 'mockup' ? 'default' : 'outline'}
+                    className="w-full"
+                    onClick={() => setLayoutMode('mockup')}
+                  >
+                    <Monitor className="h-4 w-4 mr-2" />
+                    Mockup
+                  </Button>
+                  <Button
                     variant={layoutMode === 'modern' ? 'default' : 'outline'}
                     className="w-full"
                     onClick={() => setLayoutMode('modern')}

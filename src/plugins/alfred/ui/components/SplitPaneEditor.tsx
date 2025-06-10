@@ -20,8 +20,7 @@ import {
   PlayIcon
 } from 'lucide-react';
 import { cn } from '../../../../client/lib/utils';
-import { StreamingService } from '../../src/services/streaming-service';
-import { AlfredService } from '../../src/services/alfred-service';
+import { useAlfredContext } from '../hooks/useAlfredContext';
 
 interface FileNode {
   name: string;
@@ -34,8 +33,6 @@ interface FileNode {
 interface SplitPaneEditorProps {
   projectPath?: string;
   initialFile?: string;
-  alfredService: AlfredService;
-  streamingService: StreamingService;
   onFileSelect?: (file: FileNode) => void;
   onCodeGenerate?: (code: string, file: string) => void;
 }
@@ -43,11 +40,10 @@ interface SplitPaneEditorProps {
 export function SplitPaneEditor({
   projectPath,
   initialFile,
-  alfredService,
-  streamingService,
   onFileSelect,
   onCodeGenerate
 }: SplitPaneEditorProps) {
+  const { alfredService, streamingService } = useAlfredContext();
   const [fileTree, setFileTree] = useState<FileNode[]>([]);
   const [selectedFile, setSelectedFile] = useState<FileNode | null>(null);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());

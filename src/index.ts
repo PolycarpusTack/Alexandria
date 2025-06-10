@@ -29,6 +29,9 @@ const logger = createLogger({
   format: 'simple'
 });
 
+// Import API routes
+import systemMetricsRouter from './api/system-metrics';
+
 // Core services object
 let coreServices: CoreServices;
 
@@ -204,6 +207,9 @@ app.use((req, res, next) => {
 
 // AI and Storage services are handled through plugins
 // Individual plugins can register their own API routes
+
+// Register system metrics API routes
+app.use('/api', systemMetricsRouter);
 
 // Authentication endpoints with stricter rate limiting
 app.post('/api/auth/login', async (req, res) => {

@@ -6,6 +6,13 @@ import { CrashLogUpload } from './crash-log-upload';
 import { CrashAnalyzerContext } from './crash-analyzer-context';
 import { crashAnalyzerAPI } from '../../services/crash-analyzer-api';
 
+// Import Hadron Dashboard
+const HadronDashboard = React.lazy(() => 
+  import('../../../plugins/hadron/ui/components/Dashboard').then(module => ({ 
+    default: module.Dashboard 
+  }))
+);
+
 // Real API service implementation
 const createCrashAnalyzerService = () => {
   return {
@@ -34,7 +41,11 @@ export const CrashAnalyzerRoutes: React.FC = () => {
   return (
     <CrashAnalyzerContext.Provider value={{ service }}>
       <Routes>
-        <Route path="/" element={<CrashLogDashboard />} />
+        <Route path="/" element={
+          <React.Suspense fallback={<div>Loading Hadron Dashboard...</div>}>
+            <HadronDashboard crashAnalyzerService={service} />
+          </React.Suspense>
+        } />
         <Route path="/upload" element={<CrashLogUpload />} />
         <Route path="/logs/:logId" element={<CrashLogDetail />} />
         <Route path="*" element={<Navigate to="/crash-analyzer" replace />} />

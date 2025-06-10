@@ -15,7 +15,11 @@ if (!canUseNativeEsbuild()) {
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react({
+    // Fix for WSL path issues
+    fastRefresh: process.platform === 'win32' ? true : false,
+    include: '**/*.{jsx,tsx}',
+  })],
   resolve: {
     alias: {
       '@': path.resolve(process.cwd(), './src'),

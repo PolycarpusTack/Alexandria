@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alfred UI Test</title>
+    <script type="module">
+        // Simulate the Alfred service for testing
+        window.alfred = {
+            services: {
+                alfredService: {
+                    async getSessions() {
+                        return [];
+                    },
+                    async getSession(id) {
+                        return {
+                            id,
+                            name: 'Test Session',
+                            messages: [],
+                            createdAt: new Date(),
+                            updatedAt: new Date(),
+                            metadata: { model: 'test', totalTokens: 0 }
+                        };
+                    },
+                    async createSession(projectPath) {
+                        return {
+                            id: 'test-' + Date.now(),
+                            name: 'New Session',
+                            projectPath,
+                            messages: [],
+                            createdAt: new Date(),
+                            updatedAt: new Date(),
+                            metadata: { model: 'test', totalTokens: 0 }
+                        };
+                    },
+                    async sendMessage(sessionId, content) {
+                        return {
+                            id: 'msg-' + Date.now(),
+                            role: 'assistant',
+                            content: 'Test response',
+                            timestamp: new Date()
+                        };
+                    },
+                    async deleteSession(id) {
+                        return true;
+                    },
+                    async generateCode(request) {
+                        return {
+                            code: '// Generated code',
+                            language: 'javascript'
+                        };
+                    },
+                    async analyzeProject(projectPath) {
+                        return {
+                            projectPath,
+                            structure: {
+                                files: [],
+                                statistics: {
+                                    totalFiles: 0,
+                                    totalDirectories: 0,
+                                    totalSize: 0,
+                                    languageBreakdown: {},
+                                    largestFiles: []
+                                }
+                            }
+                        };
+                    }
+                },
+                streamingService: {
+                    async *streamChat(sessionId, message) {
+                        yield 'Test ';
+                        yield 'streaming ';
+                        yield 'response.';
+                    },
+                    cancelAllStreams: () => {},
+                    removeAllListeners: () => {}
+                },
+                projectAnalyzer: {
+                    analyzeProject: async (path) => ({
+                        projectPath: path,
+                        structure: { 
+                            files: [], 
+                            statistics: { 
+                                totalFiles: 0, 
+                                totalDirectories: 0, 
+                                totalSize: 0, 
+                                languageBreakdown: {},
+                                largestFiles: [] 
+                            } 
+                        }
+                    })
+                },
+                codeGenerator: {
+                    generateCode: async (request) => ({
+                        code: '// Generated code',
+                        language: 'javascript'
+                    })
+                },
+                templateManager: {
+                    getTemplates: async () => [],
+                    createTemplate: async (template) => template,
+                    deleteTemplate: async (id) => {}
+                }
+            }
+        };
+        
+        console.log('✅ Alfred services mock created');
+        console.log('Services available:', Object.keys(window.alfred.services));
+    </script>
+</head>
+<body>
+    <h1>Alfred UI Test Environment</h1>
+    <p>This page sets up mock Alfred services for testing the UI components.</p>
+    <p>Check the console for service availability.</p>
+</body>
+</html>

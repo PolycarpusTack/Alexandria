@@ -93,7 +93,7 @@ export const Sidebar: React.FC = () => {
           <SidebarItem 
             to="/crash-analyzer" 
             icon={<Bug className="h-4 w-4" />} 
-            label="Crash Analyzer" 
+            label="Hadron" 
             badge={3} 
           />
           <SidebarItem 

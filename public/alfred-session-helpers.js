@@ -7,6 +7,7 @@ window.getAlfredSessions = function() {
   return [
     {
       id: "session-1",
+      name: "Demo Session",
       projectPath: "C:/Projects/Alexandria",
       messages: [],
       createdAt: new Date(),
@@ -21,8 +22,10 @@ window.getAlfredSessions = function() {
 
 // Similarly for creating a session
 window.createAlfredSession = function(projectPath) {
+  const timestamp = new Date().toLocaleString();
   return {
     id: `session-${Date.now()}`,
+    name: `New Session - ${timestamp}`,
     projectPath: projectPath || "C:/Projects/Alexandria",
     messages: [],
     createdAt: new Date(),

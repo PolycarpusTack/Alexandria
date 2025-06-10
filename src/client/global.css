@@ -2,6 +2,9 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Import Alexandria Global Design System */
+@import '../styles/alexandria-global.css';
+
 @layer base {
   :root {
     /* Alexandria Mockup Design Variables */

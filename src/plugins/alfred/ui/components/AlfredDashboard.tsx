@@ -12,11 +12,7 @@ import {
 } from '../../../../client/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../client/components/ui/tabs';
 import { Button } from '../../../../client/components/ui/button';
-import { AlfredService } from '../../src/services/alfred-service';
-import { StreamingService } from '../../src/services/streaming-service';
-import { ProjectAnalyzer } from '../../src/services/project-analyzer';
-import { CodeGenerator } from '../../src/services/code-generator';
-import { TemplateManager } from '../../src/services/template-manager';
+import { useAlfredContext } from '../hooks/useAlfredContext';
 import { ChatInterface } from './ChatInterface';
 import { ProjectExplorer } from './ProjectExplorer';
 import { TemplateManager as TemplateManagerUI } from './TemplateManager';
@@ -24,6 +20,7 @@ import { SessionList } from './SessionList';
 import { SplitPaneEditor } from './SplitPaneEditor';
 import { Bot, FolderOpen, FileCode, History, MessageSquare, Code } from 'lucide-react';
 import { createClientLogger } from '../../../../client/utils/client-logger';
+import { AlfredEnhancedLayout } from './AlfredEnhancedLayout';
 
 // Add TypeScript declarations for window extensions
 declare global {
@@ -35,30 +32,19 @@ declare global {
 
 const logger = createClientLogger({ serviceName: 'alfred-dashboard' });
 
-interface AlfredDashboardProps {
-  alfredService: AlfredService;
-  streamingService: StreamingService;
-  projectAnalyzer: ProjectAnalyzer;
-  codeGenerator: CodeGenerator;
-  templateManager: TemplateManager;
-}
-
-export function AlfredDashboard({
-  alfredService,
-  streamingService,
-  projectAnalyzer,
-  codeGenerator,
-  templateManager
-}: AlfredDashboardProps) {
+export function AlfredDashboard() {
+  const { alfredService, streamingService, projectAnalyzer, codeGenerator, templateManager, isLoading } = useAlfredContext();
   const [activeTab, setActiveTab] = useState('chat');
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
   const [sessions, setSessions] = useState([]);
   const [currentProject, setCurrentProject] = useState<string | undefined>();
 
   useEffect(() => {
-    // Load sessions on mount
-    loadSessions();
-  }, []);
+    // Load sessions on mount when services are ready
+    if (!isLoading && alfredService) {
+      loadSessions();
+    }
+  }, [isLoading, alfredService]);
 
   const loadSessions = async () => {
     try {
@@ -85,10 +71,12 @@ export function AlfredDashboard({
       } else {
         // Create a default session if none exist
         logger.info('No sessions found, creating default session');
-        const newSession = await handleNewSession();
-        if (newSession) {
-          setSessions([newSession]);
-          setCurrentSessionId(newSession.id);
+        if (alfredService) {
+          const newSession = await handleNewSession();
+          if (newSession) {
+            setSessions([newSession]);
+            setCurrentSessionId(newSession.id);
+          }
         }
       }
     } catch (error) {
@@ -108,6 +96,7 @@ export function AlfredDashboard({
   };
 
   const handleNewSession = async () => {
+    if (!alfredService) return null;
     try {
       let session;
       try {
@@ -142,30 +131,51 @@ export function AlfredDashboard({
     setCurrentProject(projectPath);
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <div className="animate-spin h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading Alfred services...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!alfredService) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="text-center">
+          <p className="text-destructive">Failed to load Alfred services</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="alfred-dashboard h-full flex flex-col">
-      <Card className="flex-1 flex flex-col">
-        <CardHeader>
+    <AlfredEnhancedLayout activeView={activeTab} onViewChange={setActiveTab}>
+      <div className="alfred-dashboard h-full flex flex-col">
+        <div className="content-header">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Bot className="h-6 w-6" />
-              <CardTitle>ALFRED Assistant</CardTitle>
+              <Bot className="h-6 w-6 text-primary" />
+              <h2 className="text-xl font-semibold">ALFRED Assistant</h2>
             </div>
-            <Button onClick={handleNewSession} size="sm">
+            <Button onClick={handleNewSession} size="sm" className="btn btn-primary">
               New Chat
             </Button>
           </div>
-          <CardDescription>
+          <p className="text-sm text-muted-foreground mt-1">
             AI-powered coding assistant for rapid development
             {currentProject && (
-              <span className="ml-2 text-sm font-medium">
+              <span className="ml-2 font-medium">
                 • Project: {currentProject.split('/').pop()}
               </span>
             )}
-          </CardDescription>
-        </CardHeader>
+          </p>
+        </div>
         
-        <CardContent className="flex-1 p-0">
+        <div className="flex-1 overflow-hidden mt-4">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
             <div className="px-6">
               <TabsList className="grid w-full grid-cols-6">
@@ -264,8 +274,8 @@ export function AlfredDashboard({
               </TabsContent>
             </div>
           </Tabs>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+      </div>
+    </AlfredEnhancedLayout>
   );
 }

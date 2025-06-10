@@ -13,12 +13,9 @@ import { SessionRepository } from './repositories/session-repository';
 import { TemplateRepository } from './repositories/template-repository';
 import { createAlfredRouter } from './api/alfred-api';
 import { Router } from 'express';
+import { AlfredDataServiceAdapter } from './services/data-service-adapter';
 
-// UI components
-import { AlfredDashboard } from '../ui/components/AlfredDashboard';
-import { ChatInterface } from '../ui/components/ChatInterface';
-import { ProjectExplorer } from '../ui/components/ProjectExplorer';
-import { TemplateManager as TemplateManagerUI } from '../ui/components/TemplateManager';
+// UI components will be loaded dynamically
 
 export class AlfredPlugin implements PluginLifecycle {
   private alfredService?: AlfredService;
@@ -39,9 +36,12 @@ export class AlfredPlugin implements PluginLifecycle {
     
     logger.info('Activating Alfred plugin');
     
-    // Initialize repositories
-    this.sessionRepository = new SessionRepository(data);
-    this.templateRepository = new TemplateRepository(data);
+    // Get collection-based data service adapter
+    const collectionService = await AlfredDataServiceAdapter.getInstance(data, logger);
+    
+    // Initialize repositories with collection service
+    this.sessionRepository = new SessionRepository(collectionService, logger);
+    this.templateRepository = new TemplateRepository(collectionService, logger);
     
     // Initialize AI adapter
     this.aiAdapter = new AlfredAIAdapter({
@@ -55,7 +55,8 @@ export class AlfredPlugin implements PluginLifecycle {
       dataService: data,
       eventBus,
       aiService,
-      storageService
+      storageService,
+      sessionRepository: this.sessionRepository
     });
     
     this.streamingService = new StreamingService(logger, this.aiAdapter);
@@ -94,43 +95,18 @@ export class AlfredPlugin implements PluginLifecycle {
       ));
     }
     
-    // Register UI components
-    ui.registerComponent({
-      id: 'alfred-dashboard',
-      component: AlfredDashboard,
-      props: {
-        alfredService: this.alfredService,
-        streamingService: this.streamingService,
-        projectAnalyzer: this.projectAnalyzer,
-        codeGenerator: this.codeGenerator,
-        templateManager: this.templateManager
-      }
-    });
-    
-    ui.registerComponent({
-      id: 'alfred-chat',
-      component: ChatInterface,
-      props: {
-        alfredService: this.alfredService,
-        streamingService: this.streamingService
-      }
-    });
-    
-    ui.registerComponent({
-      id: 'alfred-project-explorer',
-      component: ProjectExplorer,
-      props: {
-        projectAnalyzer: this.projectAnalyzer
-      }
-    });
-    
-    ui.registerComponent({
-      id: 'alfred-template-manager',
-      component: TemplateManagerUI,
-      props: {
-        templateManager: this.templateManager
-      }
-    });
+    // Make services available globally for UI components
+    if (typeof window !== 'undefined') {
+      (window as any).alfred = {
+        services: {
+          alfredService: this.alfredService,
+          streamingService: this.streamingService,
+          projectAnalyzer: this.projectAnalyzer,
+          codeGenerator: this.codeGenerator,
+          templateManager: this.templateManager
+        }
+      };
+    }
     
     // Subscribe to events
     eventBus.on('alfred:request:code', async (data: any) => {

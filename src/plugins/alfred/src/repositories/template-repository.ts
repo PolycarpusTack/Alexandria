@@ -2,24 +2,25 @@
  * Template Repository - Handles persistence of code templates
  */
 
-import { DataService } from '../../../../core/data/interfaces';
 import { Logger } from '../../../../utils/logger';
 import { CodeTemplate } from '../interfaces';
+import { CollectionDataService } from '../../../../core/data/collection-adapter';
 
 export class TemplateRepository {
   private readonly COLLECTION_NAME = 'alfred_templates';
 
   constructor(
-    private dataService: DataService,
+    private dataService: CollectionDataService,
     private logger: Logger
   ) {}
 
   async saveTemplate(template: CodeTemplate): Promise<void> {
     try {
-      await this.dataService.upsert(this.COLLECTION_NAME, {
-        id: template.id,
-        ...this.serializeTemplate(template)
-      });
+      await this.dataService.upsert(
+        this.COLLECTION_NAME,
+        template.id,
+        this.serializeTemplate(template)
+      );
     } catch (error) {
       this.logger.error('Failed to save template', { error, templateId: template.id });
       throw error;

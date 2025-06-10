@@ -67,7 +67,7 @@ const EnhancedMockupDashboard: React.FC = () => {
 
   const plugins = [
     {
-      name: 'ALFRED',
+      name: 'Alfred',
       version: 'v2.0.0',
       status: 'Active',
       description: 'AI-powered coding assistant with project-aware context and intelligent code generation capabilities.',
@@ -76,7 +76,7 @@ const EnhancedMockupDashboard: React.FC = () => {
       metrics: { requests: 893, success: '98.2%', avgTime: '145ms' }
     },
     {
-      name: 'Crash Analyzer',
+      name: 'Hadron',
       version: 'v1.0.0',
       status: 'Active',
       description: 'AI-powered crash log analysis with root cause detection and solution recommendations.',
@@ -97,7 +97,7 @@ const EnhancedMockupDashboard: React.FC = () => {
 
   const recentActivity = [
     { type: 'ai', message: 'LLM model loaded', detail: 'qwen2.5-coder:14b • 5 minutes ago', icon: '🤖' },
-    { type: 'alfred', message: 'ALFRED session started', detail: 'Code generation • 15 minutes ago', icon: '💻' },
+    { type: 'alfred', message: 'Alfred session started', detail: 'Code generation • 15 minutes ago', icon: '💻' },
     { type: 'crash', message: 'Crash analyzed', detail: 'High confidence • 1 hour ago', icon: '🔍' },
     { type: 'system', message: 'System startup complete', detail: 'All services online • 2 hours ago', icon: '✅' }
   ];
@@ -263,7 +263,7 @@ const EnhancedMockupDashboard: React.FC = () => {
             
             <div className="quick-actions-grid">
               <button className="btn btn-secondary" onClick={() => navigate('/alfred')}>
-                💻 Launch ALFRED
+                💻 Launch Alfred
               </button>
               <button className="btn btn-secondary" onClick={() => navigate('/crash-analyzer')}>
                 🔍 Analyze Crash

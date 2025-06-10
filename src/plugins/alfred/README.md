@@ -1,155 +1,257 @@
-# ALFRED Plugin for Alexandria
+# Alfred Plugin for Alexandria
 
-## AI-Linked Framework for Rapid Engineering Development
+🤖 **Alfred** is an AI-powered coding assistant plugin for the Alexandria platform that helps developers write better code faster through intelligent suggestions, code generation, and project understanding.
 
-ALFRED is a powerful AI coding assistant plugin for the Alexandria platform that helps developers with rapid engineering development through intelligent code generation, project analysis, and interactive AI assistance.
+![Alfred Banner](docs/images/alfred-banner.png)
 
 ## Features
 
-### 🤖 AI-Powered Chat Interface
-- Interactive conversations with AI models
-- Context-aware responses based on your project
-- Multiple AI model support (Ollama, OpenAI, etc.)
-- Session management with history
+### 🎯 Core Capabilities
 
-### 📁 Project Analysis
-- Automatic project structure analysis
-- Language detection and statistics
-- Dependency scanning
-- Real-time file change tracking
+- **AI Chat Assistant** - Natural language coding help and explanations
+- **Code Generation** - Generate code from descriptions with template support
+- **Project Analysis** - Understand and work within your project context
+- **Session Persistence** - All conversations saved and searchable
+- **Multi-Model Support** - Works with Ollama, OpenAI, and other AI providers
+- **Template System** - Create reusable code templates with variables
 
-### 💻 Code Generation
-- Template-based code generation
-- Custom template creation and management
-- Variable substitution and validation
-- Multi-language support
+### 🛠️ Technical Features
 
-### 🎯 Smart Features
-- Command palette integration (Ctrl+Alt+P)
-- Keyboard shortcuts for common actions
-- Real-time project context awareness
-- Code extraction and analysis
+- **PostgreSQL Storage** - Reliable session and template persistence
+- **Real-time Streaming** - See AI responses as they're generated
+- **Syntax Highlighting** - Beautiful code display with language detection
+- **Project Context** - AI understands your codebase structure
+- **Export/Import** - Share sessions and templates
+- **Keyboard Shortcuts** - Efficient workflow with hotkeys
 
 ## Installation
 
-ALFRED is included as a core plugin in Alexandria. To activate it:
+Alfred comes pre-installed with Alexandria. To verify it's enabled:
 
-1. Navigate to Alexandria's plugin settings
-2. Find "ALFRED - AI Coding Assistant"
-3. Click "Activate"
+```bash
+# Check plugin status
+alexandria plugins list
 
-## Usage
+# Enable if needed
+alexandria plugins enable alfred
+```
 
-### Starting a New Chat Session
+## Quick Start
 
-1. Click on the ALFRED icon in the sidebar
-2. Click "New Chat" or press `Ctrl+Alt+N`
-3. Start typing your questions or requests
+1. **Open Alfred**
+   - Click the Alfred tile in Alexandria dashboard
+   - Or press `Ctrl+K` (Windows/Linux) or `⌘K` (Mac)
 
-### Loading a Project
+2. **Start Chatting**
+   ```
+   "How do I create a REST API endpoint in Express?"
+   "Help me refactor this function to be more efficient"
+   "Generate unit tests for this React component"
+   ```
 
-1. Click "Open Project" in the ALFRED dashboard
-2. Select your project directory
-3. ALFRED will automatically analyze the project structure
+3. **Generate Code**
+   - Click "Generate" tab
+   - Describe what you need
+   - Select language and optional template
+   - Copy generated code
 
-### Generating Code
+## Documentation
 
-1. Use the command palette (`Ctrl+Alt+P`) and search for "Generate Code"
-2. Or click the "Generate" button in the chat interface
-3. Select a template or describe what you want to generate
-4. Fill in any required variables
-5. Review and insert the generated code
+- 📖 **[User Guide](docs/USER_GUIDE.md)** - Complete user documentation
+- 🔧 **[Developer Guide](docs/DEVELOPER_GUIDE.md)** - Technical documentation
+- 📋 **[Quick Reference](docs/QUICK_REFERENCE.md)** - Shortcuts and commands
 
-### Managing Templates
+## Project Structure
 
-1. Navigate to the Templates tab in ALFRED
-2. Create custom templates for your common patterns
-3. Share templates with your team
-4. Import templates from the community
+```
+alfred/
+├── src/                    # Core business logic
+│   ├── api/               # REST API endpoints
+│   ├── bridge/            # Python integration
+│   ├── repositories/      # Data persistence
+│   └── services/          # Business logic
+├── ui/                    # React components
+│   ├── components/        # UI components
+│   ├── hooks/            # React hooks
+│   └── styles/           # CSS styles
+├── __tests__/            # Test suites
+│   ├── unit/             # Unit tests
+│   └── integration/      # Integration tests
+└── docs/                 # Documentation
+```
 
-## API Endpoints
+## Development
 
-ALFRED exposes the following REST API endpoints:
+### Prerequisites
 
-- `POST /api/plugins/alfred/sessions` - Create a new chat session
-- `GET /api/plugins/alfred/sessions` - List all sessions
-- `GET /api/plugins/alfred/sessions/:id` - Get session details
-- `POST /api/plugins/alfred/sessions/:id/messages` - Send a message
-- `DELETE /api/plugins/alfred/sessions/:id` - Delete a session
-- `POST /api/plugins/alfred/generate` - Generate code
-- `GET /api/plugins/alfred/templates` - List templates
-- `POST /api/plugins/alfred/analyze` - Analyze a project
+- Node.js 18+
+- PostgreSQL 14+
+- Python 3.8+ (optional)
+- pnpm package manager
+
+### Setup
+
+```bash
+# Clone repository
+git clone https://github.com/your-org/alexandria.git
+cd alexandria
+
+# Install dependencies
+pnpm install
+
+# Run tests
+pnpm test alfred
+
+# Start development
+pnpm dev
+```
+
+### Testing
+
+```bash
+# Run all tests
+pnpm test
+
+# Unit tests only
+pnpm test:unit
+
+# With coverage
+pnpm test:coverage
+
+# Watch mode
+pnpm test:watch
+```
 
 ## Configuration
 
-ALFRED can be configured through Alexandria's settings:
+### Environment Variables
+
+```env
+# AI Service Configuration
+AI_SERVICE_TYPE=ollama
+OLLAMA_BASE_URL=http://localhost:11434
+AI_MODEL=deepseek-coder:latest
+
+# Database
+DATABASE_URL=postgresql://user:password@localhost:5432/alexandria
+
+# Optional Python Bridge
+ALFRED_PYTHON_PATH=/path/to/alfred/python
+```
+
+### Plugin Configuration
 
 ```json
 {
   "alfred": {
     "defaultModel": "deepseek-coder:latest",
-    "enableAutoSave": true,
-    "codeExtractionDepth": 3,
-    "maxSessionHistory": 100,
-    "enableTemplateSharing": true
+    "maxTokens": 4096,
+    "temperature": 0.7,
+    "streamingEnabled": true,
+    "sessionRetentionDays": 30
   }
 }
 ```
 
-## Keyboard Shortcuts
+## API Reference
 
-- `Ctrl+Alt+N` - New chat session
-- `Ctrl+Alt+A` - Analyze current project
-- `Ctrl+Alt+G` - Generate code
-- `Ctrl+Alt+S` - Save current session
-- `Ctrl+L` - Clear chat
+### Core Endpoints
 
-## Development
+```typescript
+// Sessions
+GET    /api/alfred/sessions
+POST   /api/alfred/sessions
+GET    /api/alfred/sessions/:id
+DELETE /api/alfred/sessions/:id
 
-### Building from Source
+// Messages
+POST   /api/alfred/sessions/:id/messages
+GET    /api/alfred/sessions/:id/stream
 
-```bash
-# Navigate to the plugin directory
-cd src/plugins/alfred
+// Code Generation
+POST   /api/alfred/generate
 
-# Install dependencies
-npm install
-
-# Build the plugin
-npm run build
-
-# Run tests
-npm test
+// Templates
+GET    /api/alfred/templates
+POST   /api/alfred/templates
 ```
 
-### Contributing
+### WebSocket Events
 
-We welcome contributions! Please see the main Alexandria contributing guide.
+```typescript
+// Client -> Server
+'alfred:message'         // Send message
+'alfred:generate'        // Generate code
+'alfred:analyze'         // Analyze project
 
-### Plugin Architecture
+// Server -> Client
+'alfred:response'        // AI response
+'alfred:stream'          // Streaming chunk
+'alfred:error'           // Error message
+```
 
-ALFRED follows Alexandria's plugin architecture:
+## Contributing
 
-- **Services**: Business logic and AI integration
-- **Repositories**: Data persistence layer
-- **API**: REST endpoints for external access
-- **UI Components**: React components for the interface
+We welcome contributions! Please see our [Contributing Guide](../../CONTRIBUTING.md) for details.
 
-## Migration from Standalone Alfred
+### Development Workflow
 
-If you're migrating from the standalone Alfred application:
+1. Fork the repository
+2. Create feature branch (`git checkout -b feature/amazing-feature`)
+3. Write tests first (TDD)
+4. Implement feature
+5. Run tests (`pnpm test`)
+6. Commit changes (`git commit -m 'Add amazing feature'`)
+7. Push branch (`git push origin feature/amazing-feature`)
+8. Open Pull Request
 
-1. Export your sessions from the old Alfred
-2. Import them into Alexandria's ALFRED plugin
-3. Your templates and settings will be automatically migrated
+### Code Style
 
-## Support
+- TypeScript with strict mode
+- ESLint + Prettier formatting
+- Comprehensive JSDoc comments
+- 80%+ test coverage required
 
-For issues or questions:
-- Check the Alexandria documentation
-- Open an issue on GitHub
-- Join our Discord community
+## Troubleshooting
+
+### Common Issues
+
+**AI Service Not Responding**
+- Check Ollama is running: `curl http://localhost:11434/api/tags`
+- Verify model is downloaded: `ollama list`
+- Check Alexandria logs: `alexandria logs alfred`
+
+**Sessions Not Saving**
+- Verify PostgreSQL connection
+- Check database migrations: `pnpm migrate`
+- Ensure proper permissions
+
+**Python Bridge Issues**
+- Verify Python path in config
+- Check Python dependencies: `pip install -r requirements.txt`
+- Run in TypeScript-only mode if needed
 
 ## License
 
-MIT License - see LICENSE file for details
+This project is part of Alexandria and follows the same license terms. See the [LICENSE](../../LICENSE) file for details.
+
+## Support
+
+- 📧 **Email**: support@alexandria.dev
+- 💬 **Discord**: [Join our community](https://discord.gg/alexandria)
+- 🐛 **Issues**: [GitHub Issues](https://github.com/your-org/alexandria/issues)
+- 📚 **Docs**: [Full Documentation](https://docs.alexandria.dev/plugins/alfred)
+
+## Acknowledgments
+
+- Built with ❤️ by the Alexandria team
+- Powered by open-source AI models
+- Special thanks to all contributors
+
+---
+
+<p align="center">
+  <a href="https://alexandria.dev">Website</a> •
+  <a href="https://docs.alexandria.dev">Documentation</a> •
+  <a href="https://github.com/your-org/alexandria">GitHub</a>
+</p>

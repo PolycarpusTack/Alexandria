@@ -80,7 +80,5 @@ The Alexandria repository serves two primary purposes:
 
 ---
 
-[... rest of the original document remains the same ...]
-
 ## Memories
-```
+- layout plugins

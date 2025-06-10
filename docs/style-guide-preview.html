@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alexandria Style Guide Preview</title>
+    <link rel="stylesheet" href="src/styles/alexandria-global.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+        }
+        .preview-section {
+            padding: var(--alexandria-space-xl);
+            border-bottom: 1px solid var(--alexandria-border-default);
+        }
+        .preview-title {
+            font-size: var(--alexandria-text-2xl);
+            font-weight: var(--alexandria-font-bold);
+            margin-bottom: var(--alexandria-space-lg);
+            color: var(--alexandria-text-primary);
+        }
+        .preview-subtitle {
+            font-size: var(--alexandria-text-lg);
+            font-weight: var(--alexandria-font-semibold);
+            margin: var(--alexandria-space-lg) 0 var(--alexandria-space-md) 0;
+            color: var(--alexandria-text-primary);
+        }
+        .preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--alexandria-space-lg);
+            margin: var(--alexandria-space-lg) 0;
+        }
+        .color-swatch {
+            display: flex;
+            align-items: center;
+            gap: var(--alexandria-space-md);
+            padding: var(--alexandria-space-md);
+            border-radius: var(--alexandria-radius-md);
+            background: var(--alexandria-bg-tertiary);
+        }
+        .color-box {
+            width: 60px;
+            height: 60px;
+            border-radius: var(--alexandria-radius-md);
+            box-shadow: var(--alexandria-shadow-sm);
+        }
+        .theme-toggle {
+            position: fixed;
+            top: var(--alexandria-space-md);
+            right: var(--alexandria-space-md);
+            z-index: 1000;
+        }
+        .component-example {
+            padding: var(--alexandria-space-lg);
+            background: var(--alexandria-bg-secondary);
+            border-radius: var(--alexandria-radius-lg);
+            margin: var(--alexandria-space-md) 0;
+        }
+        .mock-layout {
+            height: 600px;
+            border: 1px solid var(--alexandria-border-default);
+            border-radius: var(--alexandria-radius-lg);
+            overflow: hidden;
+            box-shadow: var(--alexandria-shadow-lg);
+        }
+    </style>
+</head>
+<body class="alexandria-app">
+    <!-- Theme Toggle -->
+    <div class="theme-toggle">
+        <button class="alexandria-btn alexandria-btn-secondary" onclick="toggleTheme()">
+            Toggle Dark Mode
+        </button>
+    </div>
+
+    <!-- Colors Section -->
+    <section class="preview-section">
+        <h1 class="preview-title">Alexandria Design System</h1>
+        
+        <h2 class="preview-subtitle">Color Palette</h2>
+        <div class="preview-grid">
+            <div class="color-swatch">
+                <div class="color-box" style="background: var(--alexandria-primary);"></div>
+                <div>
+                    <div class="alexandria-font-semibold">Primary</div>
+                    <div class="alexandria-text-sm alexandria-text-secondary">#3b82f6</div>
+                </div>
+            </div>
+            <div class="color-swatch">
+                <div class="color-box" style="background: var(--alexandria-success);"></div>
+                <div>
+                    <div class="alexandria-font-semibold">Success</div>
+                    <div class="alexandria-text-sm alexandria-text-secondary">#10b981</div>
+                </div>
+            </div>
+            <div class="color-swatch">
+                <div class="color-box" style="background: var(--alexandria-warning);"></div>
+                <div>
+                    <div class="alexandria-font-semibold">Warning</div>
+                    <div class="alexandria-text-sm alexandria-text-secondary">#f59e0b</div>
+                </div>
+            </div>
+            <div class="color-swatch">
+                <div class="color-box" style="background: var(--alexandria-error);"></div>
+                <div>
+                    <div class="alexandria-font-semibold">Error</div>
+                    <div class="alexandria-text-sm alexandria-text-secondary">#ef4444</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Typography Section -->
+    <section class="preview-section">
+        <h2 class="preview-subtitle">Typography</h2>
+        <div class="component-example">
+            <h1 class="alexandria-text-2xl alexandria-font-bold">Heading 2XL Bold</h1>
+            <h2 class="alexandria-text-xl alexandria-font-semibold">Heading XL Semibold</h2>
+            <h3 class="alexandria-text-lg alexandria-font-semibold">Heading LG Semibold</h3>
+            <p class="alexandria-text-base">Base paragraph text for body content</p>
+            <p class="alexandria-text-sm alexandria-text-secondary">Small secondary text for descriptions</p>
+            <p class="alexandria-text-xs alexandria-text-tertiary">Extra small tertiary text for labels</p>
+        </div>
+    </section>
+
+    <!-- Buttons Section -->
+    <section class="preview-section">
+        <h2 class="preview-subtitle">Buttons</h2>
+        <div class="component-example">
+            <div class="alexandria-flex alexandria-gap-md" style="margin-bottom: var(--alexandria-space-md);">
+                <button class="alexandria-btn alexandria-btn-primary">Primary</button>
+                <button class="alexandria-btn alexandria-btn-secondary">Secondary</button>
+                <button class="alexandria-btn alexandria-btn-ghost">Ghost</button>
+                <button class="alexandria-btn alexandria-btn-danger">Danger</button>
+                <button class="alexandria-btn alexandria-btn-primary" disabled>Disabled</button>
+            </div>
+            <div class="alexandria-flex alexandria-gap-md">
+                <button class="alexandria-btn alexandria-btn-primary alexandria-btn-sm">Small</button>
+                <button class="alexandria-btn alexandria-btn-primary">Default</button>
+                <button class="alexandria-btn alexandria-btn-primary alexandria-btn-lg">Large</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Forms Section -->
+    <section class="preview-section">
+        <h2 class="preview-subtitle">Form Elements</h2>
+        <div class="component-example">
+            <div style="max-width: 400px;">
+                <div style="margin-bottom: var(--alexandria-space-md);">
+                    <label class="alexandria-label">Username</label>
+                    <input type="text" class="alexandria-input" placeholder="Enter your username">
+                </div>
+                <div style="margin-bottom: var(--alexandria-space-md);">
+                    <label class="alexandria-label">Email</label>
+                    <input type="email" class="alexandria-input" placeholder="user@example.com">
+                </div>
+                <div>
+                    <label class="alexandria-label">Disabled Input</label>
+                    <input type="text" class="alexandria-input" placeholder="Cannot edit" disabled>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Cards Section -->
+    <section class="preview-section">
+        <h2 class="preview-subtitle">Cards</h2>
+        <div class="preview-grid">
+            <div class="alexandria-card">
+                <div class="alexandria-card-header">
+                    <h3 class="alexandria-text-lg alexandria-font-semibold">Card Title</h3>
+                </div>
+                <div class="alexandria-card-content">
+                    <p class="alexandria-text-sm alexandria-text-secondary">
+                        This is a card component with header and content sections.
+                    </p>
+                </div>
+                <div class="alexandria-card-footer">
+                    <button class="alexandria-btn alexandria-btn-primary alexandria-btn-sm">Action</button>
+                </div>
+            </div>
+            
+            <div class="alexandria-card">
+                <div class="alexandria-card-content">
+                    <div class="alexandria-stat-grid">
+                        <div class="alexandria-stat-item">
+                            <span class="alexandria-stat-label">Total Users</span>
+                            <span class="alexandria-stat-value">1,234</span>
+                        </div>
+                        <div class="alexandria-stat-item">
+                            <span class="alexandria-stat-label">Active</span>
+                            <span class="alexandria-stat-value success">892</span>
+                        </div>
+                        <div class="alexandria-stat-item">
+                            <span class="alexandria-stat-label">Errors</span>
+                            <span class="alexandria-stat-value error">23</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Badges Section -->
+    <section class="preview-section">
+        <h2 class="preview-subtitle">Badges</h2>
+        <div class="component-example">
+            <div class="alexandria-flex alexandria-gap-sm">
+                <span class="alexandria-badge alexandria-badge-default">Default</span>
+                <span class="alexandria-badge alexandria-badge-primary">Primary</span>
+                <span class="alexandria-badge alexandria-badge-success">Success</span>
+                <span class="alexandria-badge alexandria-badge-warning">Warning</span>
+                <span class="alexandria-badge alexandria-badge-error">Error</span>
+            </div>
+        </div>
+    </section>
+
+    <!-- Layout Example -->
+    <section class="preview-section">
+        <h2 class="preview-subtitle">Enhanced Layout Example</h2>
+        <div class="mock-layout">
+            <div class="alexandria-enhanced-layout">
+                <!-- Title Bar -->
+                <div class="alexandria-titlebar">
+                    <div class="alexandria-window-controls">
+                        <div class="alexandria-window-control close"></div>
+                        <div class="alexandria-window-control minimize"></div>
+                        <div class="alexandria-window-control maximize"></div>
+                    </div>
+                    <div class="alexandria-titlebar-title">Alexandria Plugin - Style Guide</div>
+                    <div class="alexandria-titlebar-controls">
+                        <button class="alexandria-btn alexandria-btn-ghost alexandria-btn-sm">⌘K</button>
+                    </div>
+                </div>
+                
+                <!-- Main Container -->
+                <div class="alexandria-main-container">
+                    <!-- Activity Bar -->
+                    <div class="alexandria-activity-bar">
+                        <div class="alexandria-activity-item active">📊</div>
+                        <div class="alexandria-activity-item">📁</div>
+                        <div class="alexandria-activity-item">
+                            🔔
+                            <span class="alexandria-activity-badge">3</span>
+                        </div>
+                        <div class="alexandria-activity-spacer"></div>
+                        <div class="alexandria-activity-item">⚙️</div>
+                    </div>
+                    
+                    <!-- Sidebar -->
+                    <div class="alexandria-sidebar">
+                        <div class="alexandria-sidebar-header">
+                            <h3 class="alexandria-sidebar-title">Navigation</h3>
+                        </div>
+                        <div class="alexandria-sidebar-content">
+                            <div class="alexandria-nav-section">
+                                <div class="alexandria-nav-section-title">MAIN MENU</div>
+                                <div class="alexandria-nav-item active">
+                                    <span>📊</span>
+                                    <span>Dashboard</span>
+                                </div>
+                                <div class="alexandria-nav-item">
+                                    <span>📈</span>
+                                    <span>Analytics</span>
+                                </div>
+                                <div class="alexandria-nav-item">
+                                    <span>📝</span>
+                                    <span>Reports</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Content Area -->
+                    <div class="alexandria-content-area">
+                        <div class="alexandria-content-header">
+                            <h1 class="alexandria-text-xl alexandria-font-semibold">Dashboard</h1>
+                            <p class="alexandria-text-sm alexandria-text-secondary">
+                                Welcome to your plugin dashboard
+                            </p>
+                        </div>
+                        <div class="alexandria-p-lg">
+                            <div class="alexandria-grid alexandria-grid-cols-3 alexandria-gap-md">
+                                <div class="alexandria-card">
+                                    <div class="alexandria-card-content">
+                                        <div class="alexandria-text-2xl alexandria-font-bold">124</div>
+                                        <div class="alexandria-text-sm alexandria-text-secondary">Total Items</div>
+                                    </div>
+                                </div>
+                                <div class="alexandria-card">
+                                    <div class="alexandria-card-content">
+                                        <div class="alexandria-text-2xl alexandria-font-bold alexandria-text-primary">89%</div>
+                                        <div class="alexandria-text-sm alexandria-text-secondary">Success Rate</div>
+                                    </div>
+                                </div>
+                                <div class="alexandria-card">
+                                    <div class="alexandria-card-content">
+                                        <div class="alexandria-text-2xl alexandria-font-bold success">+23%</div>
+                                        <div class="alexandria-text-sm alexandria-text-secondary">Growth</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        function toggleTheme() {
+            const html = document.documentElement;
+            const currentTheme = html.getAttribute('data-theme');
+            html.setAttribute('data-theme', currentTheme === 'dark' ? 'light' : 'dark');
+        }
+    </script>
+</body>
+</html>

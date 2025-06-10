@@ -20,11 +20,12 @@ import DashboardWrapper from './pages/DashboardWrapper';
 import NotFound from './pages/NotFound';
 import LLMModels from './pages/LLMModels';
 import Settings from './pages/Settings';
+import Plugins from './pages/Plugins';
 import { CrashAnalyzerRoutes } from './pages/crash-analyzer';
 
 // Plugin Routes - Dynamic imports for better code splitting
-const AlfredApp = React.lazy(() => import('../plugins/alfred/ui').then(module => ({ default: module.AlfredApp })));
-const HeimdallDashboard = React.lazy(() => import('../plugins/heimdall/ui/components/HeimdallDashboard'));
+const AlfredApp = React.lazy(() => import('../plugins/alfred/ui/index'));
+const HeimdallRoutes = React.lazy(() => import('./pages/heimdall'));
 
 // Auth context
 interface User {
@@ -204,7 +205,7 @@ const App: React.FC = () => {
               <DynamicLayout>
                 <RouteErrorBoundary>
                   <React.Suspense fallback={<div>Loading Heimdall...</div>}>
-                    <HeimdallDashboard />
+                    <HeimdallRoutes />
                   </React.Suspense>
                 </RouteErrorBoundary>
               </DynamicLayout>
@@ -216,6 +217,15 @@ const App: React.FC = () => {
             element={
               <DynamicLayout>
                 <LLMModels />
+              </DynamicLayout>
+            } 
+          />
+        } />
+        <Route path="/plugins" element={
+          <ProtectedRoute 
+            element={
+              <DynamicLayout>
+                <Plugins />
               </DynamicLayout>
             } 
           />

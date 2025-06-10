@@ -16,10 +16,11 @@ export default function EnhancedMockupSimple({ children }: { children?: React.Re
 
   const getPageTitle = () => {
     const path = location.pathname;
-    if (path.includes('/alfred')) return 'ALFRED';
-    if (path.includes('/crash-analyzer')) return 'Crash Analysis';
+    if (path.includes('/alfred')) return 'Alfred';
+    if (path.includes('/crash-analyzer') || path.includes('/hadron')) return 'Hadron';
     if (path.includes('/llm-models')) return 'AI Models';
     if (path.includes('/settings')) return 'Settings';
+    if (path.includes('/plugins')) return 'Plugins';
     return 'Dashboard';
   };
 
@@ -174,12 +175,12 @@ export default function EnhancedMockupSimple({ children }: { children?: React.Re
               </div>
               <div className="tab">
                 <span>💻</span>
-                <span>ALFRED</span>
+                <span>Alfred</span>
                 <span>❌</span>
               </div>
               <div className="tab">
                 <span>🔍</span>
-                <span>Crash Analysis</span>
+                <span>Hadron</span>
                 <span>❌</span>
               </div>
             </div>
@@ -257,7 +258,7 @@ export default function EnhancedMockupSimple({ children }: { children?: React.Re
               <h4 className="card-title">Quick Actions</h4>
               <div className="quick-actions-grid">
                 <button className="btn btn-secondary" onClick={() => navigateToPage('/alfred')}>
-                  💻 ALFRED
+                  💻 Alfred
                 </button>
                 <button className="btn btn-secondary" onClick={() => navigateToPage('/crash-analyzer')}>
                   🔍 Analyze

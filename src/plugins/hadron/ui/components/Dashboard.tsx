@@ -9,12 +9,13 @@ import {
   Pagination,
   Input,
   Select 
-} from '../../../../ui/components';
-import { useUIContext } from '../../../../ui/ui-context';
+} from '../../../../client/components/ui';
+import { useUIContext } from '../../../../client/context/ui-context';
 import { CrashLog } from '../../src/interfaces';
 import { CrashLogList } from './CrashLogList';
 import { StatsSummary } from './StatsSummary';
 import { hadronTheme } from '../utils/theme';
+import { HadronEnhancedLayout } from './HadronEnhancedLayout';
 
 interface DashboardProps {
   crashAnalyzerService: any;
@@ -33,7 +34,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ crashAnalyzerService }) =>
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const navigate = useNavigate();
-  const { showModal } = useUIContext();
+  
+  // Handle UI context safely - it might not be available when loaded as a plugin
+  let showModal: ((modalId: string, props?: any) => void) | undefined;
+  try {
+    const uiContext = useUIContext();
+    showModal = uiContext?.showModal;
+  } catch (error) {
+    // UI context not available - we'll handle modals differently
+    console.warn('UI context not available in Hadron Dashboard, using fallback modal handling');
+  }
   
   useEffect(() => {
     loadCrashLogs();
@@ -143,15 +153,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ crashAnalyzerService }) =>
   };
   
   const handleUploadClick = () => {
-    showModal('crash-analyzer-upload', {
-      onLogUploaded: (logId: string) => {
-        loadCrashLogs();
-        // Navigate to the log detail page when upload is complete
-        if (logId) {
-          navigate(`/crash-analyzer/logs/${logId}`);
+    if (showModal) {
+      showModal('crash-analyzer-upload', {
+        onLogUploaded: (logId: string) => {
+          loadCrashLogs();
+          // Navigate to the log detail page when upload is complete
+          if (logId) {
+            navigate(`/crash-analyzer/logs/${logId}`);
+          }
         }
-      }
-    });
+      });
+    } else {
+      // Fallback: navigate to upload page directly
+      navigate('/crash-analyzer/upload');
+    }
   };
   
   const handleLogClick = (logId: string) => {
@@ -179,14 +194,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ crashAnalyzerService }) =>
   }
   
   return (
-    <div className="p-4">
-      <div className="flex flex-col space-y-4 mb-6">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center">
-            <h1 className="text-2xl font-bold flex items-center gap-2">
-              <span className={hadronTheme.classes.accent}>⚡</span>
-              Crash Analyzer
-            </h1>
+    <HadronEnhancedLayout activeView="dashboard">
+      <div className="p-4">
+        <div className="flex flex-col space-y-4 mb-6">
+          <div className="flex justify-between items-center">
+            <div className="flex items-center">
+              <h1 className="text-2xl font-bold flex items-center gap-2">
+                <span className={hadronTheme.classes.accent}>⚡</span>
+                Crash Analyzer
+              </h1>
             {lastUpdated && (
               <div className="ml-4 text-sm text-gray-500">
                 Last updated: {lastUpdated.toLocaleTimeString()}
@@ -204,7 +220,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ crashAnalyzerService }) =>
           </div>
           <div className="flex gap-2">
             {/* Show code snippet button only if the service has that capability */}
-            {'analyzeCodeSnippet' in crashAnalyzerService && (
+            {'analyzeCodeSnippet' in crashAnalyzerService && showModal && (
               <Button
                 variant="secondary"
                 onClick={() => showModal('crash-analyzer-code-snippet-upload', {
@@ -327,5 +343,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ crashAnalyzerService }) =>
         )}
       </Card>
     </div>
+    </HadronEnhancedLayout>
   );
 };

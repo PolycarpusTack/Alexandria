@@ -61,7 +61,7 @@ export default function EnhancedMockupLayout({ children }: { children?: React.Re
     { id: 'plugins', icon: Puzzle, view: 'PLUGINS', badge: '3' },
     { id: 'ai', icon: Brain, view: 'AI MODELS' },
     { id: 'monitoring', icon: LineChart, view: 'MONITORING' },
-    { id: 'crashes', icon: Bug, view: 'CRASH ANALYZER', badge: '2' },
+    { id: 'crashes', icon: Bug, view: 'HADRON', badge: '2' },
   ];
 
   return (
@@ -181,7 +181,7 @@ export default function EnhancedMockupLayout({ children }: { children?: React.Re
               </div>
               <div className="tab">
                 <Code size={14} className="tab-icon tab-icon-alfred" />
-                <span>ALFRED</span>
+                <span>Alfred</span>
                 <X size={14} className="tab-close" />
               </div>
               <div className="tab">
@@ -281,7 +281,7 @@ export default function EnhancedMockupLayout({ children }: { children?: React.Re
                   <Code size={16} />
                 </div>
                 <div className="command-result-text">
-                  <div className="command-result-title">Launch ALFRED</div>
+                  <div className="command-result-title">Launch Alfred</div>
                   <div className="command-result-subtitle">Start AI coding assistant</div>
                 </div>
               </div>
