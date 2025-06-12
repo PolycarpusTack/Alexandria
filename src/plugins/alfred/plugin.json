@@ -41,7 +41,7 @@
     {
       "id": "alfred-projects",
       "name": "Project Explorer",
-      "location": "main", 
+      "location": "main",
       "component": "ui/components/ProjectExplorer",
       "routes": ["/alfred/projects"]
     },

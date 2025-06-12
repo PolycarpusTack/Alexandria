@@ -51,7 +51,7 @@ export class CacheManager {
    */
   async get<T>(key: string): Promise<T | null> {
     const entry = this.cache.get(key);
-    
+
     if (!entry) {
       this.stats.misses++;
       this.updateHitRate();
@@ -70,7 +70,7 @@ export class CacheManager {
     // Update access tracking
     entry.accessCount++;
     this.updateAccessOrder(key);
-    
+
     this.stats.hits++;
     this.updateHitRate();
 
@@ -87,17 +87,16 @@ export class CacheManager {
    */
   async set<T>(key: string, data: T): Promise<void> {
     const size = this.calculateSize(data);
-    
+
     // Check if we need to make room
     while (this.cache.size >= this.options.maxSize) {
       this.evictLRU();
     }
 
     // Compress large entries
-    const shouldCompress = 
-      this.options.compressionThreshold && 
-      size > this.options.compressionThreshold;
-    
+    const shouldCompress =
+      this.options.compressionThreshold && size > this.options.compressionThreshold;
+
     const entry: CacheEntry<T> = {
       data: shouldCompress ? await this.compress(data) : data,
       timestamp: Date.now(),
@@ -126,18 +125,18 @@ export class CacheManager {
     // Clear by pattern
     const regex = new RegExp(pattern);
     const keysToDelete = [];
-    
+
     for (const key of this.cache.keys()) {
       if (regex.test(key)) {
         keysToDelete.push(key);
       }
     }
 
-    keysToDelete.forEach(key => {
+    keysToDelete.forEach((key) => {
       this.cache.delete(key);
       this.removeFromAccessOrder(key);
     });
-    
+
     this.stats.size = this.cache.size;
   }
 
@@ -159,11 +158,9 @@ export class CacheManager {
   /**
    * Preload cache with data
    */
-  async preload<T>(
-    entries: Array<{ key: string; data: T }>
-  ): Promise<void> {
+  async preload<T>(entries: Array<{ key: string; data: T }>): Promise<void> {
     logger.info('Preloading cache', { entries: entries.length });
-    
+
     for (const { key, data } of entries) {
       await this.set(key, data);
     }
@@ -198,12 +195,12 @@ export class CacheManager {
 
   private evictLRU(): void {
     if (this.accessOrder.length === 0) return;
-    
+
     const keyToEvict = this.accessOrder[0];
     this.cache.delete(keyToEvict);
     this.accessOrder.shift();
     this.stats.evictions++;
-    
+
     logger.debug('Evicted cache entry', { key: keyToEvict });
   }
 
@@ -227,7 +224,7 @@ export class CacheManager {
     // Clean up expired entries every minute
     setInterval(() => {
       let cleaned = 0;
-      
+
       for (const [key, entry] of this.cache.entries()) {
         if (this.isExpired(entry)) {
           this.cache.delete(key);
@@ -235,7 +232,7 @@ export class CacheManager {
           cleaned++;
         }
       }
-      
+
       if (cleaned > 0) {
         logger.debug('Cleaned expired cache entries', { count: cleaned });
         this.stats.size = this.cache.size;
@@ -246,18 +243,14 @@ export class CacheManager {
   /**
    * Advanced caching strategies
    */
-  async getOrSet<T>(
-    key: string,
-    factory: () => Promise<T>,
-    ttl?: number
-  ): Promise<T> {
+  async getOrSet<T>(key: string, factory: () => Promise<T>, ttl?: number): Promise<T> {
     const cached = await this.get<T>(key);
     if (cached !== null) {
       return cached;
     }
 
     const data = await factory();
-    
+
     // Use custom TTL if provided
     if (ttl) {
       const originalTTL = this.options.ttl;
@@ -274,10 +267,7 @@ export class CacheManager {
   /**
    * Implement cache warming strategy
    */
-  async warmCache(
-    keys: string[],
-    factory: (key: string) => Promise<any>
-  ): Promise<void> {
+  async warmCache(keys: string[], factory: (key: string) => Promise<any>): Promise<void> {
     const warmupPromises = keys.map(async (key) => {
       const cached = await this.get(key);
       if (!cached) {

@@ -1,11 +1,17 @@
 /**
  * Feedback Analytics Dashboard Component
- * 
+ *
  * Displays analytics and insights from user feedback on AI analyses
  */
 
 import React, { useEffect, useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../../client/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from '../../../../client/components/ui/card';
 import { Button } from '../../../../client/components/ui/button';
 import { Badge } from '../../../../client/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../client/components/ui/tabs';
@@ -24,7 +30,7 @@ import {
   Legend,
   ResponsiveContainer
 } from 'recharts';
-import {  
+import {
   Star,
   TrendingUp,
   TrendingDown,
@@ -34,7 +40,7 @@ import {
   Download,
   RefreshCw,
   Calendar
-  } from 'lucide-react';
+} from 'lucide-react';
 import { apiClient } from '@/utils/api-client';
 import { FeedbackStats, FeedbackAnalysis } from '../../src/services/feedback/feedback-service';
 import { createClientLogger } from '@/client/utils/client-logger';
@@ -49,10 +55,7 @@ interface FeedbackAnalyticsProps {
   };
 }
 
-export const FeedbackAnalytics: React.FC<FeedbackAnalyticsProps> = ({
-  crashType,
-  dateRange
-}) => {
+export const FeedbackAnalytics: React.FC<FeedbackAnalyticsProps> = ({ crashType, dateRange }) => {
   const [stats, setStats] = useState<FeedbackStats | null>(null);
   const [analysis, setAnalysis] = useState<FeedbackAnalysis | null>(null);
   const [loading, setLoading] = useState(true);
@@ -98,7 +101,7 @@ export const FeedbackAnalytics: React.FC<FeedbackAnalyticsProps> = ({
       const response = await apiClient.get(`/api/crash-analyzer/feedback/export?format=${format}`, {
         responseType: 'blob'
       });
-      
+
       const url = URL.createObjectURL(response.data);
       const a = document.createElement('a');
       a.href = url;
@@ -112,15 +115,15 @@ export const FeedbackAnalytics: React.FC<FeedbackAnalyticsProps> = ({
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <RefreshCw className="h-8 w-8 animate-spin text-gray-400" />
+      <div className='flex items-center justify-center h-64'>
+        <RefreshCw className='h-8 w-8 animate-spin text-gray-400' />
       </div>
     );
   }
 
   if (error || !stats) {
     return (
-      <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 rounded-md">
+      <div className='bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-4 rounded-md'>
         {error || 'No data available'}
       </div>
     );
@@ -142,55 +145,41 @@ export const FeedbackAnalytics: React.FC<FeedbackAnalyticsProps> = ({
   const COLORS = ['#ef4444', '#f59e0b', '#6b7280', '#10b981', '#3b82f6'];
 
   return (
-    <div className="space-y-6">
+    <div className='space-y-6'>
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className='flex justify-between items-center'>
         <div>
-          <h2 className="text-2xl font-bold">Feedback Analytics</h2>
-          <p className="text-muted-foreground">
+          <h2 className='text-2xl font-bold'>Feedback Analytics</h2>
+          <p className='text-muted-foreground'>
             Insights from {stats.totalFeedback} feedback submissions
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleExport('csv')}
-          >
-            <Download className="h-4 w-4 mr-2" />
+        <div className='flex gap-2'>
+          <Button variant='outline' size='sm' onClick={() => handleExport('csv')}>
+            <Download className='h-4 w-4 mr-2' />
             Export CSV
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => handleExport('json')}
-          >
-            <Download className="h-4 w-4 mr-2" />
+          <Button variant='outline' size='sm' onClick={() => handleExport('json')}>
+            <Download className='h-4 w-4 mr-2' />
             Export JSON
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={loadAnalytics}
-          >
-            <RefreshCw className="h-4 w-4" />
+          <Button variant='outline' size='sm' onClick={loadAnalytics}>
+            <RefreshCw className='h-4 w-4' />
           </Button>
         </div>
       </div>
 
       {/* Key Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
+          <CardContent className='p-6'>
+            <div className='flex items-center justify-between'>
               <div>
-                <p className="text-sm text-muted-foreground">Average Rating</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
-                  <span className="text-2xl font-bold">
-                    {stats.averageRating.toFixed(1)}
-                  </span>
-                  <span className="text-sm text-muted-foreground">/ 5</span>
+                <p className='text-sm text-muted-foreground'>Average Rating</p>
+                <div className='flex items-center gap-2 mt-2'>
+                  <Star className='h-5 w-5 text-yellow-500 fill-yellow-500' />
+                  <span className='text-2xl font-bold'>{stats.averageRating.toFixed(1)}</span>
+                  <span className='text-sm text-muted-foreground'>/ 5</span>
                 </div>
               </div>
             </div>
@@ -198,13 +187,13 @@ export const FeedbackAnalytics: React.FC<FeedbackAnalyticsProps> = ({
         </Card>
 
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
+          <CardContent className='p-6'>
+            <div className='flex items-center justify-between'>
               <div>
-                <p className="text-sm text-muted-foreground">Accuracy Score</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <CheckCircle className="h-5 w-5 text-green-500" />
-                  <span className="text-2xl font-bold">
+                <p className='text-sm text-muted-foreground'>Accuracy Score</p>
+                <div className='flex items-center gap-2 mt-2'>
+                  <CheckCircle className='h-5 w-5 text-green-500' />
+                  <span className='text-2xl font-bold'>
                     {(stats.accuracyScore * 100).toFixed(0)}%
                   </span>
                 </div>
@@ -214,13 +203,13 @@ export const FeedbackAnalytics: React.FC<FeedbackAnalyticsProps> = ({
         </Card>
 
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
+          <CardContent className='p-6'>
+            <div className='flex items-center justify-between'>
               <div>
-                <p className="text-sm text-muted-foreground">Usefulness Score</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <TrendingUp className="h-5 w-5 text-blue-500" />
-                  <span className="text-2xl font-bold">
+                <p className='text-sm text-muted-foreground'>Usefulness Score</p>
+                <div className='flex items-center gap-2 mt-2'>
+                  <TrendingUp className='h-5 w-5 text-blue-500' />
+                  <span className='text-2xl font-bold'>
                     {(stats.usefulnessScore * 100).toFixed(0)}%
                   </span>
                 </div>
@@ -230,13 +219,13 @@ export const FeedbackAnalytics: React.FC<FeedbackAnalyticsProps> = ({
         </Card>
 
         <Card>
-          <CardContent className="p-6">
-            <div className="flex items-center justify-between">
+          <CardContent className='p-6'>
+            <div className='flex items-center justify-between'>
               <div>
-                <p className="text-sm text-muted-foreground">Total Feedback</p>
-                <div className="flex items-center gap-2 mt-2">
-                  <AlertTriangle className="h-5 w-5 text-purple-500" />
-                  <span className="text-2xl font-bold">{stats.totalFeedback}</span>
+                <p className='text-sm text-muted-foreground'>Total Feedback</p>
+                <div className='flex items-center gap-2 mt-2'>
+                  <AlertTriangle className='h-5 w-5 text-purple-500' />
+                  <span className='text-2xl font-bold'>{stats.totalFeedback}</span>
                 </div>
               </div>
             </div>
@@ -245,28 +234,28 @@ export const FeedbackAnalytics: React.FC<FeedbackAnalyticsProps> = ({
       </div>
 
       {/* Detailed Analytics */}
-      <Tabs defaultValue="overview" className="space-y-4">
+      <Tabs defaultValue='overview' className='space-y-4'>
         <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="models">Model Performance</TabsTrigger>
-          <TabsTrigger value="issues">Common Issues</TabsTrigger>
-          <TabsTrigger value="trends">Trends</TabsTrigger>
+          <TabsTrigger value='overview'>Overview</TabsTrigger>
+          <TabsTrigger value='models'>Model Performance</TabsTrigger>
+          <TabsTrigger value='issues'>Common Issues</TabsTrigger>
+          <TabsTrigger value='trends'>Trends</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-4">
+        <TabsContent value='overview' className='space-y-4'>
           {analysis && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-6'>
               <Card>
                 <CardHeader>
                   <CardTitle>Strengths</CardTitle>
                   <CardDescription>What's working well</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ul className="space-y-2">
+                  <ul className='space-y-2'>
                     {analysis.strengths.map((strength, index) => (
-                      <li key={index} className="flex items-start gap-2">
-                        <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
-                        <span className="text-sm">{strength}</span>
+                      <li key={index} className='flex items-start gap-2'>
+                        <CheckCircle className='h-5 w-5 text-green-500 mt-0.5' />
+                        <span className='text-sm'>{strength}</span>
                       </li>
                     ))}
                   </ul>
@@ -279,28 +268,28 @@ export const FeedbackAnalytics: React.FC<FeedbackAnalyticsProps> = ({
                   <CardDescription>What needs attention</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ul className="space-y-2">
+                  <ul className='space-y-2'>
                     {analysis.weaknesses.map((weakness, index) => (
-                      <li key={index} className="flex items-start gap-2">
-                        <XCircle className="h-5 w-5 text-red-500 mt-0.5" />
-                        <span className="text-sm">{weakness}</span>
+                      <li key={index} className='flex items-start gap-2'>
+                        <XCircle className='h-5 w-5 text-red-500 mt-0.5' />
+                        <span className='text-sm'>{weakness}</span>
                       </li>
                     ))}
                   </ul>
                 </CardContent>
               </Card>
 
-              <Card className="md:col-span-2">
+              <Card className='md:col-span-2'>
                 <CardHeader>
                   <CardTitle>Recommendations</CardTitle>
                   <CardDescription>Suggested improvements</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <ul className="space-y-2">
+                  <ul className='space-y-2'>
                     {analysis.recommendations.map((rec, index) => (
-                      <li key={index} className="flex items-start gap-2">
-                        <AlertTriangle className="h-5 w-5 text-blue-500 mt-0.5" />
-                        <span className="text-sm">{rec}</span>
+                      <li key={index} className='flex items-start gap-2'>
+                        <AlertTriangle className='h-5 w-5 text-blue-500 mt-0.5' />
+                        <span className='text-sm'>{rec}</span>
                       </li>
                     ))}
                   </ul>
@@ -310,17 +299,15 @@ export const FeedbackAnalytics: React.FC<FeedbackAnalyticsProps> = ({
           )}
         </TabsContent>
 
-        <TabsContent value="models" className="space-y-4">
+        <TabsContent value='models' className='space-y-4'>
           <Card>
             <CardHeader>
               <CardTitle>Model Performance Comparison</CardTitle>
-              <CardDescription>
-                Performance metrics across different LLM models
-              </CardDescription>
+              <CardDescription>Performance metrics across different LLM models</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
+              <div className='h-80'>
+                <ResponsiveContainer width='100%' height='100%'>
                   <BarChart
                     data={Object.entries(stats.modelPerformance).map(([model, perf]) => ({
                       model,
@@ -330,13 +317,13 @@ export const FeedbackAnalytics: React.FC<FeedbackAnalyticsProps> = ({
                     }))}
                     margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="model" />
+                    <CartesianGrid strokeDasharray='3 3' />
+                    <XAxis dataKey='model' />
                     <YAxis />
                     <Tooltip />
                     <Legend />
-                    <Bar dataKey="rating" fill="#3b82f6" name="Avg Rating" />
-                    <Bar dataKey="accuracy" fill="#10b981" name="Accuracy %" />
+                    <Bar dataKey='rating' fill='#3b82f6' name='Avg Rating' />
+                    <Bar dataKey='accuracy' fill='#10b981' name='Accuracy %' />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -344,24 +331,20 @@ export const FeedbackAnalytics: React.FC<FeedbackAnalyticsProps> = ({
           </Card>
         </TabsContent>
 
-        <TabsContent value="issues" className="space-y-4">
+        <TabsContent value='issues' className='space-y-4'>
           <Card>
             <CardHeader>
               <CardTitle>Common Issues</CardTitle>
-              <CardDescription>
-                Most frequently reported problems
-              </CardDescription>
+              <CardDescription>Most frequently reported problems</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
+              <div className='space-y-3'>
                 {stats.commonIssues.map((issue, index) => (
-                  <div key={index} className="flex items-center justify-between">
-                    <span className="text-sm">{issue.issue}</span>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary">
-                        {issue.count} reports
-                      </Badge>
-                      <span className="text-sm text-muted-foreground">
+                  <div key={index} className='flex items-center justify-between'>
+                    <span className='text-sm'>{issue.issue}</span>
+                    <div className='flex items-center gap-2'>
+                      <Badge variant='secondary'>{issue.count} reports</Badge>
+                      <span className='text-sm text-muted-foreground'>
                         {issue.percentage.toFixed(1)}%
                       </span>
                     </div>
@@ -372,42 +355,33 @@ export const FeedbackAnalytics: React.FC<FeedbackAnalyticsProps> = ({
           </Card>
         </TabsContent>
 
-        <TabsContent value="trends" className="space-y-4">
+        <TabsContent value='trends' className='space-y-4'>
           <Card>
             <CardHeader>
               <CardTitle>Performance Trends</CardTitle>
-              <CardDescription>
-                Rating and accuracy trends over time
-              </CardDescription>
+              <CardDescription>Rating and accuracy trends over time</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="h-80">
-                <ResponsiveContainer width="100%" height="100%">
+              <div className='h-80'>
+                <ResponsiveContainer width='100%' height='100%'>
                   <LineChart
                     data={stats.improvementTrends}
                     margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis 
-                      dataKey="date" 
+                    <CartesianGrid strokeDasharray='3 3' />
+                    <XAxis
+                      dataKey='date'
                       tickFormatter={(date) => new Date(date).toLocaleDateString()}
                     />
                     <YAxis />
-                    <Tooltip 
-                      labelFormatter={(date) => new Date(date).toLocaleDateString()}
-                    />
+                    <Tooltip labelFormatter={(date) => new Date(date).toLocaleDateString()} />
                     <Legend />
-                    <Line 
-                      type="monotone" 
-                      dataKey="rating" 
-                      stroke="#3b82f6" 
-                      name="Average Rating"
-                    />
-                    <Line 
-                      type="monotone" 
-                      dataKey={(d) => d.accuracy * 100} 
-                      stroke="#10b981" 
-                      name="Accuracy %"
+                    <Line type='monotone' dataKey='rating' stroke='#3b82f6' name='Average Rating' />
+                    <Line
+                      type='monotone'
+                      dataKey={(d) => d.accuracy * 100}
+                      stroke='#10b981'
+                      name='Accuracy %'
                     />
                   </LineChart>
                 </ResponsiveContainer>

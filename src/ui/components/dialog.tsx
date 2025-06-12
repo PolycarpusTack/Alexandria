@@ -50,12 +50,12 @@ export interface DialogCloseProps {
 /**
  * Dialog root component
  */
-export const Dialog: React.FC<DialogProps> = ({ 
-  children, 
-  open, 
+export const Dialog: React.FC<DialogProps> = ({
+  children,
+  open,
   defaultOpen = false,
   onOpenChange,
-  className = '' 
+  className = ''
 }) => {
   const [isOpen, setIsOpen] = useState(open ?? defaultOpen);
 
@@ -83,29 +83,25 @@ export const Dialog: React.FC<DialogProps> = ({
 /**
  * Dialog trigger component
  */
-export const DialogTrigger: React.FC<DialogTriggerProps> = ({ 
+export const DialogTrigger: React.FC<DialogTriggerProps> = ({
   children,
   asChild = false,
-  className = '' 
+  className = ''
 }) => {
-  return (
-    <div className={`alexandria-dialog-trigger ${className}`}>
-      {children}
-    </div>
-  );
+  return <div className={`alexandria-dialog-trigger ${className}`}>{children}</div>;
 };
 
 /**
  * Dialog content component
  */
-export const DialogContent: React.FC<DialogContentProps> = ({ 
+export const DialogContent: React.FC<DialogContentProps> = ({
   children,
   className = '',
   onInteractOutside,
   onEscapeKeyDown
 }) => {
   return (
-    <div 
+    <div
       className={`alexandria-dialog-content ${className}`}
       onClick={(e) => e.stopPropagation()}
       onKeyDown={(e) => {
@@ -122,70 +118,41 @@ export const DialogContent: React.FC<DialogContentProps> = ({
 /**
  * Dialog header component
  */
-export const DialogHeader: React.FC<DialogHeaderProps> = ({ 
-  children,
-  className = '' 
-}) => {
-  return (
-    <div className={`alexandria-dialog-header ${className}`}>
-      {children}
-    </div>
-  );
+export const DialogHeader: React.FC<DialogHeaderProps> = ({ children, className = '' }) => {
+  return <div className={`alexandria-dialog-header ${className}`}>{children}</div>;
 };
 
 /**
  * Dialog title component
  */
-export const DialogTitle: React.FC<DialogTitleProps> = ({ 
-  children,
-  className = '' 
-}) => {
-  return (
-    <h2 className={`alexandria-dialog-title ${className}`}>
-      {children}
-    </h2>
-  );
+export const DialogTitle: React.FC<DialogTitleProps> = ({ children, className = '' }) => {
+  return <h2 className={`alexandria-dialog-title ${className}`}>{children}</h2>;
 };
 
 /**
  * Dialog description component
  */
-export const DialogDescription: React.FC<DialogDescriptionProps> = ({ 
+export const DialogDescription: React.FC<DialogDescriptionProps> = ({
   children,
-  className = '' 
+  className = ''
 }) => {
-  return (
-    <div className={`alexandria-dialog-description ${className}`}>
-      {children}
-    </div>
-  );
+  return <div className={`alexandria-dialog-description ${className}`}>{children}</div>;
 };
 
 /**
  * Dialog footer component
  */
-export const DialogFooter: React.FC<DialogFooterProps> = ({ 
-  children,
-  className = '' 
-}) => {
-  return (
-    <div className={`alexandria-dialog-footer ${className}`}>
-      {children}
-    </div>
-  );
+export const DialogFooter: React.FC<DialogFooterProps> = ({ children, className = '' }) => {
+  return <div className={`alexandria-dialog-footer ${className}`}>{children}</div>;
 };
 
 /**
  * Dialog close component
  */
-export const DialogClose: React.FC<DialogCloseProps> = ({ 
+export const DialogClose: React.FC<DialogCloseProps> = ({
   children,
   asChild = false,
-  className = '' 
+  className = ''
 }) => {
-  return (
-    <div className={`alexandria-dialog-close ${className}`}>
-      {children}
-    </div>
-  );
+  return <div className={`alexandria-dialog-close ${className}`}>{children}</div>;
 };

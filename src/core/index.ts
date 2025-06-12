@@ -1,6 +1,6 @@
 /**
  * Core system exports for the Alexandria Platform
- * 
+ *
  * This file exports the interfaces and implementations of the core system components.
  */
 
@@ -67,23 +67,25 @@ import { createStorageService } from './services/storage';
 /**
  * Initialize the core system and services
  */
-export async function initializeCore(options: {
-  logLevel?: 'debug' | 'info' | 'warn' | 'error';
-  environment?: 'development' | 'test' | 'staging' | 'production';
-  pluginsDir?: string;
-  platformVersion?: string;
-  jwtSecret?: string;
-  encryptionKey?: string;
-  dataServiceType?: DataServiceType;
-  postgresOptions?: {
-    host: string;
-    port: number;
-    database: string;
-    user: string;
-    password: string;
-    ssl?: boolean;
-  };
-} = {}): Promise<CoreServices> {
+export async function initializeCore(
+  options: {
+    logLevel?: 'debug' | 'info' | 'warn' | 'error';
+    environment?: 'development' | 'test' | 'staging' | 'production';
+    pluginsDir?: string;
+    platformVersion?: string;
+    jwtSecret?: string;
+    encryptionKey?: string;
+    dataServiceType?: DataServiceType;
+    postgresOptions?: {
+      host: string;
+      port: number;
+      database: string;
+      user: string;
+      password: string;
+      ssl?: boolean;
+    };
+  } = {}
+): Promise<CoreServices> {
   // Set defaults
   const {
     logLevel = 'info',
@@ -95,46 +97,51 @@ export async function initializeCore(options: {
     dataServiceType = 'in-memory',
     postgresOptions
   } = options;
-  
+
   // Create logger
   const logger = createLogger({
     level: logLevel,
     serviceName: 'alexandria',
     format: environment === 'development' ? 'simple' : 'json'
   });
-  
-  logger.info('Initializing Alexandria Platform', { 
-    environment, 
+
+  logger.info('Initializing Alexandria Platform', {
+    environment,
     platformVersion,
     dataServiceType
   });
-  
+
   try {
     // Initialize event bus first (needed by other components)
     const eventBus = new EventBusImpl(logger);
-    
+
     // Initialize data service using factory
-    const dataService = createDataService({
-      type: dataServiceType,
-      postgres: postgresOptions
-    }, logger);
+    const dataService = createDataService(
+      {
+        type: dataServiceType,
+        postgres: postgresOptions
+      },
+      logger
+    );
     await dataService.initialize();
-    
+
     // Ensure required security parameters are provided
     if (!jwtSecret) {
       throw new Error('JWT secret is required. Please provide it in the initialization options.');
     }
     if (!encryptionKey) {
-      throw new Error('Encryption key is required. Please provide it in the initialization options.');
+      throw new Error(
+        'Encryption key is required. Please provide it in the initialization options.'
+      );
     }
-    
+
     // Initialize security service
     const securityService = new SecurityServiceImpl(logger, dataService, {
       jwtSecret,
       encryptionKey
     });
     await securityService.initialize();
-    
+
     // Initialize core system (use refactored version)
     const coreSystem = new CoreSystemRefactored({
       logger,
@@ -142,16 +149,16 @@ export async function initializeCore(options: {
       eventBus,
       dataService
     });
-    
+
     // Set data service before initialization
     coreSystem.setDataService(dataService);
-    
+
     await coreSystem.initialize();
-    
+
     // Initialize feature flags
     const featureFlags = new FeatureFlagServiceImpl(logger, eventBus);
     await featureFlags.initialize();
-    
+
     // Initialize AI service with dynamic model detection
     logger.info('Initializing AI service with dynamic model detection');
     const aiService = await createDynamicAIService(logger, {
@@ -161,31 +168,31 @@ export async function initializeCore(options: {
         maxSize: 100
       }
     });
-    
+
     // Initialize storage service
     logger.info('Initializing storage service');
     const storageService = createStorageService({}, logger);
     if (storageService.initialize) {
       await storageService.initialize();
     }
-    
+
     // Initialize plugin registry
     const pluginRegistry = new PluginRegistryImpl(
-      logger, 
-      eventBus, 
-      coreSystem, 
+      logger,
+      eventBus,
+      coreSystem,
       securityService,
       platformVersion,
       environment
     );
-    
+
     // Discover plugins
     await pluginRegistry.discoverPlugins(pluginsDir);
-    
+
     // Auto-activate plugins (parallel processing for better performance)
     const discoveredPlugins = pluginRegistry.getAllPlugins();
     logger.info(`Found ${discoveredPlugins.length} plugins, auto-activating...`);
-    
+
     // Process plugins in parallel for better performance
     const pluginActivationPromises = discoveredPlugins.map(async (plugin) => {
       try {
@@ -193,13 +200,13 @@ export async function initializeCore(options: {
         if (plugin.state === 'discovered') {
           await pluginRegistry.installPlugin(plugin);
         }
-        
+
         // Activate plugin
         if (plugin.state === 'installed') {
           await pluginRegistry.activatePlugin(plugin.manifest.id);
           logger.info(`Auto-activated plugin: ${plugin.manifest.name}`);
         }
-        
+
         return { success: true, pluginId: plugin.manifest.id };
       } catch (error) {
         logger.error(`Failed to auto-activate plugin ${plugin.manifest.id}`, {
@@ -208,24 +215,26 @@ export async function initializeCore(options: {
         return { success: false, pluginId: plugin.manifest.id, error };
       }
     });
-    
+
     // Wait for all plugin activations to complete
     const activationResults = await Promise.allSettled(pluginActivationPromises);
     const successfulActivations = activationResults.filter(
-      result => result.status === 'fulfilled' && result.value.success
+      (result) => result.status === 'fulfilled' && result.value.success
     ).length;
-    
-    logger.info(`Plugin activation completed: ${successfulActivations}/${discoveredPlugins.length} successful`);
-    
+
+    logger.info(
+      `Plugin activation completed: ${successfulActivations}/${discoveredPlugins.length} successful`
+    );
+
     // AI service will dynamically detect available models
     if (aiService) {
       logger.info('AI service initialized with dynamic model detection');
     } else {
       logger.warn('No AI models detected. AI features will be unavailable.');
     }
-    
+
     logger.info('Alexandria Platform core initialized successfully');
-    
+
     return {
       coreSystem,
       eventBus,
@@ -240,7 +249,7 @@ export async function initializeCore(options: {
     logger.error('Failed to initialize Alexandria Platform', {
       error: error instanceof Error ? error.message : String(error)
     });
-    
+
     throw error;
   }
 }

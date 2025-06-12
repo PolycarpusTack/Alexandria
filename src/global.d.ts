@@ -63,8 +63,8 @@ declare global {
       toHaveAttribute(attr: string, value?: string): R;
       toHaveClass(...classNames: string[]): R;
       toHaveFocus(): R;
-      toHaveFormValues(expectedValues: Record<string, any>): R;
-      toHaveStyle(css: string | Record<string, any>): R;
+      toHaveFormValues(expectedValues: Record<string, string | number | boolean>): R;
+      toHaveStyle(css: string | Record<string, string | number>): R;
       toHaveTextContent(text: string | RegExp, options?: { normalizeWhitespace: boolean }): R;
       toHaveValue(value?: string | string[] | number): R;
       toHaveDisplayValue(value: string | RegExp | Array<string | RegExp>): R;
@@ -91,7 +91,7 @@ declare module '*.jpg' {
 }
 
 declare module '*.json' {
-  const content: any;
+  const content: Record<string, unknown>;
   export default content;
 }
 

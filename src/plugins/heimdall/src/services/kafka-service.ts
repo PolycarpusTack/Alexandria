@@ -5,7 +5,7 @@
 
 import { Logger } from '@utils/logger';
 import { EventBus } from '@core/event-bus/interfaces';
-import { 
+import {
   KafkaConfig,
   KafkaMessage,
   HeimdallLogEntry,
@@ -13,7 +13,6 @@ import {
   Environment,
   DataClassification
 } from '../interfaces';
-import { v4 as uuidv4 } from 'uuid';
 import { CircuitBreakerService } from './circuit-breaker-service';
 import { HyperionResourceManager } from './resource-manager';
 
@@ -62,20 +61,25 @@ export class KafkaService {
   private reconnectTimer?: NodeJS.Timer;
   private messageProcessingQueue = new Map<string, Promise<void>>();
 
-  constructor(config: KafkaConfig, eventBus: EventBus, logger: Logger, resourceManager: HyperionResourceManager) {
+  constructor(
+    config: KafkaConfig,
+    eventBus: EventBus,
+    logger: Logger,
+    resourceManager: HyperionResourceManager
+  ) {
     this.config = config;
     this.eventBus = eventBus;
     this.logger = logger;
     this.resourceManager = resourceManager;
     this.circuitBreaker = new CircuitBreakerService(logger);
-    
+
     // Initialize circuit breakers for Kafka operations
     this.circuitBreaker.createCircuit('kafka-consumer', {
       failureThreshold: 3,
       resetTimeout: 30000,
       volumeThreshold: 5
     });
-    
+
     this.circuitBreaker.createCircuit('kafka-producer', {
       failureThreshold: 5,
       resetTimeout: 60000,
@@ -110,24 +114,24 @@ export class KafkaService {
         });
         this.client = this.createMockKafkaClient();
       }
-      
+
       // Initialize producer
       this.producer = this.client.producer();
       await this.producer.connect();
-      
+
       // Initialize consumer
-      this.consumer = this.client.consumer({ 
-        groupId: this.config.groupId || 'heimdall-consumers' 
+      this.consumer = this.client.consumer({
+        groupId: this.config.groupId || 'heimdall-consumers'
       });
       await this.consumer.connect();
-      
+
       // Initialize admin
       this.admin = this.client.admin();
       await this.admin.connect();
-      
+
       // Create topics if they don't exist
       await this.ensureTopics();
-      
+
       this.isConnected = true;
       this.logger.info('Kafka service initialized successfully');
     } catch (error) {
@@ -149,11 +153,11 @@ export class KafkaService {
     }
 
     this.messageHandler = messageHandler;
-    
+
     try {
       // Subscribe to multiple topics with error handling
       const topics = ['heimdall-logs', 'heimdall-alerts', 'heimdall-metrics'];
-      
+
       for (const topic of topics) {
         try {
           await this.consumer!.subscribe({
@@ -173,7 +177,7 @@ export class KafkaService {
       await this.consumer!.run({
         eachMessage: async ({ topic, partition, message }: any) => {
           const processingStartTime = Date.now();
-          
+
           try {
             const kafkaMessage: KafkaMessage = {
               topic,
@@ -190,9 +194,9 @@ export class KafkaService {
               this.messageHandler!(kafkaMessage),
               this.createTimeoutPromise(30000) // 30 second timeout
             ]);
-            
+
             const processingTime = Date.now() - processingStartTime;
-            
+
             // Emit success event with metrics
             await this.eventBus.publish('heimdall:kafka:message:processed', {
               topic,
@@ -204,10 +208,9 @@ export class KafkaService {
 
             // Reset reconnect attempts on successful processing
             this.reconnectAttempts = 0;
-            
           } catch (error) {
             const processingTime = Date.now() - processingStartTime;
-            
+
             this.logger.error('Failed to process Kafka message', {
               topic,
               partition,
@@ -216,7 +219,7 @@ export class KafkaService {
               error: error instanceof Error ? error.message : String(error),
               stack: error instanceof Error ? error.stack : undefined
             });
-            
+
             // Emit error event with context
             await this.eventBus.publish('heimdall:kafka:message:error', {
               topic,
@@ -242,7 +245,7 @@ export class KafkaService {
       this.logger.error('Failed to start Kafka consumer', {
         error: error instanceof Error ? error.message : String(error)
       });
-      
+
       // Schedule reconnection for recoverable errors
       if (this.isRecoverableError(error)) {
         await this.scheduleReconnect();
@@ -266,7 +269,7 @@ export class KafkaService {
     try {
       // Stop components in reverse order with timeouts
       const disconnectPromises = [];
-      
+
       if (this.consumer) {
         disconnectPromises.push(
           Promise.race([
@@ -275,7 +278,7 @@ export class KafkaService {
           ])
         );
       }
-      
+
       if (this.producer) {
         disconnectPromises.push(
           Promise.race([
@@ -284,7 +287,7 @@ export class KafkaService {
           ])
         );
       }
-      
+
       if (this.admin) {
         disconnectPromises.push(
           Promise.race([
@@ -296,7 +299,7 @@ export class KafkaService {
 
       // Wait for all disconnections with overall timeout
       await Promise.allSettled(disconnectPromises);
-      
+
       this.isConnected = false;
       this.reconnectAttempts = 0;
       this.logger.info('Kafka service stopped successfully');
@@ -304,7 +307,7 @@ export class KafkaService {
       this.logger.error('Failed to stop Kafka service gracefully', {
         error: error instanceof Error ? error.message : String(error)
       });
-      
+
       // Force cleanup
       this.isConnected = false;
       this.isRunning = false;
@@ -365,7 +368,7 @@ export class KafkaService {
     try {
       // Group logs by service for better partitioning
       const serviceGroups = new Map<string, HeimdallLogEntry[]>();
-      
+
       for (const log of logs) {
         const service = log.source.service;
         const group = serviceGroups.get(service) || [];
@@ -374,26 +377,28 @@ export class KafkaService {
       }
 
       // Send each service group to optimize partitioning
-      const sendPromises = Array.from(serviceGroups.entries()).map(async ([service, serviceLogs]) => {
-        const messages = serviceLogs.map((log, index) => ({
-          key: log.id,
-          value: JSON.stringify(log),
-          timestamp: Date.now().toString(),
-          partition: this.getPartitionForService(service),
-          headers: {
-            'content-type': 'application/json',
-            'schema-version': log.version.toString(),
-            'source-service': service,
-            'batch-index': index.toString(),
-            'batch-size': serviceLogs.length.toString()
-          }
-        }));
+      const sendPromises = Array.from(serviceGroups.entries()).map(
+        async ([service, serviceLogs]) => {
+          const messages = serviceLogs.map((log, index) => ({
+            key: log.id,
+            value: JSON.stringify(log),
+            timestamp: Date.now().toString(),
+            partition: this.getPartitionForService(service),
+            headers: {
+              'content-type': 'application/json',
+              'schema-version': log.version.toString(),
+              'source-service': service,
+              'batch-index': index.toString(),
+              'batch-size': serviceLogs.length.toString()
+            }
+          }));
 
-        return this.producer!.send({
-          topic: 'heimdall-logs',
-          messages
-        });
-      });
+          return this.producer!.send({
+            topic: 'heimdall-logs',
+            messages
+          });
+        }
+      );
 
       // Send all service groups in parallel
       await Promise.all(sendPromises);
@@ -411,7 +416,6 @@ export class KafkaService {
         services: Array.from(serviceGroups.keys()),
         timestamp: Date.now()
       });
-
     } catch (error) {
       this.logger.error('Failed to send batch to Kafka', {
         count: logs.length,
@@ -434,7 +438,7 @@ export class KafkaService {
    */
   convertToLogEntry(message: KafkaMessage): HeimdallLogEntry {
     const value = message.value as any;
-    
+
     // If the message already has the correct structure, return it
     if (value.id && value.timestamp && value.version) {
       return value as HeimdallLogEntry;
@@ -442,7 +446,7 @@ export class KafkaService {
 
     // Otherwise, create a new log entry from the message
     const uuidv7 = () => `${Date.now()}-${uuidv4()}`;
-    
+
     return {
       id: message.key || uuidv7(),
       timestamp: BigInt(message.timestamp || Date.now()) * BigInt(1000000), // Convert to nanoseconds
@@ -509,15 +513,15 @@ export class KafkaService {
    */
   async restart(): Promise<void> {
     this.logger.info('Restarting Kafka service');
-    
+
     try {
       await this.stop();
       await this.initialize();
-      
+
       if (this.messageHandler) {
         await this.start(this.messageHandler);
       }
-      
+
       this.logger.info('Kafka service restarted successfully');
     } catch (error) {
       this.logger.error('Failed to restart Kafka service', {
@@ -530,7 +534,7 @@ export class KafkaService {
   /**
    * Private helper methods
    */
-  
+
   private async ensureTopics(): Promise<void> {
     const topics = [
       {
@@ -566,7 +570,7 @@ export class KafkaService {
     try {
       await this.admin!.createTopics({ topics });
       this.logger.info('Kafka topics created/verified', {
-        topics: topics.map(t => t.topic)
+        topics: topics.map((t) => t.topic)
       });
     } catch (error) {
       this.logger.error('Failed to create Kafka topics', {
@@ -585,13 +589,13 @@ export class KafkaService {
 
   private parseHeaders(headers: any): Record<string, string> {
     const parsed: Record<string, string> = {};
-    
+
     if (headers) {
       for (const [key, value] of Object.entries(headers)) {
         parsed[key] = value?.toString() || '';
       }
     }
-    
+
     return parsed;
   }
 
@@ -619,7 +623,7 @@ export class KafkaService {
     ];
 
     const errorMessage = error instanceof Error ? error.message : String(error);
-    return retryableErrors.some(pattern => errorMessage.includes(pattern));
+    return retryableErrors.some((pattern) => errorMessage.includes(pattern));
   }
 
   /**
@@ -634,21 +638,17 @@ export class KafkaService {
     ];
 
     const errorMessage = error instanceof Error ? error.message : String(error);
-    return criticalErrors.some(pattern => errorMessage.includes(pattern));
+    return criticalErrors.some((pattern) => errorMessage.includes(pattern));
   }
 
   /**
    * Determine if an error is recoverable (service can be restarted)
    */
   private isRecoverableError(error: any): boolean {
-    const unrecoverableErrors = [
-      'INVALID_CONFIG',
-      'UNSUPPORTED_VERSION',
-      'UNKNOWN_MEMBER_ID'
-    ];
+    const unrecoverableErrors = ['INVALID_CONFIG', 'UNSUPPORTED_VERSION', 'UNKNOWN_MEMBER_ID'];
 
     const errorMessage = error instanceof Error ? error.message : String(error);
-    return !unrecoverableErrors.some(pattern => errorMessage.includes(pattern));
+    return !unrecoverableErrors.some((pattern) => errorMessage.includes(pattern));
   }
 
   /**
@@ -659,10 +659,10 @@ export class KafkaService {
     let hash = 0;
     for (let i = 0; i < service.length; i++) {
       const char = service.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
-    
+
     // Assuming 10 partitions (as configured in ensureTopics)
     return Math.abs(hash) % 10;
   }
@@ -697,7 +697,7 @@ export class KafkaService {
           attempt: this.reconnectAttempts,
           error: error instanceof Error ? error.message : String(error)
         });
-        
+
         // Schedule next attempt if we haven't exceeded max attempts
         if (this.reconnectAttempts < this.maxReconnectAttempts) {
           await this.scheduleReconnect();
@@ -722,18 +722,20 @@ export class KafkaService {
           message: {
             offset: Date.now().toString(),
             timestamp: Date.now().toString(),
-            value: Buffer.from(JSON.stringify({
-              id: uuidv4(),
-              timestamp: Date.now(),
-              level: ['INFO', 'WARN', 'ERROR'][Math.floor(Math.random() * 3)],
-              service: ['auth', 'api', 'worker'][Math.floor(Math.random() * 3)],
-              message: 'Mock log message from Kafka'
-            })),
+            value: Buffer.from(
+              JSON.stringify({
+                id: uuidv4(),
+                timestamp: Date.now(),
+                level: ['INFO', 'WARN', 'ERROR'][Math.floor(Math.random() * 3)],
+                service: ['auth', 'api', 'worker'][Math.floor(Math.random() * 3)],
+                message: 'Mock log message from Kafka'
+              })
+            ),
             headers: {}
           }
         };
-        
-        messageHandler(mockMessage).catch(err => {
+
+        messageHandler(mockMessage).catch((err) => {
           this.logger.error('Mock message handler error', { error: err });
         });
       }
@@ -755,7 +757,7 @@ export class KafkaService {
           this.logger.info('Mock Kafka consumer running');
         }
       }),
-      
+
       producer: () => ({
         connect: async () => {
           this.logger.info('Mock Kafka producer connected');
@@ -771,7 +773,7 @@ export class KafkaService {
           });
         }
       }),
-      
+
       admin: () => ({
         connect: async () => {
           this.logger.info('Mock Kafka admin connected');
@@ -781,7 +783,7 @@ export class KafkaService {
         },
         createTopics: async (config: { topics: any[] }) => {
           this.logger.info('Mock Kafka topics created', {
-            topics: config.topics.map(t => t.topic)
+            topics: config.topics.map((t) => t.topic)
           });
         },
         listTopics: async () => {

@@ -4,15 +4,12 @@
 
 import { Router } from 'express';
 import { body, param, query, validationResult } from 'express-validator';
-import { FeedbackService, AnalysisFeedback } from '../services/feedback/feedback-service';
+import { FeedbackService } from '../services/feedback/feedback-service';
 import { Logger } from '@utils/logger';
 import { authMiddleware } from '@core/security/auth-middleware';
 import { permissionMiddleware } from './permission-middleware';
 
-export function createFeedbackRouter(
-  feedbackService: FeedbackService,
-  logger: Logger
-): Router {
+export function createFeedbackRouter(feedbackService: FeedbackService, logger: Logger): Router {
   const router = Router();
 
   // Apply authentication to all feedback routes
@@ -86,9 +83,7 @@ export function createFeedbackRouter(
    */
   router.get(
     '/analysis/:analysisId',
-    [
-      param('analysisId').isString().notEmpty()
-    ],
+    [param('analysisId').isString().notEmpty()],
     permissionMiddleware('feedback:read'),
     async (req, res) => {
       try {
@@ -138,7 +133,9 @@ export function createFeedbackRouter(
           startDate: req.query.startDate ? new Date(req.query.startDate as string) : undefined,
           endDate: req.query.endDate ? new Date(req.query.endDate as string) : undefined,
           llmModel: req.query.llmModel as string | undefined,
-          minFeedbackCount: req.query.minFeedbackCount ? parseInt(req.query.minFeedbackCount as string) : undefined
+          minFeedbackCount: req.query.minFeedbackCount
+            ? parseInt(req.query.minFeedbackCount as string)
+            : undefined
         };
 
         const stats = await feedbackService.getFeedbackStats(options);
@@ -176,7 +173,9 @@ export function createFeedbackRouter(
         }
 
         const options = {
-          minSampleSize: req.query.minSampleSize ? parseInt(req.query.minSampleSize as string) : undefined,
+          minSampleSize: req.query.minSampleSize
+            ? parseInt(req.query.minSampleSize as string)
+            : undefined,
           focusArea: req.query.focusArea as 'accuracy' | 'usefulness' | 'performance' | undefined
         };
 
@@ -202,9 +201,7 @@ export function createFeedbackRouter(
    */
   router.get(
     '/recommendations/:crashType',
-    [
-      param('crashType').isString().notEmpty()
-    ],
+    [param('crashType').isString().notEmpty()],
     async (req, res) => {
       try {
         const errors = validationResult(req);

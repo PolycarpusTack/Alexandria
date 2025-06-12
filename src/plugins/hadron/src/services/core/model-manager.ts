@@ -1,6 +1,6 @@
 /**
  * Model Manager Service
- * 
+ *
  * Manages AI model selection, loading, performance monitoring, and dynamic optimization
  * for crash log analysis with intelligent tier selection and load balancing.
  */
@@ -8,7 +8,6 @@
 import { Logger } from '../../../../../utils/logger';
 import { EventBus } from '../../../../../core/event-bus/event-bus';
 import { ILlmService } from '../../interfaces';
-import { v4 as uuidv4 } from 'uuid';
 
 export interface ModelConfig {
   id: string;
@@ -102,7 +101,7 @@ export class ModelManager {
     confidence?: number;
     tokensUsed?: number;
   }> = [];
-  
+
   private loadBalancingStrategy: LoadBalancingStrategy;
   private healthCheckInterval: NodeJS.Timeout | null = null;
 
@@ -130,7 +129,7 @@ export class ModelManager {
    */
   async registerModel(modelConfig: ModelConfig): Promise<void> {
     try {
-      this.logger.info('Registering model', { 
+      this.logger.info('Registering model', {
         modelId: modelConfig.id,
         name: modelConfig.name,
         tier: modelConfig.tier
@@ -175,12 +174,12 @@ export class ModelManager {
         status: modelConfig.availability.status
       });
 
-      this.logger.info('Model registered successfully', { 
+      this.logger.info('Model registered successfully', {
         modelId: modelConfig.id,
         status: modelConfig.availability.status
       });
     } catch (error) {
-      this.logger.error('Failed to register model', { 
+      this.logger.error('Failed to register model', {
         modelId: modelConfig.id,
         error: error instanceof Error ? error.message : String(error)
       });
@@ -195,17 +194,18 @@ export class ModelManager {
     try {
       this.logger.info('Selecting optimal model', { criteria });
 
-      const availableModels = Array.from(this.models.values())
-        .filter(model => model.availability.status === 'available');
+      const availableModels = Array.from(this.models.values()).filter(
+        (model) => model.availability.status === 'available'
+      );
 
       if (availableModels.length === 0) {
         throw new Error('No models are currently available');
       }
 
       // Filter models by capabilities
-      let candidateModels = availableModels.filter(model => 
-        criteria.requiredCapabilities.every(capability => 
-          model.capabilities[capability as keyof typeof model.capabilities]
+      let candidateModels = availableModels.filter((model) =>
+        criteria.requiredCapabilities.every(
+          (capability) => model.capabilities[capability as keyof typeof model.capabilities]
         )
       );
 
@@ -216,14 +216,14 @@ export class ModelManager {
 
       // Apply tier preference if specified
       if (criteria.preferredTier) {
-        const tierModels = candidateModels.filter(model => model.tier === criteria.preferredTier);
+        const tierModels = candidateModels.filter((model) => model.tier === criteria.preferredTier);
         if (tierModels.length > 0) {
           candidateModels = tierModels;
         }
       }
 
       // Score models based on criteria
-      const scoredModels = candidateModels.map(model => ({
+      const scoredModels = candidateModels.map((model) => ({
         model,
         score: this.calculateModelScore(model, criteria)
       }));
@@ -232,20 +232,20 @@ export class ModelManager {
       scoredModels.sort((a, b) => b.score - a.score);
 
       // Apply load balancing
-      const selectedModel = this.applyLoadBalancing(scoredModels.map(sm => sm.model));
+      const selectedModel = this.applyLoadBalancing(scoredModels.map((sm) => sm.model));
 
-      this.logger.info('Model selected', { 
+      this.logger.info('Model selected', {
         selectedModelId: selectedModel.id,
         selectedModelName: selectedModel.name,
         selectedModelTier: selectedModel.tier,
-        score: scoredModels.find(sm => sm.model.id === selectedModel.id)?.score
+        score: scoredModels.find((sm) => sm.model.id === selectedModel.id)?.score
       });
 
       // Emit selection event
       this.eventBus.publish('hadron:model:selected', {
         modelId: selectedModel.id,
         criteria,
-        alternatives: scoredModels.slice(0, 3).map(sm => ({
+        alternatives: scoredModels.slice(0, 3).map((sm) => ({
           modelId: sm.model.id,
           score: sm.score
         }))
@@ -253,7 +253,7 @@ export class ModelManager {
 
       return selectedModel.id;
     } catch (error) {
-      this.logger.error('Failed to select optimal model', { 
+      this.logger.error('Failed to select optimal model', {
         criteria,
         error: error instanceof Error ? error.message : String(error)
       });
@@ -285,7 +285,7 @@ export class ModelManager {
     const startTime = Date.now();
 
     try {
-      this.logger.info('Executing analysis with model', { 
+      this.logger.info('Executing analysis with model', {
         modelId,
         requestId,
         promptLength: prompt.length
@@ -312,7 +312,7 @@ export class ModelManager {
       };
 
       const result = await this.llmService.generateResponse(prompt, analysisOptions);
-      
+
       const latency = Date.now() - startTime;
       const tokensUsed = this.estimateTokensUsed(prompt, result);
       const confidence = this.extractConfidence(result);
@@ -347,7 +347,7 @@ export class ModelManager {
         cost
       });
 
-      this.logger.info('Analysis executed successfully', { 
+      this.logger.info('Analysis executed successfully', {
         modelId,
         requestId,
         latency,
@@ -384,7 +384,7 @@ export class ModelManager {
         success: false
       });
 
-      this.logger.error('Analysis execution failed', { 
+      this.logger.error('Analysis execution failed', {
         modelId,
         requestId,
         latency,
@@ -417,13 +417,13 @@ export class ModelManager {
     let models = Array.from(this.models.values());
 
     if (tier) {
-      models = models.filter(model => model.tier === tier);
+      models = models.filter((model) => model.tier === tier);
     }
 
     return models.sort((a, b) => {
       // Sort by availability first, then by performance
       if (a.availability.status !== b.availability.status) {
-        const statusOrder = { 'available': 0, 'loading': 1, 'error': 2, 'unavailable': 3 };
+        const statusOrder = { available: 0, loading: 1, error: 2, unavailable: 3 };
         return statusOrder[a.availability.status] - statusOrder[b.availability.status];
       }
       return b.performance.accuracy - a.performance.accuracy;
@@ -434,7 +434,7 @@ export class ModelManager {
    * Update load balancing strategy
    */
   async updateLoadBalancingStrategy(strategy: LoadBalancingStrategy): Promise<void> {
-    this.logger.info('Updating load balancing strategy', { 
+    this.logger.info('Updating load balancing strategy', {
       oldType: this.loadBalancingStrategy.type,
       newType: strategy.type
     });
@@ -546,7 +546,7 @@ export class ModelManager {
           averageLatency: 5000,
           throughput: 12,
           accuracy: 0.88,
-          reliability: 0.90
+          reliability: 0.9
         },
         resources: {
           memoryUsage: 8192,
@@ -567,7 +567,7 @@ export class ModelManager {
     ];
 
     // Register default models
-    defaultModels.forEach(model => {
+    defaultModels.forEach((model) => {
       this.models.set(model.id, model);
       this.modelMetrics.set(model.id, {
         modelId: model.id,
@@ -589,7 +589,7 @@ export class ModelManager {
       this.activeRequests.set(model.id, new Set());
     });
 
-    this.logger.info('Default models initialized', { 
+    this.logger.info('Default models initialized', {
       modelCount: defaultModels.length
     });
   }
@@ -605,7 +605,7 @@ export class ModelManager {
 
     // Latency score (20% weight)
     const maxLatency = criteria.maxLatency || 10000;
-    const latencyScore = Math.max(0, 1 - (model.performance.averageLatency / maxLatency));
+    const latencyScore = Math.max(0, 1 - model.performance.averageLatency / maxLatency);
     score += latencyScore * 20;
 
     // Complexity matching (20% weight)
@@ -614,7 +614,7 @@ export class ModelManager {
 
     // Cost efficiency (10% weight)
     const maxCost = criteria.maxCost || 0.01;
-    const costScore = Math.max(0, 1 - (model.cost.perRequest / maxCost));
+    const costScore = Math.max(0, 1 - model.cost.perRequest / maxCost);
     score += costScore * 10;
 
     // Urgency modifier (10% weight)
@@ -629,7 +629,7 @@ export class ModelManager {
     // Load balancing factor
     const activeRequests = this.activeRequests.get(model.id)?.size || 0;
     const maxRequests = this.loadBalancingStrategy.maxRequestsPerModel || 10;
-    const loadFactor = Math.max(0, 1 - (activeRequests / maxRequests));
+    const loadFactor = Math.max(0, 1 - activeRequests / maxRequests);
     score *= loadFactor;
 
     return Math.round(score * 100) / 100;
@@ -640,10 +640,10 @@ export class ModelManager {
    */
   private getComplexityScore(tier: string, complexity: number): number {
     const tierComplexityMap = {
-      'small': { min: 0, max: 0.3 },
-      'medium': { min: 0.2, max: 0.7 },
-      'large': { min: 0.6, max: 0.9 },
-      'xl': { min: 0.8, max: 1.0 }
+      small: { min: 0, max: 0.3 },
+      medium: { min: 0.2, max: 0.7 },
+      large: { min: 0.6, max: 0.9 },
+      xl: { min: 0.8, max: 1.0 }
     };
 
     const range = tierComplexityMap[tier as keyof typeof tierComplexityMap];
@@ -663,14 +663,14 @@ export class ModelManager {
    */
   private getUrgencyScore(model: ModelConfig, urgency: string): number {
     const urgencyLatencyMap = {
-      'critical': 1000,
-      'high': 3000,
-      'medium': 10000,
-      'low': 30000
+      critical: 1000,
+      high: 3000,
+      medium: 10000,
+      low: 30000
     };
 
     const maxLatency = urgencyLatencyMap[urgency as keyof typeof urgencyLatencyMap];
-    return Math.max(0, 1 - (model.performance.averageLatency / maxLatency));
+    return Math.max(0, 1 - model.performance.averageLatency / maxLatency);
   }
 
   /**
@@ -689,7 +689,7 @@ export class ModelManager {
       case 'round_robin':
         return this.roundRobinSelection(models);
       case 'least_latency':
-        return models.reduce((best, current) => 
+        return models.reduce((best, current) =>
           current.performance.averageLatency < best.performance.averageLatency ? current : best
         );
       case 'least_load':
@@ -712,12 +712,12 @@ export class ModelManager {
    */
   private roundRobinSelection(models: ModelConfig[]): ModelConfig {
     // Simple round robin based on total requests
-    const modelMetrics = models.map(model => ({
+    const modelMetrics = models.map((model) => ({
       model,
       requests: this.modelMetrics.get(model.id)?.totalRequests || 0
     }));
 
-    return modelMetrics.reduce((best, current) => 
+    return modelMetrics.reduce((best, current) =>
       current.requests < best.requests ? current : best
     ).model;
   }
@@ -727,9 +727,9 @@ export class ModelManager {
    */
   private weightedSelection(models: ModelConfig[]): ModelConfig {
     const weights = this.loadBalancingStrategy.weights || {};
-    
+
     // Calculate weighted scores
-    const weightedModels = models.map(model => ({
+    const weightedModels = models.map((model) => ({
       model,
       weight: weights[model.id] || 1.0
     }));
@@ -737,7 +737,7 @@ export class ModelManager {
     // Select based on weighted random selection
     const totalWeight = weightedModels.reduce((sum, wm) => sum + wm.weight, 0);
     const random = Math.random() * totalWeight;
-    
+
     let currentWeight = 0;
     for (const weightedModel of weightedModels) {
       currentWeight += weightedModel.weight;
@@ -754,28 +754,27 @@ export class ModelManager {
    */
   private adaptiveSelection(models: ModelConfig[]): ModelConfig {
     // Score models based on recent performance
-    const scoredModels = models.map(model => {
+    const scoredModels = models.map((model) => {
       const metrics = this.modelMetrics.get(model.id);
       if (!metrics) return { model, score: 0 };
 
       // Calculate adaptive score
       let score = 0;
       score += (1 - metrics.errorRate) * 40; // Reliability (40%)
-      score += (1 - (model.performance.averageLatency / 10000)) * 30; // Speed (30%)
+      score += (1 - model.performance.averageLatency / 10000) * 30; // Speed (30%)
       score += model.performance.accuracy * 20; // Accuracy (20%)
-      
+
       // Load factor (10%)
       const activeRequests = this.activeRequests.get(model.id)?.size || 0;
       const maxRequests = this.loadBalancingStrategy.maxRequestsPerModel || 10;
-      const loadFactor = Math.max(0, 1 - (activeRequests / maxRequests));
+      const loadFactor = Math.max(0, 1 - activeRequests / maxRequests);
       score += loadFactor * 10;
 
       return { model, score };
     });
 
-    return scoredModels.reduce((best, current) => 
-      current.score > best.score ? current : best
-    ).model;
+    return scoredModels.reduce((best, current) => (current.score > best.score ? current : best))
+      .model;
   }
 
   /**
@@ -803,12 +802,14 @@ export class ModelManager {
 
     // Update averages
     const total = metrics.totalRequests;
-    metrics.averageLatency = ((metrics.averageLatency * (total - 1)) + execution.latency) / total;
-    
+    metrics.averageLatency = (metrics.averageLatency * (total - 1) + execution.latency) / total;
+
     if (execution.success) {
       const successTotal = metrics.successfulRequests;
-      metrics.averageConfidence = ((metrics.averageConfidence * (successTotal - 1)) + execution.confidence) / successTotal;
-      metrics.averageTokensUsed = ((metrics.averageTokensUsed * (successTotal - 1)) + execution.tokensUsed) / successTotal;
+      metrics.averageConfidence =
+        (metrics.averageConfidence * (successTotal - 1) + execution.confidence) / successTotal;
+      metrics.averageTokensUsed =
+        (metrics.averageTokensUsed * (successTotal - 1) + execution.tokensUsed) / successTotal;
     }
 
     // Update error rate
@@ -817,7 +818,7 @@ export class ModelManager {
     // Update cost
     const model = this.models.get(modelId);
     if (model) {
-      metrics.costToDate += model.cost.perRequest + (execution.tokensUsed * model.cost.perToken);
+      metrics.costToDate += model.cost.perRequest + execution.tokensUsed * model.cost.perToken;
     }
 
     // Update last used
@@ -856,7 +857,7 @@ export class ModelManager {
 
     // Get recent requests for this model
     const recentRequests = this.requestHistory
-      .filter(req => req.modelId === modelId && req.success)
+      .filter((req) => req.modelId === modelId && req.success)
       .slice(-20); // Last 20 requests
 
     if (recentRequests.length < 10) return;
@@ -867,9 +868,11 @@ export class ModelManager {
     const secondHalf = recentRequests.slice(midpoint);
 
     // Latency trend
-    const firstHalfAvgLatency = firstHalf.reduce((sum, req) => sum + req.latency, 0) / firstHalf.length;
-    const secondHalfAvgLatency = secondHalf.reduce((sum, req) => sum + req.latency, 0) / secondHalf.length;
-    
+    const firstHalfAvgLatency =
+      firstHalf.reduce((sum, req) => sum + req.latency, 0) / firstHalf.length;
+    const secondHalfAvgLatency =
+      secondHalf.reduce((sum, req) => sum + req.latency, 0) / secondHalf.length;
+
     if (secondHalfAvgLatency < firstHalfAvgLatency * 0.95) {
       metrics.trends.latencyTrend = 'improving';
     } else if (secondHalfAvgLatency > firstHalfAvgLatency * 1.05) {
@@ -879,12 +882,14 @@ export class ModelManager {
     }
 
     // Accuracy trend
-    const firstHalfAvgConf = firstHalf
-      .filter(req => req.confidence !== undefined)
-      .reduce((sum, req) => sum + (req.confidence || 0), 0) / firstHalf.length;
-    const secondHalfAvgConf = secondHalf
-      .filter(req => req.confidence !== undefined)
-      .reduce((sum, req) => sum + (req.confidence || 0), 0) / secondHalf.length;
+    const firstHalfAvgConf =
+      firstHalf
+        .filter((req) => req.confidence !== undefined)
+        .reduce((sum, req) => sum + (req.confidence || 0), 0) / firstHalf.length;
+    const secondHalfAvgConf =
+      secondHalf
+        .filter((req) => req.confidence !== undefined)
+        .reduce((sum, req) => sum + (req.confidence || 0), 0) / secondHalf.length;
 
     if (secondHalfAvgConf > firstHalfAvgConf * 1.02) {
       metrics.trends.accuracyTrend = 'improving';
@@ -897,7 +902,7 @@ export class ModelManager {
     // Reliability trend (based on success rate)
     const firstHalfSuccessRate = firstHalf.length / firstHalf.length; // All are successful
     const secondHalfSuccessRate = secondHalf.length / secondHalf.length; // All are successful
-    
+
     // This would be more meaningful with failure data
     metrics.trends.reliabilityTrend = 'stable';
   }
@@ -917,21 +922,21 @@ export class ModelManager {
         maxTokens: 10,
         timeout: 5000
       });
-      
+
       const latency = Date.now() - startTime;
-      
+
       // Update availability
       model.availability.status = 'available';
       model.availability.lastChecked = new Date();
       model.availability.errorCount = Math.max(0, model.availability.errorCount - 1);
-      
+
       // Update performance
       model.performance.averageLatency = latency;
     } catch (error) {
       model.availability.status = 'error';
       model.availability.lastChecked = new Date();
       model.availability.errorCount++;
-      
+
       this.logger.warn('Model health check failed', {
         modelId,
         error: error instanceof Error ? error.message : String(error)
@@ -949,7 +954,7 @@ export class ModelManager {
 
     this.healthCheckInterval = setInterval(async () => {
       const modelIds = Array.from(this.models.keys());
-      
+
       for (const modelId of modelIds) {
         await this.checkModelHealth(modelId);
       }
@@ -978,7 +983,7 @@ export class ModelManager {
   private estimateTokensUsed(prompt: string, response: any): number {
     // Rough estimation: ~4 characters per token
     const promptTokens = Math.ceil(prompt.length / 4);
-    const responseTokens = Math.ceil((JSON.stringify(response).length) / 4);
+    const responseTokens = Math.ceil(JSON.stringify(response).length / 4);
     return promptTokens + responseTokens;
   }
 
@@ -990,7 +995,7 @@ export class ModelManager {
     if (typeof response === 'object' && response.confidence) {
       return response.confidence;
     }
-    
+
     // Default confidence based on response completeness
     const responseString = JSON.stringify(response);
     if (responseString.length > 500) return 0.8;
@@ -1002,7 +1007,7 @@ export class ModelManager {
    * Calculate cost for request
    */
   private calculateCost(model: ModelConfig, tokensUsed: number): number {
-    return model.cost.perRequest + (tokensUsed * model.cost.perToken);
+    return model.cost.perRequest + tokensUsed * model.cost.perToken;
   }
 
   /**

@@ -10,28 +10,28 @@ export function exportToCSV(data: any[], filename: string): void {
 
   // Get headers from first object
   const headers = Object.keys(data[0]);
-  
+
   // Build CSV content
   let csv = headers.join(',') + '\n';
-  
-  data.forEach(row => {
-    const values = headers.map(header => {
+
+  data.forEach((row) => {
+    const values = headers.map((header) => {
       const value = row[header];
-      
+
       // Handle different value types
       if (value === null || value === undefined) {
         return '';
       }
-      
+
       // Escape quotes and wrap in quotes if contains comma or quote
       const stringValue = String(value);
       if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
         return `"${stringValue.replace(/"/g, '""')}"`;
       }
-      
+
       return stringValue;
     });
-    
+
     csv += values.join(',') + '\n';
   });
 
@@ -39,15 +39,15 @@ export function exportToCSV(data: any[], filename: string): void {
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const link = document.createElement('a');
   const url = URL.createObjectURL(blob);
-  
+
   link.setAttribute('href', url);
   link.setAttribute('download', `${filename}-${formatDate(new Date())}.csv`);
   link.style.visibility = 'hidden';
-  
+
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  
+
   // Clean up
   URL.revokeObjectURL(url);
 }
@@ -60,20 +60,20 @@ export function exportToJSON(data: any, filename: string): void {
 
   // Pretty print JSON
   const json = JSON.stringify(data, null, 2);
-  
+
   // Create blob and download
   const blob = new Blob([json], { type: 'application/json;charset=utf-8;' });
   const link = document.createElement('a');
   const url = URL.createObjectURL(blob);
-  
+
   link.setAttribute('href', url);
   link.setAttribute('download', `${filename}-${formatDate(new Date())}.json`);
   link.style.visibility = 'hidden';
-  
+
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  
+
   // Clean up
   URL.revokeObjectURL(url);
 }
@@ -88,15 +88,15 @@ export function downloadFile(content: string, filename: string, mimeType: string
   const blob = new Blob([content], { type: mimeType });
   const link = document.createElement('a');
   const url = URL.createObjectURL(blob);
-  
+
   link.setAttribute('href', url);
   link.setAttribute('download', filename);
   link.style.visibility = 'hidden';
-  
+
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
-  
+
   URL.revokeObjectURL(url);
 }
 
@@ -107,6 +107,6 @@ function formatDate(date: Date): string {
   const day = String(date.getDate()).padStart(2, '0');
   const hours = String(date.getHours()).padStart(2, '0');
   const minutes = String(date.getMinutes()).padStart(2, '0');
-  
+
   return `${year}${month}${day}-${hours}${minutes}`;
 }

@@ -1,6 +1,6 @@
 /**
  * Metrics Card Component
- * 
+ *
  * Displays key metrics and statistics for log data
  */
 
@@ -22,29 +22,25 @@ interface MetricsCardProps {
   metrics: MetricDefinition[];
 }
 
-export const MetricsCard: React.FC<MetricsCardProps> = ({
-  title,
-  data,
-  metrics
-}) => {
+export const MetricsCard: React.FC<MetricsCardProps> = ({ title, data, metrics }) => {
   const calculatedMetrics = useMemo(() => {
     if (!data?.logs) return {};
 
     const logs = data.logs;
     const results: Record<string, any> = {};
 
-    metrics.forEach(metric => {
+    metrics.forEach((metric) => {
       switch (metric.type) {
         case 'count':
           if (metric.key === 'total') {
             results[metric.key] = logs.length;
           } else if (metric.key.startsWith('level_')) {
             const level = metric.key.replace('level_', '').toUpperCase() as LogLevel;
-            results[metric.key] = logs.filter(log => log.level === level).length;
+            results[metric.key] = logs.filter((log) => log.level === level).length;
           } else {
             // Count non-null values for the field
-            results[metric.key] = logs.filter(log => 
-              log[metric.key as keyof LogEntry] != null
+            results[metric.key] = logs.filter(
+              (log) => log[metric.key as keyof LogEntry] != null
             ).length;
           }
           break;
@@ -52,7 +48,7 @@ export const MetricsCard: React.FC<MetricsCardProps> = ({
         case 'percentage':
           if (metric.key.startsWith('level_')) {
             const level = metric.key.replace('level_', '').toUpperCase() as LogLevel;
-            const count = logs.filter(log => log.level === level).length;
+            const count = logs.filter((log) => log.level === level).length;
             results[metric.key] = logs.length > 0 ? (count / logs.length) * 100 : 0;
           }
           break;
@@ -116,7 +112,7 @@ export const MetricsCard: React.FC<MetricsCardProps> = ({
 
   const getMetricColor = (metric: MetricDefinition): string => {
     const baseClasses = 'text-center p-4 rounded-lg';
-    
+
     switch (metric.color) {
       case 'blue':
         return `${baseClasses} bg-blue-50 border border-blue-200`;
@@ -150,78 +146,76 @@ export const MetricsCard: React.FC<MetricsCardProps> = ({
 
   if (!data) {
     return (
-      <Card className="p-4">
-        <h4 className="text-lg font-semibold mb-4">{title}</h4>
-        <div className="flex items-center justify-center h-32 text-gray-500">
-          No data available
-        </div>
+      <Card className='p-4'>
+        <h4 className='text-lg font-semibold mb-4'>{title}</h4>
+        <div className='flex items-center justify-center h-32 text-gray-500'>No data available</div>
       </Card>
     );
   }
 
   return (
-    <Card className="p-4">
-      <h4 className="text-lg font-semibold mb-4">{title}</h4>
-      
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <Card className='p-4'>
+      <h4 className='text-lg font-semibold mb-4'>{title}</h4>
+
+      <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'>
         {metrics.map((metric) => {
           const value = calculatedMetrics[metric.key];
-          
+
           return (
             <div key={metric.key} className={getMetricColor(metric)}>
               <div className={`text-2xl font-bold ${getValueColor(metric)}`}>
                 {formatValue(value, metric)}
               </div>
-              <div className="text-sm text-gray-600 mt-1">
-                {metric.label}
-              </div>
+              <div className='text-sm text-gray-600 mt-1'>{metric.label}</div>
             </div>
           );
         })}
       </div>
 
       {/* Summary information */}
-      <div className="mt-6 pt-4 border-t border-gray-200">
-        <div className="grid grid-cols-2 gap-4 text-sm">
+      <div className='mt-6 pt-4 border-t border-gray-200'>
+        <div className='grid grid-cols-2 gap-4 text-sm'>
           <div>
-            <span className="text-gray-500">Total Logs:</span>
-            <span className="ml-2 font-medium">{data.total.toLocaleString()}</span>
+            <span className='text-gray-500'>Total Logs:</span>
+            <span className='ml-2 font-medium'>{data.total.toLocaleString()}</span>
           </div>
           <div>
-            <span className="text-gray-500">Query Time:</span>
-            <span className="ml-2 font-medium">{data.executionTime}ms</span>
+            <span className='text-gray-500'>Query Time:</span>
+            <span className='ml-2 font-medium'>{data.executionTime}ms</span>
           </div>
         </div>
       </div>
 
       {/* Log level breakdown */}
       {data.logs.length > 0 && (
-        <div className="mt-4">
-          <h5 className="text-sm font-medium text-gray-700 mb-2">Log Level Distribution</h5>
-          <div className="flex space-x-2">
-            {Object.values(LogLevel).map(level => {
-              const count = data.logs.filter(log => log.level === level).length;
+        <div className='mt-4'>
+          <h5 className='text-sm font-medium text-gray-700 mb-2'>Log Level Distribution</h5>
+          <div className='flex space-x-2'>
+            {Object.values(LogLevel).map((level) => {
+              const count = data.logs.filter((log) => log.level === level).length;
               const percentage = (count / data.logs.length) * 100;
-              
+
               if (count === 0) return null;
-              
-              const colorClass = 
-                level === LogLevel.ERROR ? 'bg-red-500' :
-                level === LogLevel.WARN ? 'bg-yellow-500' :
-                level === LogLevel.INFO ? 'bg-blue-500' :
-                level === LogLevel.DEBUG ? 'bg-gray-500' :
-                'bg-purple-500';
-              
+
+              const colorClass =
+                level === LogLevel.ERROR
+                  ? 'bg-red-500'
+                  : level === LogLevel.WARN
+                    ? 'bg-yellow-500'
+                    : level === LogLevel.INFO
+                      ? 'bg-blue-500'
+                      : level === LogLevel.DEBUG
+                        ? 'bg-gray-500'
+                        : 'bg-purple-500';
+
               return (
-                <div key={level} className="flex-1">
-                  <div className={`h-2 rounded ${colorClass}`} 
-                       style={{ width: `${percentage}%` }} />
-                  <div className="text-xs text-center mt-1">
-                    {level.toUpperCase()}
-                  </div>
-                  <div className="text-xs text-center text-gray-500">
-                    {count}
-                  </div>
+                <div key={level} className='flex-1'>
+                  <div
+                    className={`h-2 rounded ${colorClass}`}
+                    style={{ width: `${percentage}%` }}
+                  />
+                  <div className='text-xs text-center mt-1'>{level.toUpperCase()}</div>
+                  <div className='text-xs text-center text-gray-500'>{count}</div>
                 </div>
               );
             })}

@@ -1,16 +1,16 @@
 /**
  * Comprehensive Test Suite for Plugin Registry
- * 
+ *
  * This test suite provides complete coverage for the PluginRegistryImpl class,
  * testing all aspects of plugin lifecycle management including discovery,
  * installation, activation, deactivation, updates, and security.
  */
 
 import { PluginRegistryImpl } from '../plugin-registry';
-import { 
-  Plugin, 
-  PluginManifest, 
-  PluginState, 
+import {
+  Plugin,
+  PluginManifest,
+  PluginState,
   PluginLifecycle,
   PluginCapability,
   PluginPermission
@@ -36,7 +36,7 @@ describe('PluginRegistryImpl', () => {
   let mockCoreSystem: jest.Mocked<CoreSystem>;
   let mockSecurityService: jest.Mocked<SecurityService>;
   let mockSandboxManager: jest.Mocked<SandboxManager>;
-  
+
   const mockManifest: PluginManifest = {
     id: 'test-plugin',
     name: 'Test Plugin',
@@ -90,42 +90,42 @@ describe('PluginRegistryImpl', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Setup logger mock
     mockLogger = {
       info: jest.fn(),
-      debug: jest.fn(),  
+      debug: jest.fn(),
       warn: jest.fn(),
       error: jest.fn(),
       child: jest.fn(() => mockLogger)
     } as any;
-    
+
     // Setup event bus mock
     mockEventBus = {
       publish: jest.fn(),
       subscribe: jest.fn(),
       unsubscribe: jest.fn()
     } as any;
-    
+
     // Setup core system mock
     mockCoreSystem = {} as any;
-    
+
     // Setup security service mock with authorization service
     const mockAuthorizationService = {
       hasPermission: jest.fn().mockReturnValue({ granted: true })
     };
-    
+
     mockSecurityService = {
       authorizationService: mockAuthorizationService
     } as any;
-    
+
     // Setup sandbox manager mock
     mockSandboxManager = {
       createSandbox: jest.fn(),
       destroySandbox: jest.fn(),
       executeSandboxed: jest.fn()
     } as any;
-    
+
     // Create registry with mocks
     registry = new PluginRegistryImpl(
       mockLogger,
@@ -135,7 +135,7 @@ describe('PluginRegistryImpl', () => {
       '0.1.0',
       'test'
     );
-    
+
     // Replace sandbox manager with mock
     (registry as any).sandboxManager = mockSandboxManager;
   });
@@ -153,7 +153,7 @@ describe('PluginRegistryImpl', () => {
 
     it('should discover plugins in directory', async () => {
       const plugins = await registry.discoverPlugins('/plugins');
-      
+
       expect(plugins).toHaveLength(2);
       expect(plugins[0].manifest.id).toBe('test-plugin');
       expect(plugins[0].state).toBe(PluginState.DISCOVERED);
@@ -165,18 +165,19 @@ describe('PluginRegistryImpl', () => {
 
     it('should handle missing plugin directory', async () => {
       (fs.access as jest.Mock).mockRejectedValue(new Error('ENOENT'));
-      
-      await expect(registry.discoverPlugins('/nonexistent'))
-        .rejects.toThrow('Failed to discover plugins');
+
+      await expect(registry.discoverPlugins('/nonexistent')).rejects.toThrow(
+        'Failed to discover plugins'
+      );
     });
 
     it('should skip plugins with invalid manifests', async () => {
       (fs.readFile as jest.Mock)
         .mockResolvedValueOnce('invalid json')
         .mockResolvedValueOnce(JSON.stringify(mockManifest));
-      
+
       const plugins = await registry.discoverPlugins('/plugins');
-      
+
       expect(plugins).toHaveLength(1);
       expect(mockLogger.warn).toHaveBeenCalledWith(
         expect.stringContaining('Invalid plugin manifest'),
@@ -187,9 +188,9 @@ describe('PluginRegistryImpl', () => {
     it('should validate manifest fields', async () => {
       const invalidManifest = { ...mockManifest, id: '' };
       (fs.readFile as jest.Mock).mockResolvedValue(JSON.stringify(invalidManifest));
-      
+
       const plugins = await registry.discoverPlugins('/plugins');
-      
+
       expect(plugins).toHaveLength(0);
       expect(mockLogger.warn).toHaveBeenCalled();
     });
@@ -197,7 +198,7 @@ describe('PluginRegistryImpl', () => {
 
   describe('Plugin Installation', () => {
     beforeEach(() => {
-      registry.getAllPlugins().forEach(p => {
+      registry.getAllPlugins().forEach((p) => {
         registry.uninstallPlugin(p.manifest.id).catch(() => {});
       });
     });
@@ -206,9 +207,9 @@ describe('PluginRegistryImpl', () => {
       // Mock module loading
       const mockModule = { default: jest.fn(() => mockPluginInstance) };
       jest.doMock('/plugins/test-plugin/index.js', () => mockModule, { virtual: true });
-      
+
       await registry.installPlugin(mockPlugin);
-      
+
       expect(mockPlugin.state).toBe(PluginState.INSTALLED);
       expect(mockPlugin.installedAt).toBeDefined();
       expect(mockPluginInstance.onInstall).toHaveBeenCalled();
@@ -229,14 +230,16 @@ describe('PluginRegistryImpl', () => {
           minPlatformVersion: '2.0.0'
         }
       };
-      
-      await expect(registry.installPlugin(incompatiblePlugin))
-        .rejects.toThrow('requires platform version >= 2.0.0');
+
+      await expect(registry.installPlugin(incompatiblePlugin)).rejects.toThrow(
+        'requires platform version >= 2.0.0'
+      );
     });
 
     it('should check dependencies before installation', async () => {
-      await expect(registry.installPlugin(mockPlugin))
-        .rejects.toThrow('unresolved dependencies: dependency-plugin@^1.0.0');
+      await expect(registry.installPlugin(mockPlugin)).rejects.toThrow(
+        'unresolved dependencies: dependency-plugin@^1.0.0'
+      );
     });
 
     it('should handle installation errors gracefully', async () => {
@@ -244,14 +247,17 @@ describe('PluginRegistryImpl', () => {
         ...mockPlugin,
         manifest: { ...mockManifest, dependencies: {} }
       };
-      
-      jest.doMock('/plugins/test-plugin/index.js', () => {
-        throw new Error('Module load error');
-      }, { virtual: true });
-      
-      await expect(registry.installPlugin(errorPlugin))
-        .rejects.toThrow('Failed to install plugin');
-      
+
+      jest.doMock(
+        '/plugins/test-plugin/index.js',
+        () => {
+          throw new Error('Module load error');
+        },
+        { virtual: true }
+      );
+
+      await expect(registry.installPlugin(errorPlugin)).rejects.toThrow('Failed to install plugin');
+
       expect(errorPlugin.state).toBe(PluginState.ERRORED);
       expect(errorPlugin.error).toContain('Module load error');
     });
@@ -261,9 +267,8 @@ describe('PluginRegistryImpl', () => {
         ...mockPlugin,
         state: PluginState.INSTALLED
       };
-      
-      await expect(registry.installPlugin(installedPlugin))
-        .rejects.toThrow('already installed');
+
+      await expect(registry.installPlugin(installedPlugin)).rejects.toThrow('already installed');
     });
   });
 
@@ -278,14 +283,14 @@ describe('PluginRegistryImpl', () => {
         state: PluginState.INSTALLED,
         instance: mockPluginInstance
       };
-      
+
       // Add to registry
       (registry as any).plugins.set('test-plugin', installedPlugin);
     });
 
     it('should activate an installed plugin', async () => {
       await registry.activatePlugin('test-plugin');
-      
+
       expect(installedPlugin.state).toBe(PluginState.ACTIVE);
       expect(installedPlugin.activatedAt).toBeDefined();
       expect(mockPluginInstance.onActivate).toHaveBeenCalled();
@@ -309,12 +314,13 @@ describe('PluginRegistryImpl', () => {
         }),
         getAllPermissions: jest.fn().mockReturnValue(['system:read', 'system:write'])
       };
-      
+
       (registry as any).enhancedValidator = mockEnhancedValidator;
-      
-      await expect(registry.activatePlugin('test-plugin'))
-        .rejects.toThrow(/Failed to activate plugin.*Invalid permission/);
-      
+
+      await expect(registry.activatePlugin('test-plugin')).rejects.toThrow(
+        /Failed to activate plugin.*Invalid permission/
+      );
+
       expect(mockLogger.error).toHaveBeenCalledWith(
         'Plugin permission validation failed',
         expect.any(Object)
@@ -323,7 +329,7 @@ describe('PluginRegistryImpl', () => {
 
     it('should register event subscriptions', async () => {
       await registry.activatePlugin('test-plugin');
-      
+
       expect(mockEventBus.subscribe).toHaveBeenCalledWith(
         'test.event',
         expect.any(Function),
@@ -340,11 +346,11 @@ describe('PluginRegistryImpl', () => {
       const mockAPI = {
         registerComponent: jest.fn()
       };
-      
+
       (registry as any).pluginAPIs.set('test-plugin', mockAPI);
-      
+
       await registry.activatePlugin('test-plugin');
-      
+
       expect(mockAPI.registerComponent).toHaveBeenCalledWith(
         expect.objectContaining({
           id: 'test-component',
@@ -363,26 +369,26 @@ describe('PluginRegistryImpl', () => {
         },
         state: PluginState.INSTALLED
       };
-      
+
       (registry as any).plugins.set('dependency-plugin', depPlugin);
-      
+
       // Update test plugin to have dependencies
       installedPlugin.manifest.dependencies = {
         'dependency-plugin': '^1.0.0'
       };
-      
-      await expect(registry.activatePlugin('test-plugin'))
-        .rejects.toThrow('Dependency dependency-plugin is not active');
+
+      await expect(registry.activatePlugin('test-plugin')).rejects.toThrow(
+        'Dependency dependency-plugin is not active'
+      );
     });
 
     it('should handle activation errors', async () => {
-      mockPluginInstance.onActivate = jest.fn().mockRejectedValue(
-        new Error('Activation failed')
+      mockPluginInstance.onActivate = jest.fn().mockRejectedValue(new Error('Activation failed'));
+
+      await expect(registry.activatePlugin('test-plugin')).rejects.toThrow(
+        'Failed to activate plugin'
       );
-      
-      await expect(registry.activatePlugin('test-plugin'))
-        .rejects.toThrow('Failed to activate plugin');
-      
+
       expect(installedPlugin.state).toBe(PluginState.ERRORED);
       expect(installedPlugin.error).toContain('Activation failed');
     });
@@ -398,7 +404,7 @@ describe('PluginRegistryImpl', () => {
         state: PluginState.ACTIVE,
         instance: mockPluginInstance
       };
-      
+
       (registry as any).plugins.set('test-plugin', activePlugin);
       (registry as any).pluginAPIs.set('test-plugin', {
         unregisterComponent: jest.fn()
@@ -407,7 +413,7 @@ describe('PluginRegistryImpl', () => {
 
     it('should deactivate an active plugin', async () => {
       await registry.deactivatePlugin('test-plugin');
-      
+
       expect(activePlugin.state).toBe(PluginState.INACTIVE);
       expect(mockPluginInstance.onDeactivate).toHaveBeenCalled();
       expect(mockSandboxManager.destroySandbox).toHaveBeenCalledWith('test-plugin');
@@ -421,9 +427,9 @@ describe('PluginRegistryImpl', () => {
 
     it('should unregister UI components', async () => {
       const mockAPI = (registry as any).pluginAPIs.get('test-plugin');
-      
+
       await registry.deactivatePlugin('test-plugin');
-      
+
       expect(mockAPI.unregisterComponent).toHaveBeenCalledWith('test-component');
     });
 
@@ -439,20 +445,22 @@ describe('PluginRegistryImpl', () => {
         },
         state: PluginState.ACTIVE
       };
-      
+
       (registry as any).plugins.set('dependent-plugin', dependentPlugin);
-      
-      await expect(registry.deactivatePlugin('test-plugin'))
-        .rejects.toThrow('required by active plugins: dependent-plugin');
+
+      await expect(registry.deactivatePlugin('test-plugin')).rejects.toThrow(
+        'required by active plugins: dependent-plugin'
+      );
     });
 
     it('should handle deactivation errors', async () => {
-      mockPluginInstance.onDeactivate = jest.fn().mockRejectedValue(
-        new Error('Deactivation failed')
+      mockPluginInstance.onDeactivate = jest
+        .fn()
+        .mockRejectedValue(new Error('Deactivation failed'));
+
+      await expect(registry.deactivatePlugin('test-plugin')).rejects.toThrow(
+        'Failed to deactivate plugin'
       );
-      
-      await expect(registry.deactivatePlugin('test-plugin'))
-        .rejects.toThrow('Failed to deactivate plugin');
     });
   });
 
@@ -465,13 +473,13 @@ describe('PluginRegistryImpl', () => {
         state: PluginState.INSTALLED,
         instance: mockPluginInstance
       };
-      
+
       (registry as any).plugins.set('test-plugin', installedPlugin);
     });
 
     it('should uninstall an installed plugin', async () => {
       await registry.uninstallPlugin('test-plugin');
-      
+
       expect(mockPluginInstance.onUninstall).toHaveBeenCalled();
       expect(registry.getPlugin('test-plugin')).toBeUndefined();
       expect(mockEventBus.publish).toHaveBeenCalledWith(
@@ -485,9 +493,9 @@ describe('PluginRegistryImpl', () => {
     it('should deactivate before uninstalling if active', async () => {
       installedPlugin.state = PluginState.ACTIVE;
       const deactivateSpy = jest.spyOn(registry, 'deactivatePlugin');
-      
+
       await registry.uninstallPlugin('test-plugin');
-      
+
       expect(deactivateSpy).toHaveBeenCalledWith('test-plugin');
       expect(mockPluginInstance.onDeactivate).toHaveBeenCalled();
       expect(mockPluginInstance.onUninstall).toHaveBeenCalled();
@@ -504,16 +512,18 @@ describe('PluginRegistryImpl', () => {
         },
         state: PluginState.INSTALLED
       };
-      
+
       (registry as any).plugins.set('dependent-plugin', dependentPlugin);
-      
-      await expect(registry.uninstallPlugin('test-plugin'))
-        .rejects.toThrow('required by: dependent-plugin');
+
+      await expect(registry.uninstallPlugin('test-plugin')).rejects.toThrow(
+        'required by: dependent-plugin'
+      );
     });
 
     it('should handle unknown plugin', async () => {
-      await expect(registry.uninstallPlugin('unknown-plugin'))
-        .rejects.toThrow('Plugin unknown-plugin not found');
+      await expect(registry.uninstallPlugin('unknown-plugin')).rejects.toThrow(
+        'Plugin unknown-plugin not found'
+      );
     });
   });
 
@@ -528,7 +538,7 @@ describe('PluginRegistryImpl', () => {
         instance: mockPluginInstance,
         installedAt: new Date()
       };
-      
+
       newPlugin = {
         ...mockPlugin,
         manifest: {
@@ -536,7 +546,7 @@ describe('PluginRegistryImpl', () => {
           version: '2.0.0'
         }
       };
-      
+
       (registry as any).plugins.set('test-plugin', oldPlugin);
     });
 
@@ -544,14 +554,14 @@ describe('PluginRegistryImpl', () => {
       const newInstance = { ...mockPluginInstance };
       const mockModule = { default: jest.fn(() => newInstance) };
       jest.doMock('/plugins/test-plugin/index.js', () => mockModule, { virtual: true });
-      
+
       await registry.updatePlugin('test-plugin', newPlugin);
-      
+
       const updated = registry.getPlugin('test-plugin');
       expect(updated?.manifest.version).toBe('2.0.0');
       expect(updated?.state).toBe(PluginState.INSTALLED);
       expect(updated?.installedAt).toEqual(oldPlugin.installedAt);
-      
+
       expect(mockEventBus.publish).toHaveBeenCalledWith(
         'plugins.updated',
         expect.objectContaining({
@@ -564,31 +574,37 @@ describe('PluginRegistryImpl', () => {
 
     it('should validate version is newer', async () => {
       newPlugin.manifest.version = '0.9.0';
-      
-      await expect(registry.updatePlugin('test-plugin', newPlugin))
-        .rejects.toThrow('New version (0.9.0) is not greater than current version (1.0.0)');
+
+      await expect(registry.updatePlugin('test-plugin', newPlugin)).rejects.toThrow(
+        'New version (0.9.0) is not greater than current version (1.0.0)'
+      );
     });
 
     it('should validate plugin IDs match', async () => {
       newPlugin.manifest.id = 'different-plugin';
-      
-      await expect(registry.updatePlugin('test-plugin', newPlugin))
-        .rejects.toThrow('Plugin ID mismatch');
+
+      await expect(registry.updatePlugin('test-plugin', newPlugin)).rejects.toThrow(
+        'Plugin ID mismatch'
+      );
     });
 
     it('should deactivate and reactivate if was active', async () => {
       oldPlugin.state = PluginState.ACTIVE;
-      
+
       const deactivateSpy = jest.spyOn(registry, 'deactivatePlugin');
       const activateSpy = jest.spyOn(registry, 'activatePlugin');
-      
+
       const newInstance = { ...mockPluginInstance };
-      jest.doMock('/plugins/test-plugin/index.js', () => ({
-        default: jest.fn(() => newInstance)
-      }), { virtual: true });
-      
+      jest.doMock(
+        '/plugins/test-plugin/index.js',
+        () => ({
+          default: jest.fn(() => newInstance)
+        }),
+        { virtual: true }
+      );
+
       await registry.updatePlugin('test-plugin', newPlugin);
-      
+
       expect(deactivateSpy).toHaveBeenCalledWith('test-plugin');
       expect(activateSpy).toHaveBeenCalledWith('test-plugin');
     });
@@ -598,13 +614,17 @@ describe('PluginRegistryImpl', () => {
         ...mockPluginInstance,
         onUpdate: jest.fn()
       };
-      
-      jest.doMock('/plugins/test-plugin/index.js', () => ({
-        default: jest.fn(() => newInstance)
-      }), { virtual: true });
-      
+
+      jest.doMock(
+        '/plugins/test-plugin/index.js',
+        () => ({
+          default: jest.fn(() => newInstance)
+        }),
+        { virtual: true }
+      );
+
       await registry.updatePlugin('test-plugin', newPlugin);
-      
+
       expect(newInstance.onUpdate).toHaveBeenCalledWith('1.0.0', '2.0.0');
     });
   });
@@ -625,8 +645,8 @@ describe('PluginRegistryImpl', () => {
           state: PluginState.ACTIVE
         }
       ];
-      
-      plugins.forEach(p => {
+
+      plugins.forEach((p) => {
         (registry as any).plugins.set(p.manifest.id, p);
       });
     });
@@ -639,7 +659,7 @@ describe('PluginRegistryImpl', () => {
     it('should get active plugins only', () => {
       const active = registry.getActivePlugins();
       expect(active).toHaveLength(2);
-      expect(active.every(p => p.state === PluginState.ACTIVE)).toBe(true);
+      expect(active.every((p) => p.state === PluginState.ACTIVE)).toBe(true);
     });
 
     it('should get plugin by ID', () => {
@@ -663,9 +683,9 @@ describe('PluginRegistryImpl', () => {
         },
         state: PluginState.INSTALLED
       };
-      
+
       (registry as any).plugins.set('dependent', depPlugin);
-      
+
       const dependents = registry.getDependentPlugins('plugin-1');
       expect(dependents).toHaveLength(1);
       expect(dependents[0].manifest.id).toBe('dependent');
@@ -683,18 +703,18 @@ describe('PluginRegistryImpl', () => {
         },
         state: PluginState.INSTALLED
       };
-      
+
       (registry as any).plugins.set('dependency-plugin', depPlugin);
-      
+
       const result = registry.checkDependencies(mockPlugin);
-      
+
       expect(result.resolved).toBe(true);
       expect(result.missing).toHaveLength(0);
     });
 
     it('should detect missing dependencies', () => {
       const result = registry.checkDependencies(mockPlugin);
-      
+
       expect(result.resolved).toBe(false);
       expect(result.missing).toContainEqual({
         id: 'dependency-plugin',
@@ -711,11 +731,11 @@ describe('PluginRegistryImpl', () => {
         },
         state: PluginState.INSTALLED
       };
-      
+
       (registry as any).plugins.set('dependency-plugin', depPlugin);
-      
+
       const result = registry.checkDependencies(mockPlugin);
-      
+
       expect(result.resolved).toBe(false);
       expect(result.missing).toContainEqual({
         id: 'dependency-plugin',
@@ -732,13 +752,13 @@ describe('PluginRegistryImpl', () => {
         ...mockPlugin,
         settings: { theme: 'dark' }
       };
-      
+
       (registry as any).plugins.set('test-plugin', plugin);
     });
 
     it('should create plugin API with all methods', () => {
       const api = registry.createPluginAPI(plugin);
-      
+
       expect(api.events).toBe(mockEventBus);
       expect(api.registerComponent).toBeDefined();
       expect(api.unregisterComponent).toBeDefined();
@@ -754,12 +774,12 @@ describe('PluginRegistryImpl', () => {
 
     it('should get and update settings', async () => {
       const api = registry.createPluginAPI(plugin);
-      
+
       const settings = api.getSettings();
       expect(settings).toEqual({ theme: 'dark' });
-      
+
       await api.updateSettings({ theme: 'light', newProp: true });
-      
+
       expect(plugin.settings).toEqual({
         theme: 'light',
         newProp: true
@@ -769,7 +789,7 @@ describe('PluginRegistryImpl', () => {
     it('should provide platform info', () => {
       const api = registry.createPluginAPI(plugin);
       const info = api.getPlatformInfo();
-      
+
       expect(info).toEqual({
         version: '0.1.0',
         environment: 'test',
@@ -779,21 +799,21 @@ describe('PluginRegistryImpl', () => {
 
     it('should check if plugins are active', () => {
       const api = registry.createPluginAPI(plugin);
-      
+
       plugin.state = PluginState.ACTIVE;
       expect(api.isPluginActive('test-plugin')).toBe(true);
-      
+
       plugin.state = PluginState.INSTALLED;
       expect(api.isPluginActive('test-plugin')).toBe(false);
-      
+
       expect(api.isPluginActive('unknown-plugin')).toBe(false);
     });
 
     it('should provide logging with plugin context', () => {
       const api = registry.createPluginAPI(plugin);
-      
+
       api.log('info', 'Test message', { extra: 'data' });
-      
+
       expect(mockLogger.info).toHaveBeenCalledWith(
         'Test message',
         expect.objectContaining({
@@ -817,13 +837,13 @@ describe('PluginRegistryImpl', () => {
         state: PluginState.INSTALLED,
         instance: mockPluginInstance
       };
-      
+
       (registry as any).plugins.set('test-plugin', plugin);
     });
 
     it('should create sandbox with correct options', async () => {
       await registry.activatePlugin('test-plugin');
-      
+
       expect(mockSandboxManager.createSandbox).toHaveBeenCalledWith(
         expect.objectContaining({
           id: 'test-plugin',
@@ -840,9 +860,9 @@ describe('PluginRegistryImpl', () => {
 
     it('should destroy sandbox on deactivation', async () => {
       plugin.state = PluginState.ACTIVE;
-      
+
       await registry.deactivatePlugin('test-plugin');
-      
+
       expect(mockSandboxManager.destroySandbox).toHaveBeenCalledWith('test-plugin');
     });
 
@@ -857,16 +877,17 @@ describe('PluginRegistryImpl', () => {
         }),
         getAllPermissions: jest.fn().mockReturnValue(['system:read', 'system:write'])
       };
-      
+
       (registry as any).enhancedValidator = mockEnhancedValidator;
-      
+
       await registry.activatePlugin('test-plugin');
-      
-      expect(mockEnhancedValidator.validatePluginPermissions).toHaveBeenCalledWith(
-        'test-plugin',
-        ['system:read', 'logs:write', 'network:access']
-      );
-      
+
+      expect(mockEnhancedValidator.validatePluginPermissions).toHaveBeenCalledWith('test-plugin', [
+        'system:read',
+        'logs:write',
+        'network:access'
+      ]);
+
       expect(mockLogger.warn).toHaveBeenCalledWith(
         expect.stringContaining('activation warnings'),
         expect.any(Object)
@@ -878,9 +899,9 @@ describe('PluginRegistryImpl', () => {
     it('should load CommonJS modules', async () => {
       const mockModule = { default: jest.fn(() => mockPluginInstance) };
       jest.doMock('/plugins/test-plugin/index.js', () => mockModule, { virtual: true });
-      
+
       const module = await (registry as any).loadPluginModule(mockPlugin);
-      
+
       expect(module).toBe(mockModule);
     });
 
@@ -892,12 +913,12 @@ describe('PluginRegistryImpl', () => {
           main: 'index.mjs'
         }
       };
-      
+
       const mockModule = { default: jest.fn(() => mockPluginInstance) };
       jest.doMock('/plugins/test-plugin/index.mjs', () => mockModule, { virtual: true });
-      
+
       const module = await (registry as any).loadPluginModule(esmPlugin);
-      
+
       expect(module).toBe(mockModule);
     });
 
@@ -908,7 +929,7 @@ describe('PluginRegistryImpl', () => {
         }
         return Promise.resolve('');
       });
-      
+
       const isESM = await (registry as any).isESModule('/plugins/test/index.js');
       expect(isESM).toBe(true);
     });
@@ -921,16 +942,17 @@ describe('PluginRegistryImpl', () => {
           main: '../../../etc/passwd'
         }
       };
-      
-      (fs.realpath as jest.Mock).mockImplementation(p => {
+
+      (fs.realpath as jest.Mock).mockImplementation((p) => {
         if (p.includes('passwd')) {
           return '/etc/passwd';
         }
         return p;
       });
-      
-      await expect((registry as any).loadPluginModule(maliciousPlugin))
-        .rejects.toThrow('Plugin main file is outside of plugin directory');
+
+      await expect((registry as any).loadPluginModule(maliciousPlugin)).rejects.toThrow(
+        'Plugin main file is outside of plugin directory'
+      );
     });
   });
 
@@ -943,27 +965,27 @@ describe('PluginRegistryImpl', () => {
         state: PluginState.ACTIVE,
         instance: mockPluginInstance
       };
-      
+
       (registry as any).plugins.set('test-plugin', plugin);
     });
 
     it('should subscribe to events during activation', async () => {
       plugin.state = PluginState.INSTALLED;
-      
+
       await registry.activatePlugin('test-plugin');
-      
+
       // Get the subscribed handler
       const subscribeCalls = mockEventBus.subscribe.mock.calls;
-      const testEventCall = subscribeCalls.find(call => call[0] === 'test.event');
-      
+      const testEventCall = subscribeCalls.find((call) => call[0] === 'test.event');
+
       expect(testEventCall).toBeDefined();
-      
+
       // Test the handler
       const handler = testEventCall![1];
       const testEvent = { data: 'test' };
-      
+
       handler(testEvent);
-      
+
       expect(mockPluginInstance.handleTestEvent).toHaveBeenCalledWith(
         expect.objectContaining({
           ...testEvent,
@@ -974,14 +996,14 @@ describe('PluginRegistryImpl', () => {
 
     it('should add source to events if not present', async () => {
       plugin.state = PluginState.INSTALLED;
-      
+
       await registry.activatePlugin('test-plugin');
-      
+
       const handler = mockEventBus.subscribe.mock.calls[0][1];
       const eventWithSource = { data: 'test', source: 'custom' };
-      
+
       handler(eventWithSource);
-      
+
       expect(mockPluginInstance.handleTestEvent).toHaveBeenCalledWith(
         expect.objectContaining({
           source: 'custom'
@@ -1002,14 +1024,14 @@ describe('PluginRegistryImpl', () => {
           },
           state: PluginState.DISCOVERED
         };
-        
+
         (registry as any).plugins.set(`plugin-${i}`, plugin);
       }
-      
+
       const start = Date.now();
       const all = registry.getAllPlugins();
       const duration = Date.now() - start;
-      
+
       expect(all).toHaveLength(100);
       expect(duration).toBeLessThan(10); // Should be very fast
     });
@@ -1023,7 +1045,7 @@ describe('PluginRegistryImpl', () => {
         },
         state: PluginState.DISCOVERED
       };
-      
+
       const pluginB = {
         manifest: {
           ...mockManifest,
@@ -1033,10 +1055,10 @@ describe('PluginRegistryImpl', () => {
         },
         state: PluginState.DISCOVERED
       };
-      
+
       (registry as any).plugins.set('plugin-a', pluginA);
       (registry as any).plugins.set('plugin-b', pluginB);
-      
+
       const resultA = registry.checkDependencies(pluginA);
       expect(resultA.resolved).toBe(false);
     });
@@ -1048,23 +1070,23 @@ describe('PluginRegistryImpl', () => {
         state: PluginState.INSTALLED,
         instance: mockPluginInstance
       };
-      
+
       const plugin2 = {
         ...mockPlugin,
         manifest: { ...mockManifest, id: 'plugin-2', dependencies: {} },
         state: PluginState.INSTALLED,
         instance: mockPluginInstance
       };
-      
+
       (registry as any).plugins.set('plugin-1', plugin1);
       (registry as any).plugins.set('plugin-2', plugin2);
-      
+
       // Activate plugins concurrently
       const results = await Promise.all([
         registry.activatePlugin('plugin-1'),
         registry.activatePlugin('plugin-2')
       ]);
-      
+
       expect(plugin1.state).toBe(PluginState.ACTIVE);
       expect(plugin2.state).toBe(PluginState.ACTIVE);
     });
@@ -1079,16 +1101,16 @@ describe('PluginRegistryImpl', () => {
         author: { name: 'Test' },
         minPlatformVersion: '0.1.0'
       };
-      
+
       const minimalPlugin = {
         manifest: minimalManifest,
         state: PluginState.DISCOVERED,
         path: '/plugins/minimal'
       };
-      
+
       // Should work without optional fields
       (registry as any).validateManifest(minimalManifest);
-      
+
       expect(() => {
         (registry as any).checkPlatformCompatibility(minimalManifest);
       }).not.toThrow();

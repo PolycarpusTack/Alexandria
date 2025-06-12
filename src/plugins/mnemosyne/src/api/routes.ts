@@ -1,6 +1,6 @@
 /**
  * Mnemosyne API Routes Configuration
- * 
+ *
  * Comprehensive route definitions for all Mnemosyne plugin endpoints
  * with middleware, authentication, and rate limiting
  */
@@ -38,7 +38,7 @@ export interface APIRouteConfig {
 
 /**
  * API Routes Manager
- * 
+ *
  * Configures and manages all API routes for the Mnemosyne plugin
  * with comprehensive middleware stack and documentation
  */
@@ -115,10 +115,7 @@ export class MnemosyneAPIRoutes {
    * Document management routes
    */
   private setupDocumentRoutes(): void {
-    const baseMiddleware = [
-      this.authMiddleware.authenticate,
-      this.rateLimitMiddleware.standard
-    ];
+    const baseMiddleware = [this.authMiddleware.authenticate, this.rateLimitMiddleware.standard];
 
     // List documents
     this.router.get(
@@ -132,7 +129,11 @@ export class MnemosyneAPIRoutes {
         author: { type: 'string', optional: true },
         category: { type: 'string', optional: true },
         tags: { type: 'array', optional: true },
-        sortBy: { type: 'string', enum: ['created', 'modified', 'title', 'relevance'], optional: true },
+        sortBy: {
+          type: 'string',
+          enum: ['created', 'modified', 'title', 'relevance'],
+          optional: true
+        },
         sortOrder: { type: 'string', enum: ['asc', 'desc'], optional: true }
       }),
       this.controller.listDocuments
@@ -209,10 +210,7 @@ export class MnemosyneAPIRoutes {
    * Knowledge graph routes
    */
   private setupKnowledgeGraphRoutes(): void {
-    const baseMiddleware = [
-      this.authMiddleware.authenticate,
-      this.rateLimitMiddleware.standard
-    ];
+    const baseMiddleware = [this.authMiddleware.authenticate, this.rateLimitMiddleware.standard];
 
     // List nodes
     this.router.get(
@@ -236,7 +234,21 @@ export class MnemosyneAPIRoutes {
       this.authMiddleware.requirePermission('mnemosyne:knowledge-graph:create'),
       this.rateLimitMiddleware.strict,
       this.validationMiddleware.validateBody({
-        type: { type: 'string', enum: ['document', 'concept', 'person', 'organization', 'topic', 'keyword', 'template', 'folder', 'tag', 'custom'] },
+        type: {
+          type: 'string',
+          enum: [
+            'document',
+            'concept',
+            'person',
+            'organization',
+            'topic',
+            'keyword',
+            'template',
+            'folder',
+            'tag',
+            'custom'
+          ]
+        },
         title: { type: 'string', maxLength: 500 },
         content: { type: 'string', optional: true },
         weight: { type: 'number', min: 0, max: 10, optional: true },
@@ -257,7 +269,21 @@ export class MnemosyneAPIRoutes {
       this.validationMiddleware.validateBody({
         sourceId: { type: 'string', pattern: '^[a-f\\d-]{36}$' },
         targetId: { type: 'string', pattern: '^[a-f\\d-]{36}$' },
-        type: { type: 'string', enum: ['links-to', 'references', 'depends-on', 'part-of', 'similar-to', 'contradicts', 'extends', 'implements', 'uses', 'custom'] },
+        type: {
+          type: 'string',
+          enum: [
+            'links-to',
+            'references',
+            'depends-on',
+            'part-of',
+            'similar-to',
+            'contradicts',
+            'extends',
+            'implements',
+            'uses',
+            'custom'
+          ]
+        },
         strength: { type: 'number', min: 0, max: 10, optional: true },
         confidence: { type: 'number', min: 0, max: 1, optional: true },
         bidirectional: { type: 'boolean', optional: true },
@@ -301,7 +327,11 @@ export class MnemosyneAPIRoutes {
       ...baseMiddleware,
       this.validationMiddleware.validateQuery({
         nodeLimit: { type: 'number', min: 10, max: 1000, optional: true },
-        algorithm: { type: 'string', enum: ['force-directed', 'hierarchical', 'circular'], optional: true }
+        algorithm: {
+          type: 'string',
+          enum: ['force-directed', 'hierarchical', 'circular'],
+          optional: true
+        }
       }),
       this.controller.getVisualization
     );
@@ -311,10 +341,7 @@ export class MnemosyneAPIRoutes {
    * Search routes
    */
   private setupSearchRoutes(): void {
-    const baseMiddleware = [
-      this.authMiddleware.authenticate,
-      this.rateLimitMiddleware.standard
-    ];
+    const baseMiddleware = [this.authMiddleware.authenticate, this.rateLimitMiddleware.standard];
 
     // Perform search
     this.router.post(
@@ -348,10 +375,7 @@ export class MnemosyneAPIRoutes {
    * Graph algorithms routes
    */
   private setupAlgorithmRoutes(): void {
-    const baseMiddleware = [
-      this.authMiddleware.authenticate,
-      this.rateLimitMiddleware.analytical
-    ];
+    const baseMiddleware = [this.authMiddleware.authenticate, this.rateLimitMiddleware.analytical];
 
     // Execute analysis
     this.router.post(
@@ -359,9 +383,18 @@ export class MnemosyneAPIRoutes {
       ...baseMiddleware,
       this.authMiddleware.requirePermission('mnemosyne:algorithms:execute'),
       this.validationMiddleware.validateBody({
-        algorithm: { 
-          type: 'string', 
-          enum: ['centrality', 'community', 'path-analysis', 'influence', 'trend-analysis', 'similarity-clustering', 'anomaly-detection', 'prediction'] 
+        algorithm: {
+          type: 'string',
+          enum: [
+            'centrality',
+            'community',
+            'path-analysis',
+            'influence',
+            'trend-analysis',
+            'similarity-clustering',
+            'anomaly-detection',
+            'prediction'
+          ]
         },
         parameters: { type: 'object', optional: true },
         nodeFilter: { type: 'object', optional: true },
@@ -377,10 +410,7 @@ export class MnemosyneAPIRoutes {
    * Template routes
    */
   private setupTemplateRoutes(): void {
-    const baseMiddleware = [
-      this.authMiddleware.authenticate,
-      this.rateLimitMiddleware.standard
-    ];
+    const baseMiddleware = [this.authMiddleware.authenticate, this.rateLimitMiddleware.standard];
 
     // List templates
     this.router.get(
@@ -401,11 +431,7 @@ export class MnemosyneAPIRoutes {
    */
   private setupHealthRoutes(): void {
     // Health endpoint (no authentication required)
-    this.router.get(
-      '/health',
-      this.rateLimitMiddleware.health,
-      this.controller.getHealth
-    );
+    this.router.get('/health', this.rateLimitMiddleware.health, this.controller.getHealth);
 
     // Metrics endpoint (authentication required)
     this.router.get(
@@ -605,12 +631,12 @@ export class MnemosyneAPIRoutes {
    */
   private generateOpenAPIPaths(): any {
     const paths: any = {};
-    
+
     for (const route of this.routeDefinitions) {
       if (!paths[route.path]) {
         paths[route.path] = {};
       }
-      
+
       paths[route.path][route.method.toLowerCase()] = {
         summary: route.description,
         tags: route.tags,
@@ -649,7 +675,7 @@ export class MnemosyneAPIRoutes {
         }
       };
     }
-    
+
     return paths;
   }
 }

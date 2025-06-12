@@ -64,12 +64,12 @@ export class MetricsService extends EventEmitter {
       clearInterval(this.metricsInterval);
       this.metricsInterval = null;
     }
-    
+
     this.counters.clear();
     this.gauges.clear();
     this.histograms.clear();
     this.timers.clear();
-    
+
     this.logger.info('Metrics service stopped');
   }
 
@@ -80,7 +80,7 @@ export class MetricsService extends EventEmitter {
     const key = this.getMetricKey(name, tags);
     const current = this.counters.get(key) || 0;
     this.counters.set(key, current + value);
-    
+
     this.emit('metric', {
       type: 'counter',
       name,
@@ -96,7 +96,7 @@ export class MetricsService extends EventEmitter {
   setGauge(name: string, value: number, tags?: Record<string, string>): void {
     const key = this.getMetricKey(name, tags);
     this.gauges.set(key, value);
-    
+
     this.emit('metric', {
       type: 'gauge',
       name,
@@ -112,19 +112,19 @@ export class MetricsService extends EventEmitter {
   recordHistogram(name: string, value: number, tags?: Record<string, string>): void {
     const key = this.getMetricKey(name, tags);
     let values = this.histograms.get(key);
-    
+
     if (!values) {
       values = [];
       this.histograms.set(key, values);
     }
-    
+
     values.push(value);
-    
+
     // Limit histogram size
     if (values.length > this.maxHistogramSize) {
       values.splice(0, values.length - this.maxHistogramSize);
     }
-    
+
     this.emit('metric', {
       type: 'histogram',
       name,
@@ -139,7 +139,7 @@ export class MetricsService extends EventEmitter {
    */
   startTimer(name: string): () => void {
     const start = Date.now();
-    
+
     return () => {
       const duration = Date.now() - start;
       this.recordHistogram(`${name}.duration`, duration);
@@ -149,27 +149,23 @@ export class MetricsService extends EventEmitter {
   /**
    * Measure async operation
    */
-  async measure<T>(
-    name: string,
-    fn: () => Promise<T>,
-    tags?: Record<string, string>
-  ): Promise<T> {
+  async measure<T>(name: string, fn: () => Promise<T>, tags?: Record<string, string>): Promise<T> {
     const start = Date.now();
-    
+
     try {
       const result = await fn();
       const duration = Date.now() - start;
-      
+
       this.recordHistogram(`${name}.duration`, duration, tags);
       this.incrementCounter(`${name}.success`, 1, tags);
-      
+
       return result;
     } catch (error) {
       const duration = Date.now() - start;
-      
+
       this.recordHistogram(`${name}.duration`, duration, tags);
       this.incrementCounter(`${name}.error`, 1, tags);
-      
+
       throw error;
     }
   }
@@ -196,11 +192,11 @@ export class MetricsService extends EventEmitter {
   getHistogram(name: string, tags?: Record<string, string>): MetricHistogram | undefined {
     const key = this.getMetricKey(name, tags);
     const values = this.histograms.get(key);
-    
+
     if (!values || values.length === 0) {
       return undefined;
     }
-    
+
     return this.calculateHistogramStats(values);
   }
 
@@ -214,27 +210,31 @@ export class MetricsService extends EventEmitter {
   } {
     const counters: MetricCounter[] = [];
     const gauges: MetricGauge[] = [];
-    const histograms: Array<{ name: string; stats: MetricHistogram; tags?: Record<string, string> }> = [];
-    
+    const histograms: Array<{
+      name: string;
+      stats: MetricHistogram;
+      tags?: Record<string, string>;
+    }> = [];
+
     // Collect counters
     for (const [key, value] of this.counters.entries()) {
       const { name, tags } = this.parseMetricKey(key);
       counters.push({ name, value, tags });
     }
-    
+
     // Collect gauges
     for (const [key, value] of this.gauges.entries()) {
       const { name, tags } = this.parseMetricKey(key);
       gauges.push({ name, value, tags });
     }
-    
+
     // Collect histograms
     for (const [key, values] of this.histograms.entries()) {
       const { name, tags } = this.parseMetricKey(key);
       const stats = this.calculateHistogramStats(values);
       histograms.push({ name, stats, tags });
     }
-    
+
     return { counters, gauges, histograms };
   }
 
@@ -246,49 +246,49 @@ export class MetricsService extends EventEmitter {
     this.gauges.clear();
     this.histograms.clear();
     this.timers.clear();
-    
+
     this.logger.info('Metrics reset');
   }
 
   /**
    * Private helper methods
    */
-  
+
   private getMetricKey(name: string, tags?: Record<string, string>): string {
     if (!tags || Object.keys(tags).length === 0) {
       return name;
     }
-    
+
     const tagStr = Object.entries(tags)
       .sort(([a], [b]) => a.localeCompare(b))
       .map(([k, v]) => `${k}:${v}`)
       .join(',');
-    
+
     return `${name}{${tagStr}}`;
   }
 
   private parseMetricKey(key: string): { name: string; tags?: Record<string, string> } {
     const match = key.match(/^([^{]+)(?:{(.+)})?$/);
-    
+
     if (!match) {
       return { name: key };
     }
-    
+
     const name = match[1];
     const tagStr = match[2];
-    
+
     if (!tagStr) {
       return { name };
     }
-    
+
     const tags: Record<string, string> = {};
-    tagStr.split(',').forEach(pair => {
+    tagStr.split(',').forEach((pair) => {
       const [k, v] = pair.split(':');
       if (k && v) {
         tags[k] = v;
       }
     });
-    
+
     return { name, tags };
   }
 
@@ -296,7 +296,7 @@ export class MetricsService extends EventEmitter {
     const sorted = [...values].sort((a, b) => a - b);
     const count = sorted.length;
     const sum = sorted.reduce((acc, val) => acc + val, 0);
-    
+
     return {
       count,
       sum,
@@ -311,13 +311,13 @@ export class MetricsService extends EventEmitter {
 
   private reportMetrics(): void {
     const metrics = this.getAllMetrics();
-    
+
     this.logger.info('Metrics report', {
       counters: metrics.counters.length,
       gauges: metrics.gauges.length,
       histograms: metrics.histograms.length
     });
-    
+
     // Emit metrics report event
     this.emit('report', metrics);
   }

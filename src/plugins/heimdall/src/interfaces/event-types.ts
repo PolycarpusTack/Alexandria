@@ -32,10 +32,12 @@ export interface SystemInitializedEvent extends Event {
  * Type guard to check if an event is a log source connected event
  */
 export function isLogSourceConnectedEvent(event: Event): event is LogSourceConnectedEvent {
-  return event.topic === 'log:source:connected' && 
+  return (
+    event.topic === 'log:source:connected' &&
     typeof event.data === 'object' &&
     'sourceId' in event.data &&
-    'sourceType' in event.data;
+    'sourceType' in event.data
+  );
 }
 
 /**

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 const Plugins: React.FC = () => {
@@ -9,7 +9,8 @@ const Plugins: React.FC = () => {
       name: 'Alfred',
       version: 'v2.0.0',
       status: 'active',
-      description: 'AI-powered coding assistant with project-aware context and intelligent code generation capabilities.',
+      description:
+        'AI-powered coding assistant with project-aware context and intelligent code generation capabilities.',
       author: 'Alexandria Team',
       category: 'AI Assistant',
       color: '#38bdf8',
@@ -37,7 +38,8 @@ const Plugins: React.FC = () => {
       name: 'Hadron',
       version: 'v1.0.0',
       status: 'active',
-      description: 'AI-powered crash log analysis with root cause detection and solution recommendations.',
+      description:
+        'AI-powered crash log analysis with root cause detection and solution recommendations.',
       author: 'Alexandria Team',
       category: 'Analysis',
       color: '#f43f5e',
@@ -65,7 +67,8 @@ const Plugins: React.FC = () => {
       name: 'Heimdall',
       version: 'v1.0.0',
       status: 'inactive',
-      description: 'Advanced log visualization and pattern detection platform for system monitoring.',
+      description:
+        'Advanced log visualization and pattern detection platform for system monitoring.',
       author: 'Alexandria Team',
       category: 'Monitoring',
       color: '#a78bfa',
@@ -93,12 +96,14 @@ const Plugins: React.FC = () => {
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredPlugins = plugins.filter(plugin => {
-    const matchesFilter = filter === 'all' || 
+  const filteredPlugins = plugins.filter((plugin) => {
+    const matchesFilter =
+      filter === 'all' ||
       (filter === 'active' && plugin.status === 'active') ||
       (filter === 'inactive' && plugin.status === 'inactive');
-    
-    const matchesSearch = plugin.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+
+    const matchesSearch =
+      plugin.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       plugin.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       plugin.category.toLowerCase().includes(searchTerm.toLowerCase());
 
@@ -106,182 +111,179 @@ const Plugins: React.FC = () => {
   });
 
   const togglePlugin = (pluginId: string) => {
-    setPlugins(prev => prev.map(plugin => 
-      plugin.id === pluginId 
-        ? { 
-            ...plugin, 
-            enabled: !plugin.enabled,
-            status: !plugin.enabled ? 'active' : 'inactive'
-          }
-        : plugin
-    ));
+    setPlugins((prev) =>
+      prev.map((plugin) =>
+        plugin.id === pluginId
+          ? {
+              ...plugin,
+              enabled: !plugin.enabled,
+              status: !plugin.enabled ? 'active' : 'inactive'
+            }
+          : plugin
+      )
+    );
   };
 
   const navigateToPlugin = (pluginId: string) => {
     // Map plugin IDs to their actual routes
     const routeMap: Record<string, string> = {
-      'alfred': '/alfred',
-      'hadron': '/crash-analyzer',
-      'heimdall': '/heimdall'
+      alfred: '/alfred',
+      hadron: '/crash-analyzer',
+      heimdall: '/heimdall'
     };
-    
+
     const route = routeMap[pluginId] || `/${pluginId}`;
     navigate(route);
   };
 
   return (
-    <div className="plugins-page">
+    <div className='plugins-page'>
       <style>{pluginsPageStyles}</style>
-      
+
       {/* Header */}
-      <div className="page-header">
-        <div className="header-content">
-          <h1 className="page-title">Plugins</h1>
-          <p className="page-subtitle">Manage and configure your Alexandria Platform plugins</p>
+      <div className='page-header'>
+        <div className='header-content'>
+          <h1 className='page-title'>Plugins</h1>
+          <p className='page-subtitle'>Manage and configure your Alexandria Platform plugins</p>
         </div>
-        <div className="header-actions">
-          <button className="btn btn-primary">
-            ➕ Install Plugin
-          </button>
-          <button className="btn btn-secondary">
-            🔄 Refresh
-          </button>
+        <div className='header-actions'>
+          <button className='btn btn-primary'>➕ Install Plugin</button>
+          <button className='btn btn-secondary'>🔄 Refresh</button>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="plugin-stats">
-        <div className="stat-item">
-          <div className="stat-value">{plugins.length}</div>
-          <div className="stat-label">Total Plugins</div>
+      <div className='plugin-stats'>
+        <div className='stat-item'>
+          <div className='stat-value'>{plugins.length}</div>
+          <div className='stat-label'>Total Plugins</div>
         </div>
-        <div className="stat-item">
-          <div className="stat-value">{plugins.filter(p => p.status === 'active').length}</div>
-          <div className="stat-label">Active</div>
+        <div className='stat-item'>
+          <div className='stat-value'>{plugins.filter((p) => p.status === 'active').length}</div>
+          <div className='stat-label'>Active</div>
         </div>
-        <div className="stat-item">
-          <div className="stat-value">{plugins.filter(p => p.enabled).length}</div>
-          <div className="stat-label">Enabled</div>
+        <div className='stat-item'>
+          <div className='stat-value'>{plugins.filter((p) => p.enabled).length}</div>
+          <div className='stat-label'>Enabled</div>
         </div>
-        <div className="stat-item">
-          <div className="stat-value">{plugins.reduce((acc, p) => acc + (p.metrics.users || 0), 0)}</div>
-          <div className="stat-label">Total Users</div>
+        <div className='stat-item'>
+          <div className='stat-value'>
+            {plugins.reduce((acc, p) => acc + (p.metrics.users || 0), 0)}
+          </div>
+          <div className='stat-label'>Total Users</div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="filters-section">
-        <div className="search-container">
+      <div className='filters-section'>
+        <div className='search-container'>
           <input
-            type="text"
-            className="search-input"
-            placeholder="Search plugins..."
+            type='text'
+            className='search-input'
+            placeholder='Search plugins...'
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="filter-buttons">
-          <button 
+        <div className='filter-buttons'>
+          <button
             className={`filter-btn ${filter === 'all' ? 'active' : ''}`}
             onClick={() => setFilter('all')}
           >
             All ({plugins.length})
           </button>
-          <button 
+          <button
             className={`filter-btn ${filter === 'active' ? 'active' : ''}`}
             onClick={() => setFilter('active')}
           >
-            Active ({plugins.filter(p => p.status === 'active').length})
+            Active ({plugins.filter((p) => p.status === 'active').length})
           </button>
-          <button 
+          <button
             className={`filter-btn ${filter === 'inactive' ? 'active' : ''}`}
             onClick={() => setFilter('inactive')}
           >
-            Inactive ({plugins.filter(p => p.status === 'inactive').length})
+            Inactive ({plugins.filter((p) => p.status === 'inactive').length})
           </button>
         </div>
       </div>
 
       {/* Plugin Grid */}
-      <div className="plugins-grid">
+      <div className='plugins-grid'>
         {filteredPlugins.map((plugin) => (
-          <div key={plugin.id} className="plugin-card" style={{ '--plugin-color': plugin.color } as any}>
-            <div className="plugin-header">
-              <div className="plugin-icon">{plugin.icon}</div>
-              <div className="plugin-info">
-                <div className="plugin-name">{plugin.name}</div>
-                <div className="plugin-version">{plugin.version}</div>
+          <div
+            key={plugin.id}
+            className='plugin-card'
+            style={{ '--plugin-color': plugin.color } as any}
+          >
+            <div className='plugin-header'>
+              <div className='plugin-icon'>{plugin.icon}</div>
+              <div className='plugin-info'>
+                <div className='plugin-name'>{plugin.name}</div>
+                <div className='plugin-version'>{plugin.version}</div>
               </div>
-              <div className="plugin-status">
+              <div className='plugin-status'>
                 <div className={`status-badge ${plugin.status}`}>
                   {plugin.status === 'active' ? '🟢' : '🔴'} {plugin.status}
                 </div>
               </div>
             </div>
 
-            <div className="plugin-meta">
-              <span className="plugin-category">{plugin.category}</span>
-              <span className="plugin-size">{plugin.size}</span>
+            <div className='plugin-meta'>
+              <span className='plugin-category'>{plugin.category}</span>
+              <span className='plugin-size'>{plugin.size}</span>
             </div>
 
-            <p className="plugin-description">{plugin.description}</p>
+            <p className='plugin-description'>{plugin.description}</p>
 
-            <div className="plugin-features">
-              <div className="features-label">Features:</div>
-              <div className="features-list">
+            <div className='plugin-features'>
+              <div className='features-label'>Features:</div>
+              <div className='features-list'>
                 {plugin.features.slice(0, 3).map((feature, index) => (
-                  <span key={index} className="feature-tag">
+                  <span key={index} className='feature-tag'>
                     {feature}
                   </span>
                 ))}
                 {plugin.features.length > 3 && (
-                  <span className="feature-tag more">
-                    +{plugin.features.length - 3} more
-                  </span>
+                  <span className='feature-tag more'>+{plugin.features.length - 3} more</span>
                 )}
               </div>
             </div>
 
-            <div className="plugin-metrics">
+            <div className='plugin-metrics'>
               {Object.entries(plugin.metrics).map(([key, value]) => (
-                <div key={key} className="metric-item">
-                  <div className="metric-value">{value}</div>
-                  <div className="metric-label">{key}</div>
+                <div key={key} className='metric-item'>
+                  <div className='metric-value'>{value}</div>
+                  <div className='metric-label'>{key}</div>
                 </div>
               ))}
             </div>
 
-            <div className="plugin-actions">
-              <button 
-                className="btn btn-primary"
-                onClick={() => navigateToPlugin(plugin.id)}
-              >
+            <div className='plugin-actions'>
+              <button className='btn btn-primary' onClick={() => navigateToPlugin(plugin.id)}>
                 🚀 Open
               </button>
-              <button 
+              <button
                 className={`btn ${plugin.enabled ? 'btn-warning' : 'btn-success'}`}
                 onClick={() => togglePlugin(plugin.id)}
               >
                 {plugin.enabled ? '⏸️ Disable' : '▶️ Enable'}
               </button>
-              <button className="btn btn-secondary">
-                ⚙️ Configure
-              </button>
+              <button className='btn btn-secondary'>⚙️ Configure</button>
             </div>
 
-            <div className="plugin-footer">
-              <span className="plugin-author">by {plugin.author}</span>
-              <span className="plugin-updated">Updated {plugin.lastUpdated}</span>
+            <div className='plugin-footer'>
+              <span className='plugin-author'>by {plugin.author}</span>
+              <span className='plugin-updated'>Updated {plugin.lastUpdated}</span>
             </div>
           </div>
         ))}
       </div>
 
       {filteredPlugins.length === 0 && (
-        <div className="empty-state">
-          <div className="empty-icon">🔍</div>
-          <div className="empty-title">No plugins found</div>
-          <div className="empty-message">
+        <div className='empty-state'>
+          <div className='empty-icon'>🔍</div>
+          <div className='empty-title'>No plugins found</div>
+          <div className='empty-message'>
             {searchTerm ? 'Try adjusting your search terms' : 'No plugins match the current filter'}
           </div>
         </div>

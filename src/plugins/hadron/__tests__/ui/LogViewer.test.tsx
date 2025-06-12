@@ -14,9 +14,7 @@ Line 5: ERROR - Database operation timed out
 `;
 
   it('should render log content correctly', () => {
-    renderWithProviders(
-      <LogViewer content={mockContent} />
-    );
+    renderWithProviders(<LogViewer content={mockContent} />);
 
     expect(screen.getByText(/Line 1: INFO - Application starting/)).toBeInTheDocument();
     expect(screen.getByText(/Line 3: ERROR - Failed to connect to database/)).toBeInTheDocument();
@@ -24,9 +22,7 @@ Line 5: ERROR - Database operation timed out
   });
 
   it('should display line numbers by default', () => {
-    renderWithProviders(
-      <LogViewer content={mockContent} />
-    );
+    renderWithProviders(<LogViewer content={mockContent} />);
 
     // Check that line numbers are displayed
     expect(screen.getByText('1')).toBeInTheDocument();
@@ -35,9 +31,7 @@ Line 5: ERROR - Database operation timed out
   });
 
   it('should allow toggling line numbers', async () => {
-    renderWithProviders(
-      <LogViewer content={mockContent} />
-    );
+    renderWithProviders(<LogViewer content={mockContent} />);
 
     const user = userEvent.setup();
     await user.click(screen.getByLabelText(/Line Numbers/i));
@@ -49,16 +43,14 @@ Line 5: ERROR - Database operation timed out
 
     // Toggle back on
     await user.click(screen.getByLabelText(/Line Numbers/i));
-    
+
     await waitFor(() => {
       expect(screen.getByText('1')).toBeInTheDocument();
     });
   });
 
   it('should filter content based on search input', async () => {
-    renderWithProviders(
-      <LogViewer content={mockContent} />
-    );
+    renderWithProviders(<LogViewer content={mockContent} />);
 
     const user = userEvent.setup();
     await user.type(screen.getByPlaceholderText(/Filter log/i), 'ERROR');
@@ -72,9 +64,7 @@ Line 5: ERROR - Database operation timed out
   });
 
   it('should handle regex search input', async () => {
-    renderWithProviders(
-      <LogViewer content={mockContent} />
-    );
+    renderWithProviders(<LogViewer content={mockContent} />);
 
     const user = userEvent.setup();
     await user.type(screen.getByPlaceholderText(/Filter log/i), 'ERROR|WARN');
@@ -84,9 +74,7 @@ Line 5: ERROR - Database operation timed out
   });
 
   it('should allow navigating between matches', async () => {
-    renderWithProviders(
-      <LogViewer content={mockContent} />
-    );
+    renderWithProviders(<LogViewer content={mockContent} />);
 
     const user = userEvent.setup();
     await user.type(screen.getByPlaceholderText(/Filter log/i), 'ERROR');
@@ -94,7 +82,7 @@ Line 5: ERROR - Database operation timed out
     // Should display navigation buttons
     const prevButton = screen.getByRole('button', { name: /↑ Prev/i });
     const nextButton = screen.getByRole('button', { name: /↓ Next/i });
-    
+
     expect(prevButton).toBeInTheDocument();
     expect(nextButton).toBeInTheDocument();
 
@@ -103,21 +91,19 @@ Line 5: ERROR - Database operation timed out
 
     // Navigate to next match
     await user.click(nextButton);
-    
+
     // Should update match position
     expect(screen.getByText(/2\/2 matches/i)).toBeInTheDocument();
 
     // Navigate to previous match
     await user.click(prevButton);
-    
+
     // Should update match position back
     expect(screen.getByText(/1\/2 matches/i)).toBeInTheDocument();
   });
 
   it('should wrap around when navigating past the last match', async () => {
-    renderWithProviders(
-      <LogViewer content={mockContent} />
-    );
+    renderWithProviders(<LogViewer content={mockContent} />);
 
     const user = userEvent.setup();
     await user.type(screen.getByPlaceholderText(/Filter log/i), 'ERROR');
@@ -125,15 +111,13 @@ Line 5: ERROR - Database operation timed out
     // Navigate to next match twice to go beyond the last match
     await user.click(screen.getByRole('button', { name: /↓ Next/i }));
     await user.click(screen.getByRole('button', { name: /↓ Next/i }));
-    
+
     // Should wrap around to the first match
     expect(screen.getByText(/1\/2 matches/i)).toBeInTheDocument();
   });
 
   it('should display an error for invalid regex patterns', async () => {
-    renderWithProviders(
-      <LogViewer content={mockContent} />
-    );
+    renderWithProviders(<LogViewer content={mockContent} />);
 
     const user = userEvent.setup();
     await user.type(screen.getByPlaceholderText(/Filter log/i), '(unclosed');
@@ -143,9 +127,7 @@ Line 5: ERROR - Database operation timed out
   });
 
   it('should allow clearing the filter', async () => {
-    renderWithProviders(
-      <LogViewer content={mockContent} />
-    );
+    renderWithProviders(<LogViewer content={mockContent} />);
 
     const user = userEvent.setup();
     await user.type(screen.getByPlaceholderText(/Filter log/i), 'ERROR');
@@ -153,10 +135,10 @@ Line 5: ERROR - Database operation timed out
     // Clear button should appear
     const clearButton = screen.getByRole('button', { name: /✕/i });
     expect(clearButton).toBeInTheDocument();
-    
+
     // Click to clear
     await user.click(clearButton);
-    
+
     // Filter should be cleared
     expect(screen.getByPlaceholderText(/Filter log/i)).toHaveValue('');
     expect(screen.queryByText(/matches/i)).not.toBeInTheDocument();
@@ -169,9 +151,7 @@ Line 5: ERROR - Database operation timed out
       writeText: jest.fn().mockResolvedValue(undefined)
     };
 
-    renderWithProviders(
-      <LogViewer content={mockContent} />
-    );
+    renderWithProviders(<LogViewer content={mockContent} />);
 
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: /Copy to Clipboard/i }));
@@ -186,23 +166,21 @@ Line 5: ERROR - Database operation timed out
     // Mock URL and document APIs
     global.URL.createObjectURL = jest.fn().mockReturnValue('blob:url');
     global.URL.revokeObjectURL = jest.fn();
-    
+
     const appendChildMock = jest.fn();
     const removeChildMock = jest.fn();
     const clickMock = jest.fn();
-    
+
     document.createElement = jest.fn().mockImplementation(() => ({
       href: '',
       download: '',
       click: clickMock
     }));
-    
+
     document.body.appendChild = appendChildMock;
     document.body.removeChild = removeChildMock;
 
-    renderWithProviders(
-      <LogViewer content={mockContent} />
-    );
+    renderWithProviders(<LogViewer content={mockContent} />);
 
     const user = userEvent.setup();
     await user.click(screen.getByRole('button', { name: /Download/i }));
@@ -213,18 +191,13 @@ Line 5: ERROR - Database operation timed out
   });
 
   it('should render parsedData when provided', () => {
-    renderWithProviders(
-      <LogViewer
-        content={mockContent}
-        parsedData={sampleCrashLog.parsedData}
-      />
-    );
+    renderWithProviders(<LogViewer content={mockContent} parsedData={sampleCrashLog.parsedData} />);
 
     // Should render the content
     expect(screen.getByText(/Line 1: INFO - Application starting/)).toBeInTheDocument();
-    
+
     // And should use ParsedData for any advanced rendering if implemented
-    // This is a placeholder test as the current implementation doesn't do special 
+    // This is a placeholder test as the current implementation doesn't do special
     // rendering based on parsedData
   });
 });

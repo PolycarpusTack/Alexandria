@@ -1,15 +1,10 @@
 /**
  * Mnemosyne Core Types and Interfaces
- * 
+ *
  * Core data structures and interfaces for the Mnemosyne knowledge management system
  */
 
-import { 
-  PluginContext,
-  Logger,
-  EventBus,
-  DataService
-} from '@alexandria/plugin-interface';
+import { PluginContext, Logger, EventBus, DataService } from '@alexandria/plugin-interface';
 
 import { MnemosyneConfiguration } from '../core/config/Configuration';
 
@@ -50,44 +45,44 @@ export interface Document {
   content: string;
   contentType: 'markdown' | 'html' | 'plain';
   status: DocumentStatus;
-  
+
   // Metadata
   tags: string[];
   category?: string;
   description?: string;
-  
+
   // Timestamps
   created: Date;
   modified: Date;
   lastAccessed?: Date;
-  
+
   // Authorship
   author: string;
   contributors: string[];
-  
+
   // Version control
   version: number;
   parentVersion?: string;
   versionHistory?: DocumentVersion[];
-  
+
   // Knowledge graph integration
   relationships: DocumentRelationship[];
   backlinks: string[];
-  
+
   // Template information
   templateId?: string;
   templateVariables?: Record<string, any>;
-  
+
   // Import/Export tracking
   provenance?: DocumentProvenance;
-  
+
   // Collaboration
   collaborators?: string[];
   permissions?: DocumentPermissions;
-  
+
   // Analytics
   analytics?: DocumentAnalytics;
-  
+
   // Custom metadata
   metadata?: Record<string, any>;
 }
@@ -182,31 +177,31 @@ export interface KnowledgeNode {
   type: NodeType;
   title: string;
   content?: string;
-  
+
   // Position and visualization
   position?: {
     x: number;
     y: number;
     z?: number;
   };
-  
+
   // Graph properties
   weight: number;
   centrality?: number;
   clustering?: number;
-  
+
   // Metadata
   tags: string[];
   category?: string;
   metadata?: Record<string, any>;
-  
+
   // Timestamps
   created: Date;
   modified: Date;
-  
+
   // Relationships
   relationships: KnowledgeRelationship[];
-  
+
   // Analytics
   analytics?: NodeAnalytics;
 }
@@ -229,22 +224,22 @@ export interface KnowledgeRelationship {
   sourceId: string;
   targetId: string;
   type: RelationshipType;
-  
+
   // Relationship properties
   strength: number;
   confidence: number;
   bidirectional: boolean;
-  
+
   // Metadata
   description?: string;
   evidence?: string[];
   metadata?: Record<string, any>;
-  
+
   // Timestamps
   created: Date;
   modified: Date;
   createdBy: string;
-  
+
   // Analytics
   analytics?: RelationshipAnalytics;
 }
@@ -365,39 +360,39 @@ export interface Template {
   name: string;
   description: string;
   category: string;
-  
+
   // Template content
   content: string;
   engine: 'handlebars' | 'mustache' | 'liquid';
-  
+
   // Variables
   variables: TemplateVariable[];
   requiredVariables: string[];
-  
+
   // Metadata
   tags: string[];
   author: string;
   version: string;
-  
+
   // Usage tracking
   usageCount: number;
   lastUsed?: Date;
-  
+
   // AI generation
   generatedBy?: 'user' | 'ai';
   generationPrompt?: string;
-  
+
   // Timestamps
   created: Date;
   modified: Date;
-  
+
   // Template relationships
   parentTemplate?: string;
   childTemplates?: string[];
-  
+
   // Configuration
   config?: TemplateConfig;
-  
+
   // Analytics
   analytics?: TemplateAnalytics;
 }
@@ -483,29 +478,29 @@ export interface ImportSession {
   id: string;
   source: ImportSource;
   status: ImportStatus;
-  
+
   // Progress tracking
   progress: number;
   totalItems: number;
   processedItems: number;
-  
+
   // Results
   documentsImported: number;
   relationshipsCreated: number;
   errorsCount: number;
-  
+
   // Configuration
   options: ImportOptions;
-  
+
   // Metadata
   started: Date;
   completed?: Date;
   duration?: number;
-  
+
   // Error tracking
   errors: ImportError[];
   warnings: ImportWarning[];
-  
+
   // Analytics
   analytics?: ImportAnalytics;
 }
@@ -584,23 +579,23 @@ export interface ExportSession {
   id: string;
   format: ExportFormat;
   status: ExportStatus;
-  
+
   // Configuration
   documents: ExportDocumentSelection;
   options: ExportOptions;
   template?: string;
-  
+
   // Progress
   progress: number;
-  
+
   // Results
   outputPath?: string;
   fileSize?: number;
-  
+
   // Timestamps
   started: Date;
   completed?: Date;
-  
+
   // Error tracking
   errors: ExportError[];
 }

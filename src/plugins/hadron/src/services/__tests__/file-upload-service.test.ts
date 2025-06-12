@@ -1,6 +1,6 @@
 /**
  * Comprehensive test suite for FileUploadService
- * 
+ *
  * Tests cover file upload processing, validation, storage, and error handling
  */
 
@@ -102,11 +102,7 @@ describe('FileUploadService', () => {
       );
 
       expect(result).toEqual(mockFile);
-      expect(mockFileValidator.validateFile).toHaveBeenCalledWith(
-        validBuffer,
-        fileName,
-        mimeType
-      );
+      expect(mockFileValidator.validateFile).toHaveBeenCalledWith(validBuffer, fileName, mimeType);
       expect(mockHadronRepository.getSessionById).toHaveBeenCalledWith(sessionId);
       expect(mockFileStorage.storeFile).toHaveBeenCalledWith(
         validBuffer,
@@ -133,13 +129,7 @@ describe('FileUploadService', () => {
 
     it('should throw error for empty buffer', async () => {
       await expect(
-        fileUploadService.processFileUpload(
-          Buffer.from(''),
-          fileName,
-          mimeType,
-          userId,
-          sessionId
-        )
+        fileUploadService.processFileUpload(Buffer.from(''), fileName, mimeType, userId, sessionId)
       ).rejects.toThrow('File buffer is empty');
 
       expect(mockFileValidator.validateFile).not.toHaveBeenCalled();
@@ -147,57 +137,27 @@ describe('FileUploadService', () => {
 
     it('should throw error for null buffer', async () => {
       await expect(
-        fileUploadService.processFileUpload(
-          null as any,
-          fileName,
-          mimeType,
-          userId,
-          sessionId
-        )
+        fileUploadService.processFileUpload(null as any, fileName, mimeType, userId, sessionId)
       ).rejects.toThrow('File buffer is empty');
     });
 
     it('should throw error for empty filename', async () => {
       await expect(
-        fileUploadService.processFileUpload(
-          validBuffer,
-          '',
-          mimeType,
-          userId,
-          sessionId
-        )
+        fileUploadService.processFileUpload(validBuffer, '', mimeType, userId, sessionId)
       ).rejects.toThrow('File name is required');
 
       await expect(
-        fileUploadService.processFileUpload(
-          validBuffer,
-          '   ',
-          mimeType,
-          userId,
-          sessionId
-        )
+        fileUploadService.processFileUpload(validBuffer, '   ', mimeType, userId, sessionId)
       ).rejects.toThrow('File name is required');
     });
 
     it('should throw error for missing userId or sessionId', async () => {
       await expect(
-        fileUploadService.processFileUpload(
-          validBuffer,
-          fileName,
-          mimeType,
-          '',
-          sessionId
-        )
+        fileUploadService.processFileUpload(validBuffer, fileName, mimeType, '', sessionId)
       ).rejects.toThrow('User ID and session ID are required');
 
       await expect(
-        fileUploadService.processFileUpload(
-          validBuffer,
-          fileName,
-          mimeType,
-          userId,
-          ''
-        )
+        fileUploadService.processFileUpload(validBuffer, fileName, mimeType, userId, '')
       ).rejects.toThrow('User ID and session ID are required');
     });
 
@@ -208,13 +168,7 @@ describe('FileUploadService', () => {
       });
 
       await expect(
-        fileUploadService.processFileUpload(
-          validBuffer,
-          fileName,
-          mimeType,
-          userId,
-          sessionId
-        )
+        fileUploadService.processFileUpload(validBuffer, fileName, mimeType, userId, sessionId)
       ).rejects.toThrow('File validation failed: File too large, Invalid format');
     });
 
@@ -222,13 +176,7 @@ describe('FileUploadService', () => {
       mockHadronRepository.getSessionById.mockResolvedValueOnce(null);
 
       await expect(
-        fileUploadService.processFileUpload(
-          validBuffer,
-          fileName,
-          mimeType,
-          userId,
-          sessionId
-        )
+        fileUploadService.processFileUpload(validBuffer, fileName, mimeType, userId, sessionId)
       ).rejects.toThrow(`Session not found: ${sessionId}`);
     });
 
@@ -239,13 +187,7 @@ describe('FileUploadService', () => {
       });
 
       await expect(
-        fileUploadService.processFileUpload(
-          validBuffer,
-          fileName,
-          mimeType,
-          userId,
-          sessionId
-        )
+        fileUploadService.processFileUpload(validBuffer, fileName, mimeType, userId, sessionId)
       ).rejects.toThrow('Session does not belong to the user');
     });
 
@@ -254,13 +196,7 @@ describe('FileUploadService', () => {
       mockFileStorage.storeFile.mockRejectedValueOnce(storageError);
 
       await expect(
-        fileUploadService.processFileUpload(
-          validBuffer,
-          fileName,
-          mimeType,
-          userId,
-          sessionId
-        )
+        fileUploadService.processFileUpload(validBuffer, fileName, mimeType, userId, sessionId)
       ).rejects.toThrow(storageError);
 
       expect(mockLogger.error).toHaveBeenCalledWith(
@@ -279,13 +215,7 @@ describe('FileUploadService', () => {
       mockHadronRepository.saveFile.mockRejectedValueOnce(saveError);
 
       await expect(
-        fileUploadService.processFileUpload(
-          validBuffer,
-          fileName,
-          mimeType,
-          userId,
-          sessionId
-        )
+        fileUploadService.processFileUpload(validBuffer, fileName, mimeType, userId, sessionId)
       ).rejects.toThrow(saveError);
     });
   });
@@ -335,18 +265,17 @@ describe('FileUploadService', () => {
       expect(mockHadronRepository.getFileById).toHaveBeenCalledWith('file-123');
       expect(mockFileStorage.deleteFile).toHaveBeenCalledWith('file-123');
       expect(mockHadronRepository.deleteFile).toHaveBeenCalledWith('file-123');
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        'File deleted: file-123',
-        { userId: 'user-123' }
-      );
+      expect(mockLogger.info).toHaveBeenCalledWith('File deleted: file-123', {
+        userId: 'user-123'
+      });
     });
 
     it('should throw error when file not found', async () => {
       mockHadronRepository.getFileById.mockResolvedValueOnce(null);
 
-      await expect(
-        fileUploadService.deleteFile('non-existent', 'user-123')
-      ).rejects.toThrow('File not found: non-existent');
+      await expect(fileUploadService.deleteFile('non-existent', 'user-123')).rejects.toThrow(
+        'File not found: non-existent'
+      );
 
       expect(mockFileStorage.deleteFile).not.toHaveBeenCalled();
     });
@@ -357,9 +286,9 @@ describe('FileUploadService', () => {
         userId: 'different-user'
       });
 
-      await expect(
-        fileUploadService.deleteFile('file-123', 'user-123')
-      ).rejects.toThrow('User does not own this file');
+      await expect(fileUploadService.deleteFile('file-123', 'user-123')).rejects.toThrow(
+        'User does not own this file'
+      );
 
       expect(mockFileStorage.deleteFile).not.toHaveBeenCalled();
     });
@@ -368,9 +297,9 @@ describe('FileUploadService', () => {
       const deleteError = new Error('Storage delete failed');
       mockFileStorage.deleteFile.mockRejectedValueOnce(deleteError);
 
-      await expect(
-        fileUploadService.deleteFile('file-123', 'user-123')
-      ).rejects.toThrow(deleteError);
+      await expect(fileUploadService.deleteFile('file-123', 'user-123')).rejects.toThrow(
+        deleteError
+      );
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         'Error deleting file:',
@@ -386,9 +315,9 @@ describe('FileUploadService', () => {
       const deleteError = new Error('Repository delete failed');
       mockHadronRepository.deleteFile.mockRejectedValueOnce(deleteError);
 
-      await expect(
-        fileUploadService.deleteFile('file-123', 'user-123')
-      ).rejects.toThrow(deleteError);
+      await expect(fileUploadService.deleteFile('file-123', 'user-123')).rejects.toThrow(
+        deleteError
+      );
 
       expect(mockFileStorage.deleteFile).toHaveBeenCalled(); // Storage delete happened first
     });

@@ -26,7 +26,7 @@ export class RouteService {
     if (this.routes.has(routeKey)) {
       throw new ConflictError('Route', `Route already registered: ${routeKey}`);
     }
-    
+
     this.routes.set(routeKey, route);
     this.logger.debug(`Registered route: ${routeKey}`, { component: 'RouteService' });
   }
@@ -39,7 +39,7 @@ export class RouteService {
     if (!this.routes.has(routeKey)) {
       throw new NotFoundError('Route', routeKey);
     }
-    
+
     this.routes.delete(routeKey);
     this.logger.debug(`Removed route: ${routeKey}`, { component: 'RouteService' });
   }

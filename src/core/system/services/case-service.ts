@@ -5,7 +5,7 @@
 import { Case } from '../interfaces';
 import { DataService } from '../../data/interfaces';
 import { Logger } from '../../../utils/logger';
-import { ValidationError, ConfigurationError } from '../../errors';
+import { ValidationError } from '../../errors';
 
 export interface CaseServiceOptions {
   dataService: DataService;
@@ -28,7 +28,7 @@ export class CaseService {
     if (!id || typeof id !== 'string') {
       throw new ValidationError([{ field: 'id', message: 'Case ID must be a non-empty string' }]);
     }
-    
+
     return await this.dataService.cases.findById(id);
   }
 
@@ -39,7 +39,7 @@ export class CaseService {
     if (!caseData || !caseData.title) {
       throw new ValidationError([{ field: 'title', message: 'Case title is required' }]);
     }
-    
+
     return await this.dataService.cases.create(caseData);
   }
 
@@ -50,12 +50,12 @@ export class CaseService {
     if (!id || typeof id !== 'string') {
       throw new ValidationError([{ field: 'id', message: 'Case ID must be a non-empty string' }]);
     }
-    
+
     const existingCase = await this.getCaseById(id);
     if (!existingCase) {
       throw new ValidationError([{ field: 'id', message: 'Case not found' }]);
     }
-    
+
     return await this.dataService.cases.update(id, updates);
   }
 
@@ -66,7 +66,7 @@ export class CaseService {
     if (!id || typeof id !== 'string') {
       throw new ValidationError([{ field: 'id', message: 'Case ID must be a non-empty string' }]);
     }
-    
+
     return await this.dataService.cases.delete(id);
   }
 
@@ -76,9 +76,11 @@ export class CaseService {
   async findCasesByStatus(status: Case['status']): Promise<Case[]> {
     const validStatuses: Case['status'][] = ['open', 'in_progress', 'resolved', 'closed'];
     if (!status || !validStatuses.includes(status)) {
-      throw new ValidationError([{ field: 'status', message: 'Status must be one of: open, in_progress, resolved, closed' }]);
+      throw new ValidationError([
+        { field: 'status', message: 'Status must be one of: open, in_progress, resolved, closed' }
+      ]);
     }
-    
+
     return await this.dataService.cases.findByStatus(status);
   }
 
@@ -87,9 +89,11 @@ export class CaseService {
    */
   async findCasesByAssignee(userId: string): Promise<Case[]> {
     if (!userId || typeof userId !== 'string') {
-      throw new ValidationError([{ field: 'userId', message: 'User ID must be a non-empty string' }]);
+      throw new ValidationError([
+        { field: 'userId', message: 'User ID must be a non-empty string' }
+      ]);
     }
-    
+
     return await this.dataService.cases.findByAssignedTo(userId);
   }
 
@@ -98,22 +102,28 @@ export class CaseService {
    */
   async addComment(caseId: string, userId: string, comment: string): Promise<Case> {
     if (!caseId || typeof caseId !== 'string') {
-      throw new ValidationError([{ field: 'caseId', message: 'Case ID must be a non-empty string' }]);
+      throw new ValidationError([
+        { field: 'caseId', message: 'Case ID must be a non-empty string' }
+      ]);
     }
-    
+
     if (!userId || typeof userId !== 'string') {
-      throw new ValidationError([{ field: 'userId', message: 'User ID must be a non-empty string' }]);
+      throw new ValidationError([
+        { field: 'userId', message: 'User ID must be a non-empty string' }
+      ]);
     }
-    
+
     if (!comment || typeof comment !== 'string') {
-      throw new ValidationError([{ field: 'comment', message: 'Comment must be a non-empty string' }]);
+      throw new ValidationError([
+        { field: 'comment', message: 'Comment must be a non-empty string' }
+      ]);
     }
-    
+
     const caseToUpdate = await this.getCaseById(caseId);
     if (!caseToUpdate) {
       throw new ValidationError([{ field: 'caseId', message: 'Case not found' }]);
     }
-    
+
     // Since Case doesn't have a history property, we'll store comments in metadata
     const newComment = {
       id: Date.now().toString(), // Simple ID generation
@@ -121,12 +131,12 @@ export class CaseService {
       text: comment,
       createdAt: new Date()
     };
-    
+
     const metadata = caseToUpdate.metadata || {};
     const comments = metadata.comments || [];
     comments.push(newComment);
-    
-    return await this.updateCase(caseId, { 
+
+    return await this.updateCase(caseId, {
       metadata: {
         ...metadata,
         comments

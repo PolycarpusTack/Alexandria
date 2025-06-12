@@ -1,5 +1,4 @@
 import { PluginPermission } from './interfaces';
-import { SecurityError, ValidationError } from '../errors';
 import { createLogger } from '../../utils/logger';
 
 const logger = createLogger({ serviceName: 'permission-validator' });
@@ -18,151 +17,211 @@ export interface PermissionRule {
 
 export class PermissionValidator {
   private static permissionRules: Map<PluginPermission, PermissionRule> = new Map([
-    ['file:read', {
-      permission: 'file:read',
-      description: 'Read files from the file system',
-      riskLevel: 'medium',
-      allowedResources: ['./data', './config', './logs'],
-    }],
-    ['file:write', {
-      permission: 'file:write',
-      description: 'Write files to the file system',
-      riskLevel: 'high',
-      requiredApproval: true,
-      allowedResources: ['./data/plugins', './logs'],
-    }],
-    ['network:http', {
-      permission: 'network:http',
-      description: 'Make HTTP/HTTPS requests',
-      riskLevel: 'medium',
-      rateLimit: {
-        requests: 100,
-        windowMs: 60000, // 1 minute
-      },
-    }],
+    [
+      'file:read',
+      {
+        permission: 'file:read',
+        description: 'Read files from the file system',
+        riskLevel: 'medium',
+        allowedResources: ['./data', './config', './logs']
+      }
+    ],
+    [
+      'file:write',
+      {
+        permission: 'file:write',
+        description: 'Write files to the file system',
+        riskLevel: 'high',
+        requiredApproval: true,
+        allowedResources: ['./data/plugins', './logs']
+      }
+    ],
+    [
+      'network:http',
+      {
+        permission: 'network:http',
+        description: 'Make HTTP/HTTPS requests',
+        riskLevel: 'medium',
+        rateLimit: {
+          requests: 100,
+          windowMs: 60000 // 1 minute
+        }
+      }
+    ],
     // Database permissions (enhanced)
-    ['database:access', {
-      permission: 'database:access',
-      description: 'Basic database access',
-      riskLevel: 'low',
-    }],
-    ['database:read', {
-      permission: 'database:read',
-      description: 'Read from database',
-      riskLevel: 'low',
-      rateLimit: {
-        requests: 1000,
-        windowMs: 60000,
-      },
-    }],
-    ['database:write', {
-      permission: 'database:write',
-      description: 'Write to database',
-      riskLevel: 'high',
-      requiredApproval: true,
-      rateLimit: {
-        requests: 100,
-        windowMs: 60000,
-      },
-    }],
-    ['llm:access', {
-      permission: 'llm:access',
-      description: 'Access Large Language Model services',
-      riskLevel: 'medium',
-      rateLimit: {
-        requests: 50,
-        windowMs: 60000,
-      },
-    }],
-    ['event:emit', {
-      permission: 'event:emit',
-      description: 'Emit events to the event bus',
-      riskLevel: 'low',
-      rateLimit: {
-        requests: 1000,
-        windowMs: 60000,
-      },
-    }],
-    ['event:subscribe', {
-      permission: 'event:subscribe',
-      description: 'Subscribe to events from the event bus',
-      riskLevel: 'low',
-    }],
-    ['crypto:access', {
-      permission: 'crypto:access',
-      description: 'Access cryptographic functions',
-      riskLevel: 'medium',
-    }],
-    ['buffer:access', {
-      permission: 'buffer:access',
-      description: 'Access Buffer operations',
-      riskLevel: 'low',
-    }],
-    ['system:info', {
-      permission: 'system:info',
-      description: 'Access system information',
-      riskLevel: 'low',
-    }],
-    ['plugin:communicate', {
-      permission: 'plugin:communicate',
-      description: 'Communicate with other plugins',
-      riskLevel: 'medium',
-      requiredApproval: true,
-    }],
+    [
+      'database:access',
+      {
+        permission: 'database:access',
+        description: 'Basic database access',
+        riskLevel: 'low'
+      }
+    ],
+    [
+      'database:read',
+      {
+        permission: 'database:read',
+        description: 'Read from database',
+        riskLevel: 'low',
+        rateLimit: {
+          requests: 1000,
+          windowMs: 60000
+        }
+      }
+    ],
+    [
+      'database:write',
+      {
+        permission: 'database:write',
+        description: 'Write to database',
+        riskLevel: 'high',
+        requiredApproval: true,
+        rateLimit: {
+          requests: 100,
+          windowMs: 60000
+        }
+      }
+    ],
+    [
+      'llm:access',
+      {
+        permission: 'llm:access',
+        description: 'Access Large Language Model services',
+        riskLevel: 'medium',
+        rateLimit: {
+          requests: 50,
+          windowMs: 60000
+        }
+      }
+    ],
+    [
+      'event:emit',
+      {
+        permission: 'event:emit',
+        description: 'Emit events to the event bus',
+        riskLevel: 'low',
+        rateLimit: {
+          requests: 1000,
+          windowMs: 60000
+        }
+      }
+    ],
+    [
+      'event:subscribe',
+      {
+        permission: 'event:subscribe',
+        description: 'Subscribe to events from the event bus',
+        riskLevel: 'low'
+      }
+    ],
+    [
+      'crypto:access',
+      {
+        permission: 'crypto:access',
+        description: 'Access cryptographic functions',
+        riskLevel: 'medium'
+      }
+    ],
+    [
+      'buffer:access',
+      {
+        permission: 'buffer:access',
+        description: 'Access Buffer operations',
+        riskLevel: 'low'
+      }
+    ],
+    [
+      'system:info',
+      {
+        permission: 'system:info',
+        description: 'Access system information',
+        riskLevel: 'low'
+      }
+    ],
+    [
+      'plugin:communicate',
+      {
+        permission: 'plugin:communicate',
+        description: 'Communicate with other plugins',
+        riskLevel: 'medium',
+        requiredApproval: true
+      }
+    ],
     // Event permissions
-    ['event:publish', {
-      permission: 'event:publish',
-      description: 'Publish events to the event bus',
-      riskLevel: 'low',
-      rateLimit: {
-        requests: 1000,
-        windowMs: 60000,
-      },
-    }],
+    [
+      'event:publish',
+      {
+        permission: 'event:publish',
+        description: 'Publish events to the event bus',
+        riskLevel: 'low',
+        rateLimit: {
+          requests: 1000,
+          windowMs: 60000
+        }
+      }
+    ],
     // Project permissions
-    ['project:analyze', {
-      permission: 'project:analyze',
-      description: 'Analyze project data',
-      riskLevel: 'medium',
-    }],
+    [
+      'project:analyze',
+      {
+        permission: 'project:analyze',
+        description: 'Analyze project data',
+        riskLevel: 'medium'
+      }
+    ],
     // AI/ML permissions
-    ['code:generate', {
-      permission: 'code:generate',
-      description: 'Generate code using AI',
-      riskLevel: 'high',
-      requiredApproval: true,
-    }],
-    ['ml:execute', {
-      permission: 'ml:execute',
-      description: 'Execute machine learning models',
-      riskLevel: 'medium',
-      rateLimit: {
-        requests: 100,
-        windowMs: 60000,
-      },
-    }],
+    [
+      'code:generate',
+      {
+        permission: 'code:generate',
+        description: 'Generate code using AI',
+        riskLevel: 'high',
+        requiredApproval: true
+      }
+    ],
+    [
+      'ml:execute',
+      {
+        permission: 'ml:execute',
+        description: 'Execute machine learning models',
+        riskLevel: 'medium',
+        rateLimit: {
+          requests: 100,
+          windowMs: 60000
+        }
+      }
+    ],
     // Template permissions
-    ['template:manage', {
-      permission: 'template:manage',
-      description: 'Manage templates',
-      riskLevel: 'medium',
-    }],
+    [
+      'template:manage',
+      {
+        permission: 'template:manage',
+        description: 'Manage templates',
+        riskLevel: 'medium'
+      }
+    ],
     // Network permissions
-    ['network:access', {
-      permission: 'network:access',
-      description: 'Basic network access',
-      riskLevel: 'low',
-    }],
+    [
+      'network:access',
+      {
+        permission: 'network:access',
+        description: 'Basic network access',
+        riskLevel: 'low'
+      }
+    ],
     // Analytics permissions
-    ['analytics:write', {
-      permission: 'analytics:write',
-      description: 'Write analytics data',
-      riskLevel: 'low',
-      rateLimit: {
-        requests: 1000,
-        windowMs: 60000,
-      },
-    }],
+    [
+      'analytics:write',
+      {
+        permission: 'analytics:write',
+        description: 'Write analytics data',
+        riskLevel: 'low',
+        rateLimit: {
+          requests: 1000,
+          windowMs: 60000
+        }
+      }
+    ]
   ]);
 
   private rateLimitTrackers = new Map<string, Map<string, number[]>>();
@@ -179,7 +238,7 @@ export class PermissionValidator {
 
     for (const permission of requestedPermissions) {
       const rule = PermissionValidator.permissionRules.get(permission);
-      
+
       if (!rule) {
         errors.push(`Unknown permission: ${permission}`);
         continue;
@@ -204,13 +263,13 @@ export class PermissionValidator {
       valid: errors.length === 0,
       errors,
       warnings,
-      requiredApprovals,
+      requiredApprovals
     };
   }
 
   checkRateLimit(pluginId: string, permission: PluginPermission): boolean {
     const rule = PermissionValidator.permissionRules.get(permission);
-    
+
     if (!rule?.rateLimit) {
       return true; // No rate limit defined
     }
@@ -222,47 +281,44 @@ export class PermissionValidator {
     if (!this.rateLimitTrackers.has(pluginId)) {
       this.rateLimitTrackers.set(pluginId, new Map());
     }
-    
+
     const pluginTrackers = this.rateLimitTrackers.get(pluginId)!;
-    
+
     // Get or create tracker for this permission
     if (!pluginTrackers.has(permission)) {
       pluginTrackers.set(permission, []);
     }
-    
+
     const timestamps = pluginTrackers.get(permission)!;
-    
+
     // Remove old timestamps outside the window
     const cutoff = now - windowMs;
-    const validTimestamps = timestamps.filter(ts => ts > cutoff);
-    
+    const validTimestamps = timestamps.filter((ts) => ts > cutoff);
+
     // Check if limit exceeded
     if (validTimestamps.length >= requests) {
       logger.warn(`Rate limit exceeded for plugin ${pluginId} on permission ${permission}`);
       return false;
     }
-    
+
     // Add current timestamp
     validTimestamps.push(now);
     pluginTrackers.set(permission, validTimestamps);
-    
+
     return true;
   }
 
-  validateResourceAccess(
-    permission: PluginPermission,
-    resource: string
-  ): boolean {
+  validateResourceAccess(permission: PluginPermission, resource: string): boolean {
     const rule = PermissionValidator.permissionRules.get(permission);
-    
+
     if (!rule?.allowedResources) {
       return true; // No resource restrictions
     }
 
     // Normalize paths for comparison
     const normalizedResource = resource.replace(/\\/g, '/');
-    
-    return rule.allowedResources.some(allowed => {
+
+    return rule.allowedResources.some((allowed) => {
       const normalizedAllowed = allowed.replace(/\\/g, '/');
       return normalizedResource.startsWith(normalizedAllowed);
     });
@@ -278,12 +334,10 @@ export class PermissionValidator {
 
   private checkDangerousCombinations(permissions: PluginPermission[]): string[] {
     const errors: string[] = [];
-    
+
     // Check for dangerous combinations
     if (permissions.includes('file:write') && permissions.includes('network:http')) {
-      errors.push(
-        'Dangerous combination: file:write + network:http could allow data exfiltration'
-      );
+      errors.push('Dangerous combination: file:write + network:http could allow data exfiltration');
     }
 
     if (permissions.includes('database:write') && permissions.includes('network:http')) {
@@ -310,8 +364,9 @@ export class PermissionValidator {
   }
 
   getPermissionsByRiskLevel(riskLevel: 'low' | 'medium' | 'high' | 'critical'): PermissionRule[] {
-    return Array.from(PermissionValidator.permissionRules.values())
-      .filter(rule => rule.riskLevel === riskLevel);
+    return Array.from(PermissionValidator.permissionRules.values()).filter(
+      (rule) => rule.riskLevel === riskLevel
+    );
   }
 
   generatePermissionReport(permissions: PluginPermission[]): {
@@ -320,27 +375,24 @@ export class PermissionValidator {
     riskScore: number;
   } {
     const details = permissions
-      .map(p => this.getPermissionInfo(p))
+      .map((p) => this.getPermissionInfo(p))
       .filter((rule): rule is PermissionRule => rule !== undefined);
 
     const riskScores = {
       low: 1,
       medium: 5,
       high: 10,
-      critical: 20,
+      critical: 20
     };
 
-    const totalRiskScore = details.reduce(
-      (sum, rule) => sum + riskScores[rule.riskLevel],
-      0
-    );
+    const totalRiskScore = details.reduce((sum, rule) => sum + riskScores[rule.riskLevel], 0);
 
     const summary = `Plugin requests ${permissions.length} permissions with a total risk score of ${totalRiskScore}`;
 
     return {
       summary,
       details,
-      riskScore: totalRiskScore,
+      riskScore: totalRiskScore
     };
   }
 }

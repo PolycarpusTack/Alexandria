@@ -6,22 +6,22 @@ import {
   CardHeader,
   CardTitle,
   CardDescription,
-  CardFooter,
-} from "../../../../ui/components/ui/card";
+  CardFooter
+} from '../../../../ui/components/ui/card';
 import {
   Table,
   TableHeader,
   TableRow,
   TableHead,
   TableBody,
-  TableCell,
-} from "../../../../ui/components/ui/table";
+  TableCell
+} from '../../../../ui/components/ui/table';
 
-import { Shield, ShieldCheck, ShieldAlert, ShieldX } from "lucide-react";
+import { ShieldAlert, ShieldX } from 'lucide-react';
 
 import { Badge } from '../../../../client/components/ui/badge';
 import { Button } from '../../../../client/components/ui/button';
-import { Alert, AlertDescription, AlertTitle } from '../../../../client/components/ui/alert'
+import { Alert, AlertDescription, AlertTitle } from '../../../../client/components/ui/alert';
 interface FileScanResult {
   fileId: string;
   filename: string;
@@ -58,7 +58,7 @@ export const SecurityScanResults: React.FC<SecurityScanResultsProps> = ({
   sessionId,
   fileId,
   onScanComplete,
-  readOnly = false,
+  readOnly = false
 }) => {
   const [scanResults, setScanResults] = useState<FileScanResult[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -95,19 +95,19 @@ export const SecurityScanResults: React.FC<SecurityScanResultsProps> = ({
       setLoading(true);
       setActionInProgress(fileId);
       const response = await apiClient.post(`/security/scan/${fileId}`, {
-        autoQuarantine,
+        autoQuarantine
       });
-      
+
       setScanResults([response.data]);
       if (onScanComplete) {
         onScanComplete([response.data]);
       }
-      
+
       // Refresh quarantined files if we auto-quarantined
       if (autoQuarantine && !readOnly) {
         await loadQuarantinedFiles();
       }
-      
+
       setLoading(false);
       setActionInProgress(null);
     } catch (err) {
@@ -126,19 +126,19 @@ export const SecurityScanResults: React.FC<SecurityScanResultsProps> = ({
       setLoading(true);
       setActionInProgress(sessionId);
       const response = await apiClient.post(`/security/batch-scan/${sessionId}`, {
-        autoQuarantine,
+        autoQuarantine
       });
-      
+
       setScanResults(response.data);
       if (onScanComplete) {
         onScanComplete(response.data);
       }
-      
+
       // Refresh quarantined files if we auto-quarantined
       if (autoQuarantine && !readOnly) {
         await loadQuarantinedFiles();
       }
-      
+
       setLoading(false);
       setActionInProgress(null);
     } catch (err) {
@@ -154,9 +154,9 @@ export const SecurityScanResults: React.FC<SecurityScanResultsProps> = ({
     try {
       setActionInProgress(fileId);
       await apiClient.post(`/security/quarantine/release/${fileId}`, {
-        force,
+        force
       });
-      
+
       // Refresh quarantined files
       await loadQuarantinedFiles();
       setActionInProgress(null);
@@ -171,19 +171,19 @@ export const SecurityScanResults: React.FC<SecurityScanResultsProps> = ({
   const renderRiskBadge = (riskLevel: string) => {
     switch (riskLevel) {
       case 'low':
-        return <Badge variant="success">Low Risk</Badge>;
+        return <Badge variant='success'>Low Risk</Badge>;
       case 'medium':
-        return <Badge variant="warning">Medium Risk</Badge>;
+        return <Badge variant='warning'>Medium Risk</Badge>;
       case 'high':
-        return <Badge variant="destructive">High Risk</Badge>;
+        return <Badge variant='destructive'>High Risk</Badge>;
       case 'critical':
         return (
-          <Badge variant="destructive" className="bg-red-700">
+          <Badge variant='destructive' className='bg-red-700'>
             Critical Risk
           </Badge>
         );
       default:
-        return <Badge variant="secondary">Unknown</Badge>;
+        return <Badge variant='secondary'>Unknown</Badge>;
     }
   };
 
@@ -191,25 +191,25 @@ export const SecurityScanResults: React.FC<SecurityScanResultsProps> = ({
   const renderThreatIcon = (riskLevel: string) => {
     switch (riskLevel) {
       case 'low':
-        return <ShieldCheckIcon className="w-5 h-5 text-green-500" />;
+        return <ShieldCheckIcon className='w-5 h-5 text-green-500' />;
       case 'medium':
-        return <ShieldAlert className="w-5 h-5 text-amber-500" />;
+        return <ShieldAlert className='w-5 h-5 text-amber-500' />;
       case 'high':
       case 'critical':
-        return <ShieldX className="w-5 h-5 text-red-500" />;
+        return <ShieldX className='w-5 h-5 text-red-500' />;
       default:
-        return <SecurityScanIcon className="w-5 h-5 text-gray-500" />;
+        return <SecurityScanIcon className='w-5 h-5 text-gray-500' />;
     }
   };
 
   return (
-    <div className="space-y-6">
+    <div className='space-y-6'>
       {/* Scan Controls */}
       {!readOnly && (
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <SecurityScanIcon className="w-5 h-5" />
+            <CardTitle className='flex items-center gap-2'>
+              <SecurityScanIcon className='w-5 h-5' />
               Security Scanner
             </CardTitle>
             <CardDescription>
@@ -217,24 +217,24 @@ export const SecurityScanResults: React.FC<SecurityScanResultsProps> = ({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="flex flex-col md:flex-row gap-4">
+            <div className='flex flex-col md:flex-row gap-4'>
               {fileId && (
-                <div className="space-y-2">
-                  <h3 className="text-sm font-medium">Scan Single File</h3>
-                  <div className="flex gap-2">
+                <div className='space-y-2'>
+                  <h3 className='text-sm font-medium'>Scan Single File</h3>
+                  <div className='flex gap-2'>
                     <Button
                       onClick={() => scanFile(fileId, false)}
                       disabled={loading || actionInProgress !== null}
-                      variant="outline"
-                      size="small"
+                      variant='outline'
+                      size='small'
                     >
                       Scan Only
                     </Button>
                     <Button
                       onClick={() => scanFile(fileId, true)}
                       disabled={loading || actionInProgress !== null}
-                      variant="default"
-                      size="small"
+                      variant='default'
+                      size='small'
                     >
                       Scan & Quarantine
                     </Button>
@@ -243,22 +243,22 @@ export const SecurityScanResults: React.FC<SecurityScanResultsProps> = ({
               )}
 
               {sessionId && (
-                <div className="space-y-2">
-                  <h3 className="text-sm font-medium">Batch Scan Session</h3>
-                  <div className="flex gap-2">
+                <div className='space-y-2'>
+                  <h3 className='text-sm font-medium'>Batch Scan Session</h3>
+                  <div className='flex gap-2'>
                     <Button
                       onClick={() => batchScanSession(sessionId, false)}
                       disabled={loading || actionInProgress !== null}
-                      variant="outline"
-                      size="small"
+                      variant='outline'
+                      size='small'
                     >
                       Scan All Files
                     </Button>
                     <Button
                       onClick={() => batchScanSession(sessionId, true)}
                       disabled={loading || actionInProgress !== null}
-                      variant="default"
-                      size="small"
+                      variant='default'
+                      size='small'
                     >
                       Scan & Quarantine All
                     </Button>
@@ -269,7 +269,7 @@ export const SecurityScanResults: React.FC<SecurityScanResultsProps> = ({
           </CardContent>
           {loading && (
             <CardFooter>
-              <div className="w-full text-center text-sm text-muted-foreground">
+              <div className='w-full text-center text-sm text-muted-foreground'>
                 {actionInProgress ? (
                   <span>Processing {actionInProgress}...</span>
                 ) : (
@@ -283,7 +283,7 @@ export const SecurityScanResults: React.FC<SecurityScanResultsProps> = ({
 
       {/* Error Display */}
       {error && (
-        <Alert variant="destructive">
+        <Alert variant='destructive'>
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>{error}</AlertDescription>
         </Alert>
@@ -295,7 +295,7 @@ export const SecurityScanResults: React.FC<SecurityScanResultsProps> = ({
           <CardHeader>
             <CardTitle>Scan Results</CardTitle>
             <CardDescription>
-              {scanResults.length} file(s) scanned on{" "}
+              {scanResults.length} file(s) scanned on{' '}
               {new Date(scanResults[0].scannedAt).toLocaleString()}
             </CardDescription>
           </CardHeader>
@@ -313,29 +313,21 @@ export const SecurityScanResults: React.FC<SecurityScanResultsProps> = ({
               <TableBody>
                 {scanResults.map((result) => (
                   <TableRow key={result.fileId}>
-                    <TableCell>
-                      {renderThreatIcon(result.riskLevel)}
-                    </TableCell>
-                    <TableCell className="font-medium">
-                      {result.filename}
-                    </TableCell>
+                    <TableCell>{renderThreatIcon(result.riskLevel)}</TableCell>
+                    <TableCell className='font-medium'>{result.filename}</TableCell>
                     <TableCell>{renderRiskBadge(result.riskLevel)}</TableCell>
                     <TableCell>
                       {result.detectedThreats.length > 0 ? (
-                        <ul className="text-xs list-disc pl-4">
+                        <ul className='text-xs list-disc pl-4'>
                           {result.detectedThreats.map((threat, idx) => (
                             <li key={idx}>{threat}</li>
                           ))}
                         </ul>
                       ) : (
-                        <span className="text-sm text-muted-foreground">
-                          No threats detected
-                        </span>
+                        <span className='text-sm text-muted-foreground'>No threats detected</span>
                       )}
                     </TableCell>
-                    <TableCell>
-                      {result.quarantined ? "Yes" : "No"}
-                    </TableCell>
+                    <TableCell>{result.quarantined ? 'Yes' : 'No'}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -366,43 +358,34 @@ export const SecurityScanResults: React.FC<SecurityScanResultsProps> = ({
               <TableBody>
                 {quarantinedFiles.map((file) => (
                   <TableRow key={file.id}>
-                    <TableCell className="font-medium">
-                      {file.filename}
-                    </TableCell>
+                    <TableCell className='font-medium'>{file.filename}</TableCell>
                     <TableCell>
-                      {renderRiskBadge(
-                        file.metadata?.securityScan?.riskLevel || "unknown"
-                      )}
+                      {renderRiskBadge(file.metadata?.securityScan?.riskLevel || 'unknown')}
                     </TableCell>
                     <TableCell>
                       {file.metadata?.quarantinedAt
-                        ? new Date(
-                            file.metadata.quarantinedAt
-                          ).toLocaleString()
-                        : "Unknown"}
+                        ? new Date(file.metadata.quarantinedAt).toLocaleString()
+                        : 'Unknown'}
                     </TableCell>
                     <TableCell>
-                      <div className="flex gap-2">
+                      <div className='flex gap-2'>
                         <Button
-                          onClick={() =>
-                            releaseFromQuarantine(file.id, false)
-                          }
+                          onClick={() => releaseFromQuarantine(file.id, false)}
                           disabled={
                             actionInProgress === file.id ||
-                            (file.metadata?.securityScan?.riskLevel === "high" ||
-                              file.metadata?.securityScan?.riskLevel ===
-                                "critical")
+                            file.metadata?.securityScan?.riskLevel === 'high' ||
+                            file.metadata?.securityScan?.riskLevel === 'critical'
                           }
-                          variant="outline"
-                          size="small"
+                          variant='outline'
+                          size='small'
                         >
                           Release
                         </Button>
                         <Button
                           onClick={() => releaseFromQuarantine(file.id, true)}
                           disabled={actionInProgress === file.id}
-                          variant="destructive"
-                          size="small"
+                          variant='destructive'
+                          size='small'
                         >
                           Force Release
                         </Button>
@@ -419,10 +402,10 @@ export const SecurityScanResults: React.FC<SecurityScanResultsProps> = ({
       {/* No Results */}
       {!loading && scanResults.length === 0 && !readOnly && quarantinedFiles.length === 0 && (
         <Card>
-          <CardContent className="pt-6">
-            <div className="text-center py-6">
-              <SecurityScanIcon className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
-              <p className="text-muted-foreground">
+          <CardContent className='pt-6'>
+            <div className='text-center py-6'>
+              <SecurityScanIcon className='w-12 h-12 mx-auto text-muted-foreground mb-3' />
+              <p className='text-muted-foreground'>
                 No scan results or quarantined files to display. Start a scan to see results.
               </p>
             </div>

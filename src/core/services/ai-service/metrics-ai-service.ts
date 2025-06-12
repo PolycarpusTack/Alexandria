@@ -1,6 +1,6 @@
 /**
  * Metrics-Aware AI Service Wrapper
- * 
+ *
  * Wraps any AI service implementation to track metrics for monitoring
  */
 
@@ -80,16 +80,10 @@ export class MetricsAIService implements AIService {
 
     try {
       const response = await this.baseService.complete(prompt, options);
-      
+
       // Track the successful request
       const responseTime = Date.now() - startTime;
-      trackModelRequest(
-        modelId,
-        responseTime,
-        response.usage.totalTokens,
-        false,
-        this.provider
-      );
+      trackModelRequest(modelId, responseTime, response.usage.totalTokens, false, this.provider);
 
       // Log for debugging
       this.logger.debug('AI completion tracked', {
@@ -103,7 +97,7 @@ export class MetricsAIService implements AIService {
     } catch (err) {
       error = true;
       const responseTime = Date.now() - startTime;
-      
+
       // Track the failed request
       trackModelRequest(modelId, responseTime, 0, true, this.provider);
 
@@ -124,16 +118,10 @@ export class MetricsAIService implements AIService {
 
     try {
       const response = await this.baseService.completeChat(options);
-      
+
       // Track the successful request
       const responseTime = Date.now() - startTime;
-      trackModelRequest(
-        modelId,
-        responseTime,
-        response.usage.totalTokens,
-        false,
-        this.provider
-      );
+      trackModelRequest(modelId, responseTime, response.usage.totalTokens, false, this.provider);
 
       this.logger.debug('AI chat completion tracked', {
         modelId,
@@ -146,7 +134,7 @@ export class MetricsAIService implements AIService {
     } catch (err) {
       error = true;
       const responseTime = Date.now() - startTime;
-      
+
       // Track the failed request
       trackModelRequest(modelId, responseTime, 0, true, this.provider);
 
@@ -179,7 +167,7 @@ export class MetricsAIService implements AIService {
         onComplete: (fullText: string) => {
           const responseTime = Date.now() - startTime;
           trackModelRequest(modelId, responseTime, totalTokens, false, this.provider);
-          
+
           this.logger.debug('AI stream completion tracked', {
             modelId,
             responseTime,
@@ -193,7 +181,7 @@ export class MetricsAIService implements AIService {
           error = true;
           const responseTime = Date.now() - startTime;
           trackModelRequest(modelId, responseTime, totalTokens, true, this.provider);
-          
+
           this.logger.error('AI stream failed', {
             modelId,
             responseTime,
@@ -231,7 +219,7 @@ export class MetricsAIService implements AIService {
         onComplete: (fullText: string) => {
           const responseTime = Date.now() - startTime;
           trackModelRequest(modelId, responseTime, totalTokens, false, this.provider);
-          
+
           this.logger.debug('AI chat stream completion tracked', {
             modelId,
             responseTime,
@@ -245,7 +233,7 @@ export class MetricsAIService implements AIService {
           error = true;
           const responseTime = Date.now() - startTime;
           trackModelRequest(modelId, responseTime, totalTokens, true, this.provider);
-          
+
           this.logger.error('AI chat stream failed', {
             modelId,
             responseTime,
@@ -273,7 +261,7 @@ export class MetricsAIService implements AIService {
 
     try {
       const embedding = await this.baseService.embed(text, options);
-      
+
       const responseTime = Date.now() - startTime;
       // Estimate tokens for embeddings
       const tokens = Math.ceil(text.length / 4);
@@ -307,7 +295,7 @@ export class MetricsAIService implements AIService {
 
     try {
       const embeddings = await this.baseService.embedBatch(texts, options);
-      
+
       const responseTime = Date.now() - startTime;
       // Estimate tokens for all texts
       const tokens = texts.reduce((sum, text) => sum + Math.ceil(text.length / 4), 0);

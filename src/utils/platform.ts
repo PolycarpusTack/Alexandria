@@ -73,7 +73,7 @@ export function isLinux(): boolean {
 export function canUseNativeEsbuild(): boolean {
   const platform = getPlatform();
   const arch = getArchitecture();
-  
+
   // Check if we're in a known good configuration
   const supportedConfigs = [
     { platform: 'windows', arch: 'x64' },
@@ -82,23 +82,10 @@ export function canUseNativeEsbuild(): boolean {
     { platform: 'linux', arch: 'x64' },
     { platform: 'linux', arch: 'arm64' }
   ];
-  
-  const isSupported = supportedConfigs.some(
-    config => config.platform === platform && config.arch === arch
+
+  return supportedConfigs.some(
+    (config) => config.platform === platform && config.arch === arch
   );
-  
-  if (!isSupported) {
-    return false;
-  }
-  
-  // Try to check if esbuild native binary exists
-  try {
-    const esbuildPackage = `@esbuild/${platform}-${arch}`;
-    require.resolve(esbuildPackage);
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 /**
@@ -151,10 +138,11 @@ export function execPlatformCommand(commands: {
   default: string;
 }): string {
   const platform = getPlatform();
-  const command = platform === 'unknown' 
-    ? commands.default 
-    : (commands[platform as keyof typeof commands] || commands.default);
-  
+  const command =
+    platform === 'unknown'
+      ? commands.default
+      : commands[platform as keyof typeof commands] || commands.default;
+
   try {
     return execSync(command, { encoding: 'utf-8' }).trim();
   } catch (error) {

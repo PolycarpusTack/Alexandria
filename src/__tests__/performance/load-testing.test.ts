@@ -1,6 +1,6 @@
 /**
  * Load Testing Suite
- * 
+ *
  * Comprehensive performance and load tests including:
  * - Concurrent request handling
  * - Memory usage under load
@@ -43,7 +43,7 @@ describe('Load Testing', () => {
       warn: jest.fn(),
       error: jest.fn(),
       debug: jest.fn(),
-      child: jest.fn().mockReturnThis(),
+      child: jest.fn().mockReturnThis()
     } as any;
 
     // Setup system metrics tracking
@@ -52,23 +52,23 @@ describe('Load Testing', () => {
       requestCount: 0,
       errorCount: 0,
       memoryPeak: 0,
-      responseTimes: [],
+      responseTimes: []
     };
 
     // Add metrics middleware
     app.use((req, res, next) => {
       const start = performance.now();
       systemMetrics.requestCount++;
-      
+
       res.on('finish', () => {
         const duration = performance.now() - start;
         systemMetrics.responseTimes.push(duration);
-        
+
         if (res.statusCode >= 400) {
           systemMetrics.errorCount++;
         }
       });
-      
+
       next();
     });
 
@@ -78,7 +78,7 @@ describe('Load Testing', () => {
     });
 
     app.get('/api/test/slow', async (req, res) => {
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
       res.json({ message: 'Slow response', timestamp: Date.now() });
     });
 
@@ -88,7 +88,7 @@ describe('Load Testing', () => {
       const processed = {
         ...data,
         processedAt: Date.now(),
-        size: JSON.stringify(data).length,
+        size: JSON.stringify(data).length
       };
       res.json(processed);
     });
@@ -98,11 +98,11 @@ describe('Load Testing', () => {
       const largeArray = new Array(10000).fill(0).map(() => Math.random());
       const currentMemory = process.memoryUsage().heapUsed;
       systemMetrics.memoryPeak = Math.max(systemMetrics.memoryPeak, currentMemory);
-      
-      res.json({ 
+
+      res.json({
         message: 'Memory operation complete',
         memoryUsed: currentMemory,
-        arraySize: largeArray.length,
+        arraySize: largeArray.length
       });
     });
 
@@ -121,9 +121,7 @@ describe('Load Testing', () => {
 
       // Create concurrent requests
       const requests = Array.from({ length: concurrentRequests }, () =>
-        request(app)
-          .get('/api/test/fast')
-          .expect(200)
+        request(app).get('/api/test/fast').expect(200)
       );
 
       const responses = await Promise.all(requests);
@@ -132,7 +130,7 @@ describe('Load Testing', () => {
 
       // All requests should succeed
       expect(responses).toHaveLength(concurrentRequests);
-      responses.forEach(response => {
+      responses.forEach((response) => {
         expect(response.body).toHaveProperty('message', 'Fast response');
         expect(response.body).toHaveProperty('timestamp');
       });
@@ -143,7 +141,8 @@ describe('Load Testing', () => {
       expect(systemMetrics.errorCount).toBe(0);
 
       // Calculate average response time
-      const avgResponseTime = systemMetrics.responseTimes.reduce((a, b) => a + b, 0) / systemMetrics.responseTimes.length;
+      const avgResponseTime =
+        systemMetrics.responseTimes.reduce((a, b) => a + b, 0) / systemMetrics.responseTimes.length;
       expect(avgResponseTime).toBeLessThan(100); // Average < 100ms
     });
 
@@ -153,19 +152,15 @@ describe('Load Testing', () => {
       const startTime = performance.now();
 
       const allRequests = [
-        ...Array.from({ length: fastRequests }, () =>
-          request(app).get('/api/test/fast')
-        ),
-        ...Array.from({ length: slowRequests }, () =>
-          request(app).get('/api/test/slow')
-        ),
+        ...Array.from({ length: fastRequests }, () => request(app).get('/api/test/fast')),
+        ...Array.from({ length: slowRequests }, () => request(app).get('/api/test/slow'))
       ];
 
       const responses = await Promise.allSettled(allRequests);
       const endTime = performance.now();
 
       // All requests should complete
-      const successCount = responses.filter(r => r.status === 'fulfilled').length;
+      const successCount = responses.filter((r) => r.status === 'fulfilled').length;
       expect(successCount).toBe(fastRequests + slowRequests);
 
       // Fast requests should complete much quicker than slow ones
@@ -179,20 +174,17 @@ describe('Load Testing', () => {
       const testData = {
         id: 'test-123',
         name: 'Load Test Item',
-        data: new Array(100).fill(0).map(i => ({ value: Math.random() })),
+        data: new Array(100).fill(0).map((i) => ({ value: Math.random() }))
       };
 
       const requests = Array.from({ length: requestCount }, () =>
-        request(app)
-          .post('/api/test/data')
-          .send(testData)
-          .expect(200)
+        request(app).post('/api/test/data').send(testData).expect(200)
       );
 
       const responses = await Promise.all(requests);
 
       // All requests should succeed and process data
-      responses.forEach(response => {
+      responses.forEach((response) => {
         expect(response.body).toHaveProperty('processedAt');
         expect(response.body).toHaveProperty('size');
         expect(response.body.id).toBe(testData.id);
@@ -208,9 +200,7 @@ describe('Load Testing', () => {
       const operationCount = 30;
 
       const requests = Array.from({ length: operationCount }, () =>
-        request(app)
-          .get('/api/test/memory')
-          .expect(200)
+        request(app).get('/api/test/memory').expect(200)
       );
 
       await Promise.all(requests);
@@ -236,16 +226,14 @@ describe('Load Testing', () => {
 
       // Create memory pressure
       const heavyRequests = Array.from({ length: 20 }, () =>
-        request(app)
-          .get('/api/test/memory')
-          .expect(200)
+        request(app).get('/api/test/memory').expect(200)
       );
 
       await Promise.all(heavyRequests);
       const peakMemory = process.memoryUsage().heapUsed;
 
       // Wait for potential cleanup
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Force garbage collection
       if (global.gc) {
@@ -267,8 +255,7 @@ describe('Load Testing', () => {
       const requestCount = 100;
 
       const requests = Array.from({ length: requestCount }, () =>
-        request(app)
-          .get('/api/test/error')
+        request(app).get('/api/test/error')
       );
 
       await Promise.allSettled(requests);
@@ -285,15 +272,13 @@ describe('Load Testing', () => {
 
       for (let burst = 0; burst < burstCount; burst++) {
         const burstRequests = Array.from({ length: burstSize }, () =>
-          request(app)
-            .get('/api/test/fast')
-            .expect(200)
+          request(app).get('/api/test/fast').expect(200)
         );
 
         await Promise.all(burstRequests);
 
         if (burst < burstCount - 1) {
-          await new Promise(resolve => setTimeout(resolve, delayBetweenBursts));
+          await new Promise((resolve) => setTimeout(resolve, delayBetweenBursts));
         }
       }
 
@@ -307,15 +292,13 @@ describe('Load Testing', () => {
       const requestCount = 200;
 
       const requests = Array.from({ length: requestCount }, () =>
-        request(app)
-          .get('/api/test/fast')
-          .expect(200)
+        request(app).get('/api/test/fast').expect(200)
       );
 
       await Promise.all(requests);
 
       const responseTimes = systemMetrics.responseTimes;
-      
+
       // Calculate percentiles
       const sortedTimes = [...responseTimes].sort((a, b) => a - b);
       const p50 = sortedTimes[Math.floor(sortedTimes.length * 0.5)];
@@ -329,7 +312,9 @@ describe('Load Testing', () => {
 
       // Standard deviation should be reasonable
       const avg = responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length;
-      const variance = responseTimes.reduce((sum, time) => sum + Math.pow(time - avg, 2), 0) / responseTimes.length;
+      const variance =
+        responseTimes.reduce((sum, time) => sum + Math.pow(time - avg, 2), 0) /
+        responseTimes.length;
       const stdDev = Math.sqrt(variance);
 
       expect(stdDev).toBeLessThan(avg); // Standard deviation should be less than average
@@ -344,21 +329,19 @@ describe('Load Testing', () => {
 
       for (let connections = stepSize; connections <= maxTestConnections; connections += stepSize) {
         const startTime = performance.now();
-        
-        const requests = Array.from({ length: stepSize }, () =>
-          request(app)
-            .get('/api/test/fast')
-        );
+
+        const requests = Array.from({ length: stepSize }, () => request(app).get('/api/test/fast'));
 
         try {
           await Promise.all(requests);
           successfulConnections = connections;
-          
+
           const duration = performance.now() - startTime;
           const avgResponseTime = duration / stepSize;
 
           // If response time degrades significantly, we've likely hit a limit
-          if (avgResponseTime > 1000) { // 1 second average
+          if (avgResponseTime > 1000) {
+            // 1 second average
             break;
           }
         } catch (error) {
@@ -367,7 +350,7 @@ describe('Load Testing', () => {
       }
 
       expect(successfulConnections).toBeGreaterThan(100); // Should handle at least 100 concurrent
-      
+
       console.log(`Maximum tested concurrent connections: ${successfulConnections}`);
     });
 
@@ -377,7 +360,7 @@ describe('Load Testing', () => {
         { connections: 25, duration: 500 },
         { connections: 50, duration: 500 },
         { connections: 25, duration: 500 },
-        { connections: 10, duration: 500 },
+        { connections: 10, duration: 500 }
       ];
 
       const results = [];
@@ -387,39 +370,39 @@ describe('Load Testing', () => {
         const phaseMetrics = {
           requestCount: 0,
           errorCount: 0,
-          responseTimes: [],
+          responseTimes: []
         };
 
         const requests = Array.from({ length: phase.connections }, () =>
           request(app)
             .get('/api/test/fast')
-            .then(response => {
+            .then((response) => {
               phaseMetrics.requestCount++;
               return response;
             })
-            .catch(error => {
+            .catch((error) => {
               phaseMetrics.errorCount++;
               throw error;
             })
         );
 
         await Promise.allSettled(requests);
-        
+
         const phaseDuration = performance.now() - phaseStart;
-        
+
         results.push({
           connections: phase.connections,
           duration: phaseDuration,
           requestCount: phaseMetrics.requestCount,
           errorCount: phaseMetrics.errorCount,
-          errorRate: phaseMetrics.errorCount / phase.connections,
+          errorRate: phaseMetrics.errorCount / phase.connections
         });
 
-        await new Promise(resolve => setTimeout(resolve, phase.duration));
+        await new Promise((resolve) => setTimeout(resolve, phase.duration));
       }
 
       // System should handle load increase and decrease gracefully
-      results.forEach(result => {
+      results.forEach((result) => {
         expect(result.errorRate).toBeLessThan(0.1); // Less than 10% error rate
       });
 
@@ -437,20 +420,17 @@ describe('Load Testing', () => {
     it('should recover from temporary overload conditions', async () => {
       // Create overload condition
       const overloadRequests = Array.from({ length: 200 }, () =>
-        request(app)
-          .get('/api/test/slow')
+        request(app).get('/api/test/slow')
       );
 
       // Don't wait for completion, just start them
       const overloadPromise = Promise.allSettled(overloadRequests);
 
       // Wait briefly for overload to establish
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Test normal requests during overload
-      const normalRequest = await request(app)
-        .get('/api/test/fast')
-        .timeout(5000); // Generous timeout
+      const normalRequest = await request(app).get('/api/test/fast').timeout(5000); // Generous timeout
 
       expect(normalRequest.status).toBe(200);
 
@@ -459,9 +439,7 @@ describe('Load Testing', () => {
 
       // Test recovery - normal requests should work well again
       const recoveryRequests = Array.from({ length: 10 }, () =>
-        request(app)
-          .get('/api/test/fast')
-          .expect(200)
+        request(app).get('/api/test/fast').expect(200)
       );
 
       const recoveryStart = performance.now();
@@ -477,7 +455,7 @@ describe('Load Testing', () => {
     it('should track resource usage during load', async () => {
       const initialStats = {
         memory: process.memoryUsage(),
-        cpu: process.cpuUsage(),
+        cpu: process.cpuUsage()
       };
 
       // Create sustained load
@@ -489,20 +467,16 @@ describe('Load Testing', () => {
       const loadStart = Date.now();
 
       while (Date.now() - loadStart < loadDuration) {
-        loadPromises.push(
-          request(app)
-            .get('/api/test/fast')
-            .expect(200)
-        );
-        
-        await new Promise(resolve => setTimeout(resolve, requestInterval));
+        loadPromises.push(request(app).get('/api/test/fast').expect(200));
+
+        await new Promise((resolve) => setTimeout(resolve, requestInterval));
       }
 
       await Promise.all(loadPromises);
 
       const finalStats = {
         memory: process.memoryUsage(),
-        cpu: process.cpuUsage(initialStats.cpu),
+        cpu: process.cpuUsage(initialStats.cpu)
       };
 
       // Memory usage should be tracked
@@ -526,27 +500,27 @@ describe('Load Testing', () => {
       for (let run = 0; run < baselineRuns; run++) {
         const runStart = performance.now();
         const runRequests = Array.from({ length: 50 }, () =>
-          request(app)
-            .get('/api/test/fast')
-            .expect(200)
+          request(app).get('/api/test/fast').expect(200)
         );
 
         await Promise.all(runRequests);
         const runDuration = performance.now() - runStart;
-        
+
         baselineResults.push({
           duration: runDuration,
           requestCount: 50,
-          throughput: 50 / (runDuration / 1000), // requests per second
+          throughput: 50 / (runDuration / 1000) // requests per second
         });
 
         // Small delay between runs
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
       }
 
       // Calculate baseline metrics
-      const avgThroughput = baselineResults.reduce((sum, r) => sum + r.throughput, 0) / baselineResults.length;
-      const avgDuration = baselineResults.reduce((sum, r) => sum + r.duration, 0) / baselineResults.length;
+      const avgThroughput =
+        baselineResults.reduce((sum, r) => sum + r.throughput, 0) / baselineResults.length;
+      const avgDuration =
+        baselineResults.reduce((sum, r) => sum + r.duration, 0) / baselineResults.length;
 
       // Performance thresholds (these would be adjusted based on actual system requirements)
       expect(avgThroughput).toBeGreaterThan(100); // At least 100 requests/second
@@ -556,7 +530,7 @@ describe('Load Testing', () => {
       console.log('Performance Baseline:', {
         averageThroughput: avgThroughput.toFixed(2),
         averageDuration: avgDuration.toFixed(2),
-        timestamp: new Date().toISOString(),
+        timestamp: new Date().toISOString()
       });
     });
   });

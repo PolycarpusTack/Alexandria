@@ -127,13 +127,17 @@ export interface Evidence {
  * Interface for the Crash Analyzer Service
  */
 export interface ICrashAnalyzerService {
-  analyzeLog(logId: string, content: string, metadata: Record<string, string | number | boolean | null>): Promise<CrashAnalysisResult>;
+  analyzeLog(
+    logId: string,
+    content: string,
+    metadata: Record<string, string | number | boolean | null>
+  ): Promise<CrashAnalysisResult>;
   getCrashLogById(id: string): Promise<CrashLog | null>;
   getAllCrashLogs(): Promise<CrashLog[]>;
   getCrashLogsByUser(userId: string): Promise<CrashLog[]>;
   deleteCrashLog(id: string): Promise<boolean>;
   getAnalysisById(analysisId: string): Promise<CrashAnalysisResult | null>;
-  
+
   /**
    * Get access to the LLM service for UI components
    */
@@ -144,8 +148,14 @@ export interface ICrashAnalyzerService {
  * Interface for the Log Parser Service
  */
 export interface ILogParser {
-  parse(content: string, metadata?: Record<string, string | number | boolean | null>): Promise<ParsedCrashData>;
-  supportsFormat(content: string, metadata?: Record<string, string | number | boolean | null>): boolean;
+  parse(
+    content: string,
+    metadata?: Record<string, string | number | boolean | null>
+  ): Promise<ParsedCrashData>;
+  supportsFormat(
+    content: string,
+    metadata?: Record<string, string | number | boolean | null>
+  ): boolean;
 }
 
 /**
@@ -158,8 +168,12 @@ export interface ILlmService {
    * @param rawContent Raw content of the crash log
    * @param customModel Optional model to use instead of the default
    */
-  analyzeLog(parsedData: ParsedCrashData, rawContent: string, customModel?: string): Promise<CrashAnalysisResult>;
-  
+  analyzeLog(
+    parsedData: ParsedCrashData,
+    rawContent: string,
+    customModel?: string
+  ): Promise<CrashAnalysisResult>;
+
   /**
    * Analyze a code snippet for potential issues and improvements
    * @param code The code snippet to analyze
@@ -167,18 +181,22 @@ export interface ILlmService {
    * @param customModel Optional model to use instead of the default
    * @returns Analysis result with issues and recommendations
    */
-  analyzeCodeSnippet?(code: string, language: string, customModel?: string): Promise<CodeAnalysisResult>;
-  
+  analyzeCodeSnippet?(
+    code: string,
+    language: string,
+    customModel?: string
+  ): Promise<CodeAnalysisResult>;
+
   /**
    * Get a list of all available Ollama models
    */
   getAvailableModels(): Promise<string[]>;
-  
+
   /**
    * Get status information for a specific model
    */
   getModelStatus(modelId: string): Promise<ModelStatus>;
-  
+
   /**
    * Check if the Ollama service is available
    * @returns true if Ollama is reachable and working, false otherwise
@@ -243,12 +261,12 @@ export interface FeatureFlagService {
    * Get the value of a feature flag
    */
   getValue(key: string): Promise<string | number | boolean | null>;
-  
+
   /**
    * Set the value of a feature flag
    */
   setValue(key: string, value: string | number | boolean | null): Promise<void>;
-  
+
   /**
    * Check if a feature flag is enabled
    */
@@ -262,7 +280,11 @@ export interface FeatureFlagService {
 export interface CollectionDataService {
   createCollectionIfNotExists(collectionName: string): Promise<void>;
   createIndex(collectionName: string, field: string): Promise<void>;
-  upsert(collectionName: string, id: string, data: Record<string, unknown>): Promise<Record<string, unknown>>;
+  upsert(
+    collectionName: string,
+    id: string,
+    data: Record<string, unknown>
+  ): Promise<Record<string, unknown>>;
   findById(collectionName: string, id: string): Promise<Record<string, unknown> | null>;
   find(collectionName: string, filter: Record<string, unknown>): Promise<Record<string, unknown>[]>;
   delete(collectionName: string, id: string): Promise<boolean>;

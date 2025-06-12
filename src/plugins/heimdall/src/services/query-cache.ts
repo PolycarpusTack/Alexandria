@@ -1,6 +1,6 @@
 /**
  * Enhanced Query Cache Service
- * 
+ *
  * Implements intelligent caching with multi-level storage and predictive pre-caching
  */
 
@@ -50,7 +50,7 @@ export class EnhancedQueryCache {
   private l2Cache = new Map<string, CacheEntry>(); // Compressed cache
   private queryPatterns = new Map<string, number>(); // Query frequency tracking
   private predictiveQueue = new Set<string>(); // Queries to pre-cache
-  
+
   private stats: CacheStats = {
     hits: 0,
     misses: 0,
@@ -141,7 +141,8 @@ export class EnhancedQueryCache {
     const size = this.estimateSize(result);
 
     // Check if result is too large to cache
-    if (size > this.maxSize * 0.1) { // Don't cache items larger than 10% of max size
+    if (size > this.maxSize * 0.1) {
+      // Don't cache items larger than 10% of max size
       this.logger.debug('Result too large to cache', {
         component: 'QueryCache',
         key,
@@ -251,7 +252,7 @@ export class EnhancedQueryCache {
     let hash = 0;
     for (let i = 0; i < str.length; i++) {
       const char = str.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
     return Math.abs(hash).toString(36);
@@ -405,11 +406,13 @@ export class EnhancedQueryCache {
     averageAccessCount: number;
   } {
     const entries = Array.from(this.cache.values());
-    const averageEntrySize = this.stats.entryCount > 0 ? this.stats.totalSize / this.stats.entryCount : 0;
+    const averageEntrySize =
+      this.stats.entryCount > 0 ? this.stats.totalSize / this.stats.entryCount : 0;
     const utilizationPercent = (this.stats.totalSize / this.maxSize) * 100;
-    const averageAccessCount = entries.length > 0 
-      ? entries.reduce((sum, entry) => sum + entry.accessCount, 0) / entries.length 
-      : 0;
+    const averageAccessCount =
+      entries.length > 0
+        ? entries.reduce((sum, entry) => sum + entry.accessCount, 0) / entries.length
+        : 0;
 
     return {
       hitRate: this.getHitRate(),

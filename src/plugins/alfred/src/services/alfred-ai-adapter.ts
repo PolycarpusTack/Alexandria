@@ -1,11 +1,15 @@
 /**
  * Alfred AI Adapter
- * 
+ *
  * Adapts Alfred to use the shared Alexandria AI service (Ollama)
  * instead of its own Ollama client, ensuring consistency across plugins.
  */
 
-import { AIService, CompletionOptions, StreamOptions } from '../../../../core/services/ai-service/interfaces';
+import {
+  AIService,
+  CompletionOptions,
+  StreamOptions
+} from '../../../../core/services/ai-service/interfaces';
 import { EventEmitter } from 'events';
 import { Logger } from '../../../../utils/logger';
 
@@ -34,16 +38,13 @@ export class AlfredAIAdapter extends EventEmitter {
    * Send a chat message and get a response
    */
   async chat(
-    message: string, 
+    message: string,
     history: Array<{ role: string; content: string }> = [],
     options: CompletionOptions = {}
   ): Promise<string> {
     try {
       // Build messages array
-      const messages = [
-        ...history,
-        { role: 'user', content: message }
-      ];
+      const messages = [...history, { role: 'user', content: message }];
 
       // Use the shared AI service
       const response = await this.aiService.completeChat({
@@ -160,7 +161,7 @@ export class AlfredAIAdapter extends EventEmitter {
   ): Promise<string> {
     try {
       let prompt = `Analyze the following code:\n\n\`\`\`\n${code}\n\`\`\`\n\n`;
-      
+
       if (question) {
         prompt += `Question: ${question}\n\n`;
       } else {
@@ -169,7 +170,7 @@ export class AlfredAIAdapter extends EventEmitter {
         prompt += '2. Potential issues or improvements\n';
         prompt += '3. Best practices recommendations\n\n';
       }
-      
+
       prompt += 'Analysis:';
 
       const response = await this.aiService.complete(prompt, {
@@ -215,7 +216,7 @@ export class AlfredAIAdapter extends EventEmitter {
   async getAvailableModels(): Promise<Array<{ id: string; name: string }>> {
     try {
       const models = await this.aiService.listModels();
-      return models.map(m => ({
+      return models.map((m) => ({
         id: m.id,
         name: m.name || m.id
       }));

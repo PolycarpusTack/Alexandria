@@ -1,6 +1,6 @@
 /**
  * UI Context Test Suite
- * 
+ *
  * Comprehensive tests for the UI Context provider including:
  * - Context provider initialization
  * - State management and updates
@@ -21,7 +21,7 @@ import { UIContext, UIProvider, useUI } from '../ui-context';
 // Mock localStorage
 const mockLocalStorage = (() => {
   let store: Record<string, string> = {};
-  
+
   return {
     getItem: jest.fn((key: string) => store[key] || null),
     setItem: jest.fn((key: string, value: string) => {
@@ -32,12 +32,12 @@ const mockLocalStorage = (() => {
     }),
     clear: jest.fn(() => {
       store = {};
-    }),
+    })
   };
 })();
 
 Object.defineProperty(window, 'localStorage', {
-  value: mockLocalStorage,
+  value: mockLocalStorage
 });
 
 // Test component that uses the UI context
@@ -58,82 +58,80 @@ const TestComponent: React.FC = () => {
     closeModal,
     toasts,
     showToast,
-    dismissToast,
+    dismissToast
   } = useUI();
 
   return (
-    <div data-testid="test-component">
-      <div data-testid="theme">{theme}</div>
-      <button onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>
-        Toggle Theme
-      </button>
-      
-      <div data-testid="sidebar-state">{sidebarOpen ? 'open' : 'closed'}</div>
-      <button onClick={() => setSidebarOpen(!sidebarOpen)}>
-        Toggle Sidebar
-      </button>
-      
-      <div data-testid="notification-count">{notifications.length}</div>
-      <button onClick={() => addNotification({
-        id: `notif-${Date.now()}`,
-        type: 'info',
-        title: 'Test Notification',
-        message: 'This is a test notification',
-      })}>
+    <div data-testid='test-component'>
+      <div data-testid='theme'>{theme}</div>
+      <button onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>Toggle Theme</button>
+
+      <div data-testid='sidebar-state'>{sidebarOpen ? 'open' : 'closed'}</div>
+      <button onClick={() => setSidebarOpen(!sidebarOpen)}>Toggle Sidebar</button>
+
+      <div data-testid='notification-count'>{notifications.length}</div>
+      <button
+        onClick={() =>
+          addNotification({
+            id: `notif-${Date.now()}`,
+            type: 'info',
+            title: 'Test Notification',
+            message: 'This is a test notification'
+          })
+        }
+      >
         Add Notification
       </button>
-      <button onClick={() => clearNotifications()}>
-        Clear Notifications
-      </button>
-      
-      <div data-testid="loading-state">{loading ? 'loading' : 'idle'}</div>
-      <button onClick={() => setLoading(!loading)}>
-        Toggle Loading
-      </button>
-      
-      <div data-testid="modal-count">{modals.length}</div>
-      <button onClick={() => openModal({
-        id: `modal-${Date.now()}`,
-        type: 'confirm',
-        title: 'Test Modal',
-        content: 'This is a test modal',
-      })}>
+      <button onClick={() => clearNotifications()}>Clear Notifications</button>
+
+      <div data-testid='loading-state'>{loading ? 'loading' : 'idle'}</div>
+      <button onClick={() => setLoading(!loading)}>Toggle Loading</button>
+
+      <div data-testid='modal-count'>{modals.length}</div>
+      <button
+        onClick={() =>
+          openModal({
+            id: `modal-${Date.now()}`,
+            type: 'confirm',
+            title: 'Test Modal',
+            content: 'This is a test modal'
+          })
+        }
+      >
         Open Modal
       </button>
-      
-      <div data-testid="toast-count">{toasts.length}</div>
-      <button onClick={() => showToast({
-        id: `toast-${Date.now()}`,
-        type: 'success',
-        message: 'Test toast message',
-      })}>
+
+      <div data-testid='toast-count'>{toasts.length}</div>
+      <button
+        onClick={() =>
+          showToast({
+            id: `toast-${Date.now()}`,
+            type: 'success',
+            message: 'Test toast message'
+          })
+        }
+      >
         Show Toast
       </button>
-      
-      {notifications.map(notification => (
-        <div key={notification.id} data-testid="notification-item">
+
+      {notifications.map((notification) => (
+        <div key={notification.id} data-testid='notification-item'>
           <span>{notification.message}</span>
-          <button onClick={() => removeNotification(notification.id)}>
-            Remove
-          </button>
+          <button onClick={() => removeNotification(notification.id)}>Remove</button>
         </div>
       ))}
-      
-      {modals.map(modal => (
-        <div key={modal.id} data-testid="modal-item">
+
+      {modals.map((modal) => (
+        <div key={modal.id} data-testid='modal-item'>
           <span>{modal.title}</span>
-          <button onClick={() => closeModal(modal.id)}>
-            Close
-          </button>
+          <button onClick={() => closeModal(modal.id)}>Close</button>
         </div>
       ))}
-      
-      {toasts.map(toast => (
-        <div key={toast.id} data-testid="toast-item">
+
+      {toasts.map((toast) => (
+        <div key={toast.id} data-testid='toast-item'>
           <span>{toast.message}</span>
-          <button onClick={() => dismissToast(toast.id)}>
-            Dismiss
-          </button>
+          <button onClick={() => dismissToast(toast.id)}>Dismiss</button>
         </div>
       ))}
     </div>
@@ -170,9 +168,9 @@ describe('UI Context', () => {
     it('should load persisted state from localStorage', () => {
       const persistedState = {
         theme: 'dark',
-        sidebarOpen: true,
+        sidebarOpen: true
       };
-      
+
       mockLocalStorage.getItem.mockReturnValue(JSON.stringify(persistedState));
 
       render(
@@ -203,7 +201,7 @@ describe('UI Context', () => {
       const initialState = {
         theme: 'dark' as const,
         sidebarOpen: true,
-        loading: true,
+        loading: true
       };
 
       render(
@@ -276,7 +274,7 @@ describe('UI Context', () => {
       // Mock matchMedia for system theme detection
       Object.defineProperty(window, 'matchMedia', {
         writable: true,
-        value: jest.fn().mockImplementation(query => ({
+        value: jest.fn().mockImplementation((query) => ({
           matches: query === '(prefers-color-scheme: dark)',
           media: query,
           onchange: null,
@@ -284,8 +282,8 @@ describe('UI Context', () => {
           removeListener: jest.fn(),
           addEventListener: jest.fn(),
           removeEventListener: jest.fn(),
-          dispatchEvent: jest.fn(),
-        })),
+          dispatchEvent: jest.fn()
+        }))
       });
 
       render(
@@ -417,7 +415,7 @@ describe('UI Context', () => {
           title: 'Auto Dismiss',
           message: 'This will auto-dismiss',
           autoDismiss: true,
-          dismissAfter: 3000,
+          dismissAfter: 3000
         });
       });
 
@@ -443,16 +441,20 @@ describe('UI Context', () => {
       // Mock addNotification to use fixed ID
       const FixedIdComponent = () => {
         const { addNotification, notifications } = useUI();
-        
+
         return (
           <div>
-            <div data-testid="notification-count">{notifications.length}</div>
-            <button onClick={() => addNotification({
-              id: 'fixed-id',
-              type: 'info',
-              title: 'Fixed ID',
-              message: 'Same ID notification',
-            })}>
+            <div data-testid='notification-count'>{notifications.length}</div>
+            <button
+              onClick={() =>
+                addNotification({
+                  id: 'fixed-id',
+                  type: 'info',
+                  title: 'Fixed ID',
+                  message: 'Same ID notification'
+                })
+              }
+            >
               Add Fixed ID Notification
             </button>
           </div>
@@ -466,7 +468,7 @@ describe('UI Context', () => {
       );
 
       const addButton = screen.getByText('Add Fixed ID Notification');
-      
+
       // Add same notification twice
       await user.click(addButton);
       await user.click(addButton);
@@ -497,10 +499,10 @@ describe('UI Context', () => {
     it('should support loading with custom message', () => {
       const LoadingComponent = () => {
         const { setLoading, loadingMessage } = useUI();
-        
+
         return (
           <div>
-            <div data-testid="loading-message">{loadingMessage || 'No message'}</div>
+            <div data-testid='loading-message'>{loadingMessage || 'No message'}</div>
             <button onClick={() => setLoading(true, 'Processing data...')}>
               Start Loading with Message
             </button>
@@ -525,10 +527,10 @@ describe('UI Context', () => {
 
       const NestedLoadingComponent = () => {
         const { setLoading, loadingCount } = useUI();
-        
+
         return (
           <div>
-            <div data-testid="loading-count">{loadingCount}</div>
+            <div data-testid='loading-count'>{loadingCount}</div>
             <button onClick={() => setLoading(true)}>Start Loading</button>
             <button onClick={() => setLoading(false)}>Stop Loading</button>
           </div>
@@ -606,27 +608,31 @@ describe('UI Context', () => {
     it('should handle modal escape key closing', () => {
       const EscapeModalComponent = () => {
         const { modals, openModal, closeModal } = useUI();
-        
+
         React.useEffect(() => {
           const handleKeyDown = (event: KeyboardEvent) => {
             if (event.key === 'Escape' && modals.length > 0) {
               closeModal(modals[modals.length - 1].id);
             }
           };
-          
+
           document.addEventListener('keydown', handleKeyDown);
           return () => document.removeEventListener('keydown', handleKeyDown);
         }, [modals, closeModal]);
-        
+
         return (
           <div>
-            <div data-testid="modal-count">{modals.length}</div>
-            <button onClick={() => openModal({
-              id: 'escape-test',
-              type: 'info',
-              title: 'Escape Test',
-              content: 'Press escape to close',
-            })}>
+            <div data-testid='modal-count'>{modals.length}</div>
+            <button
+              onClick={() =>
+                openModal({
+                  id: 'escape-test',
+                  type: 'info',
+                  title: 'Escape Test',
+                  content: 'Press escape to close'
+                })
+              }
+            >
               Open Modal
             </button>
           </div>
@@ -692,7 +698,7 @@ describe('UI Context', () => {
           id: 'auto-dismiss-toast',
           type: 'success',
           message: 'Auto dismiss toast',
-          duration: 2000,
+          duration: 2000
         });
       });
 
@@ -734,7 +740,7 @@ describe('UI Context', () => {
           useUI();
           return <div>Should not render</div>;
         } catch (error) {
-          return <div data-testid="context-error">Context error caught</div>;
+          return <div data-testid='context-error'>Context error caught</div>;
         }
       };
 
@@ -746,7 +752,7 @@ describe('UI Context', () => {
 
     it('should handle localStorage errors gracefully', async () => {
       const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
-      
+
       mockLocalStorage.setItem.mockImplementation(() => {
         throw new Error('Storage quota exceeded');
       });
@@ -767,13 +773,11 @@ describe('UI Context', () => {
     it('should handle invalid notification data', () => {
       const InvalidNotificationComponent = () => {
         const { addNotification, notifications } = useUI();
-        
+
         return (
           <div>
-            <div data-testid="notification-count">{notifications.length}</div>
-            <button onClick={() => addNotification({} as any)}>
-              Add Invalid Notification
-            </button>
+            <div data-testid='notification-count'>{notifications.length}</div>
+            <button onClick={() => addNotification({} as any)}>Add Invalid Notification</button>
           </div>
         );
       };
@@ -821,12 +825,12 @@ describe('UI Context', () => {
       const ContextValueComponent = () => {
         const contextValue = useContext(UIContext);
         const [renderCount, setRenderCount] = React.useState(0);
-        
+
         React.useEffect(() => {
-          setRenderCount(count => count + 1);
+          setRenderCount((count) => count + 1);
         }, [contextValue]);
-        
-        return <div data-testid="render-count">{renderCount}</div>;
+
+        return <div data-testid='render-count'>{renderCount}</div>;
       };
 
       const { rerender } = render(
@@ -867,7 +871,7 @@ describe('UI Context', () => {
           title: 'Cleanup Test',
           message: 'This should be cleaned up',
           autoDismiss: true,
-          dismissAfter: 5000,
+          dismissAfter: 5000
         });
       });
 

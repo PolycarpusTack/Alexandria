@@ -44,7 +44,7 @@ export class ConnectionPool {
         ssl: this.config.ssl,
         max: this.config.max || 10,
         idleTimeoutMillis: this.config.idleTimeoutMillis || 30000,
-        connectionTimeoutMillis: this.config.connectionTimeoutMillis || 2000,
+        connectionTimeoutMillis: this.config.connectionTimeoutMillis || 2000
       };
 
       this.pool = new Pool(poolConfig);
@@ -90,7 +90,7 @@ export class ConnectionPool {
 
     try {
       const client = await this.pool.connect();
-      
+
       // Wrap the release method to add logging
       const originalRelease = client.release.bind(client);
       client.release = (err?: Error | boolean) => {
@@ -153,9 +153,7 @@ export class ConnectionPool {
   /**
    * Execute a transaction
    */
-  async transaction<T>(
-    callback: (client: PoolClient) => Promise<T>
-  ): Promise<T> {
+  async transaction<T>(callback: (client: PoolClient) => Promise<T>): Promise<T> {
     const client = await this.getClient();
 
     try {
@@ -187,7 +185,7 @@ export class ConnectionPool {
 
       // End all pool connections
       await this.pool.end();
-      
+
       this.pool = null;
       this.isInitialized = false;
 

@@ -35,8 +35,9 @@ describe('HyperionResourceManager', () => {
       shutdown: jest.fn().mockResolvedValue(undefined)
     } as any;
 
-    (BulletproofConnectionPool as jest.MockedClass<typeof BulletproofConnectionPool>)
-      .mockImplementation(() => mockConnectionPool);
+    (
+      BulletproofConnectionPool as jest.MockedClass<typeof BulletproofConnectionPool>
+    ).mockImplementation(() => mockConnectionPool);
 
     resourceManager = new HyperionResourceManager(mockLogger);
   });
@@ -100,10 +101,7 @@ describe('HyperionResourceManager', () => {
       const connection = await resourceManager.getConnection('test-pool', Priority.NORMAL, 5000);
 
       expect(connection).toEqual({ id: 'test-connection' });
-      expect(mockConnectionPool.getConnection).toHaveBeenCalledWith(
-        Priority.NORMAL,
-        5000
-      );
+      expect(mockConnectionPool.getConnection).toHaveBeenCalledWith(Priority.NORMAL, 5000);
     });
 
     it('should release connections to pools', async () => {
@@ -217,7 +215,7 @@ describe('HyperionResourceManager', () => {
       });
 
       const usage = resourceManager.getResourceUsage();
-      
+
       // Should detect high memory usage
       expect(usage.total.memoryMB).toBeGreaterThan(900);
     });
@@ -226,13 +224,13 @@ describe('HyperionResourceManager', () => {
   describe('shutdown', () => {
     it('should shutdown all resources', async () => {
       await resourceManager.initialize();
-      
+
       resourceManager.addResourcePool('test-pool-1', {
         type: 'database',
         maxConnections: 10,
         connectionFactory: jest.fn()
       });
-      
+
       resourceManager.addResourcePool('test-pool-2', {
         type: 'cache',
         maxConnections: 5,
@@ -249,7 +247,7 @@ describe('HyperionResourceManager', () => {
 
     it('should handle shutdown errors gracefully', async () => {
       await resourceManager.initialize();
-      
+
       resourceManager.addResourcePool('test-pool', {
         type: 'database',
         maxConnections: 10,
@@ -290,13 +288,13 @@ describe('HyperionResourceManager', () => {
     it('should respect priority order in connection allocation', async () => {
       // Test that higher priority requests are processed first
       const highPriorityConnection = await resourceManager.getConnection(
-        'test-pool', 
-        Priority.HIGH, 
+        'test-pool',
+        Priority.HIGH,
         5000
       );
       const normalPriorityConnection = await resourceManager.getConnection(
-        'test-pool', 
-        Priority.NORMAL, 
+        'test-pool',
+        Priority.NORMAL,
         5000
       );
 

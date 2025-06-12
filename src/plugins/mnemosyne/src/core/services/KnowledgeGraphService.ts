@@ -1,6 +1,6 @@
 /**
  * Mnemosyne Knowledge Graph Service
- * 
+ *
  * Enterprise-grade knowledge graph management service providing
  * node/relationship operations, graph algorithms, analytics, and real-time updates
  */
@@ -23,7 +23,13 @@ import {
 } from '../../types/core';
 
 export interface GraphUpdateEvent {
-  type: 'node-created' | 'node-updated' | 'node-deleted' | 'relationship-created' | 'relationship-updated' | 'relationship-deleted';
+  type:
+    | 'node-created'
+    | 'node-updated'
+    | 'node-deleted'
+    | 'relationship-created'
+    | 'relationship-updated'
+    | 'relationship-deleted';
   entityId: string;
   entityType: 'node' | 'relationship';
   data?: any;
@@ -69,7 +75,7 @@ export interface GraphVisualizationData {
 
 /**
  * Knowledge Graph Service
- * 
+ *
  * Comprehensive service for managing knowledge graphs with advanced
  * analytics, real-time updates, and enterprise-grade performance
  */
@@ -130,7 +136,6 @@ export class KnowledgeGraphService implements MnemosyneService {
 
       this.status = ServiceStatus.INITIALIZED;
       this.logger.info('Knowledge Graph Service initialized successfully');
-
     } catch (error) {
       this.status = ServiceStatus.ERROR;
       this.logger.error('Failed to initialize Knowledge Graph Service', { error });
@@ -156,7 +161,6 @@ export class KnowledgeGraphService implements MnemosyneService {
 
       this.status = ServiceStatus.ACTIVE;
       this.logger.info('Knowledge Graph Service activated successfully');
-
     } catch (error) {
       this.status = ServiceStatus.ERROR;
       this.logger.error('Failed to activate Knowledge Graph Service', { error });
@@ -182,7 +186,6 @@ export class KnowledgeGraphService implements MnemosyneService {
 
       this.status = ServiceStatus.INACTIVE;
       this.logger.info('Knowledge Graph Service shut down successfully');
-
     } catch (error) {
       this.status = ServiceStatus.ERROR;
       this.logger.error('Error shutting down Knowledge Graph Service', { error });
@@ -198,7 +201,7 @@ export class KnowledgeGraphService implements MnemosyneService {
       // Test basic operations
       await this.dataService.query('SELECT COUNT(*) FROM mnemosyne_active_nodes LIMIT 1');
       await this.dataService.query('SELECT COUNT(*) FROM mnemosyne_active_relationships LIMIT 1');
-      
+
       return this.status === ServiceStatus.ACTIVE;
     } catch (error) {
       this.logger.error('Knowledge Graph Service health check failed', { error });
@@ -212,7 +215,7 @@ export class KnowledgeGraphService implements MnemosyneService {
   public async getMetrics(): Promise<ServiceMetrics> {
     const nodeCount = await this.getNodeCount();
     const relationshipCount = await this.getRelationshipCount();
-    
+
     this.metrics.customMetrics = {
       ...this.metrics.customMetrics,
       nodeCount,
@@ -231,7 +234,7 @@ export class KnowledgeGraphService implements MnemosyneService {
    */
   public async createNode(nodeData: Partial<KnowledgeNode>): Promise<KnowledgeNode> {
     const startTime = Date.now();
-    
+
     try {
       this.validateNodeData(nodeData);
 
@@ -270,9 +273,8 @@ export class KnowledgeGraphService implements MnemosyneService {
 
       this.updateMetrics(startTime, true);
       this.logger.debug(`Created node: ${node.id}`);
-      
-      return node;
 
+      return node;
     } catch (error) {
       this.updateMetrics(startTime, false);
       this.logger.error('Failed to create node', { error, nodeData });
@@ -300,14 +302,14 @@ export class KnowledgeGraphService implements MnemosyneService {
       `;
 
       const result = await this.dataService.query(query, [nodeId]);
-      
+
       if (result.length === 0) {
         this.updateMetrics(startTime, true);
         return null;
       }
 
       const node = this.mapDbRowToNode(result[0]);
-      
+
       // Load relationships
       node.relationships = await this.getNodeRelationships(nodeId);
 
@@ -316,7 +318,6 @@ export class KnowledgeGraphService implements MnemosyneService {
 
       this.updateMetrics(startTime, true);
       return node;
-
     } catch (error) {
       this.updateMetrics(startTime, false);
       this.logger.error('Failed to get node', { error, nodeId });
@@ -374,13 +375,13 @@ export class KnowledgeGraphService implements MnemosyneService {
       `;
 
       const result = await this.dataService.query(query, values);
-      
+
       if (result.length === 0) {
         throw new Error(`Node ${nodeId} not found`);
       }
 
       const node = this.mapDbRowToNode(result[0]);
-      
+
       // Update cache
       this.nodeCache.set(nodeId, node);
 
@@ -395,9 +396,8 @@ export class KnowledgeGraphService implements MnemosyneService {
 
       this.updateMetrics(startTime, true);
       this.logger.debug(`Updated node: ${nodeId}`);
-      
-      return node;
 
+      return node;
     } catch (error) {
       this.updateMetrics(startTime, false);
       this.logger.error('Failed to update node', { error, nodeId, updates });
@@ -420,7 +420,7 @@ export class KnowledgeGraphService implements MnemosyneService {
       `;
 
       const result = await this.dataService.query(query, [nodeId]);
-      
+
       if (result.length === 0) {
         this.updateMetrics(startTime, true);
         return false;
@@ -430,11 +430,14 @@ export class KnowledgeGraphService implements MnemosyneService {
       this.nodeCache.delete(nodeId);
 
       // Also soft delete related relationships
-      await this.dataService.query(`
+      await this.dataService.query(
+        `
         UPDATE mnemosyne_knowledge_relationships 
         SET deleted_at = NOW()
         WHERE (source_id = $1 OR target_id = $1) AND deleted_at IS NULL;
-      `, [nodeId]);
+      `,
+        [nodeId]
+      );
 
       // Emit event
       await this.emitGraphEvent({
@@ -446,9 +449,8 @@ export class KnowledgeGraphService implements MnemosyneService {
 
       this.updateMetrics(startTime, true);
       this.logger.debug(`Deleted node: ${nodeId}`);
-      
-      return true;
 
+      return true;
     } catch (error) {
       this.updateMetrics(startTime, false);
       this.logger.error('Failed to delete node', { error, nodeId });
@@ -461,7 +463,9 @@ export class KnowledgeGraphService implements MnemosyneService {
   /**
    * Create a new relationship
    */
-  public async createRelationship(relationshipData: Partial<KnowledgeRelationship>): Promise<KnowledgeRelationship> {
+  public async createRelationship(
+    relationshipData: Partial<KnowledgeRelationship>
+  ): Promise<KnowledgeRelationship> {
     const startTime = Date.now();
 
     try {
@@ -509,9 +513,8 @@ export class KnowledgeGraphService implements MnemosyneService {
 
       this.updateMetrics(startTime, true);
       this.logger.debug(`Created relationship: ${relationship.id}`);
-      
-      return relationship;
 
+      return relationship;
     } catch (error) {
       this.updateMetrics(startTime, false);
       this.logger.error('Failed to create relationship', { error, relationshipData });
@@ -533,11 +536,10 @@ export class KnowledgeGraphService implements MnemosyneService {
       `;
 
       const result = await this.dataService.query(query, [nodeId]);
-      const relationships = result.map(row => this.mapDbRowToRelationship(row));
+      const relationships = result.map((row) => this.mapDbRowToRelationship(row));
 
       this.updateMetrics(startTime, true);
       return relationships;
-
     } catch (error) {
       this.updateMetrics(startTime, false);
       this.logger.error('Failed to get node relationships', { error, nodeId });
@@ -555,10 +557,9 @@ export class KnowledgeGraphService implements MnemosyneService {
 
     try {
       const result = await this.queryBuilder.executeQuery(query);
-      
+
       this.updateMetrics(startTime, true);
       return result;
-
     } catch (error) {
       this.updateMetrics(startTime, false);
       this.logger.error('Failed to execute graph query', { error, query });
@@ -596,13 +597,12 @@ export class KnowledgeGraphService implements MnemosyneService {
 
     try {
       await this.queryBuilder.calculatePageRank();
-      
+
       // Clear node cache to ensure fresh PageRank values
       this.nodeCache.clear();
 
       this.logger.info('PageRank calculation completed');
       this.updateMetrics(startTime, true);
-
     } catch (error) {
       this.updateMetrics(startTime, false);
       this.logger.error('Failed to calculate PageRank', { error });
@@ -623,14 +623,14 @@ export class KnowledgeGraphService implements MnemosyneService {
   public async getGraphAnalytics(): Promise<Record<string, any>> {
     const cacheKey = 'graph_analytics';
     const cached = this.analysisCache.get(cacheKey);
-    
+
     if (cached && Date.now() - cached.timestamp.getTime() < this.cacheTimeout) {
       return cached.results;
     }
 
     const startTime = Date.now();
     const analytics = await this.queryBuilder.getGraphAnalytics();
-    
+
     this.analysisCache.set(cacheKey, {
       algorithm: 'analytics',
       results: analytics,
@@ -661,9 +661,9 @@ export class KnowledgeGraphService implements MnemosyneService {
         ORDER BY page_rank DESC 
         LIMIT $1;
       `;
-      
+
       const nodeResults = await this.dataService.query(nodesQuery, [nodeLimit]);
-      const nodeIds = nodeResults.map(n => n.id);
+      const nodeIds = nodeResults.map((n) => n.id);
 
       // Get relationships between these nodes
       const relationshipsQuery = `
@@ -671,11 +671,11 @@ export class KnowledgeGraphService implements MnemosyneService {
         WHERE source_id = ANY($1) AND target_id = ANY($1)
         ORDER BY strength DESC;
       `;
-      
+
       const relationshipResults = await this.dataService.query(relationshipsQuery, [nodeIds]);
 
       // Format for visualization
-      const nodes = nodeResults.map(node => ({
+      const nodes = nodeResults.map((node) => ({
         id: node.id,
         label: node.title,
         type: node.type,
@@ -689,7 +689,7 @@ export class KnowledgeGraphService implements MnemosyneService {
         }
       }));
 
-      const edges = relationshipResults.map(rel => ({
+      const edges = relationshipResults.map((rel) => ({
         id: rel.id,
         source: rel.source_id,
         target: rel.target_id,
@@ -716,7 +716,6 @@ export class KnowledgeGraphService implements MnemosyneService {
           }
         }
       };
-
     } catch (error) {
       this.updateMetrics(startTime, false);
       this.logger.error('Failed to get visualization data', { error });
@@ -782,14 +781,14 @@ export class KnowledgeGraphService implements MnemosyneService {
       ORDER BY access_count DESC 
       LIMIT 50;
     `;
-    
+
     const results = await this.dataService.query(query);
-    
+
     for (const row of results) {
       const node = this.mapDbRowToNode(row);
       this.nodeCache.set(node.id, node);
     }
-    
+
     this.logger.debug(`Preloaded ${results.length} frequently used nodes`);
   }
 
@@ -797,7 +796,7 @@ export class KnowledgeGraphService implements MnemosyneService {
     if (!nodeData.title) {
       throw new Error('Node title is required');
     }
-    
+
     if (nodeData.weight !== undefined && (nodeData.weight < 0 || nodeData.weight > 10)) {
       throw new Error('Node weight must be between 0 and 10');
     }
@@ -807,12 +806,15 @@ export class KnowledgeGraphService implements MnemosyneService {
     if (!relationshipData.sourceId || !relationshipData.targetId) {
       throw new Error('Source and target node IDs are required');
     }
-    
+
     if (relationshipData.sourceId === relationshipData.targetId) {
       throw new Error('Self-referencing relationships are not allowed');
     }
-    
-    if (relationshipData.strength !== undefined && (relationshipData.strength < 0 || relationshipData.strength > 10)) {
+
+    if (
+      relationshipData.strength !== undefined &&
+      (relationshipData.strength < 0 || relationshipData.strength > 10)
+    ) {
       throw new Error('Relationship strength must be between 0 and 10');
     }
   }
@@ -886,32 +888,36 @@ export class KnowledgeGraphService implements MnemosyneService {
 
   private updateMetrics(startTime: number, success: boolean): void {
     const responseTime = Date.now() - startTime;
-    
+
     this.metrics.requestCount++;
     if (!success) {
       this.metrics.errorCount++;
     }
-    
+
     // Update average response time
-    this.metrics.avgResponseTime = 
-      (this.metrics.avgResponseTime * (this.metrics.requestCount - 1) + responseTime) / 
+    this.metrics.avgResponseTime =
+      (this.metrics.avgResponseTime * (this.metrics.requestCount - 1) + responseTime) /
       this.metrics.requestCount;
   }
 
   private calculateCacheHitRate(): number {
     const totalRequests = this.metrics.requestCount;
     const cacheHits = this.metrics.customMetrics?.cacheHits || 0;
-    
+
     return totalRequests > 0 ? cacheHits / totalRequests : 0;
   }
 
   private async getNodeCount(): Promise<number> {
-    const result = await this.dataService.query('SELECT COUNT(*) as count FROM mnemosyne_active_nodes');
+    const result = await this.dataService.query(
+      'SELECT COUNT(*) as count FROM mnemosyne_active_nodes'
+    );
     return parseInt(result[0].count);
   }
 
   private async getRelationshipCount(): Promise<number> {
-    const result = await this.dataService.query('SELECT COUNT(*) as count FROM mnemosyne_active_relationships');
+    const result = await this.dataService.query(
+      'SELECT COUNT(*) as count FROM mnemosyne_active_relationships'
+    );
     return parseInt(result[0].count);
   }
 
@@ -928,24 +934,24 @@ export class KnowledgeGraphService implements MnemosyneService {
       tag: '#FF6D00',
       custom: '#6D6D6D'
     };
-    
+
     return colors[type] || colors.custom;
   }
 
   private getRelationshipColor(type: RelationshipType): string {
     const colors = {
       'links-to': '#4A90E2',
-      'references': '#F5A623',
+      references: '#F5A623',
       'depends-on': '#D0021B',
       'part-of': '#7ED321',
       'similar-to': '#9013FE',
-      'contradicts': '#FF0000',
-      'extends': '#50E3C2',
-      'implements': '#B8E986',
-      'uses': '#BD10E0',
-      'custom': '#6D6D6D'
+      contradicts: '#FF0000',
+      extends: '#50E3C2',
+      implements: '#B8E986',
+      uses: '#BD10E0',
+      custom: '#6D6D6D'
     };
-    
+
     return colors[type] || colors.custom;
   }
 

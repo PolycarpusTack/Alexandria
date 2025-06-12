@@ -5,14 +5,14 @@
 import { Logger } from '../../../../utils/logger';
 import { EventBus } from '../../../../core/event-bus/interfaces';
 import { StorageService } from '../../../../core/services/storage/interfaces';
-import { 
-  ProjectContext, 
-  ProjectType, 
-  ProjectStructure, 
+import {
+  ProjectContext,
+  ProjectType,
+  ProjectStructure,
   FileNode,
   ProjectStatistics,
   DependencyInfo,
-  IProjectAnalyzerService 
+  IProjectAnalyzerService
 } from '../interfaces';
 import * as path from 'path';
 import * as fs from 'fs/promises';
@@ -47,7 +47,10 @@ export class ProjectAnalyzerService implements IProjectAnalyzerService {
       }
 
       // Verify path exists
-      const exists = await fs.access(projectPath).then(() => true).catch(() => false);
+      const exists = await fs
+        .access(projectPath)
+        .then(() => true)
+        .catch(() => false);
       if (!exists) {
         throw new Error(`Project path does not exist: ${projectPath}`);
       }
@@ -74,15 +77,18 @@ export class ProjectAnalyzerService implements IProjectAnalyzerService {
       this.projectCache.set(projectPath, context);
 
       // Emit event
-      this.eventBus.emit('alfred:project-analyzed', {
+      this.eventBus.publish('alfred:project:analyzed', {
         projectPath,
-        projectType,
-        fileCount: structure.statistics.totalFiles,
-        languages: Object.keys(structure.statistics.languageBreakdown)
+        analysis: {
+          projectType,
+          fileCount: structure.statistics.totalFiles,
+          languages: Object.keys(structure.statistics.languageBreakdown)
+        },
+        duration: Date.now() - Date.now(), // TODO: Add actual timing
+        statistics: structure.statistics
       });
 
       return context;
-
     } catch (error) {
       this.logger.error('Failed to analyze project', { error, projectPath });
       throw error;
@@ -111,9 +117,9 @@ export class ProjectAnalyzerService implements IProjectAnalyzerService {
     if (cached) {
       // For now, just invalidate. In future, we could do incremental updates
       this.projectCache.delete(projectPath);
-      
+
       // Re-analyze in background
-      this.analyzeProject(projectPath).catch(error => {
+      this.analyzeProject(projectPath).catch((error) => {
         this.logger.error('Failed to re-analyze project after file change', { error });
       });
     }
@@ -156,10 +162,13 @@ export class ProjectAnalyzerService implements IProjectAnalyzerService {
     if (markers.has('javascript') && markers.get('javascript')!.includes('package.json')) {
       return ProjectType.JAVASCRIPT;
     }
-    if (markers.has('java') && (markers.get('java')!.includes('pom.xml') || markers.get('java')!.includes('build.gradle'))) {
+    if (
+      markers.has('java') &&
+      (markers.get('java')!.includes('pom.xml') || markers.get('java')!.includes('build.gradle'))
+    ) {
       return ProjectType.JAVA;
     }
-    if (markers.has('csharp') && markers.get('csharp')!.some(f => f.endsWith('.csproj'))) {
+    if (markers.has('csharp') && markers.get('csharp')!.some((f) => f.endsWith('.csproj'))) {
       return ProjectType.CSHARP;
     }
     if (markers.has('go') && markers.get('go')!.includes('go.mod')) {
@@ -173,8 +182,7 @@ export class ProjectAnalyzerService implements IProjectAnalyzerService {
     }
 
     // Check by predominant file extension
-    const sortedExtensions = Array.from(fileExtensions.entries())
-      .sort(([, a], [, b]) => b - a);
+    const sortedExtensions = Array.from(fileExtensions.entries()).sort(([, a], [, b]) => b - a);
 
     if (sortedExtensions.length > 0) {
       const [topExt] = sortedExtensions[0];
@@ -282,9 +290,9 @@ export class ProjectAnalyzerService implements IProjectAnalyzerService {
         } else {
           stats.totalFiles++;
           stats.totalSize += node.size || 0;
-          
+
           if (node.language) {
-            stats.languageBreakdown[node.language] = 
+            stats.languageBreakdown[node.language] =
               (stats.languageBreakdown[node.language] || 0) + 1;
           }
 
@@ -298,9 +306,7 @@ export class ProjectAnalyzerService implements IProjectAnalyzerService {
     traverse(structure.files);
 
     // Get top 10 largest files
-    stats.largestFiles = fileSizes
-      .sort((a, b) => b.size - a.size)
-      .slice(0, 10);
+    stats.largestFiles = fileSizes.sort((a, b) => b.size - a.size).slice(0, 10);
   }
 
   private async extractDependencies(projectPath: string): Promise<DependencyInfo[]> {
@@ -309,10 +315,15 @@ export class ProjectAnalyzerService implements IProjectAnalyzerService {
     // Check for package.json (Node.js)
     const packageJsonPath = path.join(projectPath, 'package.json');
     try {
-      if (await fs.access(packageJsonPath).then(() => true).catch(() => false)) {
+      if (
+        await fs
+          .access(packageJsonPath)
+          .then(() => true)
+          .catch(() => false)
+      ) {
         const content = await this.storageService.readFile(packageJsonPath);
         const pkg = JSON.parse(content);
-        
+
         // Runtime dependencies
         if (pkg.dependencies) {
           for (const [name, version] of Object.entries(pkg.dependencies)) {
@@ -324,7 +335,7 @@ export class ProjectAnalyzerService implements IProjectAnalyzerService {
             });
           }
         }
-        
+
         // Dev dependencies
         if (pkg.devDependencies) {
           for (const [name, version] of Object.entries(pkg.devDependencies)) {
@@ -344,10 +355,15 @@ export class ProjectAnalyzerService implements IProjectAnalyzerService {
     // Check for requirements.txt (Python)
     const requirementsPath = path.join(projectPath, 'requirements.txt');
     try {
-      if (await fs.access(requirementsPath).then(() => true).catch(() => false)) {
+      if (
+        await fs
+          .access(requirementsPath)
+          .then(() => true)
+          .catch(() => false)
+      ) {
         const content = await this.storageService.readFile(requirementsPath);
-        const lines = content.split('\n').filter(line => line.trim() && !line.startsWith('#'));
-        
+        const lines = content.split('\n').filter((line) => line.trim() && !line.startsWith('#'));
+
         for (const line of lines) {
           const match = line.match(/^([^=<>!]+)([=<>!]+.+)?$/);
           if (match) {
@@ -378,9 +394,21 @@ export class ProjectAnalyzerService implements IProjectAnalyzerService {
 
   private shouldIgnoreDirectory(name: string): boolean {
     const ignored = [
-      'node_modules', '.git', '.svn', '.hg', '__pycache__',
-      '.pytest_cache', '.vscode', '.idea', 'dist', 'build',
-      'target', 'bin', 'obj', '.next', '.nuxt'
+      'node_modules',
+      '.git',
+      '.svn',
+      '.hg',
+      '__pycache__',
+      '.pytest_cache',
+      '.vscode',
+      '.idea',
+      'dist',
+      'build',
+      'target',
+      'bin',
+      'obj',
+      '.next',
+      '.nuxt'
     ];
     return ignored.includes(name);
   }
@@ -415,39 +443,46 @@ export class ProjectAnalyzerService implements IProjectAnalyzerService {
 
   private async findProjectRoot(filePath: string): Promise<string | null> {
     let currentPath = path.dirname(filePath);
-    
+
     while (currentPath !== path.dirname(currentPath)) {
       // Check for project markers
       const markers = ['.git', 'package.json', 'requirements.txt', 'pom.xml', 'go.mod'];
-      
+
       for (const marker of markers) {
-        if (await fs.access(path.join(currentPath, marker)).then(() => true).catch(() => false)) {
+        if (
+          await fs
+            .access(path.join(currentPath, marker))
+            .then(() => true)
+            .catch(() => false)
+        ) {
           return currentPath;
         }
       }
-      
+
       currentPath = path.dirname(currentPath);
     }
-    
+
     return null;
   }
 
   private isCacheValid(context: ProjectContext): boolean {
     // Cache is valid for 5 minutes
     const cacheTimeout = 5 * 60 * 1000;
-    return (Date.now() - context.analyzedAt.getTime()) < cacheTimeout;
+    return Date.now() - context.analyzedAt.getTime() < cacheTimeout;
   }
 
-  private async listDirectoryRecursive(dirPath: string): Promise<Array<{ name: string; isDirectory: boolean }>> {
+  private async listDirectoryRecursive(
+    dirPath: string
+  ): Promise<Array<{ name: string; isDirectory: boolean }>> {
     const results: Array<{ name: string; isDirectory: boolean }> = [];
-    
+
     async function* walk(dir: string): AsyncGenerator<{ name: string; isDirectory: boolean }> {
       const entries = await fs.readdir(dir, { withFileTypes: true });
-      
+
       for (const entry of entries) {
         const fullPath = path.join(dir, entry.name);
         const relativePath = path.relative(dirPath, fullPath);
-        
+
         if (entry.isDirectory()) {
           yield { name: relativePath, isDirectory: true };
           yield* walk(fullPath);
@@ -456,11 +491,11 @@ export class ProjectAnalyzerService implements IProjectAnalyzerService {
         }
       }
     }
-    
+
     for await (const item of walk(dirPath)) {
       results.push(item);
     }
-    
+
     return results;
   }
 }

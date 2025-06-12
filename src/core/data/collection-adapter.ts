@@ -1,11 +1,10 @@
 /**
  * Collection Adapter for PostgreSQL Data Service
- * 
+ *
  * This adapter provides a collection-based API on top of the PostgreSQL data service,
  * allowing plugins to use a simpler collection interface instead of direct SQL.
  */
 
-import { Pool, PoolClient } from 'pg';
 import { Logger } from '../../utils/logger';
 import { PostgresDataService } from './pg-data-service';
 
@@ -15,12 +14,19 @@ import { PostgresDataService } from './pg-data-service';
 export interface CollectionDataService {
   createCollectionIfNotExists(collectionName: string): Promise<void>;
   createIndex(collectionName: string, field: string): Promise<void>;
-  upsert(collectionName: string, id: string, data: Record<string, any>): Promise<Record<string, any>>;
+  upsert(
+    collectionName: string,
+    id: string,
+    data: Record<string, any>
+  ): Promise<Record<string, any>>;
   findById(collectionName: string, id: string): Promise<Record<string, any> | null>;
   find(collectionName: string, filter: Record<string, any>): Promise<Record<string, any>[]>;
   findOne(collectionName: string, filter: Record<string, any>): Promise<Record<string, any> | null>;
   delete(collectionName: string, filter: Record<string, any>): Promise<boolean>;
-  deleteMany(collectionName: string, filter: Record<string, any>): Promise<{ deletedCount: number }>;
+  deleteMany(
+    collectionName: string,
+    filter: Record<string, any>
+  ): Promise<{ deletedCount: number }>;
 }
 
 /**
@@ -44,10 +50,10 @@ export class PostgresCollectionAdapter implements CollectionDataService {
         updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
       )
     `;
-    
+
     try {
       await this.pgService.query(sql);
-      
+
       // Create update trigger
       const triggerSql = `
         CREATE OR REPLACE FUNCTION update_${collectionName}_updated_at()
@@ -65,9 +71,9 @@ export class PostgresCollectionAdapter implements CollectionDataService {
           FOR EACH ROW
           EXECUTE FUNCTION update_${collectionName}_updated_at();
       `;
-      
+
       await this.pgService.query(triggerSql);
-      
+
       this.logger.info(`Collection ${collectionName} created or already exists`);
     } catch (error) {
       this.logger.error(`Failed to create collection ${collectionName}`, { error });
@@ -84,7 +90,7 @@ export class PostgresCollectionAdapter implements CollectionDataService {
       CREATE INDEX IF NOT EXISTS idx_${collectionName}_${field} 
       ON "${collectionName}" ((data->>'${field}'))
     `;
-    
+
     try {
       await this.pgService.query(sql);
       this.logger.info(`Index created on ${collectionName}.${field}`);
@@ -97,7 +103,11 @@ export class PostgresCollectionAdapter implements CollectionDataService {
   /**
    * Insert or update a document in the collection
    */
-  async upsert(collectionName: string, id: string, data: Record<string, any>): Promise<Record<string, any>> {
+  async upsert(
+    collectionName: string,
+    id: string,
+    data: Record<string, any>
+  ): Promise<Record<string, any>> {
     const sql = `
       INSERT INTO "${collectionName}" (id, data)
       VALUES ($1, $2)
@@ -106,7 +116,7 @@ export class PostgresCollectionAdapter implements CollectionDataService {
           updated_at = CURRENT_TIMESTAMP
       RETURNING *
     `;
-    
+
     try {
       const result = await this.pgService.query(sql, [id, JSON.stringify(data)]);
       const row = result.rows[0];
@@ -127,13 +137,13 @@ export class PostgresCollectionAdapter implements CollectionDataService {
    */
   async findById(collectionName: string, id: string): Promise<Record<string, any> | null> {
     const sql = `SELECT * FROM "${collectionName}" WHERE id = $1`;
-    
+
     try {
       const result = await this.pgService.query(sql, [id]);
       if (result.rows.length === 0) {
         return null;
       }
-      
+
       const row = result.rows[0];
       return {
         id: row.id,
@@ -154,10 +164,10 @@ export class PostgresCollectionAdapter implements CollectionDataService {
     let sql = `SELECT * FROM "${collectionName}"`;
     const params: any[] = [];
     const conditions: string[] = [];
-    
+
     // Handle special filter for date comparisons
     const specialFilters: string[] = [];
-    
+
     Object.entries(filter).forEach(([key, value], index) => {
       if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
         // Handle special operators like $lt, $gt, etc.
@@ -176,17 +186,17 @@ export class PostgresCollectionAdapter implements CollectionDataService {
         params.push(value);
       }
     });
-    
+
     const allConditions = [...conditions, ...specialFilters];
     if (allConditions.length > 0) {
       sql += ` WHERE ${allConditions.join(' AND ')}`;
     }
-    
+
     sql += ' ORDER BY created_at DESC';
-    
+
     try {
       const result = await this.pgService.query(sql, params);
-      return result.rows.map(row => ({
+      return result.rows.map((row) => ({
         id: row.id,
         ...row.data,
         _createdAt: row.created_at,
@@ -201,7 +211,10 @@ export class PostgresCollectionAdapter implements CollectionDataService {
   /**
    * Find a single document matching a filter
    */
-  async findOne(collectionName: string, filter: Record<string, any>): Promise<Record<string, any> | null> {
+  async findOne(
+    collectionName: string,
+    filter: Record<string, any>
+  ): Promise<Record<string, any> | null> {
     const results = await this.find(collectionName, filter);
     return results.length > 0 ? results[0] : null;
   }
@@ -213,7 +226,7 @@ export class PostgresCollectionAdapter implements CollectionDataService {
     let sql = `DELETE FROM "${collectionName}"`;
     const params: any[] = [];
     const conditions: string[] = [];
-    
+
     Object.entries(filter).forEach(([key, value], index) => {
       if (key === 'id') {
         conditions.push(`id = $${index + 1}`);
@@ -222,11 +235,11 @@ export class PostgresCollectionAdapter implements CollectionDataService {
       }
       params.push(value);
     });
-    
+
     if (conditions.length > 0) {
       sql += ` WHERE ${conditions.join(' AND ')}`;
     }
-    
+
     try {
       const result = await this.pgService.query(sql, params);
       return result.rowCount > 0;
@@ -239,11 +252,14 @@ export class PostgresCollectionAdapter implements CollectionDataService {
   /**
    * Delete many documents matching a filter
    */
-  async deleteMany(collectionName: string, filter: Record<string, any>): Promise<{ deletedCount: number }> {
+  async deleteMany(
+    collectionName: string,
+    filter: Record<string, any>
+  ): Promise<{ deletedCount: number }> {
     let sql = `DELETE FROM "${collectionName}"`;
     const params: any[] = [];
     const conditions: string[] = [];
-    
+
     Object.entries(filter).forEach(([key, value], index) => {
       if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
         // Handle special operators
@@ -259,16 +275,19 @@ export class PostgresCollectionAdapter implements CollectionDataService {
         params.push(value);
       }
     });
-    
+
     if (conditions.length > 0) {
       sql += ` WHERE ${conditions.join(' AND ')}`;
     }
-    
+
     try {
       const result = await this.pgService.query(sql, params);
       return { deletedCount: result.rowCount };
     } catch (error) {
-      this.logger.error(`Failed to delete many documents from ${collectionName}`, { error, filter });
+      this.logger.error(`Failed to delete many documents from ${collectionName}`, {
+        error,
+        filter
+      });
       throw error;
     }
   }

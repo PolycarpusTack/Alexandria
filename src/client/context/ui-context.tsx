@@ -1,6 +1,6 @@
 /**
  * UI Context for the client application
- * 
+ *
  * This context provides UI state and functions to the entire client application
  */
 
@@ -38,7 +38,7 @@ export class UIRegistryImpl implements UIRegistry {
       this.logger.error('Cannot register component without ID');
       return;
     }
-    
+
     this.components.set(component.id, component);
     this.logger.debug(`Registered UI component: ${component.id}`, {
       type: component.type,
@@ -53,13 +53,13 @@ export class UIRegistryImpl implements UIRegistry {
   }
 
   getComponentsByType(type: UIComponent['type']): UIComponent[] {
-    return Array.from(this.components.values())
-      .filter(component => component.type === type);
+    return Array.from(this.components.values()).filter((component) => component.type === type);
   }
 
   getComponentsByPosition(position: UIComponent['position']): UIComponent[] {
-    return Array.from(this.components.values())
-      .filter(component => component.position === position);
+    return Array.from(this.components.values()).filter(
+      (component) => component.position === position
+    );
   }
 }
 
@@ -119,7 +119,7 @@ export const UIContextProvider: React.FC<{
 
   // Toggle dark mode
   const toggleDarkMode = () => {
-    setDarkMode(prev => !prev);
+    setDarkMode((prev) => !prev);
   };
 
   // Set theme

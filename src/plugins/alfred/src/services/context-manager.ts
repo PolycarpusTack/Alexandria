@@ -46,9 +46,9 @@ export class ContextManager {
   }
 
   private setupEventHandlers(): void {
-    this.eventBus.on('alfred:file:created', this.handleFileChange.bind(this));
-    this.eventBus.on('alfred:file:updated', this.handleFileChange.bind(this));
-    this.eventBus.on('alfred:file:deleted', this.handleFileChange.bind(this));
+    this.eventBus.subscribe('alfred:file:created', this.handleFileChange.bind(this));
+    this.eventBus.subscribe('alfred:file:updated', this.handleFileChange.bind(this));
+    this.eventBus.subscribe('alfred:file:deleted', this.handleFileChange.bind(this));
   }
 
   async createContextSnapshot(projectPath: string): Promise<ContextSnapshot> {
@@ -78,7 +78,7 @@ export class ContextManager {
 
   async getContextForAI(projectPath: string): Promise<string> {
     let snapshot = this.contexts.get(projectPath);
-    
+
     if (!snapshot || this.isContextStale(snapshot)) {
       snapshot = await this.createContextSnapshot(projectPath);
     }
@@ -86,12 +86,14 @@ export class ContextManager {
     return this.formatContextForAI(snapshot);
   }
 
-  private async analyzeImportantFiles(projectPath: string): Promise<Array<{
-    path: string;
-    content: string;
-    language: string;
-    importance: number;
-  }>> {
+  private async analyzeImportantFiles(projectPath: string): Promise<
+    Array<{
+      path: string;
+      content: string;
+      language: string;
+      importance: number;
+    }>
+  > {
     const files = await this.storageService.listFiles(projectPath, { recursive: true });
     const importantFiles: Array<{
       path: string;
@@ -102,9 +104,10 @@ export class ContextManager {
 
     for (const file of files) {
       if (file.isDirectory) continue;
-      
+
       const importance = this.calculateFileImportance(file.name, file.path);
-      if (importance >= 6) { // Only include important files
+      if (importance >= 6) {
+        // Only include important files
         try {
           const content = await this.storageService.readFile(file.path);
           if (content.length <= this.MAX_FILE_SIZE) {
@@ -128,7 +131,11 @@ export class ContextManager {
     let importance = 5; // Base importance
 
     // Config files are highly important
-    if (['package.json', 'tsconfig.json', 'requirements.txt', 'Cargo.toml', 'go.mod'].includes(fileName)) {
+    if (
+      ['package.json', 'tsconfig.json', 'requirements.txt', 'Cargo.toml', 'go.mod'].includes(
+        fileName
+      )
+    ) {
       importance += 4;
     }
 
@@ -163,12 +170,14 @@ export class ContextManager {
     return Math.min(importance, 10);
   }
 
-  private async getRecentChanges(projectPath: string): Promise<Array<{
-    file: string;
-    changeType: 'created' | 'modified' | 'deleted';
-    timestamp: Date;
-    preview: string;
-  }>> {
+  private async getRecentChanges(projectPath: string): Promise<
+    Array<{
+      file: string;
+      changeType: 'created' | 'modified' | 'deleted';
+      timestamp: Date;
+      preview: string;
+    }>
+  > {
     // This would integrate with file system watching or git history
     // For now, return empty array as placeholder
     return [];
@@ -194,9 +203,10 @@ export class ContextManager {
       const requirementsPath = `${projectPath}/requirements.txt`;
       try {
         const requirements = await this.storageService.readFile(requirementsPath);
-        const pythonDeps = requirements.split('\n')
-          .filter(line => line.trim() && !line.startsWith('#'))
-          .map(line => line.split('==')[0].split('>=')[0].split('<=')[0].trim());
+        const pythonDeps = requirements
+          .split('\n')
+          .filter((line) => line.trim() && !line.startsWith('#'))
+          .map((line) => line.split('==')[0].split('>=')[0].split('<=')[0].trim());
         dependencies.push(...pythonDeps);
       } catch {}
 
@@ -206,13 +216,13 @@ export class ContextManager {
         const cargoContent = await this.storageService.readFile(cargoPath);
         const depsSection = cargoContent.match(/\[dependencies\]([\s\S]*?)(?=\[|$)/);
         if (depsSection) {
-          const rustDeps = depsSection[1].split('\n')
-            .filter(line => line.includes('='))
-            .map(line => line.split('=')[0].trim());
+          const rustDeps = depsSection[1]
+            .split('\n')
+            .filter((line) => line.includes('='))
+            .map((line) => line.split('=')[0].trim());
           dependencies.push(...rustDeps);
         }
       } catch {}
-
     } catch (error) {
       this.logger.warn('Failed to extract dependencies', { error, projectPath });
     }
@@ -225,24 +235,24 @@ export class ContextManager {
 
     // Detect common patterns by analyzing file structure
     const files = await this.storageService.listFiles(projectPath, { recursive: true });
-    
-    if (files.some(f => f.name === 'package.json')) {
+
+    if (files.some((f) => f.name === 'package.json')) {
       patterns.push('Node.js project');
     }
-    
-    if (files.some(f => f.name.includes('component') || f.name.includes('Component'))) {
+
+    if (files.some((f) => f.name.includes('component') || f.name.includes('Component'))) {
       patterns.push('Component-based architecture');
     }
-    
-    if (files.some(f => f.path.includes('/test/') || f.path.includes('/__tests__/'))) {
+
+    if (files.some((f) => f.path.includes('/test/') || f.path.includes('/__tests__/'))) {
       patterns.push('Test-driven development');
     }
-    
-    if (files.some(f => f.name === 'docker-compose.yml' || f.name === 'Dockerfile')) {
+
+    if (files.some((f) => f.name === 'docker-compose.yml' || f.name === 'Dockerfile')) {
       patterns.push('Containerized application');
     }
-    
-    if (files.some(f => f.path.includes('/api/') || f.path.includes('/routes/'))) {
+
+    if (files.some((f) => f.path.includes('/api/') || f.path.includes('/routes/'))) {
       patterns.push('API/REST architecture');
     }
 
@@ -257,9 +267,9 @@ export class ContextManager {
   }> {
     // Analyze a few source files to determine code style
     const files = await this.storageService.listFiles(projectPath, { recursive: true });
-    const sourceFiles = files.filter(f => 
-      f.name.endsWith('.ts') || f.name.endsWith('.js') || f.name.endsWith('.py')
-    ).slice(0, 5);
+    const sourceFiles = files
+      .filter((f) => f.name.endsWith('.ts') || f.name.endsWith('.js') || f.name.endsWith('.py'))
+      .slice(0, 5);
 
     let spacesCount = 0;
     let tabsCount = 0;
@@ -274,15 +284,15 @@ export class ContextManager {
         const content = await this.storageService.readFile(file.path);
         const lines = content.split('\n').slice(0, 100); // Analyze first 100 lines
 
-        lines.forEach(line => {
+        lines.forEach((line) => {
           if (line.startsWith('  ')) spacesCount++;
           if (line.startsWith('\t')) tabsCount++;
-          
+
           singleQuotes += (line.match(/'/g) || []).length;
           doubleQuotes += (line.match(/"/g) || []).length;
-          
+
           const identifiers = line.match(/\b[a-zA-Z_][a-zA-Z0-9_]*\b/g) || [];
-          identifiers.forEach(id => {
+          identifiers.forEach((id) => {
             if (/^[a-z][a-zA-Z0-9]*$/.test(id)) camelCaseCount++;
             if (/^[a-z][a-z0-9_]*$/.test(id)) snakeCaseCount++;
             if (/^[A-Z][a-zA-Z0-9]*$/.test(id)) pascalCaseCount++;
@@ -297,9 +307,12 @@ export class ContextManager {
       indentation: tabsCount > spacesCount ? 'tabs' : 'spaces',
       spaceCount: spacesCount > tabsCount ? 2 : undefined,
       quotingStyle: singleQuotes > doubleQuotes ? 'single' : 'double',
-      namingConvention: 
-        camelCaseCount > snakeCaseCount && camelCaseCount > pascalCaseCount ? 'camelCase' :
-        snakeCaseCount > pascalCaseCount ? 'snake_case' : 'PascalCase'
+      namingConvention:
+        camelCaseCount > snakeCaseCount && camelCaseCount > pascalCaseCount
+          ? 'camelCase'
+          : snakeCaseCount > pascalCaseCount
+            ? 'snake_case'
+            : 'PascalCase'
     };
   }
 
@@ -315,7 +328,7 @@ export class ContextManager {
     // Project patterns
     if (snapshot.patterns.length > 0) {
       context += `## Project Patterns\n`;
-      snapshot.patterns.forEach(pattern => {
+      snapshot.patterns.forEach((pattern) => {
         context += `- ${pattern}\n`;
       });
       context += '\n';
@@ -324,7 +337,7 @@ export class ContextManager {
     // Dependencies
     if (snapshot.dependencies.length > 0) {
       context += `## Key Dependencies\n`;
-      snapshot.dependencies.slice(0, 10).forEach(dep => {
+      snapshot.dependencies.slice(0, 10).forEach((dep) => {
         context += `- ${dep}\n`;
       });
       context += '\n';
@@ -333,7 +346,7 @@ export class ContextManager {
     // Important files (show structure only)
     if (snapshot.files.length > 0) {
       context += `## Key Files\n`;
-      snapshot.files.slice(0, 5).forEach(file => {
+      snapshot.files.slice(0, 5).forEach((file) => {
         context += `- ${file.path} (${file.language}, importance: ${file.importance}/10)\n`;
       });
       context += '\n';
@@ -342,7 +355,7 @@ export class ContextManager {
     // Recent changes
     if (snapshot.recentChanges.length > 0) {
       context += `## Recent Changes\n`;
-      snapshot.recentChanges.slice(0, 3).forEach(change => {
+      snapshot.recentChanges.slice(0, 3).forEach((change) => {
         context += `- ${change.file}: ${change.changeType} (${change.timestamp.toLocaleString()})\n`;
       });
       context += '\n';
@@ -358,11 +371,19 @@ export class ContextManager {
   private detectLanguage(fileName: string): string {
     const ext = fileName.split('.').pop()?.toLowerCase();
     const langMap: Record<string, string> = {
-      ts: 'typescript', tsx: 'typescript',
-      js: 'javascript', jsx: 'javascript',
-      py: 'python', java: 'java', cs: 'csharp',
-      go: 'go', rs: 'rust', rb: 'ruby',
-      php: 'php', cpp: 'cpp', c: 'c'
+      ts: 'typescript',
+      tsx: 'typescript',
+      js: 'javascript',
+      jsx: 'javascript',
+      py: 'python',
+      java: 'java',
+      cs: 'csharp',
+      go: 'go',
+      rs: 'rust',
+      rb: 'ruby',
+      php: 'php',
+      cpp: 'cpp',
+      c: 'c'
     };
     return langMap[ext || ''] || 'text';
   }
@@ -380,8 +401,8 @@ export class ContextManager {
     }
   }
 
-  private handleFileChange(event: any): void {
-    const projectPath = event.projectPath;
+  private handleFileChange(event: { topic: string; data: any; timestamp: Date; source?: string }): void {
+    const projectPath = event.data.projectPath;
     if (this.contexts.has(projectPath)) {
       // Invalidate context to force refresh
       this.contexts.delete(projectPath);

@@ -70,12 +70,13 @@ describe('StorageManager', () => {
       })
     } as any;
 
-    (ElasticsearchAdapter as jest.MockedClass<typeof ElasticsearchAdapter>)
-      .mockImplementation(() => mockElasticsearchAdapter);
-    (ClickHouseAdapter as jest.MockedClass<typeof ClickHouseAdapter>)
-      .mockImplementation(() => mockClickHouseAdapter);
-    (S3Adapter as jest.MockedClass<typeof S3Adapter>)
-      .mockImplementation(() => mockS3Adapter);
+    (ElasticsearchAdapter as jest.MockedClass<typeof ElasticsearchAdapter>).mockImplementation(
+      () => mockElasticsearchAdapter
+    );
+    (ClickHouseAdapter as jest.MockedClass<typeof ClickHouseAdapter>).mockImplementation(
+      () => mockClickHouseAdapter
+    );
+    (S3Adapter as jest.MockedClass<typeof S3Adapter>).mockImplementation(() => mockS3Adapter);
 
     storageManager = new StorageManager(mockContext, mockLogger);
   });
@@ -170,9 +171,9 @@ describe('StorageManager', () => {
     it('should throw error for non-existent tier', async () => {
       await storageManager.initialize();
 
-      await expect(
-        storageManager.store(mockLog, 'non-existent')
-      ).rejects.toThrow("Storage tier 'non-existent' not found");
+      await expect(storageManager.store(mockLog, 'non-existent')).rejects.toThrow(
+        "Storage tier 'non-existent' not found"
+      );
     });
 
     it('should handle storage errors', async () => {

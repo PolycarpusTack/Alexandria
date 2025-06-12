@@ -28,23 +28,23 @@ import {
 export class BulletproofConnectionPool extends EventEmitter {
   private readonly config: PoolConfiguration;
   private closed = false;
-  
+
   // In production, this would be the actual Aegis pool instance
   // private readonly aegisPool: AegisPool;
-  
+
   // For now, we'll implement a basic version
   private readonly connections: Map<string, Connection> = new Map();
   private readonly activeConnections: Set<string> = new Set();
   private readonly tagIndex: Map<string, Map<unknown, Set<string>>> = new Map();
-  
+
   constructor(config: PoolConfiguration) {
     super();
     this.config = config;
-    
+
     // In production:
     // this.aegisPool = new AegisPool(this.convertToAegisConfig(config));
     // this.setupAegisEventForwarding();
-    
+
     // For now, initialize with minimum connections
     this.initialize();
   }
@@ -117,11 +117,11 @@ export class BulletproofConnectionPool extends EventEmitter {
   ): Promise<Connection> {
     // Simplified implementation - in production would use Aegis tag functionality
     const taggedConnections = this.getConnectionIdsByTag(key, value);
-    
+
     for (const connId of taggedConnections) {
       if (!this.activeConnections.has(connId)) {
         const connection = this.connections.get(connId);
-        if (connection && await this.config.connectionFactory.validate(connection)) {
+        if (connection && (await this.config.connectionFactory.validate(connection))) {
           this.activeConnections.add(connId);
           this.emit(PoolEventType.CONNECTION_ACQUIRED, { connectionId: connId, priority });
           return connection;
@@ -147,7 +147,7 @@ export class BulletproofConnectionPool extends EventEmitter {
       this.connections.delete(connection.id);
       await this.config.connectionFactory.destroy(connection);
       this.emit(PoolEventType.CONNECTION_DESTROYED, { connectionId: connection.id });
-      
+
       // Replace destroyed connection
       if (this.connections.size < this.config.minSize) {
         await this.createConnection();
@@ -161,14 +161,15 @@ export class BulletproofConnectionPool extends EventEmitter {
     }
 
     this.closed = true;
-    
+
     // Destroy all connections
     const destroyPromises: Promise<void>[] = [];
     for (const [id, connection] of this.connections) {
       destroyPromises.push(
-        this.config.connectionFactory.destroy(connection)
+        this.config.connectionFactory
+          .destroy(connection)
           .then(() => this.emit(PoolEventType.CONNECTION_DESTROYED, { connectionId: id }))
-          .catch(error => this.emit(PoolEventType.ERROR, error))
+          .catch((error) => this.emit(PoolEventType.ERROR, error))
       );
     }
 
@@ -176,7 +177,7 @@ export class BulletproofConnectionPool extends EventEmitter {
     this.connections.clear();
     this.activeConnections.clear();
     this.tagIndex.clear();
-    
+
     this.emit(PoolEventType.POOL_CLOSED);
   }
 
@@ -184,7 +185,7 @@ export class BulletproofConnectionPool extends EventEmitter {
   private getConnectionIdsByTag(key: string, value: unknown): Set<string> {
     const keyIndex = this.tagIndex.get(key);
     if (!keyIndex) return new Set();
-    
+
     return keyIndex.get(value) || new Set();
   }
 
@@ -196,12 +197,12 @@ export class BulletproofConnectionPool extends EventEmitter {
     if (!this.tagIndex.has(key)) {
       this.tagIndex.set(key, new Map());
     }
-    
+
     const keyIndex = this.tagIndex.get(key)!;
     if (!keyIndex.has(value)) {
       keyIndex.set(value, new Set());
     }
-    
+
     keyIndex.get(value)!.add(connectionId);
   }
 
@@ -244,7 +245,7 @@ export class BulletproofConnectionPool extends EventEmitter {
 
   getTagDistribution(): Map<string, Map<unknown, number>> {
     const distribution = new Map<string, Map<unknown, number>>();
-    
+
     for (const [key, valueMap] of this.tagIndex) {
       const keyDist = new Map<unknown, number>();
       for (const [value, connections] of valueMap) {

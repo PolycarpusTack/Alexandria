@@ -1,13 +1,11 @@
 /**
  * Log Visualization Service
- * 
+ *
  * Core service that manages log source adapters, handles search operations,
  * and coordinates visualization capabilities.
  */
 
-import { EventEmitter } from 'events';
-import { v4 as uuidv4 } from 'uuid';
-import { 
+import {
   ILogVisualizationService,
   LogSourceConfig,
   LogSource,
@@ -37,7 +35,7 @@ export class LogVisualizationService implements ILogVisualizationService {
   private initialized: boolean = false;
   private performanceMonitor: PerformanceMonitor;
   private queryCache: QueryCache;
-  
+
   constructor(
     private logger: Logger,
     private dataService: DataService,
@@ -45,7 +43,7 @@ export class LogVisualizationService implements ILogVisualizationService {
   ) {
     // Initialize performance monitoring
     this.performanceMonitor = new PerformanceMonitor(this.logger, this.eventBus);
-    
+
     // Initialize query cache with performance monitoring
     this.queryCache = new QueryCache(this.logger, this.performanceMonitor, {
       maxSizeBytes: 50 * 1024 * 1024, // 50MB cache
@@ -62,15 +60,15 @@ export class LogVisualizationService implements ILogVisualizationService {
     if (this.initialized) {
       return;
     }
-    
+
     try {
       this.logger.info('Initializing Log Visualization Service');
-      
+
       // Register built-in adapters
       const baseAdapter = new BaseLogAdapter(this.logger);
       await baseAdapter.connect();
       this.adapters.set('base', baseAdapter);
-      
+
       // Try to initialize pattern detection from saved patterns
       try {
         const patterns = await this.dataService.query('SELECT * FROM log_patterns LIMIT 100');
@@ -80,7 +78,7 @@ export class LogVisualizationService implements ILogVisualizationService {
           error: error instanceof Error ? error.message : String(error)
         });
       }
-      
+
       this.initialized = true;
       this.logger.info('Log Visualization Service initialized successfully');
     } catch (error) {
@@ -104,7 +102,7 @@ export class LogVisualizationService implements ILogVisualizationService {
     }
 
     const sourceId = config.id || uuidv4();
-    
+
     try {
       this.logger.info('Connecting to log source', {
         component: 'LogVisualizationService',
@@ -130,9 +128,11 @@ export class LogVisualizationService implements ILogVisualizationService {
             adapter = new BaseLogAdapter(this.logger);
         }
       } catch (error) {
-        throw new Error(`Failed to create adapter for type ${config.type}: ${error instanceof Error ? error.message : String(error)}`);
+        throw new Error(
+          `Failed to create adapter for type ${config.type}: ${error instanceof Error ? error.message : String(error)}`
+        );
       }
-      
+
       // Test connection before adding to active sources
       let connectionSuccessful = false;
       try {
@@ -141,7 +141,9 @@ export class LogVisualizationService implements ILogVisualizationService {
           throw new Error('Connection test failed');
         }
       } catch (testError) {
-        throw new Error(`Connection test failed: ${testError instanceof Error ? testError.message : String(testError)}`);
+        throw new Error(
+          `Connection test failed: ${testError instanceof Error ? testError.message : String(testError)}`
+        );
       }
 
       // Connect adapter with timeout
@@ -154,11 +156,13 @@ export class LogVisualizationService implements ILogVisualizationService {
         clearTimeout(connectionTimeout);
       } catch (connectError) {
         clearTimeout(connectionTimeout);
-        throw new Error(`Failed to connect adapter: ${connectError instanceof Error ? connectError.message : String(connectError)}`);
+        throw new Error(
+          `Failed to connect adapter: ${connectError instanceof Error ? connectError.message : String(connectError)}`
+        );
       }
 
       this.adapters.set(sourceId, adapter);
-      
+
       // Create log source entry with error metadata
       const source: LogSource = {
         id: sourceId,
@@ -172,12 +176,12 @@ export class LogVisualizationService implements ILogVisualizationService {
           lastLogReceived: undefined
         }
       };
-      
+
       this.sources.set(sourceId, source);
 
       // Update connection stats for performance monitoring
       this.updateConnectionStats();
-      
+
       // Persist source configuration to database
       try {
         await this.persistSourceConfig(sourceId, config);
@@ -189,7 +193,7 @@ export class LogVisualizationService implements ILogVisualizationService {
         });
         // Continue - connection is still valid even if persistence fails
       }
-      
+
       // Emit event with error handling
       try {
         await this.eventBus.publish('log-visualization:source-connected', {
@@ -206,14 +210,14 @@ export class LogVisualizationService implements ILogVisualizationService {
         });
         // Continue - event failure shouldn't break connection
       }
-      
+
       this.logger.info('Successfully connected to log source', {
         component: 'LogVisualizationService',
         sourceName: config.name,
         sourceId,
         connectionTime: new Date()
       });
-      
+
       return sourceId;
     } catch (error) {
       // Update source status if it exists
@@ -232,7 +236,7 @@ export class LogVisualizationService implements ILogVisualizationService {
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined
       });
-      
+
       throw error;
     }
   }
@@ -289,7 +293,7 @@ export class LogVisualizationService implements ILogVisualizationService {
           // Continue with source cleanup even if adapter disconnect fails
         }
       }
-      
+
       // Update source status
       if (source) {
         source.status = 'disconnected';
@@ -372,7 +376,7 @@ export class LogVisualizationService implements ILogVisualizationService {
     // Validate time range
     const startTime = new Date(query.timeRange.start);
     const endTime = new Date(query.timeRange.end);
-    
+
     if (isNaN(startTime.getTime()) || isNaN(endTime.getTime())) {
       throw new Error('Invalid time range format');
     }
@@ -393,7 +397,7 @@ export class LogVisualizationService implements ILogVisualizationService {
     }
 
     const queryStartTime = Date.now();
-    
+
     try {
       this.logger.debug('Executing log query', {
         component: 'LogVisualizationService',
@@ -404,7 +408,7 @@ export class LogVisualizationService implements ILogVisualizationService {
 
       // Get available source IDs
       const sourceIds = query.sources || Array.from(this.adapters.keys());
-      
+
       if (sourceIds.length === 0) {
         this.logger.warn('No log sources available for query');
         return {
@@ -416,12 +420,12 @@ export class LogVisualizationService implements ILogVisualizationService {
 
       const results: LogEntry[] = [];
       const errors: string[] = [];
-      
+
       // Query each source with individual error handling
       const queryPromises = sourceIds.map(async (sourceId) => {
         const adapter = this.adapters.get(sourceId);
         const source = this.sources.get(sourceId);
-        
+
         if (!adapter) {
           const error = `No adapter found for source: ${sourceId}`;
           this.logger.warn(error, {
@@ -441,7 +445,7 @@ export class LogVisualizationService implements ILogVisualizationService {
           errors.push(error);
           return;
         }
-        
+
         try {
           // Set timeout for individual source queries
           const sourceQueryTimeout = new Promise<never>((_, reject) => {
@@ -450,10 +454,10 @@ export class LogVisualizationService implements ILogVisualizationService {
 
           const sourceQuery = adapter.query(query);
           const sourceResult = await Promise.race([sourceQuery, sourceQueryTimeout]);
-          
+
           if (sourceResult && sourceResult.logs) {
             results.push(...sourceResult.logs);
-            
+
             // Update source stats
             if (source) {
               source.stats = {
@@ -472,16 +476,16 @@ export class LogVisualizationService implements ILogVisualizationService {
           });
         } catch (error) {
           const errorMessage = `Error querying source ${sourceId}: ${error instanceof Error ? error.message : String(error)}`;
-          
+
           this.logger.error(errorMessage, {
             component: 'LogVisualizationService',
             sourceId,
             error: error instanceof Error ? error.message : String(error),
             stack: error instanceof Error ? error.stack : undefined
           });
-          
+
           errors.push(errorMessage);
-          
+
           // Update source status on error
           if (source) {
             source.status = 'error';
@@ -490,7 +494,7 @@ export class LogVisualizationService implements ILogVisualizationService {
           }
         }
       });
-      
+
       // Execute all queries with overall timeout
       const overallTimeout = new Promise<never>((_, reject) => {
         setTimeout(() => reject(new Error('Overall query timeout after 60 seconds')), 60000);
@@ -505,13 +509,13 @@ export class LogVisualizationService implements ILogVisualizationService {
         });
         throw timeoutError;
       }
-      
+
       // Sort results by timestamp (newest first)
       results.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-      
+
       // Apply limit
       const limitedResults = results.slice(0, maxResultSize);
-      
+
       const result: LogQueryResult = {
         logs: limitedResults,
         total: results.length,
@@ -534,7 +538,7 @@ export class LogVisualizationService implements ILogVisualizationService {
       if (errors.length === 0 && limitedResults.length > 0) {
         this.queryCache.set(query, result);
       }
-      
+
       // Emit query event with error handling
       try {
         await this.eventBus.publish('log-visualization:query-executed', {
@@ -560,7 +564,7 @@ export class LogVisualizationService implements ILogVisualizationService {
         errorCount: errors.length,
         fromCache: false
       });
-      
+
       return result;
     } catch (error) {
       this.logger.error('Failed to execute log query', {
@@ -579,10 +583,10 @@ export class LogVisualizationService implements ILogVisualizationService {
    */
   streamLogs(query: LogQuery, callback: (log: LogEntry) => void): () => void {
     const stopFunctions: (() => void)[] = [];
-    
+
     // Start streaming from all relevant sources
     const sourceIds = query.sources || Array.from(this.adapters.keys());
-    
+
     for (const sourceId of sourceIds) {
       const adapter = this.adapters.get(sourceId);
       if (adapter) {
@@ -590,17 +594,22 @@ export class LogVisualizationService implements ILogVisualizationService {
         stopFunctions.push(stopFunction);
       }
     }
-    
+
     // Return function to stop all streams
     return () => {
-      stopFunctions.forEach(stop => stop());
+      stopFunctions.forEach((stop) => stop());
     };
   }
 
   /**
    * Save a query
    */
-  async saveQuery(userId: string, name: string, description: string, query: LogQuery): Promise<SavedQuery> {
+  async saveQuery(
+    userId: string,
+    name: string,
+    description: string,
+    query: LogQuery
+  ): Promise<SavedQuery> {
     const savedQuery: SavedQuery = {
       id: uuidv4(),
       userId,
@@ -611,13 +620,22 @@ export class LogVisualizationService implements ILogVisualizationService {
       createdAt: new Date(),
       updatedAt: new Date()
     };
-    
+
     // Save to database
     await this.dataService.execute(
       'INSERT INTO saved_queries (id, user_id, name, description, query, is_public, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
-      [savedQuery.id, savedQuery.userId, savedQuery.name, savedQuery.description, JSON.stringify(savedQuery.query), savedQuery.isPublic, savedQuery.createdAt, savedQuery.updatedAt]
+      [
+        savedQuery.id,
+        savedQuery.userId,
+        savedQuery.name,
+        savedQuery.description,
+        JSON.stringify(savedQuery.query),
+        savedQuery.isPublic,
+        savedQuery.createdAt,
+        savedQuery.updatedAt
+      ]
     );
-    
+
     return savedQuery;
   }
 
@@ -629,7 +647,7 @@ export class LogVisualizationService implements ILogVisualizationService {
       'SELECT * FROM saved_queries WHERE user_id = $1 OR is_public = true ORDER BY created_at DESC',
       [userId]
     );
-    
+
     return result.rows.map((row: any) => ({
       id: row.id,
       userId: row.user_id,
@@ -646,10 +664,10 @@ export class LogVisualizationService implements ILogVisualizationService {
    * Delete a saved query
    */
   async deleteSavedQuery(queryId: string, userId: string): Promise<void> {
-    await this.dataService.execute(
-      'DELETE FROM saved_queries WHERE id = $1 AND user_id = $2',
-      [queryId, userId]
-    );
+    await this.dataService.execute('DELETE FROM saved_queries WHERE id = $1 AND user_id = $2', [
+      queryId,
+      userId
+    ]);
   }
 
   /**
@@ -658,40 +676,44 @@ export class LogVisualizationService implements ILogVisualizationService {
   async detectPatterns(logs: LogEntry[]): Promise<LogPattern[]> {
     const patterns: LogPattern[] = [];
     const messageGroups = new Map<string, LogEntry[]>();
-    
+
     // Group similar messages
     for (const log of logs) {
       // Create a pattern by removing numbers and specific values
       const pattern = log.message
         .replace(/\d+/g, 'NUMBER')
-        .replace(/[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}/g, 'UUID')
+        .replace(
+          /[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}/g,
+          'UUID'
+        )
         .replace(/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g, 'IP_ADDRESS')
         .trim();
-      
+
       if (!messageGroups.has(pattern)) {
         messageGroups.set(pattern, []);
       }
       messageGroups.get(pattern)!.push(log);
     }
-    
+
     // Create patterns for groups with multiple occurrences
     for (const [pattern, entries] of messageGroups) {
-      if (entries.length >= 3) { // Pattern threshold
+      if (entries.length >= 3) {
+        // Pattern threshold
         const severity = this.calculatePatternSeverity(entries);
-        
+
         patterns.push({
           id: uuidv4(),
           name: `Pattern: ${pattern.substring(0, 50)}...`,
           pattern,
           count: entries.length,
           severity,
-          firstSeen: new Date(Math.min(...entries.map(e => e.timestamp.getTime()))),
-          lastSeen: new Date(Math.max(...entries.map(e => e.timestamp.getTime()))),
+          firstSeen: new Date(Math.min(...entries.map((e) => e.timestamp.getTime()))),
+          lastSeen: new Date(Math.max(...entries.map((e) => e.timestamp.getTime()))),
           samples: entries.slice(0, 5) // First 5 samples
         });
       }
     }
-    
+
     return patterns;
   }
 
@@ -705,13 +727,21 @@ export class LogVisualizationService implements ILogVisualizationService {
       createdAt: new Date(),
       updatedAt: new Date()
     };
-    
+
     // Save to database
     await this.dataService.execute(
       'INSERT INTO log_alerts (id, name, condition, actions, enabled, created_at, updated_at) VALUES ($1, $2, $3, $4, $5, $6, $7)',
-      [newAlert.id, newAlert.name, JSON.stringify(newAlert.condition), JSON.stringify(newAlert.actions), newAlert.enabled, newAlert.createdAt, newAlert.updatedAt]
+      [
+        newAlert.id,
+        newAlert.name,
+        JSON.stringify(newAlert.condition),
+        JSON.stringify(newAlert.actions),
+        newAlert.enabled,
+        newAlert.createdAt,
+        newAlert.updatedAt
+      ]
     );
-    
+
     return newAlert;
   }
 
@@ -720,12 +750,19 @@ export class LogVisualizationService implements ILogVisualizationService {
    */
   async updateAlert(alertId: string, updates: Partial<LogAlert>): Promise<LogAlert> {
     const updatedAlert = { ...updates, id: alertId, updatedAt: new Date() };
-    
+
     await this.dataService.execute(
       'UPDATE log_alerts SET name = COALESCE($2, name), condition = COALESCE($3, condition), actions = COALESCE($4, actions), enabled = COALESCE($5, enabled), updated_at = $6 WHERE id = $1',
-      [alertId, updates.name, updates.condition ? JSON.stringify(updates.condition) : null, updates.actions ? JSON.stringify(updates.actions) : null, updates.enabled, updatedAlert.updatedAt]
+      [
+        alertId,
+        updates.name,
+        updates.condition ? JSON.stringify(updates.condition) : null,
+        updates.actions ? JSON.stringify(updates.actions) : null,
+        updates.enabled,
+        updatedAlert.updatedAt
+      ]
     );
-    
+
     return updatedAlert as LogAlert;
   }
 
@@ -740,8 +777,10 @@ export class LogVisualizationService implements ILogVisualizationService {
    * Get all alerts
    */
   async getAlerts(): Promise<LogAlert[]> {
-    const result = await this.dataService.query('SELECT * FROM log_alerts ORDER BY created_at DESC');
-    
+    const result = await this.dataService.query(
+      'SELECT * FROM log_alerts ORDER BY created_at DESC'
+    );
+
     return result.rows.map((row: any) => ({
       id: row.id,
       name: row.name,
@@ -782,11 +821,11 @@ export class LogVisualizationService implements ILogVisualizationService {
         { host: 'server-03', count: 3300 }
       ],
       logLevels: {
-        'debug': 4000,
-        'info': 5000,
-        'warn': 800,
-        'error': 180,
-        'fatal': 20
+        debug: 4000,
+        info: 5000,
+        warn: 800,
+        error: 180,
+        fatal: 20
       } as Record<LogLevel, number>
     };
   }
@@ -795,9 +834,9 @@ export class LogVisualizationService implements ILogVisualizationService {
    * Calculate pattern severity based on log entries
    */
   private calculatePatternSeverity(entries: LogEntry[]): string {
-    const errorCount = entries.filter(e => e.level === 'error' || e.level === 'fatal').length;
+    const errorCount = entries.filter((e) => e.level === 'error' || e.level === 'fatal').length;
     const ratio = errorCount / entries.length;
-    
+
     if (ratio > 0.8) return 'critical';
     if (ratio > 0.5) return 'high';
     if (ratio > 0.2) return 'medium';
@@ -823,7 +862,11 @@ export class LogVisualizationService implements ILogVisualizationService {
       queryLatencies: this.performanceMonitor.getMetrics(startTime, endTime, 'query.latency'),
       memoryUsage: this.performanceMonitor.getMetrics(startTime, endTime, 'memory.heap_used'),
       cacheMetrics: this.performanceMonitor.getMetrics(startTime, endTime, 'cache.hit_rate'),
-      connectionMetrics: this.performanceMonitor.getMetrics(startTime, endTime, 'connections.active')
+      connectionMetrics: this.performanceMonitor.getMetrics(
+        startTime,
+        endTime,
+        'connections.active'
+      )
     };
   }
 
@@ -831,9 +874,11 @@ export class LogVisualizationService implements ILogVisualizationService {
    * Update connection statistics for performance monitoring
    */
   private updateConnectionStats(): void {
-    const connectedSources = Array.from(this.sources.values()).filter(s => s.status === 'connected');
+    const connectedSources = Array.from(this.sources.values()).filter(
+      (s) => s.status === 'connected'
+    );
     const totalSources = this.sources.size;
-    const failedSources = Array.from(this.sources.values()).filter(s => s.status === 'error');
+    const failedSources = Array.from(this.sources.values()).filter((s) => s.status === 'error');
 
     this.performanceMonitor.recordConnectionStats(
       connectedSources.length,

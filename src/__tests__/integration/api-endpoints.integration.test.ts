@@ -1,6 +1,6 @@
 /**
  * Comprehensive API Integration Test Suite
- * 
+ *
  * This test suite provides complete integration testing for all Alexandria Platform APIs,
  * testing authentication, authorization, plugin endpoints, system metrics, and error handling.
  */
@@ -56,11 +56,11 @@ describe('API Integration Tests', () => {
     process.env.NODE_ENV = 'test';
     process.env.JWT_SECRET = 'test-secret-key';
     process.env.DISABLE_RATE_LIMITING = 'true';
-    
+
     // Initialize core system with in-memory data service
     dataService = new InMemoryDataService();
     await dataService.initialize();
-    
+
     // Setup mock logger
     mockLogger = {
       info: jest.fn(),
@@ -69,19 +69,19 @@ describe('API Integration Tests', () => {
       error: jest.fn(),
       child: jest.fn(() => mockLogger)
     } as any;
-    
+
     // Initialize the application
     const coreSystem = await initializeCore(dataService, mockLogger);
     app = coreSystem.getApp();
     authService = coreSystem.getAuthenticationService();
-    
+
     // Create test users
     for (const userData of Object.values(testUsers)) {
       const user = await authService.createUser(userData);
       if (userData.username === 'testuser') testUser = user;
       if (userData.username === 'admin') adminUser = user;
     }
-    
+
     // Generate auth tokens
     adminToken = await authService.generateToken(adminUser);
     userToken = await authService.generateToken(testUser);
@@ -165,23 +165,23 @@ describe('API Integration Tests', () => {
       it('should enforce rate limiting on auth endpoints', async () => {
         // Temporarily enable rate limiting
         delete process.env.DISABLE_RATE_LIMITING;
-        
+
         // Make multiple failed login attempts
-        const requests = Array(6).fill(null).map(() =>
-          request(app)
-            .post('/api/auth/login')
-            .send({
+        const requests = Array(6)
+          .fill(null)
+          .map(() =>
+            request(app).post('/api/auth/login').send({
               username: 'testuser',
               password: 'wrongpassword'
             })
-        );
+          );
 
         const responses = await Promise.all(requests);
-        
+
         // First 5 should be 401 (unauthorized), 6th should be 429 (rate limited)
-        expect(responses.slice(0, 5).every(r => r.status === 401)).toBe(true);
+        expect(responses.slice(0, 5).every((r) => r.status === 401)).toBe(true);
         expect(responses[5].status).toBe(429);
-        
+
         // Re-enable for other tests
         process.env.DISABLE_RATE_LIMITING = 'true';
       });
@@ -209,9 +209,7 @@ describe('API Integration Tests', () => {
       });
 
       it('should reject missing authorization header', async () => {
-        const response = await request(app)
-          .get('/api/system/metrics')
-          .expect(401);
+        const response = await request(app).get('/api/system/metrics').expect(401);
 
         expect(response.body).toHaveProperty('error');
         expect(response.body.error).toContain('Authorization header required');
@@ -231,9 +229,7 @@ describe('API Integration Tests', () => {
   describe('System Health & Metrics Endpoints', () => {
     describe('GET /api/health', () => {
       it('should return system health status', async () => {
-        const response = await request(app)
-          .get('/api/health')
-          .expect(200);
+        const response = await request(app).get('/api/health').expect(200);
 
         expect(response.body).toEqual({
           status: 'ok',
@@ -242,9 +238,7 @@ describe('API Integration Tests', () => {
       });
 
       it('should not require authentication', async () => {
-        const response = await request(app)
-          .get('/api/health')
-          .expect(200);
+        const response = await request(app).get('/api/health').expect(200);
 
         expect(response.body.status).toBe('ok');
       });
@@ -253,11 +247,8 @@ describe('API Integration Tests', () => {
     describe('POST /api/test', () => {
       it('should echo back test data', async () => {
         const testData = { message: 'Hello World', number: 42 };
-        
-        const response = await request(app)
-          .post('/api/test')
-          .send(testData)
-          .expect(200);
+
+        const response = await request(app).post('/api/test').send(testData).expect(200);
 
         expect(response.body).toEqual({
           received: testData,
@@ -266,10 +257,7 @@ describe('API Integration Tests', () => {
       });
 
       it('should handle empty request body', async () => {
-        const response = await request(app)
-          .post('/api/test')
-          .send({})
-          .expect(200);
+        const response = await request(app).post('/api/test').send({}).expect(200);
 
         expect(response.body.received).toEqual({});
         expect(response.body.message).toBe('Test successful');
@@ -289,7 +277,7 @@ describe('API Integration Tests', () => {
         expect(response.body).toHaveProperty('network');
         expect(response.body).toHaveProperty('uptime');
         expect(response.body).toHaveProperty('timestamp');
-        
+
         expect(typeof response.body.cpu).toBe('number');
         expect(typeof response.body.uptime).toBe('number');
         expect(response.body.memory).toHaveProperty('total');
@@ -298,9 +286,7 @@ describe('API Integration Tests', () => {
       });
 
       it('should require authentication', async () => {
-        const response = await request(app)
-          .get('/api/system/metrics')
-          .expect(401);
+        const response = await request(app).get('/api/system/metrics').expect(401);
 
         expect(response.body).toHaveProperty('error');
       });
@@ -318,7 +304,7 @@ describe('API Integration Tests', () => {
         expect(response.body).toHaveProperty('activeUsers');
         expect(response.body).toHaveProperty('avgResponseTime');
         expect(response.body).toHaveProperty('period');
-        
+
         expect(typeof response.body.totalRequests).toBe('number');
         expect(typeof response.body.totalErrors).toBe('number');
         expect(typeof response.body.activeUsers).toBe('number');
@@ -335,7 +321,7 @@ describe('API Integration Tests', () => {
 
         expect(Array.isArray(response.body)).toBe(true);
         expect(response.body.length).toBe(24);
-        
+
         response.body.forEach((item: any) => {
           expect(item).toHaveProperty('time');
           expect(item).toHaveProperty('requests');
@@ -355,7 +341,7 @@ describe('API Integration Tests', () => {
           .expect(200);
 
         expect(Array.isArray(response.body)).toBe(true);
-        
+
         response.body.forEach((plugin: any) => {
           expect(plugin).toHaveProperty('id');
           expect(plugin).toHaveProperty('name');
@@ -375,7 +361,7 @@ describe('API Integration Tests', () => {
           .expect(200);
 
         expect(Array.isArray(response.body)).toBe(true);
-        
+
         response.body.forEach((model: any) => {
           expect(model).toHaveProperty('id');
           expect(model).toHaveProperty('name');
@@ -484,11 +470,7 @@ describe('API Integration Tests', () => {
           .post('/ai/embed')
           .set('Authorization', `Bearer ${userToken}`)
           .send({
-            texts: [
-              'First sentence.',
-              'Second sentence.',
-              'Third sentence.'
-            ]
+            texts: ['First sentence.', 'Second sentence.', 'Third sentence.']
           })
           .expect(200);
 
@@ -497,7 +479,7 @@ describe('API Integration Tests', () => {
         expect(response.body.embeddings).toHaveLength(3);
         response.body.embeddings.forEach((embedding: number[]) => {
           expect(Array.isArray(embedding)).toBe(true);
-          expect(embedding.every(n => typeof n === 'number')).toBe(true);
+          expect(embedding.every((n) => typeof n === 'number')).toBe(true);
         });
       });
 
@@ -593,9 +575,7 @@ describe('API Integration Tests', () => {
 
     describe('Method Not Allowed', () => {
       it('should return 405 for wrong HTTP method', async () => {
-        const response = await request(app)
-          .put('/api/health')
-          .expect(405);
+        const response = await request(app).put('/api/health').expect(405);
 
         expect(response.body).toHaveProperty('error');
         expect(response.body.error).toContain('Method not allowed');
@@ -620,10 +600,7 @@ describe('API Integration Tests', () => {
           data: 'x'.repeat(10 * 1024 * 1024) // 10MB payload
         };
 
-        const response = await request(app)
-          .post('/api/test')
-          .send(largePayload)
-          .expect(413);
+        const response = await request(app).post('/api/test').send(largePayload).expect(413);
 
         expect(response.body).toHaveProperty('error');
         expect(response.body.error).toContain('too large');
@@ -646,9 +623,7 @@ describe('API Integration Tests', () => {
 
   describe('Security Headers', () => {
     it('should include security headers in responses', async () => {
-      const response = await request(app)
-        .get('/api/health')
-        .expect(200);
+      const response = await request(app).get('/api/health').expect(200);
 
       // Check for security headers
       expect(response.headers).toHaveProperty('x-content-type-options');
@@ -670,9 +645,7 @@ describe('API Integration Tests', () => {
     });
 
     it('should set CSP headers', async () => {
-      const response = await request(app)
-        .get('/api/health')
-        .expect(200);
+      const response = await request(app).get('/api/health').expect(200);
 
       expect(response.headers).toHaveProperty('content-security-policy');
       expect(response.headers['content-security-policy']).toContain("default-src 'self'");
@@ -683,28 +656,24 @@ describe('API Integration Tests', () => {
     describe('Response Times', () => {
       it('should respond to health check quickly', async () => {
         const start = Date.now();
-        
-        await request(app)
-          .get('/api/health')
-          .expect(200);
-        
+
+        await request(app).get('/api/health').expect(200);
+
         const duration = Date.now() - start;
         expect(duration).toBeLessThan(100); // Should be very fast
       });
 
       it('should handle concurrent requests efficiently', async () => {
-        const requests = Array(10).fill(null).map(() =>
-          request(app)
-            .get('/api/health')
-            .expect(200)
-        );
+        const requests = Array(10)
+          .fill(null)
+          .map(() => request(app).get('/api/health').expect(200));
 
         const start = Date.now();
         const responses = await Promise.all(requests);
         const duration = Date.now() - start;
 
         expect(responses).toHaveLength(10);
-        expect(responses.every(r => r.status === 200)).toBe(true);
+        expect(responses.every((r) => r.status === 200)).toBe(true);
         expect(duration).toBeLessThan(1000); // 10 concurrent requests in < 1 second
       });
     });
@@ -712,22 +681,20 @@ describe('API Integration Tests', () => {
     describe('Memory Usage', () => {
       it('should not leak memory during requests', async () => {
         const initialMemory = process.memoryUsage();
-        
+
         // Make many requests
         for (let i = 0; i < 100; i++) {
-          await request(app)
-            .get('/api/health')
-            .expect(200);
+          await request(app).get('/api/health').expect(200);
         }
-        
+
         // Force garbage collection if available
         if (global.gc) {
           global.gc();
         }
-        
+
         const finalMemory = process.memoryUsage();
         const memoryIncrease = finalMemory.heapUsed - initialMemory.heapUsed;
-        
+
         // Memory increase should be reasonable (less than 10MB)
         expect(memoryIncrease).toBeLessThan(10 * 1024 * 1024);
       });

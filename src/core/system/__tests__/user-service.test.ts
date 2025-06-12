@@ -1,6 +1,6 @@
 /**
  * User Service Test Suite
- * 
+ *
  * Comprehensive tests for the UserService including:
  * - User CRUD operations
  * - Authentication integration
@@ -38,8 +38,8 @@ describe('UserService', () => {
       passwordHash: 'hashed-password',
       lastLoginAt: new Date('2024-01-01T00:00:00Z'),
       loginCount: 5,
-      registeredAt: new Date('2024-01-01T00:00:00Z'),
-    },
+      registeredAt: new Date('2024-01-01T00:00:00Z')
+    }
   };
 
   const mockUserProfile: UserProfile = {
@@ -57,13 +57,13 @@ describe('UserService', () => {
       language: 'en',
       notifications: {
         email: true,
-        push: false,
-      },
+        push: false
+      }
     },
     socialLinks: {
       twitter: '@johndoe',
-      github: 'johndoe',
-    },
+      github: 'johndoe'
+    }
   };
 
   beforeEach(() => {
@@ -76,7 +76,7 @@ describe('UserService', () => {
       warn: jest.fn(),
       error: jest.fn(),
       debug: jest.fn(),
-      child: jest.fn().mockReturnThis(),
+      child: jest.fn().mockReturnThis()
     } as any;
 
     // Create mock data service
@@ -88,27 +88,27 @@ describe('UserService', () => {
         create: jest.fn(),
         update: jest.fn(),
         delete: jest.fn(),
-        find: jest.fn(),
+        find: jest.fn()
       },
       userProfiles: {
         findByUserId: jest.fn(),
         create: jest.fn(),
         update: jest.fn(),
-        delete: jest.fn(),
+        delete: jest.fn()
       },
       userSessions: {
         findByUserId: jest.fn(),
         create: jest.fn(),
         update: jest.fn(),
         delete: jest.fn(),
-        deleteExpired: jest.fn(),
-      },
+        deleteExpired: jest.fn()
+      }
     } as any;
 
     // Create mock event bus
     mockEventBus = {
       publish: jest.fn().mockResolvedValue({ deliveredToCount: 1, errors: [] }),
-      subscribe: jest.fn().mockReturnValue({ id: 'sub-123', unsubscribe: jest.fn() }),
+      subscribe: jest.fn().mockReturnValue({ id: 'sub-123', unsubscribe: jest.fn() })
     } as any;
 
     // Create user service
@@ -119,22 +119,18 @@ describe('UserService', () => {
     it('should initialize successfully', async () => {
       await userService.initialize();
 
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        'User service initialized successfully'
-      );
+      expect(mockLogger.info).toHaveBeenCalledWith('User service initialized successfully');
     });
 
     it('should throw error if initialized twice', async () => {
       await userService.initialize();
-      
-      await expect(userService.initialize()).rejects.toThrow(
-        'User service is already initialized'
-      );
+
+      await expect(userService.initialize()).rejects.toThrow('User service is already initialized');
     });
 
     it('should set up cleanup timer', async () => {
       const setIntervalSpy = jest.spyOn(global, 'setInterval');
-      
+
       await userService.initialize();
 
       expect(setIntervalSpy).toHaveBeenCalledWith(
@@ -155,7 +151,7 @@ describe('UserService', () => {
           username: 'newuser',
           email: 'new@example.com',
           password: 'password123',
-          roles: ['user'],
+          roles: ['user']
         };
 
         mockDataService.users.findByUsername.mockResolvedValue(null);
@@ -171,8 +167,8 @@ describe('UserService', () => {
             roles: ['user'],
             isActive: true,
             metadata: expect.objectContaining({
-              registeredAt: expect.any(Date),
-            }),
+              registeredAt: expect.any(Date)
+            })
           })
         );
         expect(result).toEqual(mockUser);
@@ -186,36 +182,32 @@ describe('UserService', () => {
         const userData = {
           username: 'existinguser',
           email: 'new@example.com',
-          password: 'password123',
+          password: 'password123'
         };
 
         mockDataService.users.findByUsername.mockResolvedValue(mockUser);
 
-        await expect(userService.createUser(userData)).rejects.toThrow(
-          'Username already exists'
-        );
+        await expect(userService.createUser(userData)).rejects.toThrow('Username already exists');
       });
 
       it('should throw error for duplicate email', async () => {
         const userData = {
           username: 'newuser',
           email: 'existing@example.com',
-          password: 'password123',
+          password: 'password123'
         };
 
         mockDataService.users.findByUsername.mockResolvedValue(null);
         mockDataService.users.findByEmail.mockResolvedValue(mockUser);
 
-        await expect(userService.createUser(userData)).rejects.toThrow(
-          'Email already exists'
-        );
+        await expect(userService.createUser(userData)).rejects.toThrow('Email already exists');
       });
 
       it('should validate required fields', async () => {
         const invalidData = {
           username: '',
           email: 'invalid-email',
-          password: '123', // Too short
+          password: '123' // Too short
         };
 
         await expect(userService.createUser(invalidData as any)).rejects.toThrow(
@@ -248,8 +240,8 @@ describe('UserService', () => {
           metadata: {
             ...mockUser.metadata,
             passwordHash: 'sensitive-hash',
-            resetTokens: ['token1', 'token2'],
-          },
+            resetTokens: ['token1', 'token2']
+          }
         };
 
         mockDataService.users.findById.mockResolvedValue(userWithSensitiveData);
@@ -265,7 +257,7 @@ describe('UserService', () => {
       it('should update user with valid data', async () => {
         const updateData = {
           email: 'updated@example.com',
-          roles: ['user', 'editor'],
+          roles: ['user', 'editor']
         };
 
         const updatedUser = { ...mockUser, ...updateData };
@@ -278,7 +270,7 @@ describe('UserService', () => {
           'user-123',
           expect.objectContaining({
             ...updateData,
-            updatedAt: expect.any(Date),
+            updatedAt: expect.any(Date)
           })
         );
         expect(result).toEqual(updatedUser);
@@ -291,9 +283,7 @@ describe('UserService', () => {
       it('should throw error for non-existent user', async () => {
         mockDataService.users.findById.mockResolvedValue(null);
 
-        await expect(userService.updateUser('non-existent', {})).rejects.toThrow(
-          'User not found'
-        );
+        await expect(userService.updateUser('non-existent', {})).rejects.toThrow('User not found');
       });
 
       it('should validate email uniqueness on update', async () => {
@@ -320,7 +310,7 @@ describe('UserService', () => {
           'user-123',
           expect.objectContaining({
             isActive: false,
-            deletedAt: expect.any(Date),
+            deletedAt: expect.any(Date)
           })
         );
         expect(result).toBe(true);
@@ -379,7 +369,7 @@ describe('UserService', () => {
         const updateData = {
           firstName: 'Jane',
           lastName: 'Smith',
-          preferences: { theme: 'light' },
+          preferences: { theme: 'light' }
         };
 
         const updatedProfile = { ...mockUserProfile, ...updateData };
@@ -402,7 +392,7 @@ describe('UserService', () => {
       it('should create profile if not exists', async () => {
         const profileData = {
           firstName: 'John',
-          lastName: 'Doe',
+          lastName: 'Doe'
         };
 
         mockDataService.userProfiles.findByUserId.mockResolvedValue(null);
@@ -413,7 +403,7 @@ describe('UserService', () => {
         expect(mockDataService.userProfiles.create).toHaveBeenCalledWith(
           expect.objectContaining({
             userId: 'user-123',
-            ...profileData,
+            ...profileData
           })
         );
         expect(result).toEqual(mockUserProfile);
@@ -422,11 +412,12 @@ describe('UserService', () => {
       it('should validate profile data', async () => {
         const invalidData = {
           email: 'invalid-email',
-          website: 'not-a-url',
+          website: 'not-a-url'
         };
 
-        await expect(userService.updateUserProfile('user-123', invalidData as any))
-          .rejects.toThrow('Validation failed');
+        await expect(userService.updateUserProfile('user-123', invalidData as any)).rejects.toThrow(
+          'Validation failed'
+        );
       });
     });
   });
@@ -441,7 +432,7 @@ describe('UserService', () => {
         const loginData = {
           ip: '192.168.1.1',
           userAgent: 'Mozilla/5.0...',
-          sessionId: 'session-123',
+          sessionId: 'session-123'
         };
 
         mockDataService.users.findById.mockResolvedValue(mockUser);
@@ -455,8 +446,8 @@ describe('UserService', () => {
             metadata: expect.objectContaining({
               lastLoginAt: expect.any(Date),
               lastLoginIp: '192.168.1.1',
-              loginCount: 6, // Previous was 5
-            }),
+              loginCount: 6 // Previous was 5
+            })
           })
         );
 
@@ -465,7 +456,7 @@ describe('UserService', () => {
           expect.objectContaining({
             userId: 'user-123',
             ip: '192.168.1.1',
-            timestamp: expect.any(Date),
+            timestamp: expect.any(Date)
           })
         );
       });
@@ -476,8 +467,8 @@ describe('UserService', () => {
           metadata: {
             ...mockUser.metadata,
             loginCount: 0,
-            lastLoginAt: null,
-          },
+            lastLoginAt: null
+          }
         };
 
         mockDataService.users.findById.mockResolvedValue(userWithoutLogin);
@@ -490,8 +481,8 @@ describe('UserService', () => {
           expect.objectContaining({
             metadata: expect.objectContaining({
               loginCount: 1,
-              firstLoginAt: expect.any(Date),
-            }),
+              firstLoginAt: expect.any(Date)
+            })
           })
         );
       });
@@ -506,7 +497,7 @@ describe('UserService', () => {
           expect.objectContaining({
             userId: 'user-123',
             sessionId: 'session-123',
-            timestamp: expect.any(Date),
+            timestamp: expect.any(Date)
           })
         );
       });
@@ -524,7 +515,7 @@ describe('UserService', () => {
         mockDataService.users.findById.mockResolvedValue(userWithoutRole);
         mockDataService.users.update.mockResolvedValue({
           ...userWithoutRole,
-          roles: ['admin'],
+          roles: ['admin']
         });
 
         const result = await userService.assignRole('user-123', 'admin');
@@ -532,7 +523,7 @@ describe('UserService', () => {
         expect(mockDataService.users.update).toHaveBeenCalledWith(
           'user-123',
           expect.objectContaining({
-            roles: ['admin'],
+            roles: ['admin']
           })
         );
         expect(result).toBe(true);
@@ -540,7 +531,7 @@ describe('UserService', () => {
           'users.role.assigned',
           expect.objectContaining({
             userId: 'user-123',
-            role: 'admin',
+            role: 'admin'
           })
         );
       });
@@ -562,7 +553,7 @@ describe('UserService', () => {
         mockDataService.users.findById.mockResolvedValue(userWithRoles);
         mockDataService.users.update.mockResolvedValue({
           ...userWithRoles,
-          roles: ['user'],
+          roles: ['user']
         });
 
         const result = await userService.removeRole('user-123', 'editor');
@@ -570,7 +561,7 @@ describe('UserService', () => {
         expect(mockDataService.users.update).toHaveBeenCalledWith(
           'user-123',
           expect.objectContaining({
-            roles: ['user'],
+            roles: ['user']
           })
         );
         expect(result).toBe(true);
@@ -578,7 +569,7 @@ describe('UserService', () => {
           'users.role.removed',
           expect.objectContaining({
             userId: 'user-123',
-            role: 'editor',
+            role: 'editor'
           })
         );
       });
@@ -598,7 +589,7 @@ describe('UserService', () => {
         mockDataService.users.findById.mockResolvedValue(userWithoutPerm);
         mockDataService.users.update.mockResolvedValue({
           ...userWithoutPerm,
-          permissions: ['write'],
+          permissions: ['write']
         });
 
         const result = await userService.grantPermission('user-123', 'write');
@@ -606,7 +597,7 @@ describe('UserService', () => {
         expect(mockDataService.users.update).toHaveBeenCalledWith(
           'user-123',
           expect.objectContaining({
-            permissions: ['write'],
+            permissions: ['write']
           })
         );
         expect(result).toBe(true);
@@ -619,7 +610,7 @@ describe('UserService', () => {
         mockDataService.users.findById.mockResolvedValue(userWithPerms);
         mockDataService.users.update.mockResolvedValue({
           ...userWithPerms,
-          permissions: ['read'],
+          permissions: ['read']
         });
 
         const result = await userService.revokePermission('user-123', 'write');
@@ -629,7 +620,7 @@ describe('UserService', () => {
           'users.permission.revoked',
           expect.objectContaining({
             userId: 'user-123',
-            permission: 'write',
+            permission: 'write'
           })
         );
       });
@@ -649,20 +640,20 @@ describe('UserService', () => {
         const result = await userService.searchUsers('john', {
           limit: 10,
           offset: 0,
-          includeInactive: false,
+          includeInactive: false
         });
 
         expect(mockDataService.users.find).toHaveBeenCalledWith(
           expect.objectContaining({
             $or: [
               { username: { $regex: 'john', $options: 'i' } },
-              { email: { $regex: 'john', $options: 'i' } },
+              { email: { $regex: 'john', $options: 'i' } }
             ],
-            isActive: true,
+            isActive: true
           }),
           expect.objectContaining({
             limit: 10,
-            offset: 0,
+            offset: 0
           })
         );
         expect(result).toEqual(mockUsers);
@@ -673,12 +664,12 @@ describe('UserService', () => {
         mockDataService.users.find.mockResolvedValue(adminUsers);
 
         const result = await userService.searchUsers('', {
-          role: 'admin',
+          role: 'admin'
         });
 
         expect(mockDataService.users.find).toHaveBeenCalledWith(
           expect.objectContaining({
-            roles: { $in: ['admin'] },
+            roles: { $in: ['admin'] }
           }),
           expect.any(Object)
         );
@@ -695,7 +686,7 @@ describe('UserService', () => {
 
         expect(mockDataService.users.find).toHaveBeenCalledWith({
           roles: { $in: ['admin'] },
-          isActive: true,
+          isActive: true
         });
         expect(result).toEqual(adminUsers);
       });
@@ -715,7 +706,7 @@ describe('UserService', () => {
       expiresAt: new Date(Date.now() + 3600000),
       ip: '192.168.1.1',
       userAgent: 'Mozilla/5.0...',
-      isActive: true,
+      isActive: true
     };
 
     describe('getUserSessions', () => {
@@ -724,10 +715,9 @@ describe('UserService', () => {
 
         const result = await userService.getUserSessions('user-123');
 
-        expect(mockDataService.userSessions.findByUserId).toHaveBeenCalledWith(
-          'user-123',
-          { active: true }
-        );
+        expect(mockDataService.userSessions.findByUserId).toHaveBeenCalledWith('user-123', {
+          active: true
+        });
         expect(result).toEqual([mockSession]);
       });
 
@@ -737,10 +727,9 @@ describe('UserService', () => {
 
         const result = await userService.getUserSessions('user-123', { includeInactive: true });
 
-        expect(mockDataService.userSessions.findByUserId).toHaveBeenCalledWith(
-          'user-123',
-          { active: false }
-        );
+        expect(mockDataService.userSessions.findByUserId).toHaveBeenCalledWith('user-123', {
+          active: false
+        });
       });
     });
 
@@ -748,18 +737,15 @@ describe('UserService', () => {
       it('should terminate specific session', async () => {
         mockDataService.userSessions.update.mockResolvedValue({
           ...mockSession,
-          isActive: false,
+          isActive: false
         });
 
         const result = await userService.terminateSession('session-123');
 
-        expect(mockDataService.userSessions.update).toHaveBeenCalledWith(
-          'session-123',
-          {
-            isActive: false,
-            terminatedAt: expect.any(Date),
-          }
-        );
+        expect(mockDataService.userSessions.update).toHaveBeenCalledWith('session-123', {
+          isActive: false,
+          terminatedAt: expect.any(Date)
+        });
         expect(result).toBe(true);
       });
     });
@@ -779,14 +765,11 @@ describe('UserService', () => {
       });
 
       it('should exclude current session', async () => {
-        const sessions = [
-          mockSession,
-          { ...mockSession, id: 'session-456' },
-        ];
+        const sessions = [mockSession, { ...mockSession, id: 'session-456' }];
         mockDataService.userSessions.findByUserId.mockResolvedValue(sessions);
 
         const result = await userService.terminateAllSessions('user-123', {
-          excludeSessionId: 'session-123',
+          excludeSessionId: 'session-123'
         });
 
         expect(mockDataService.userSessions.update).toHaveBeenCalledTimes(1);
@@ -810,15 +793,12 @@ describe('UserService', () => {
       await userService.cleanupExpiredSessions();
 
       expect(mockDataService.userSessions.deleteExpired).toHaveBeenCalled();
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        'Cleaned up expired sessions',
-        { count: 5 }
-      );
+      expect(mockLogger.info).toHaveBeenCalledWith('Cleaned up expired sessions', { count: 5 });
     });
 
     it('should run periodic cleanup', async () => {
       const cleanupSpy = jest.spyOn(userService, 'cleanupExpiredSessions');
-      
+
       // Trigger the interval manually
       const intervalCallback = (setInterval as jest.Mock).mock.calls[0][0];
       await intervalCallback();
@@ -841,8 +821,8 @@ describe('UserService', () => {
           metadata: {
             ...mockUser.metadata,
             lockedAt: new Date(),
-            lockReason: 'Security breach',
-          },
+            lockReason: 'Security breach'
+          }
         });
 
         const result = await userService.lockUser('user-123', 'Security breach');
@@ -853,8 +833,8 @@ describe('UserService', () => {
             isActive: false,
             metadata: expect.objectContaining({
               lockedAt: expect.any(Date),
-              lockReason: 'Security breach',
-            }),
+              lockReason: 'Security breach'
+            })
           })
         );
         expect(result).toBe(true);
@@ -862,7 +842,7 @@ describe('UserService', () => {
           'users.locked',
           expect.objectContaining({
             userId: 'user-123',
-            reason: 'Security breach',
+            reason: 'Security breach'
           })
         );
       });
@@ -876,8 +856,8 @@ describe('UserService', () => {
           metadata: {
             ...mockUser.metadata,
             lockedAt: new Date(),
-            lockReason: 'Test lock',
-          },
+            lockReason: 'Test lock'
+          }
         };
 
         mockDataService.users.findById.mockResolvedValue(lockedUser);
@@ -887,8 +867,8 @@ describe('UserService', () => {
           metadata: {
             ...lockedUser.metadata,
             unlockedAt: new Date(),
-            lockReason: null,
-          },
+            lockReason: null
+          }
         });
 
         const result = await userService.unlockUser('user-123');
@@ -911,12 +891,12 @@ describe('UserService', () => {
       mockDataService.users.findById.mockRejectedValue(new Error('Database error'));
 
       await expect(userService.getUserById('user-123')).rejects.toThrow('Database error');
-      
+
       expect(mockLogger.error).toHaveBeenCalledWith(
         'Error getting user',
         expect.objectContaining({
           error: expect.any(Error),
-          userId: 'user-123',
+          userId: 'user-123'
         })
       );
     });
@@ -926,8 +906,9 @@ describe('UserService', () => {
       mockDataService.users.findById.mockResolvedValue(mockUser);
       mockDataService.users.update.mockRejectedValue(new Error('Version conflict'));
 
-      await expect(userService.updateUser('user-123', { email: 'new@example.com' }))
-        .rejects.toThrow('Version conflict');
+      await expect(
+        userService.updateUser('user-123', { email: 'new@example.com' })
+      ).rejects.toThrow('Version conflict');
     });
   });
 
@@ -944,14 +925,14 @@ describe('UserService', () => {
       await userService.createUser({
         username: 'newuser',
         email: 'new@example.com',
-        password: 'password123',
+        password: 'password123'
       });
 
       expect(mockLogger.info).toHaveBeenCalledWith(
         'User created',
         expect.objectContaining({
           userId: mockUser.id,
-          username: 'newuser',
+          username: 'newuser'
         })
       );
     });
@@ -964,7 +945,7 @@ describe('UserService', () => {
       await userService.createUser({
         username: 'newuser',
         email: 'new@example.com',
-        password: 'supersecret123',
+        password: 'supersecret123'
       });
 
       // Check that password is not logged
@@ -977,7 +958,7 @@ describe('UserService', () => {
   describe('Shutdown', () => {
     it('should cleanup intervals on shutdown', async () => {
       const clearIntervalSpy = jest.spyOn(global, 'clearInterval');
-      
+
       await userService.initialize();
       await userService.shutdown();
 

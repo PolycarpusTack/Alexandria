@@ -1,17 +1,11 @@
-import { 
-  CrashAnalyzerService 
-} from '../../src/services/crash-analyzer-service';
-import { 
-  LogParser 
-} from '../../src/services/log-parser';
-import { 
-  LlmService 
-} from '../../src/services/llm-service';
-import { 
-  ICrashRepository, 
-  CrashLog, 
-  CrashAnalysisResult, 
-  ParsedCrashData 
+import { CrashAnalyzerService } from '../../src/services/crash-analyzer-service';
+import { LogParser } from '../../src/services/log-parser';
+import { LlmService } from '../../src/services/llm-service';
+import {
+  ICrashRepository,
+  CrashLog,
+  CrashAnalysisResult,
+  ParsedCrashData
 } from '../../src/interfaces';
 
 // Mock dependencies
@@ -180,7 +174,7 @@ class MockCrashRepository implements ICrashRepository {
   }
 
   async getCrashLogsByUser(userId: string): Promise<CrashLog[]> {
-    return Array.from(this.crashLogs.values()).filter(log => log.userId === userId);
+    return Array.from(this.crashLogs.values()).filter((log) => log.userId === userId);
   }
 
   async getFilteredCrashLogs(options: any): Promise<CrashLog[]> {
@@ -202,7 +196,9 @@ class MockCrashRepository implements ICrashRepository {
   }
 
   async getAnalysesByCrashLogId(crashLogId: string): Promise<CrashAnalysisResult[]> {
-    return Array.from(this.analysisResults.values()).filter(analysis => analysis.crashLogId === crashLogId);
+    return Array.from(this.analysisResults.values()).filter(
+      (analysis) => analysis.crashLogId === crashLogId
+    );
   }
 }
 
@@ -215,7 +211,7 @@ describe('Crash Analyzer Integration Tests', () => {
   beforeEach(() => {
     // Reset mocks
     jest.clearAllMocks();
-    
+
     // Setup fetch mock
     (global.fetch as jest.Mock).mockImplementation((url, options) => {
       // Mock Ollama API responses
@@ -235,14 +231,14 @@ describe('Crash Analyzer Integration Tests', () => {
           json: () => Promise.resolve(sampleLlmResponse)
         });
       }
-      
+
       // Default response
       return Promise.resolve({
         ok: false,
         statusText: 'Not Found'
       });
     });
-    
+
     // Setup feature flag mock
     mockFeatureFlagService.getValue.mockResolvedValue(null);
 
@@ -263,24 +259,24 @@ describe('Crash Analyzer Integration Tests', () => {
       // Spy on the internal methods
       const parseSpy = jest.spyOn(logParser, 'parse');
       const analyzeSpy = jest.spyOn(llmService, 'analyzeLog');
-      
+
       // Test data
       const logId = 'test-log-id';
       const metadata = { userId: 'test-user' };
-      
+
       // Execute the analysis
       const result = await crashAnalyzerService.analyzeLog(logId, sampleCrashLog, metadata);
-      
+
       // Verify the components were called correctly
       expect(parseSpy).toHaveBeenCalledWith(sampleCrashLog, expect.anything());
       expect(analyzeSpy).toHaveBeenCalled();
-      
+
       // Verify repository calls
       const savedLog = await crashRepository.getCrashLogById(logId);
       expect(savedLog).not.toBeNull();
       expect(savedLog?.content).toBe(sampleCrashLog);
       expect(savedLog?.userId).toBe('test-user');
-      
+
       // Verify analysis result
       expect(result).toBeDefined();
       expect(result.crashLogId).toBe(logId);
@@ -288,7 +284,7 @@ describe('Crash Analyzer Integration Tests', () => {
       expect(result.potentialRootCauses.length).toBeGreaterThan(0);
       expect(result.troubleshootingSteps?.length).toBeGreaterThan(0);
       expect(result.summary).toBeDefined();
-      
+
       // Verify the saved analysis
       const savedAnalysis = await crashRepository.getAnalysisById(result.id);
       expect(savedAnalysis).not.toBeNull();
@@ -298,15 +294,16 @@ describe('Crash Analyzer Integration Tests', () => {
     it('should handle errors during log analysis', async () => {
       // Make the LLM service throw an error
       (llmService as any).analyzeLog = jest.fn().mockRejectedValue(new Error('LLM Error'));
-      
+
       // Test data
       const logId = 'error-log-id';
       const metadata = { userId: 'test-user' };
-      
+
       // Execute the analysis and expect it to throw
-      await expect(crashAnalyzerService.analyzeLog(logId, sampleCrashLog, metadata))
-        .rejects.toThrow();
-      
+      await expect(
+        crashAnalyzerService.analyzeLog(logId, sampleCrashLog, metadata)
+      ).rejects.toThrow();
+
       // Verify error logging
       expect(mockLogger.error).toHaveBeenCalled();
     });
@@ -315,19 +312,19 @@ describe('Crash Analyzer Integration Tests', () => {
   describe('Log parser functionality', () => {
     it('should extract error messages and stack traces from crash logs', async () => {
       const parsedData = await logParser.parse(sampleCrashLog);
-      
+
       // Verify error messages
       expect(parsedData.errorMessages.length).toBeGreaterThan(0);
       expect(parsedData.errorMessages[0].message).toContain('fatal error');
-      
+
       // Verify stack traces
       expect(parsedData.stackTraces.length).toBeGreaterThan(0);
       expect(parsedData.stackTraces[0].message).toContain('NullPointerException');
       expect(parsedData.stackTraces[0].frames.length).toBeGreaterThan(0);
-      
+
       // Verify system info
       expect(parsedData.systemInfo.osType).toBe('Windows 10');
-      
+
       // Verify log levels
       expect(parsedData.logLevel?.ERROR).toBeGreaterThan(0);
     });
@@ -337,9 +334,9 @@ describe('Crash Analyzer Integration Tests', () => {
     it('should generate analysis using Ollama API', async () => {
       // Bypass the model check
       (llmService as any).getModelToUse = jest.fn().mockResolvedValue('llama2:8b-chat-q4');
-      
+
       const result = await llmService.analyzeLog(sampleParsedData, sampleCrashLog);
-      
+
       // Verify API was called correctly
       expect(global.fetch).toHaveBeenCalledWith(
         expect.stringContaining('api/generate'),
@@ -349,7 +346,7 @@ describe('Crash Analyzer Integration Tests', () => {
           body: expect.stringContaining('analyze')
         })
       );
-      
+
       // Verify result
       expect(result.primaryError).toBe('java.lang.NullPointerException');
       expect(result.failingComponent).toBe('com.example.app.MainService');
@@ -360,12 +357,12 @@ describe('Crash Analyzer Integration Tests', () => {
     it('should handle API errors gracefully', async () => {
       // Make fetch fail
       (global.fetch as jest.Mock).mockRejectedValue(new Error('Network error'));
-      
+
       // Bypass the model check
       (llmService as any).getModelToUse = jest.fn().mockResolvedValue('llama2:8b-chat-q4');
-      
+
       const result = await llmService.analyzeLog(sampleParsedData, sampleCrashLog);
-      
+
       // Should return a fallback analysis
       expect(result.primaryError).toBe('java.lang.NullPointerException');
       expect(result.potentialRootCauses[0].cause).toContain('failed');
@@ -384,13 +381,13 @@ describe('Crash Analyzer Integration Tests', () => {
         userId: 'test-user',
         metadata: { source: 'test' }
       };
-      
+
       // Save it
       await crashRepository.saveCrashLog(crashLog);
-      
+
       // Retrieve it
       const retrieved = await crashRepository.getCrashLogById('test-id');
-      
+
       expect(retrieved).not.toBeNull();
       expect(retrieved?.title).toBe('Test Crash');
       expect(retrieved?.content).toBe(sampleCrashLog);
@@ -406,7 +403,7 @@ describe('Crash Analyzer Integration Tests', () => {
         userId: 'user-a',
         metadata: { source: 'test' }
       };
-      
+
       const crashLog2: CrashLog = {
         id: 'log2',
         title: 'User B Crash',
@@ -415,13 +412,13 @@ describe('Crash Analyzer Integration Tests', () => {
         userId: 'user-b',
         metadata: { source: 'test' }
       };
-      
+
       await crashRepository.saveCrashLog(crashLog1);
       await crashRepository.saveCrashLog(crashLog2);
-      
+
       // Retrieve logs for User A
       const userALogs = await crashRepository.getCrashLogsByUser('user-a');
-      
+
       expect(userALogs.length).toBe(1);
       expect(userALogs[0].id).toBe('log1');
       expect(userALogs[0].title).toBe('User A Crash');

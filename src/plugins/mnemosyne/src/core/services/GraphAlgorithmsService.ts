@@ -1,6 +1,6 @@
 /**
  * Mnemosyne Graph Algorithms Service
- * 
+ *
  * Enterprise-grade graph algorithms service providing advanced analytics,
  * machine learning-based insights, pattern detection, and predictive analysis
  */
@@ -228,7 +228,7 @@ export interface SimilarityCluster {
 
 /**
  * Graph Algorithms Service
- * 
+ *
  * Advanced graph analytics engine providing sophisticated algorithms
  * for network analysis, community detection, influence analysis, and predictive insights
  */
@@ -289,7 +289,6 @@ export class GraphAlgorithmsService implements MnemosyneService {
 
       this.status = ServiceStatus.INITIALIZED;
       this.logger.info('Graph Algorithms Service initialized successfully');
-
     } catch (error) {
       this.status = ServiceStatus.ERROR;
       this.logger.error('Failed to initialize Graph Algorithms Service', { error });
@@ -315,7 +314,6 @@ export class GraphAlgorithmsService implements MnemosyneService {
 
       this.status = ServiceStatus.ACTIVE;
       this.logger.info('Graph Algorithms Service activated successfully');
-
     } catch (error) {
       this.status = ServiceStatus.ERROR;
       this.logger.error('Failed to activate Graph Algorithms Service', { error });
@@ -351,7 +349,6 @@ export class GraphAlgorithmsService implements MnemosyneService {
 
       this.status = ServiceStatus.INACTIVE;
       this.logger.info('Graph Algorithms Service shut down successfully');
-
     } catch (error) {
       this.status = ServiceStatus.ERROR;
       this.logger.error('Error shutting down Graph Algorithms Service', { error });
@@ -379,7 +376,7 @@ export class GraphAlgorithmsService implements MnemosyneService {
   public async getMetrics(): Promise<ServiceMetrics> {
     const cacheHitRate = this.calculateCacheHitRate();
     const algorithmCounts = this.getAlgorithmExecutionCounts();
-    
+
     this.metrics.customMetrics = {
       ...this.metrics.customMetrics,
       cacheHitRate,
@@ -457,7 +454,6 @@ export class GraphAlgorithmsService implements MnemosyneService {
 
       this.updateMetrics(startTime, true);
       return result;
-
     } catch (error) {
       this.updateMetrics(startTime, false);
       this.logger.error('Failed to execute graph analysis', { error, request });
@@ -468,7 +464,9 @@ export class GraphAlgorithmsService implements MnemosyneService {
   /**
    * Calculate comprehensive centrality metrics
    */
-  public async calculateCentralityMetrics(request: GraphAnalysisRequest): Promise<CentralityAnalysisResult[]> {
+  public async calculateCentralityMetrics(
+    request: GraphAnalysisRequest
+  ): Promise<CentralityAnalysisResult[]> {
     const startTime = Date.now();
 
     try {
@@ -537,7 +535,7 @@ export class GraphAlgorithmsService implements MnemosyneService {
 
       const results = await this.dataService.query(centralityQuery);
 
-      const centralityResults: CentralityAnalysisResult[] = results.map(row => ({
+      const centralityResults: CentralityAnalysisResult[] = results.map((row) => ({
         nodeId: row.id,
         title: row.title,
         type: row.type,
@@ -561,7 +559,6 @@ export class GraphAlgorithmsService implements MnemosyneService {
 
       this.logger.debug(`Calculated centrality metrics for ${centralityResults.length} nodes`);
       return centralityResults;
-
     } catch (error) {
       this.logger.error('Failed to calculate centrality metrics', { error });
       throw error;
@@ -599,8 +596,8 @@ export class GraphAlgorithmsService implements MnemosyneService {
       const metrics = {
         totalCommunities: communities.length,
         averageSize: communities.reduce((sum, c) => sum + c.size, 0) / communities.length,
-        largestCommunity: Math.max(...communities.map(c => c.size)),
-        smallestCommunity: Math.min(...communities.map(c => c.size)),
+        largestCommunity: Math.max(...communities.map((c) => c.size)),
+        smallestCommunity: Math.min(...communities.map((c) => c.size)),
         intraConnections: await this.calculateIntraConnections(communities),
         interConnections: await this.calculateInterConnections(communities)
       };
@@ -615,7 +612,6 @@ export class GraphAlgorithmsService implements MnemosyneService {
 
       this.logger.debug(`Detected ${communities.length} communities with modularity ${modularity}`);
       return result;
-
     } catch (error) {
       this.logger.error('Failed to detect communities', { error });
       throw error;
@@ -646,18 +642,16 @@ export class GraphAlgorithmsService implements MnemosyneService {
       // Analyze paths between significant nodes
       for (let i = 0; i < Math.min(nodes.length, 20); i++) {
         for (let j = i + 1; j < Math.min(nodes.length, 20); j++) {
-          const pathResult = await this.queryBuilder.findShortestPath(
-            nodes[i].id,
-            nodes[j].id,
-            { maxDepth }
-          );
+          const pathResult = await this.queryBuilder.findShortestPath(nodes[i].id, nodes[j].id, {
+            maxDepth
+          });
 
           if (pathResult.metadata.pathFound) {
             const path = this.extractPathFromResult(pathResult);
             paths.push(path);
 
             // Track bottlenecks
-            path.nodes.forEach(nodeId => {
+            path.nodes.forEach((nodeId) => {
               bottleneckCounts.set(nodeId, (bottleneckCounts.get(nodeId) || 0) + 1);
             });
           }
@@ -668,8 +662,8 @@ export class GraphAlgorithmsService implements MnemosyneService {
       const metrics = {
         totalPaths: paths.length,
         averageLength: paths.reduce((sum, p) => sum + p.length, 0) / paths.length,
-        shortestLength: Math.min(...paths.map(p => p.length)),
-        longestLength: Math.max(...paths.map(p => p.length)),
+        shortestLength: Math.min(...paths.map((p) => p.length)),
+        longestLength: Math.max(...paths.map((p) => p.length)),
         averageStrength: paths.reduce((sum, p) => sum + p.strength, 0) / paths.length
       };
 
@@ -694,7 +688,6 @@ export class GraphAlgorithmsService implements MnemosyneService {
       };
 
       return result;
-
     } catch (error) {
       this.logger.error('Failed to analyze graph paths', { error });
       throw error;
@@ -704,7 +697,9 @@ export class GraphAlgorithmsService implements MnemosyneService {
   /**
    * Analyze influence flow and propagation
    */
-  public async analyzeInfluenceFlow(request: GraphAnalysisRequest): Promise<InfluenceAnalysisResult> {
+  public async analyzeInfluenceFlow(
+    request: GraphAnalysisRequest
+  ): Promise<InfluenceAnalysisResult> {
     const startTime = Date.now();
 
     try {
@@ -754,7 +749,7 @@ export class GraphAlgorithmsService implements MnemosyneService {
 
       const influenceResults = await this.dataService.query(influenceQuery, [influenceThreshold]);
 
-      const influentialNodes = influenceResults.map(row => ({
+      const influentialNodes = influenceResults.map((row) => ({
         nodeId: row.id,
         title: row.title,
         type: row.type,
@@ -778,7 +773,6 @@ export class GraphAlgorithmsService implements MnemosyneService {
       };
 
       return result;
-
     } catch (error) {
       this.logger.error('Failed to analyze influence flow', { error });
       throw error;
@@ -807,7 +801,11 @@ export class GraphAlgorithmsService implements MnemosyneService {
       const decayingConnections = await this.identifyDecayingConnections(timeRange);
 
       // Generate insights
-      const insights = await this.generateTrendInsights(growthNodes, emergingClusters, decayingConnections);
+      const insights = await this.generateTrendInsights(
+        growthNodes,
+        emergingClusters,
+        decayingConnections
+      );
 
       const result: TrendAnalysisResult = {
         growthNodes,
@@ -817,7 +815,6 @@ export class GraphAlgorithmsService implements MnemosyneService {
       };
 
       return result;
-
     } catch (error) {
       this.logger.error('Failed to analyze trends', { error });
       throw error;
@@ -827,7 +824,9 @@ export class GraphAlgorithmsService implements MnemosyneService {
   /**
    * Cluster nodes by similarity
    */
-  public async clusterBySimilarity(request: GraphAnalysisRequest): Promise<SimilarityClusteringResult> {
+  public async clusterBySimilarity(
+    request: GraphAnalysisRequest
+  ): Promise<SimilarityClusteringResult> {
     const startTime = Date.now();
 
     try {
@@ -856,7 +855,6 @@ export class GraphAlgorithmsService implements MnemosyneService {
       };
 
       return result;
-
     } catch (error) {
       this.logger.error('Failed to cluster by similarity', { error });
       throw error;
@@ -933,17 +931,23 @@ export class GraphAlgorithmsService implements MnemosyneService {
   }
 
   // Additional helper methods (stubs for complex algorithms)
-  private async modularityBasedCommunityDetection(request: GraphAnalysisRequest): Promise<{ communities: Community[], modularity: number }> {
+  private async modularityBasedCommunityDetection(
+    request: GraphAnalysisRequest
+  ): Promise<{ communities: Community[]; modularity: number }> {
     // Implement modularity-based community detection
     return { communities: [], modularity: 0 };
   }
 
-  private async louvainCommunityDetection(request: GraphAnalysisRequest): Promise<{ communities: Community[], modularity: number }> {
+  private async louvainCommunityDetection(
+    request: GraphAnalysisRequest
+  ): Promise<{ communities: Community[]; modularity: number }> {
     // Implement Louvain algorithm
     return { communities: [], modularity: 0 };
   }
 
-  private async leidenCommunityDetection(request: GraphAnalysisRequest): Promise<{ communities: Community[], modularity: number }> {
+  private async leidenCommunityDetection(
+    request: GraphAnalysisRequest
+  ): Promise<{ communities: Community[]; modularity: number }> {
     // Implement Leiden algorithm
     return { communities: [], modularity: 0 };
   }
@@ -972,7 +976,7 @@ export class GraphAlgorithmsService implements MnemosyneService {
       const oldestKey = this.analysisCache.keys().next().value;
       this.analysisCache.delete(oldestKey);
     }
-    
+
     this.analysisCache.set(key, {
       result,
       timestamp: Date.now()
@@ -982,83 +986,91 @@ export class GraphAlgorithmsService implements MnemosyneService {
   private trackAlgorithmExecution(algorithm: GraphAlgorithm, executionTime: number): void {
     const history = this.executionHistory.get(algorithm) || [];
     history.push({ timestamp: new Date(), executionTime });
-    
+
     // Keep only last 100 executions
     if (history.length > 100) {
       history.shift();
     }
-    
+
     this.executionHistory.set(algorithm, history);
   }
 
   private buildNodeFilterConditions(filter?: GraphNodeFilter): string {
     if (!filter) return '';
-    
+
     const conditions: string[] = [];
-    
+
     if (filter.types?.length) {
-      conditions.push(`n.type = ANY(ARRAY[${filter.types.map(t => `'${t}'`).join(',')}])`);
+      conditions.push(`n.type = ANY(ARRAY[${filter.types.map((t) => `'${t}'`).join(',')}])`);
     }
-    
+
     if (filter.weightRange) {
       conditions.push(`n.weight BETWEEN ${filter.weightRange.min} AND ${filter.weightRange.max}`);
     }
-    
+
     if (filter.centralityRange) {
-      conditions.push(`n.centrality BETWEEN ${filter.centralityRange.min} AND ${filter.centralityRange.max}`);
+      conditions.push(
+        `n.centrality BETWEEN ${filter.centralityRange.min} AND ${filter.centralityRange.max}`
+      );
     }
-    
+
     return conditions.join(' AND ');
   }
 
   private buildRelationshipFilterConditions(filter?: GraphRelationshipFilter): string {
     if (!filter) return '';
-    
+
     const conditions: string[] = [];
-    
+
     if (filter.types?.length) {
-      conditions.push(`r.type = ANY(ARRAY[${filter.types.map(t => `'${t}'`).join(',')}])`);
+      conditions.push(`r.type = ANY(ARRAY[${filter.types.map((t) => `'${t}'`).join(',')}])`);
     }
-    
+
     if (filter.strengthRange) {
-      conditions.push(`r.strength BETWEEN ${filter.strengthRange.min} AND ${filter.strengthRange.max}`);
+      conditions.push(
+        `r.strength BETWEEN ${filter.strengthRange.min} AND ${filter.strengthRange.max}`
+      );
     }
-    
+
     if (filter.bidirectionalOnly) {
       conditions.push(`r.bidirectional = true`);
     }
-    
+
     return conditions.join(' AND ');
   }
 
   private generateCentralityInsights(row: any): string[] {
     const insights: string[] = [];
-    
+
     if (row.betweenness_centrality > 0.1) {
-      insights.push('High betweenness centrality indicates this node acts as a bridge between different parts of the network');
+      insights.push(
+        'High betweenness centrality indicates this node acts as a bridge between different parts of the network'
+      );
     }
-    
+
     if (row.page_rank > 0.01) {
       insights.push('High PageRank suggests this node is highly influential and well-connected');
     }
-    
+
     if (row.clustering_coefficient > 0.8) {
-      insights.push('High clustering coefficient indicates this node is part of a tightly-knit community');
+      insights.push(
+        'High clustering coefficient indicates this node is part of a tightly-knit community'
+      );
     }
-    
+
     return insights;
   }
 
   private updateMetrics(startTime: number, success: boolean): void {
     const responseTime = Date.now() - startTime;
-    
+
     this.metrics.requestCount++;
     if (!success) {
       this.metrics.errorCount++;
     }
-    
-    this.metrics.avgResponseTime = 
-      (this.metrics.avgResponseTime * (this.metrics.requestCount - 1) + responseTime) / 
+
+    this.metrics.avgResponseTime =
+      (this.metrics.avgResponseTime * (this.metrics.requestCount - 1) + responseTime) /
       this.metrics.requestCount;
   }
 
@@ -1079,29 +1091,65 @@ export class GraphAlgorithmsService implements MnemosyneService {
   private calculateAverageExecutionTime(): number {
     let totalTime = 0;
     let totalExecutions = 0;
-    
+
     for (const history of this.executionHistory.values()) {
       totalTime += history.reduce((sum, exec) => sum + exec.executionTime, 0);
       totalExecutions += history.length;
     }
-    
+
     return totalExecutions > 0 ? totalTime / totalExecutions : 0;
   }
 
   // Placeholder methods for complex implementations
-  private async calculateIntraConnections(communities: Community[]): Promise<number> { return 0; }
-  private async calculateInterConnections(communities: Community[]): Promise<number> { return 0; }
-  private extractPathFromResult(pathResult: GraphQueryResult): GraphPath {
-    return { nodes: [], relationships: [], length: 0, strength: 0, confidence: 0, weight: 0, description: '' };
+  private async calculateIntraConnections(communities: Community[]): Promise<number> {
+    return 0;
   }
-  private generatePathInsights(paths: GraphPath[], metrics: any, bottlenecks: any[]): string[] { return []; }
-  private async calculateInfluenceFlows(nodes: any[], depth: number): Promise<any[]> { return []; }
-  private async analyzeCascadePotential(nodes: any[]): Promise<any> { return { triggers: [], amplifiers: [], dampeners: [], potential: 0 }; }
-  private async analyzeNodeGrowthTrends(timeRange: any): Promise<any[]> { return []; }
-  private async detectEmergingClusters(timeRange: any): Promise<any[]> { return []; }
-  private async identifyDecayingConnections(timeRange: any): Promise<any[]> { return []; }
-  private async generateTrendInsights(growth: any[], emerging: any[], decaying: any[]): Promise<any[]> { return []; }
-  private async runPeriodicAnalysis(): Promise<void> { this.logger.debug('Running periodic analysis'); }
-  private async updateTrendData(): Promise<void> { this.logger.debug('Updating trend data'); }
-  private async invalidateRelevantAnalyses(entityId: string): Promise<void> { this.logger.debug('Invalidating analyses', { entityId }); }
+  private async calculateInterConnections(communities: Community[]): Promise<number> {
+    return 0;
+  }
+  private extractPathFromResult(pathResult: GraphQueryResult): GraphPath {
+    return {
+      nodes: [],
+      relationships: [],
+      length: 0,
+      strength: 0,
+      confidence: 0,
+      weight: 0,
+      description: ''
+    };
+  }
+  private generatePathInsights(paths: GraphPath[], metrics: any, bottlenecks: any[]): string[] {
+    return [];
+  }
+  private async calculateInfluenceFlows(nodes: any[], depth: number): Promise<any[]> {
+    return [];
+  }
+  private async analyzeCascadePotential(nodes: any[]): Promise<any> {
+    return { triggers: [], amplifiers: [], dampeners: [], potential: 0 };
+  }
+  private async analyzeNodeGrowthTrends(timeRange: any): Promise<any[]> {
+    return [];
+  }
+  private async detectEmergingClusters(timeRange: any): Promise<any[]> {
+    return [];
+  }
+  private async identifyDecayingConnections(timeRange: any): Promise<any[]> {
+    return [];
+  }
+  private async generateTrendInsights(
+    growth: any[],
+    emerging: any[],
+    decaying: any[]
+  ): Promise<any[]> {
+    return [];
+  }
+  private async runPeriodicAnalysis(): Promise<void> {
+    this.logger.debug('Running periodic analysis');
+  }
+  private async updateTrendData(): Promise<void> {
+    this.logger.debug('Updating trend data');
+  }
+  private async invalidateRelevantAnalyses(entityId: string): Promise<void> {
+    this.logger.debug('Invalidating analyses', { entityId });
+  }
 }

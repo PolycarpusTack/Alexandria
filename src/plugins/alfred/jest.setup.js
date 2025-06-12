@@ -8,7 +8,7 @@ import '@testing-library/jest-dom';
 // Mock window.matchMedia
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: jest.fn().mockImplementation(query => ({
+  value: jest.fn().mockImplementation((query) => ({
     matches: false,
     media: query,
     onchange: null,
@@ -16,8 +16,8 @@ Object.defineProperty(window, 'matchMedia', {
     removeListener: jest.fn(), // deprecated
     addEventListener: jest.fn(),
     removeEventListener: jest.fn(),
-    dispatchEvent: jest.fn(),
-  })),
+    dispatchEvent: jest.fn()
+  }))
 });
 
 // Mock IntersectionObserver
@@ -43,7 +43,7 @@ beforeEach(() => {
     const actual = jest.requireActual('lucide-react');
     return {
       ...actual,
-      Loader2: (props) => <div {...props} data-testid="loading-spinner" />
+      Loader2: (props) => <div {...props} data-testid='loading-spinner' />
     };
   });
 });

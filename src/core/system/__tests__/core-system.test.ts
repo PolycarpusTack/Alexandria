@@ -1,6 +1,6 @@
 /**
  * Comprehensive test suite for CoreSystem
- * 
+ *
  * Tests cover all public methods, error cases, security features,
  * and edge conditions to ensure robust operation.
  */
@@ -8,12 +8,12 @@
 import { CoreSystem } from '../core-system';
 import { EventBus } from '../../event-bus/interfaces';
 import { Logger } from '../../../utils/logger';
-import { 
-  NotFoundError, 
-  AuthenticationError, 
-  ValidationError, 
+import {
+  NotFoundError,
+  AuthenticationError,
+  ValidationError,
   ConflictError,
-  ConfigurationError 
+  ConfigurationError
 } from '../../errors';
 import * as bcrypt from 'bcryptjs';
 import { v4 as uuidv4 } from 'uuid';
@@ -33,7 +33,7 @@ describe('CoreSystem', () => {
   beforeEach(() => {
     // Reset all mocks
     jest.clearAllMocks();
-    
+
     // Mock logger
     mockLogger = {
       debug: jest.fn(),
@@ -65,20 +65,18 @@ describe('CoreSystem', () => {
   describe('Initialization and Shutdown', () => {
     it('should initialize successfully', async () => {
       await coreSystem.initialize();
-      
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        'Initializing core system',
-        { component: 'CoreSystem' }
-      );
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        'Core system initialized successfully',
-        { component: 'CoreSystem' }
-      );
+
+      expect(mockLogger.info).toHaveBeenCalledWith('Initializing core system', {
+        component: 'CoreSystem'
+      });
+      expect(mockLogger.info).toHaveBeenCalledWith('Core system initialized successfully', {
+        component: 'CoreSystem'
+      });
     });
 
     it('should throw error if already initialized', async () => {
       await coreSystem.initialize();
-      
+
       await expect(coreSystem.initialize()).rejects.toThrow(
         new ConfigurationError('CoreSystem', 'System is already initialized')
       );
@@ -86,9 +84,9 @@ describe('CoreSystem', () => {
 
     it('should create admin user on initialization if none exists', async () => {
       (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-password');
-      
+
       await coreSystem.initialize();
-      
+
       expect(mockLogger.warn).toHaveBeenCalledWith(
         'Created default admin user with temporary password',
         expect.objectContaining({
@@ -101,9 +99,9 @@ describe('CoreSystem', () => {
     it('should handle initialization errors gracefully', async () => {
       const error = new Error('Init failed');
       (bcrypt.hash as jest.Mock).mockRejectedValue(error);
-      
+
       await expect(coreSystem.initialize()).rejects.toThrow(error);
-      
+
       expect(mockLogger.error).toHaveBeenCalledWith(
         'Failed to initialize core system',
         expect.objectContaining({
@@ -116,15 +114,13 @@ describe('CoreSystem', () => {
     it('should shutdown successfully', async () => {
       await coreSystem.initialize();
       await coreSystem.shutdown();
-      
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        'Shutting down core system',
-        { component: 'CoreSystem' }
-      );
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        'Core system shut down successfully',
-        { component: 'CoreSystem' }
-      );
+
+      expect(mockLogger.info).toHaveBeenCalledWith('Shutting down core system', {
+        component: 'CoreSystem'
+      });
+      expect(mockLogger.info).toHaveBeenCalledWith('Core system shut down successfully', {
+        component: 'CoreSystem'
+      });
     });
 
     it('should throw error if shutting down uninitialized system', async () => {
@@ -135,15 +131,15 @@ describe('CoreSystem', () => {
 
     it('should handle shutdown errors gracefully', async () => {
       await coreSystem.initialize();
-      
+
       // Mock an error during shutdown
       const error = new Error('Shutdown failed');
       mockLogger.info.mockImplementationOnce(() => {
         throw error;
       });
-      
+
       await expect(coreSystem.shutdown()).rejects.toThrow(error);
-      
+
       expect(mockLogger.error).toHaveBeenCalledWith(
         'Failed to shut down core system',
         expect.objectContaining({
@@ -165,16 +161,15 @@ describe('CoreSystem', () => {
 
     it('should register a route successfully', () => {
       coreSystem.registerRoute(mockRoute);
-      
-      expect(mockLogger.debug).toHaveBeenCalledWith(
-        'Registered route: GET:/api/test',
-        { component: 'CoreSystem' }
-      );
+
+      expect(mockLogger.debug).toHaveBeenCalledWith('Registered route: GET:/api/test', {
+        component: 'CoreSystem'
+      });
     });
 
     it('should throw error when registering duplicate route', () => {
       coreSystem.registerRoute(mockRoute);
-      
+
       expect(() => coreSystem.registerRoute(mockRoute)).toThrow(
         new ConflictError('Route', 'Route already registered: GET:/api/test')
       );
@@ -183,11 +178,10 @@ describe('CoreSystem', () => {
     it('should remove a route successfully', () => {
       coreSystem.registerRoute(mockRoute);
       coreSystem.removeRoute('/api/test', 'GET');
-      
-      expect(mockLogger.debug).toHaveBeenCalledWith(
-        'Removed route: GET:/api/test',
-        { component: 'CoreSystem' }
-      );
+
+      expect(mockLogger.debug).toHaveBeenCalledWith('Removed route: GET:/api/test', {
+        component: 'CoreSystem'
+      });
     });
 
     it('should throw error when removing non-existent route', () => {
@@ -198,11 +192,10 @@ describe('CoreSystem', () => {
 
     it('should register health check route on initialization', async () => {
       await coreSystem.initialize();
-      
-      expect(mockLogger.debug).toHaveBeenCalledWith(
-        'Registered route: GET:/api/health',
-        { component: 'CoreSystem' }
-      );
+
+      expect(mockLogger.debug).toHaveBeenCalledWith('Registered route: GET:/api/health', {
+        component: 'CoreSystem'
+      });
     });
   });
 
@@ -224,13 +217,13 @@ describe('CoreSystem', () => {
       it('should return user when found', async () => {
         await coreSystem.saveUser(mockUser);
         const user = await coreSystem.getUserById('user-123');
-        
+
         expect(user).toEqual(mockUser);
       });
 
       it('should return null when user not found', async () => {
         const user = await coreSystem.getUserById('non-existent');
-        
+
         expect(user).toBeNull();
       });
 
@@ -238,7 +231,7 @@ describe('CoreSystem', () => {
         await expect(coreSystem.getUserById('')).rejects.toThrow(
           new ValidationError([{ field: 'id', message: 'User ID must be a non-empty string' }])
         );
-        
+
         await expect(coreSystem.getUserById(null as any)).rejects.toThrow(
           new ValidationError([{ field: 'id', message: 'User ID must be a non-empty string' }])
         );
@@ -249,23 +242,27 @@ describe('CoreSystem', () => {
       it('should return user when found', async () => {
         await coreSystem.saveUser(mockUser);
         const user = await coreSystem.getUserByUsername('testuser');
-        
+
         expect(user).toEqual(mockUser);
       });
 
       it('should return null when user not found', async () => {
         const user = await coreSystem.getUserByUsername('non-existent');
-        
+
         expect(user).toBeNull();
       });
 
       it('should throw validation error for invalid username', async () => {
         await expect(coreSystem.getUserByUsername('')).rejects.toThrow(
-          new ValidationError([{ field: 'username', message: 'Username must be a non-empty string' }])
+          new ValidationError([
+            { field: 'username', message: 'Username must be a non-empty string' }
+          ])
         );
-        
+
         await expect(coreSystem.getUserByUsername(null as any)).rejects.toThrow(
-          new ValidationError([{ field: 'username', message: 'Username must be a non-empty string' }])
+          new ValidationError([
+            { field: 'username', message: 'Username must be a non-empty string' }
+          ])
         );
       });
     });
@@ -274,7 +271,7 @@ describe('CoreSystem', () => {
       it('should save new user with timestamps', async () => {
         const newUser = { ...mockUser, createdAt: undefined, updatedAt: undefined };
         const savedUser = await coreSystem.saveUser(newUser as any);
-        
+
         expect(savedUser.createdAt).toBeDefined();
         expect(savedUser.updatedAt).toBeDefined();
       });
@@ -282,9 +279,9 @@ describe('CoreSystem', () => {
       it('should update existing user with new timestamp', async () => {
         const oldDate = new Date('2023-01-01');
         const userWithOldDate = { ...mockUser, updatedAt: oldDate };
-        
+
         const savedUser = await coreSystem.saveUser(userWithOldDate);
-        
+
         expect(savedUser.createdAt).toEqual(mockUser.createdAt);
         expect(savedUser.updatedAt).not.toEqual(oldDate);
       });
@@ -293,7 +290,7 @@ describe('CoreSystem', () => {
         await expect(coreSystem.saveUser(null as any)).rejects.toThrow(
           new ValidationError([{ field: 'user', message: 'User object with ID is required' }])
         );
-        
+
         await expect(coreSystem.saveUser({ ...mockUser, id: undefined } as any)).rejects.toThrow(
           new ValidationError([{ field: 'user', message: 'User object with ID is required' }])
         );
@@ -321,17 +318,17 @@ describe('CoreSystem', () => {
 
     it('should authenticate valid user successfully', async () => {
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
-      
+
       const result = await coreSystem.authenticate({
         username: 'testuser',
         password: 'password123'
       });
-      
+
       expect(result).toBeDefined();
       expect(result?.hashedPassword).toBeUndefined();
       expect(result?.failedLoginAttempts).toBe(0);
       expect(result?.lastLoginAt).toBeDefined();
-      
+
       expect(mockLogger.info).toHaveBeenCalledWith(
         'User authenticated successfully',
         expect.objectContaining({
@@ -343,12 +340,12 @@ describe('CoreSystem', () => {
 
     it('should return null for invalid password', async () => {
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
-      
+
       const result = await coreSystem.authenticate({
         username: 'testuser',
         password: 'wrongpassword'
       });
-      
+
       expect(result).toBeNull();
       expect(mockLogger.warn).toHaveBeenCalledWith(
         'Failed login attempt',
@@ -362,7 +359,7 @@ describe('CoreSystem', () => {
 
     it('should lock account after max failed attempts', async () => {
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
-      
+
       // Fail 5 times
       for (let i = 0; i < 5; i++) {
         await coreSystem.authenticate({
@@ -370,7 +367,7 @@ describe('CoreSystem', () => {
           password: 'wrongpassword'
         });
       }
-      
+
       expect(mockLogger.warn).toHaveBeenLastCalledWith(
         'Account locked due to multiple failed login attempts',
         expect.objectContaining({
@@ -379,7 +376,7 @@ describe('CoreSystem', () => {
           failedAttempts: 5
         })
       );
-      
+
       expect(mockEventBus.publish).toHaveBeenCalledWith(
         'security.account.locked',
         expect.objectContaining({
@@ -395,12 +392,12 @@ describe('CoreSystem', () => {
         lockedUntil: new Date(Date.now() + 3600000) // 1 hour from now
       };
       await coreSystem.saveUser(lockedUser);
-      
+
       const result = await coreSystem.authenticate({
         username: 'testuser',
         password: 'password123'
       });
-      
+
       expect(result).toBeNull();
       expect(mockLogger.warn).toHaveBeenCalledWith(
         'Authentication attempted on locked account',
@@ -414,12 +411,12 @@ describe('CoreSystem', () => {
     it('should not authenticate inactive account', async () => {
       const inactiveUser = { ...mockUser, isActive: false };
       await coreSystem.saveUser(inactiveUser);
-      
+
       const result = await coreSystem.authenticate({
         username: 'testuser',
         password: 'password123'
       });
-      
+
       expect(result).toBeNull();
       expect(mockLogger.warn).toHaveBeenCalledWith(
         'Authentication attempted on inactive account',
@@ -435,7 +432,7 @@ describe('CoreSystem', () => {
         username: 'nonexistent',
         password: 'password123'
       });
-      
+
       expect(result).toBeNull();
       expect(mockLogger.warn).toHaveBeenCalledWith(
         'Authentication failed - user not found',
@@ -451,7 +448,7 @@ describe('CoreSystem', () => {
         username: '',
         password: ''
       });
-      
+
       expect(result).toBeNull();
       expect(mockLogger.warn).toHaveBeenCalledWith(
         'Authentication attempted with missing credentials',
@@ -464,12 +461,12 @@ describe('CoreSystem', () => {
     it('should handle user without password hash', async () => {
       const userNoPassword = { ...mockUser, hashedPassword: undefined };
       await coreSystem.saveUser(userNoPassword as any);
-      
+
       const result = await coreSystem.authenticate({
         username: 'testuser',
         password: 'password123'
       });
-      
+
       expect(result).toBeNull();
       expect(mockLogger.error).toHaveBeenCalledWith(
         'User has no password hash',
@@ -482,12 +479,12 @@ describe('CoreSystem', () => {
 
     it('should handle authentication errors gracefully', async () => {
       (bcrypt.compare as jest.Mock).mockRejectedValue(new Error('bcrypt error'));
-      
+
       const result = await coreSystem.authenticate({
         username: 'testuser',
         password: 'password123'
       });
-      
+
       expect(result).toBeNull();
       expect(mockLogger.error).toHaveBeenCalledWith(
         'Error during authentication',
@@ -504,7 +501,7 @@ describe('CoreSystem', () => {
       const user = {
         permissions: ['read', 'write']
       } as any;
-      
+
       expect(coreSystem.authorize(user, 'read')).toBe(true);
       expect(coreSystem.authorize(user, 'write')).toBe(true);
       expect(coreSystem.authorize(user, 'delete')).toBe(false);
@@ -514,7 +511,7 @@ describe('CoreSystem', () => {
       const adminUser = {
         permissions: ['admin']
       } as any;
-      
+
       expect(coreSystem.authorize(adminUser, 'read')).toBe(true);
       expect(coreSystem.authorize(adminUser, 'write')).toBe(true);
       expect(coreSystem.authorize(adminUser, 'delete')).toBe(true);
@@ -529,11 +526,8 @@ describe('CoreSystem', () => {
         message: 'Debug message',
         context: { test: true }
       });
-      
-      expect(mockLogger.debug).toHaveBeenCalledWith(
-        'Debug message',
-        { test: true }
-      );
+
+      expect(mockLogger.debug).toHaveBeenCalledWith('Debug message', { test: true });
     });
 
     it('should log info level', () => {
@@ -542,11 +536,8 @@ describe('CoreSystem', () => {
         message: 'Info message',
         context: { test: true }
       });
-      
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        'Info message',
-        { test: true }
-      );
+
+      expect(mockLogger.info).toHaveBeenCalledWith('Info message', { test: true });
     });
 
     it('should log warn level', () => {
@@ -555,11 +546,8 @@ describe('CoreSystem', () => {
         message: 'Warning message',
         context: { test: true }
       });
-      
-      expect(mockLogger.warn).toHaveBeenCalledWith(
-        'Warning message',
-        { test: true }
-      );
+
+      expect(mockLogger.warn).toHaveBeenCalledWith('Warning message', { test: true });
     });
 
     it('should log error level', () => {
@@ -568,11 +556,8 @@ describe('CoreSystem', () => {
         message: 'Error message',
         context: { test: true }
       });
-      
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        'Error message',
-        { test: true }
-      );
+
+      expect(mockLogger.error).toHaveBeenCalledWith('Error message', { test: true });
     });
 
     it('should log fatal level', () => {
@@ -581,40 +566,34 @@ describe('CoreSystem', () => {
         message: 'Fatal message',
         context: { test: true }
       });
-      
-      expect(mockLogger.fatal).toHaveBeenCalledWith(
-        'Fatal message',
-        { test: true }
-      );
+
+      expect(mockLogger.fatal).toHaveBeenCalledWith('Fatal message', { test: true });
     });
 
     it('should fallback to error for fatal when fatal method not available', () => {
       mockLogger.fatal = undefined;
-      
+
       coreSystem.log({
         level: 'fatal',
         message: 'Fatal message',
         context: { test: true }
       });
-      
-      expect(mockLogger.error).toHaveBeenCalledWith(
-        'FATAL: Fatal message',
-        { test: true }
-      );
+
+      expect(mockLogger.error).toHaveBeenCalledWith('FATAL: Fatal message', { test: true });
     });
   });
 
   describe('Service Management', () => {
     it('should set and get plugin registry', () => {
       const mockRegistry = { name: 'MockRegistry' };
-      
+
       coreSystem.setPluginRegistry(mockRegistry);
       expect(coreSystem.getPluginRegistry()).toBe(mockRegistry);
     });
 
     it('should set and get security service', () => {
       const mockSecurity = { name: 'MockSecurity' };
-      
+
       coreSystem.setSecurityService(mockSecurity);
       expect(coreSystem.getSecurityService()).toBe(mockSecurity);
     });
@@ -635,7 +614,7 @@ describe('CoreSystem', () => {
         logger: mockLogger,
         configPath: '/test/config'
       });
-      
+
       await systemNoEventBus.saveUser({
         id: 'user-123',
         username: 'testuser',
@@ -648,21 +627,21 @@ describe('CoreSystem', () => {
         updatedAt: new Date(),
         failedLoginAttempts: 5
       });
-      
+
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
-      
+
       // Should not throw when publishing to missing event bus
       await systemNoEventBus.authenticate({
         username: 'testuser',
         password: 'wrong'
       });
-      
+
       expect(mockEventBus.publish).not.toHaveBeenCalled();
     });
 
     it('should generate secure password with correct length', async () => {
       await coreSystem.initialize();
-      
+
       // The mock password generation should have been called
       const crypto = require('crypto');
       expect(crypto.randomBytes).toHaveBeenCalledWith(16);

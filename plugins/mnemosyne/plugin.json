@@ -1,0 +1,66 @@
+{
+  "id": "mnemosyne",
+  "name": "Mnemosyne Knowledge Management",
+  "version": "0.1.0",
+  "description": "Comprehensive knowledge management and graph visualization plugin for Alexandria platform",
+  "author": "Alexandria Platform",
+  "type": "knowledge-management",
+  "category": "core",
+  "permissions": [
+    "data:read",
+    "data:write",
+    "data:search",
+    "api:access",
+    "ui:render",
+    "events:emit",
+    "events:listen",
+    "storage:access"
+  ],
+  "dependencies": {
+    "alexandria": ">=0.3.0"
+  },
+  "peerDependencies": {
+    "react": ">=18.0.0",
+    "typescript": ">=5.0.0"
+  },
+  "api": {
+    "routes": ["/api/mnemosyne/*"],
+    "events": [
+      "mnemosyne:knowledge:created",
+      "mnemosyne:knowledge:updated",
+      "mnemosyne:knowledge:deleted",
+      "mnemosyne:graph:updated",
+      "mnemosyne:template:applied",
+      "mnemosyne:search:performed",
+      "mnemosyne:relationship:created"
+    ]
+  },
+  "ui": {
+    "dashboard": true,
+    "sidebar": true,
+    "modals": true,
+    "routes": [
+      "/mnemosyne",
+      "/mnemosyne/graph",
+      "/mnemosyne/search",
+      "/mnemosyne/templates"
+    ]
+  },
+  "database": {
+    "migrations": "./migrations",
+    "schemas": [
+      "mnemosyne_nodes",
+      "mnemosyne_relationships",
+      "mnemosyne_templates",
+      "mnemosyne_search_index"
+    ]
+  },
+  "capabilities": [
+    "knowledge-graph",
+    "semantic-search",
+    "template-generation",
+    "data-import-export",
+    "graph-visualization",
+    "relationship-mapping"
+  ]
+}

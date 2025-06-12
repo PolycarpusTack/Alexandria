@@ -34,83 +34,51 @@ export interface TableCaptionProps extends React.HTMLAttributes<HTMLTableCaption
 
 export const Table = React.forwardRef<HTMLTableElement, TableProps>(
   ({ className, ...props }, ref) => (
-    <div className="alexandria-table-container">
-      <table
-        ref={ref}
-        className={`alexandria-table ${className || ''}`}
-        {...props}
-      />
+    <div className='alexandria-table-container'>
+      <table ref={ref} className={`alexandria-table ${className || ''}`} {...props} />
     </div>
   )
 );
 
 export const TableHeader = React.forwardRef<HTMLTableSectionElement, TableHeaderProps>(
   ({ className, ...props }, ref) => (
-    <thead
-      ref={ref}
-      className={`alexandria-table-header ${className || ''}`}
-      {...props}
-    />
+    <thead ref={ref} className={`alexandria-table-header ${className || ''}`} {...props} />
   )
 );
 
 export const TableBody = React.forwardRef<HTMLTableSectionElement, TableBodyProps>(
   ({ className, ...props }, ref) => (
-    <tbody
-      ref={ref}
-      className={`alexandria-table-body ${className || ''}`}
-      {...props}
-    />
+    <tbody ref={ref} className={`alexandria-table-body ${className || ''}`} {...props} />
   )
 );
 
 export const TableFooter = React.forwardRef<HTMLTableSectionElement, TableFooterProps>(
   ({ className, ...props }, ref) => (
-    <tfoot
-      ref={ref}
-      className={`alexandria-table-footer ${className || ''}`}
-      {...props}
-    />
+    <tfoot ref={ref} className={`alexandria-table-footer ${className || ''}`} {...props} />
   )
 );
 
 export const TableRow = React.forwardRef<HTMLTableRowElement, TableRowProps>(
   ({ className, ...props }, ref) => (
-    <tr
-      ref={ref}
-      className={`alexandria-table-row ${className || ''}`}
-      {...props}
-    />
+    <tr ref={ref} className={`alexandria-table-row ${className || ''}`} {...props} />
   )
 );
 
 export const TableHead = React.forwardRef<HTMLTableCellElement, TableHeadProps>(
   ({ className, ...props }, ref) => (
-    <th
-      ref={ref}
-      className={`alexandria-table-head ${className || ''}`}
-      {...props}
-    />
+    <th ref={ref} className={`alexandria-table-head ${className || ''}`} {...props} />
   )
 );
 
 export const TableCell = React.forwardRef<HTMLTableCellElement, TableCellProps>(
   ({ className, ...props }, ref) => (
-    <td
-      ref={ref}
-      className={`alexandria-table-cell ${className || ''}`}
-      {...props}
-    />
+    <td ref={ref} className={`alexandria-table-cell ${className || ''}`} {...props} />
   )
 );
 
 export const TableCaption = React.forwardRef<HTMLTableCaptionElement, TableCaptionProps>(
   ({ className, ...props }, ref) => (
-    <caption
-      ref={ref}
-      className={`alexandria-table-caption ${className || ''}`}
-      {...props}
-    />
+    <caption ref={ref} className={`alexandria-table-caption ${className || ''}`} {...props} />
   )
 );
 

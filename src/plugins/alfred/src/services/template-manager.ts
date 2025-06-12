@@ -4,13 +4,8 @@
 
 import { Logger } from '../../../../utils/logger';
 import { EventBus } from '../../../../core/event-bus/interfaces';
-import { 
-  CodeTemplate,
-  TemplateVariable,
-  ITemplateManagerService
-} from '../interfaces';
+import { CodeTemplate, TemplateVariable, ITemplateManagerService } from '../interfaces';
 import { TemplateRepository } from '../repositories/template-repository';
-import { v4 as uuidv4 } from 'uuid';
 
 export class TemplateManagerService implements ITemplateManagerService {
   private templatesCache: Map<string, CodeTemplate> = new Map();
@@ -28,12 +23,12 @@ export class TemplateManagerService implements ITemplateManagerService {
     try {
       // Get custom templates from repository
       const customTemplates = await this.templateRepository.getAllTemplates();
-      
+
       // Combine with built-in templates
       const allTemplates = [...this.builtInTemplates, ...customTemplates];
-      
+
       // Update cache
-      allTemplates.forEach(template => {
+      allTemplates.forEach((template) => {
         this.templatesCache.set(template.id, template);
       });
 
@@ -51,7 +46,7 @@ export class TemplateManagerService implements ITemplateManagerService {
     }
 
     // Check built-in templates
-    const builtIn = this.builtInTemplates.find(t => t.id === id);
+    const builtIn = this.builtInTemplates.find((t) => t.id === id);
     if (builtIn) {
       return builtIn;
     }
@@ -69,7 +64,9 @@ export class TemplateManagerService implements ITemplateManagerService {
     }
   }
 
-  async createTemplate(templateData: Omit<CodeTemplate, 'id' | 'createdAt' | 'updatedAt'>): Promise<CodeTemplate> {
+  async createTemplate(
+    templateData: Omit<CodeTemplate, 'id' | 'createdAt' | 'updatedAt'>
+  ): Promise<CodeTemplate> {
     const template: CodeTemplate = {
       ...templateData,
       id: uuidv4(),
@@ -91,7 +88,7 @@ export class TemplateManagerService implements ITemplateManagerService {
 
       // Save to repository
       await this.templateRepository.saveTemplate(template);
-      
+
       // Update cache
       this.templatesCache.set(template.id, template);
 
@@ -116,7 +113,7 @@ export class TemplateManagerService implements ITemplateManagerService {
     }
 
     // Don't allow updating built-in templates
-    if (this.builtInTemplates.some(t => t.id === id)) {
+    if (this.builtInTemplates.some((t) => t.id === id)) {
       throw new Error('Cannot update built-in templates');
     }
 
@@ -131,7 +128,7 @@ export class TemplateManagerService implements ITemplateManagerService {
     try {
       // Save to repository
       await this.templateRepository.saveTemplate(updated);
-      
+
       // Update cache
       this.templatesCache.set(id, updated);
 
@@ -150,7 +147,7 @@ export class TemplateManagerService implements ITemplateManagerService {
 
   async deleteTemplate(id: string): Promise<void> {
     // Don't allow deleting built-in templates
-    if (this.builtInTemplates.some(t => t.id === id)) {
+    if (this.builtInTemplates.some((t) => t.id === id)) {
       throw new Error('Cannot delete built-in templates');
     }
 
@@ -168,10 +165,10 @@ export class TemplateManagerService implements ITemplateManagerService {
   async importTemplate(templateData: string): Promise<CodeTemplate> {
     try {
       const parsed = JSON.parse(templateData);
-      
+
       // Remove id and timestamps from imported template
       const { id, createdAt, updatedAt, ...templateWithoutMeta } = parsed;
-      
+
       return this.createTemplate(templateWithoutMeta);
     } catch (error) {
       this.logger.error('Failed to import template', { error });

@@ -1,6 +1,6 @@
 /**
  * Mnemosyne Search Service
- * 
+ *
  * Enterprise-grade search service with full-text, semantic, graph-based,
  * and hybrid search capabilities with intelligent ranking and personalization
  */
@@ -89,7 +89,7 @@ export interface GraphSearchOptions {
 
 /**
  * Search Service
- * 
+ *
  * Comprehensive search solution with multiple search types,
  * intelligent ranking, personalization, and analytics
  */
@@ -116,7 +116,7 @@ export class SearchService implements MnemosyneService {
 
   // Search indexes
   private indexes: Map<string, SearchIndex> = new Map();
-  
+
   // Caching
   private queryCache: Map<string, SearchResult> = new Map();
   private suggestionCache: Map<string, SearchSuggestion[]> = new Map();
@@ -152,7 +152,6 @@ export class SearchService implements MnemosyneService {
 
       this.status = ServiceStatus.INITIALIZED;
       this.logger.info('Search Service initialized successfully');
-
     } catch (error) {
       this.status = ServiceStatus.ERROR;
       this.logger.error('Failed to initialize Search Service', { error });
@@ -178,7 +177,6 @@ export class SearchService implements MnemosyneService {
 
       this.status = ServiceStatus.ACTIVE;
       this.logger.info('Search Service activated successfully');
-
     } catch (error) {
       this.status = ServiceStatus.ERROR;
       this.logger.error('Failed to activate Search Service', { error });
@@ -207,7 +205,6 @@ export class SearchService implements MnemosyneService {
 
       this.status = ServiceStatus.INACTIVE;
       this.logger.info('Search Service shut down successfully');
-
     } catch (error) {
       this.status = ServiceStatus.ERROR;
       this.logger.error('Error shutting down Search Service', { error });
@@ -226,7 +223,7 @@ export class SearchService implements MnemosyneService {
         type: SearchType.FULL_TEXT,
         limit: 1
       });
-      
+
       return this.status === ServiceStatus.ACTIVE;
     } catch (error) {
       this.logger.error('Search Service health check failed', { error });
@@ -241,7 +238,7 @@ export class SearchService implements MnemosyneService {
     const totalDocuments = await this.getTotalDocumentCount();
     const avgQueryTime = this.calculateAverageQueryTime();
     const cacheHitRate = this.calculateCacheHitRate();
-    
+
     this.metrics.customMetrics = {
       ...this.metrics.customMetrics,
       totalDocuments,
@@ -314,7 +311,6 @@ export class SearchService implements MnemosyneService {
 
       this.updateMetrics(startTime, true);
       return result;
-
     } catch (error) {
       this.updateMetrics(startTime, false);
       this.logger.error('Search failed', { error, query });
@@ -351,7 +347,6 @@ export class SearchService implements MnemosyneService {
 
       this.updateMetrics(startTime, true);
       return result;
-
     } catch (error) {
       this.updateMetrics(startTime, false);
       this.logger.error('Faceted search failed', { error, query });
@@ -378,13 +373,12 @@ export class SearchService implements MnemosyneService {
       }
 
       const suggestions = await this.generateSearchSuggestions(partialQuery, userId, limit);
-      
+
       // Cache suggestions
       this.suggestionCache.set(cacheKey, suggestions);
 
       this.updateMetrics(startTime, true);
       return suggestions;
-
     } catch (error) {
       this.updateMetrics(startTime, false);
       this.logger.error('Failed to get search suggestions', { error, partialQuery });
@@ -414,16 +408,14 @@ export class SearchService implements MnemosyneService {
         query: document.title + ' ' + document.content?.substring(0, 500),
         type: SearchType.SEMANTIC,
         limit,
-        filters: [
-          { field: 'id', operator: 'ne', value: documentId }
-        ]
+        filters: [{ field: 'id', operator: 'ne', value: documentId }]
       };
 
       const result = await this.semanticSearch(query);
 
       // Filter by similarity threshold
-      const filteredHits = result.documents.filter(hit => hit.score >= threshold);
-      
+      const filteredHits = result.documents.filter((hit) => hit.score >= threshold);
+
       const similarResult: SearchResult = {
         ...result,
         documents: filteredHits,
@@ -437,7 +429,6 @@ export class SearchService implements MnemosyneService {
 
       this.updateMetrics(startTime, true);
       return similarResult;
-
     } catch (error) {
       this.updateMetrics(startTime, false);
       this.logger.error('Failed to find similar documents', { error, documentId });
@@ -456,8 +447,10 @@ export class SearchService implements MnemosyneService {
     personalize = true
   ): Promise<SearchResult> {
     const whereConditions = this.buildWhereConditions(query.filters || []);
-    const orderBy = query.boost ? this.buildBoostOrder(query.boost) : 'ts_rank(search_vector, plainto_tsquery($1)) DESC';
-    
+    const orderBy = query.boost
+      ? this.buildBoostOrder(query.boost)
+      : 'ts_rank(search_vector, plainto_tsquery($1)) DESC';
+
     const sqlQuery = `
       SELECT 
         d.*,
@@ -485,11 +478,11 @@ export class SearchService implements MnemosyneService {
       WHERE d.search_vector @@ plainto_tsquery('english', $1)
         ${whereConditions ? 'AND ' + whereConditions : ''};
     `;
-    
+
     const countResult = await this.dataService.query(countQuery, [query.query]);
     const total = parseInt(countResult[0].total);
 
-    const documents: SearchHit[] = results.map(row => ({
+    const documents: SearchHit[] = results.map((row) => ({
       document: this.mapDbRowToDocument(row),
       score: row.search_score,
       highlights: {
@@ -527,9 +520,9 @@ export class SearchService implements MnemosyneService {
     // For now, fall back to full-text search
     // In a production system, this would use vector embeddings
     const fullTextResult = await this.fullTextSearch(query, userId, personalize);
-    
+
     // Simulate semantic scoring
-    const semanticDocuments = fullTextResult.documents.map(hit => ({
+    const semanticDocuments = fullTextResult.documents.map((hit) => ({
       ...hit,
       score: hit.score * 0.8 + Math.random() * 0.2, // Simulated semantic score
       explanation: `Semantic similarity score: ${(hit.score * 0.8).toFixed(3)}`
@@ -540,7 +533,7 @@ export class SearchService implements MnemosyneService {
 
     return {
       ...fullTextResult,
-      documents: semanticDocuments.filter(hit => hit.score >= options.similarityThreshold),
+      documents: semanticDocuments.filter((hit) => hit.score >= options.similarityThreshold),
       metadata: {
         ...fullTextResult.metadata,
         searchType: SearchType.SEMANTIC,
@@ -564,18 +557,22 @@ export class SearchService implements MnemosyneService {
     }
   ): Promise<SearchResult> {
     // Find initial nodes matching the query
-    const initialResults = await this.fullTextSearch({
-      ...query,
-      limit: 20
-    }, userId, false);
+    const initialResults = await this.fullTextSearch(
+      {
+        ...query,
+        limit: 20
+      },
+      userId,
+      false
+    );
 
     if (initialResults.documents.length === 0) {
       return initialResults;
     }
 
     // Get graph-connected documents
-    const seedDocumentIds = initialResults.documents.map(hit => hit.document.id);
-    
+    const seedDocumentIds = initialResults.documents.map((hit) => hit.document.id);
+
     const graphQuery = `
       WITH RECURSIVE graph_expansion AS (
         -- Base case: seed documents
@@ -626,7 +623,7 @@ export class SearchService implements MnemosyneService {
 
     const graphResults = await this.dataService.query(graphQuery, graphParams);
 
-    const documents: SearchHit[] = graphResults.map(row => ({
+    const documents: SearchHit[] = graphResults.map((row) => ({
       document: this.mapDbRowToDocument(row),
       score: row.graph_score,
       highlights: {},
@@ -738,7 +735,7 @@ export class SearchService implements MnemosyneService {
         await this.rebuildIndex(name);
         index.status = 'ready';
         index.lastUpdated = new Date();
-        
+
         this.logger.debug(`Built search index: ${name}`);
       } catch (error) {
         index.status = 'error';
@@ -751,7 +748,7 @@ export class SearchService implements MnemosyneService {
     // Index rebuilding logic would go here
     // For PostgreSQL full-text search, this is handled by triggers
     const documentCount = await this.getTotalDocumentCount();
-    
+
     const index = this.indexes.get(indexName);
     if (index) {
       index.documentCount = documentCount;
@@ -769,7 +766,7 @@ export class SearchService implements MnemosyneService {
     }
 
     // Apply personalization boosting
-    const personalizedDocuments = result.documents.map(hit => {
+    const personalizedDocuments = result.documents.map((hit) => {
       let personalizedScore = hit.score;
 
       // Boost preferred content types
@@ -784,11 +781,11 @@ export class SearchService implements MnemosyneService {
 
       // Boost based on topic interests
       const documentTags = hit.document.tags || [];
-      const commonTopics = documentTags.filter(tag => 
+      const commonTopics = documentTags.filter((tag) =>
         profile.preferences.topicInterests.includes(tag)
       );
       if (commonTopics.length > 0) {
-        personalizedScore *= (1 + commonTopics.length * 0.1);
+        personalizedScore *= 1 + commonTopics.length * 0.1;
       }
 
       return {
@@ -818,10 +815,10 @@ export class SearchService implements MnemosyneService {
     for (const field of facetFields) {
       const facetQuery = this.buildFacetQuery(field, query);
       const results = await this.dataService.query(facetQuery, [query.query]);
-      
+
       facets.push({
         field,
-        values: results.map(row => ({
+        values: results.map((row) => ({
           value: row.value,
           count: parseInt(row.count)
         }))
@@ -833,7 +830,7 @@ export class SearchService implements MnemosyneService {
 
   private buildFacetQuery(field: string, query: SearchQuery): string {
     const whereConditions = this.buildWhereConditions(query.filters || []);
-    
+
     return `
       SELECT ${field} as value, COUNT(*) as count
       FROM mnemosyne_active_documents
@@ -859,12 +856,14 @@ export class SearchService implements MnemosyneService {
       .sort(([, a], [, b]) => b - a)
       .slice(0, 5);
 
-    suggestions.push(...queryHistory.map(([query, count]) => ({
-      text: query,
-      type: 'query' as const,
-      score: count / Math.max(...this.popularQueries.values()),
-      metadata: { searchCount: count }
-    })));
+    suggestions.push(
+      ...queryHistory.map(([query, count]) => ({
+        text: query,
+        type: 'query' as const,
+        score: count / Math.max(...this.popularQueries.values()),
+        metadata: { searchCount: count }
+      }))
+    );
 
     // Document title suggestions
     const titleQuery = `
@@ -876,12 +875,14 @@ export class SearchService implements MnemosyneService {
     `;
 
     const titleResults = await this.dataService.query(titleQuery, [`%${partialQuery}%`]);
-    suggestions.push(...titleResults.map(row => ({
-      text: row.title,
-      type: 'document' as const,
-      score: 0.8,
-      metadata: { viewCount: row.view_count }
-    })));
+    suggestions.push(
+      ...titleResults.map((row) => ({
+        text: row.title,
+        type: 'document' as const,
+        score: 0.8,
+        metadata: { viewCount: row.view_count }
+      }))
+    );
 
     // Author suggestions
     const authorQuery = `
@@ -894,17 +895,17 @@ export class SearchService implements MnemosyneService {
     `;
 
     const authorResults = await this.dataService.query(authorQuery, [`%${partialQuery}%`]);
-    suggestions.push(...authorResults.map(row => ({
-      text: row.author,
-      type: 'author' as const,
-      score: 0.7,
-      metadata: { documentCount: row.doc_count }
-    })));
+    suggestions.push(
+      ...authorResults.map((row) => ({
+        text: row.author,
+        type: 'author' as const,
+        score: 0.7,
+        metadata: { documentCount: row.doc_count }
+      }))
+    );
 
     // Sort by score and limit
-    return suggestions
-      .sort((a, b) => b.score - a.score)
-      .slice(0, limit);
+    return suggestions.sort((a, b) => b.score - a.score).slice(0, limit);
   }
 
   private combineSearchResults(
@@ -943,27 +944,30 @@ export class SearchService implements MnemosyneService {
   private buildWhereConditions(filters: SearchFilter[]): string {
     if (!filters.length) return '';
 
-    return filters.map(filter => {
-      switch (filter.operator) {
-        case 'eq':
-          return `${filter.field} = '${filter.value}'`;
-        case 'ne':
-          return `${filter.field} != '${filter.value}'`;
-        case 'in':
-          return `${filter.field} = ANY(ARRAY[${Array.isArray(filter.value) ? filter.value.map(v => `'${v}'`).join(',') : `'${filter.value}'`}])`;
-        case 'range':
-          return `${filter.field} BETWEEN '${filter.value.min}' AND '${filter.value.max}'`;
-        default:
-          return '';
-      }
-    }).filter(Boolean).join(' AND ');
+    return filters
+      .map((filter) => {
+        switch (filter.operator) {
+          case 'eq':
+            return `${filter.field} = '${filter.value}'`;
+          case 'ne':
+            return `${filter.field} != '${filter.value}'`;
+          case 'in':
+            return `${filter.field} = ANY(ARRAY[${Array.isArray(filter.value) ? filter.value.map((v) => `'${v}'`).join(',') : `'${filter.value}'`}])`;
+          case 'range':
+            return `${filter.field} BETWEEN '${filter.value.min}' AND '${filter.value.max}'`;
+          default:
+            return '';
+        }
+      })
+      .filter(Boolean)
+      .join(' AND ');
   }
 
   private buildBoostOrder(boost: Record<string, number>): string {
     const boosts = Object.entries(boost)
       .map(([field, weight]) => `${weight} * COALESCE(${field}, 0)`)
       .join(' + ');
-    
+
     return `(${boosts}) DESC`;
   }
 
@@ -982,7 +986,7 @@ export class SearchService implements MnemosyneService {
       const oldestKey = this.queryCache.keys().next().value;
       this.queryCache.delete(oldestKey);
     }
-    
+
     this.queryCache.set(key, result);
   }
 
@@ -1021,7 +1025,7 @@ export class SearchService implements MnemosyneService {
     result: SearchResult
   ): Promise<void> {
     let profile = this.userProfiles.get(userId);
-    
+
     if (!profile) {
       profile = {
         userId,
@@ -1075,7 +1079,7 @@ export class SearchService implements MnemosyneService {
       `;
 
       const results = await this.dataService.query(query);
-      
+
       for (const row of results) {
         this.popularQueries.set(row.query, parseInt(row.count));
       }
@@ -1178,14 +1182,14 @@ export class SearchService implements MnemosyneService {
 
   private updateMetrics(startTime: number, success: boolean): void {
     const responseTime = Date.now() - startTime;
-    
+
     this.metrics.requestCount++;
     if (!success) {
       this.metrics.errorCount++;
     }
-    
-    this.metrics.avgResponseTime = 
-      (this.metrics.avgResponseTime * (this.metrics.requestCount - 1) + responseTime) / 
+
+    this.metrics.avgResponseTime =
+      (this.metrics.avgResponseTime * (this.metrics.requestCount - 1) + responseTime) /
       this.metrics.requestCount;
   }
 
@@ -1200,7 +1204,9 @@ export class SearchService implements MnemosyneService {
   }
 
   private async getTotalDocumentCount(): Promise<number> {
-    const result = await this.dataService.query('SELECT COUNT(*) as count FROM mnemosyne_active_documents');
+    const result = await this.dataService.query(
+      'SELECT COUNT(*) as count FROM mnemosyne_active_documents'
+    );
     return parseInt(result[0].count);
   }
 }

@@ -33,7 +33,8 @@ export interface SuggestionContext {
 
 export class SuggestionEngine {
   private readonly SUGGESTION_CACHE_TTL = 30 * 60 * 1000; // 30 minutes
-  private suggestionCache: Map<string, { suggestions: CodeSuggestion[]; timestamp: Date }> = new Map();
+  private suggestionCache: Map<string, { suggestions: CodeSuggestion[]; timestamp: Date }> =
+    new Map();
 
   constructor(
     private logger: Logger,
@@ -46,14 +47,14 @@ export class SuggestionEngine {
 
     const cacheKey = `${projectPath}:${filePath || 'all'}`;
     const cached = this.suggestionCache.get(cacheKey);
-    
+
     if (cached && Date.now() - cached.timestamp.getTime() < this.SUGGESTION_CACHE_TTL) {
       return cached.suggestions;
     }
 
     try {
       const suggestions: CodeSuggestion[] = [];
-      
+
       if (filePath) {
         // Analyze specific file
         const fileSuggestions = await this.analyzeFile(projectPath, filePath);
@@ -61,7 +62,8 @@ export class SuggestionEngine {
       } else {
         // Analyze entire project
         const files = await this.getAnalyzableFiles(projectPath);
-        for (const file of files.slice(0, 10)) { // Limit to avoid overwhelming
+        for (const file of files.slice(0, 10)) {
+          // Limit to avoid overwhelming
           const fileSuggestions = await this.analyzeFile(projectPath, file);
           suggestions.push(...fileSuggestions);
         }
@@ -79,7 +81,6 @@ export class SuggestionEngine {
         const bScore = this.getImpactScore(b.impact) * (b.confidence / 100);
         return bScore - aScore;
       });
-
     } catch (error) {
       this.logger.error('Failed to analyze for suggestions', { error, projectPath, filePath });
       return [];
@@ -93,7 +94,7 @@ export class SuggestionEngine {
     try {
       const content = await this.storageService.readFile(fullPath);
       const lines = content.split('\n');
-      
+
       // Skip very large files
       if (lines.length > 1000) {
         return suggestions;
@@ -101,13 +102,12 @@ export class SuggestionEngine {
 
       // Quick static analysis
       suggestions.push(...this.performStaticAnalysis(relativePath, content, lines));
-      
+
       // AI-powered analysis for smaller files
       if (content.length < 10000) {
         const aiSuggestions = await this.performAIAnalysis(relativePath, content);
         suggestions.push(...aiSuggestions);
       }
-
     } catch (error) {
       this.logger.warn('Failed to analyze file', { error, file: relativePath });
     }
@@ -115,7 +115,11 @@ export class SuggestionEngine {
     return suggestions;
   }
 
-  private performStaticAnalysis(filePath: string, content: string, lines: string[]): CodeSuggestion[] {
+  private performStaticAnalysis(
+    filePath: string,
+    content: string,
+    lines: string[]
+  ): CodeSuggestion[] {
     const suggestions: CodeSuggestion[] = [];
     const language = this.detectLanguage(filePath);
 
@@ -138,7 +142,8 @@ export class SuggestionEngine {
           lineEnd: lineNumber,
           originalCode: line,
           suggestedCode: `// Consider breaking this line:\n${this.breakLongLine(line)}`,
-          explanation: 'Long lines can be harder to read and may not fit in some editors or displays.',
+          explanation:
+            'Long lines can be harder to read and may not fit in some editors or displays.',
           tags: ['readability', 'formatting'],
           timestamp: new Date()
         });
@@ -158,7 +163,8 @@ export class SuggestionEngine {
           lineEnd: lineNumber,
           originalCode: line,
           suggestedCode: line,
-          explanation: 'TODO and FIXME comments indicate incomplete or problematic code that should be addressed.',
+          explanation:
+            'TODO and FIXME comments indicate incomplete or problematic code that should be addressed.',
           tags: ['technical-debt', 'maintenance'],
           timestamp: new Date()
         });
@@ -180,7 +186,8 @@ export class SuggestionEngine {
             lineEnd: lineNumber,
             originalCode: line,
             suggestedCode: `const SOME_CONSTANT = ${magicNumberMatch[1]};\n// ... use SOME_CONSTANT instead`,
-            explanation: 'Magic numbers make code harder to understand and maintain. Named constants are more descriptive.',
+            explanation:
+              'Magic numbers make code harder to understand and maintain. Named constants are more descriptive.',
             tags: ['maintainability', 'readability'],
             timestamp: new Date()
           });
@@ -211,7 +218,10 @@ export class SuggestionEngine {
       }
 
       // Deprecated patterns
-      if (trimmedLine.includes('var ') && (language === 'typescript' || language === 'javascript')) {
+      if (
+        trimmedLine.includes('var ') &&
+        (language === 'typescript' || language === 'javascript')
+      ) {
         suggestions.push({
           id: `var-usage-${filePath}-${lineNumber}`,
           type: 'improvement',
@@ -224,7 +234,8 @@ export class SuggestionEngine {
           lineEnd: lineNumber,
           originalCode: line,
           suggestedCode: line.replace('var ', 'const '),
-          explanation: 'const and let have block scope, which is more predictable and less error-prone.',
+          explanation:
+            'const and let have block scope, which is more predictable and less error-prone.',
           tags: ['modernization', 'best-practice'],
           timestamp: new Date()
         });
@@ -237,7 +248,8 @@ export class SuggestionEngine {
         id: `missing-modules-${filePath}`,
         type: 'improvement',
         title: 'Consider using modules',
-        description: 'File has no imports/exports. Consider using ES modules for better organization.',
+        description:
+          'File has no imports/exports. Consider using ES modules for better organization.',
         confidence: 60,
         impact: 'low',
         file: filePath,
@@ -307,7 +319,6 @@ Return up to 5 most important suggestions.`;
       }
 
       return suggestions;
-
     } catch (error) {
       this.logger.warn('Failed to get AI analysis', { error, file: filePath });
       return [];
@@ -317,8 +328,8 @@ Return up to 5 most important suggestions.`;
   private async getAnalyzableFiles(projectPath: string): Promise<string[]> {
     const files = await this.storageService.listFiles(projectPath, { recursive: true });
     return files
-      .filter(f => !f.isDirectory && this.isAnalyzableFile(f.name))
-      .map(f => f.path.replace(projectPath, '').replace(/^\//, ''))
+      .filter((f) => !f.isDirectory && this.isAnalyzableFile(f.name))
+      .map((f) => f.path.replace(projectPath, '').replace(/^\//, ''))
       .slice(0, 20); // Limit number of files
   }
 
@@ -330,10 +341,15 @@ Return up to 5 most important suggestions.`;
   private detectLanguage(filePath: string): string {
     const ext = filePath.split('.').pop()?.toLowerCase();
     const langMap: Record<string, string> = {
-      ts: 'typescript', tsx: 'typescript',
-      js: 'javascript', jsx: 'javascript',
-      py: 'python', java: 'java', cs: 'csharp',
-      go: 'go', rs: 'rust'
+      ts: 'typescript',
+      tsx: 'typescript',
+      js: 'javascript',
+      jsx: 'javascript',
+      py: 'python',
+      java: 'java',
+      cs: 'csharp',
+      go: 'go',
+      rs: 'rust'
     };
     return langMap[ext || ''] || 'unknown';
   }
@@ -351,34 +367,37 @@ Return up to 5 most important suggestions.`;
 
   private getImpactScore(impact: string): number {
     switch (impact) {
-      case 'high': return 3;
-      case 'medium': return 2;
-      case 'low': return 1;
-      default: return 1;
+      case 'high':
+        return 3;
+      case 'medium':
+        return 2;
+      case 'low':
+        return 1;
+      default:
+        return 1;
     }
   }
 
   async applySuggestion(suggestion: CodeSuggestion, projectPath: string): Promise<void> {
     this.logger.info('Applying suggestion', { suggestionId: suggestion.id });
-    
+
     try {
       const fullPath = `${projectPath}/${suggestion.file}`;
       const content = await this.storageService.readFile(fullPath);
       const lines = content.split('\n');
-      
+
       // Replace the suggested lines
       const newLines = [
         ...lines.slice(0, suggestion.lineStart - 1),
         suggestion.suggestedCode,
         ...lines.slice(suggestion.lineEnd)
       ];
-      
+
       await this.storageService.writeFile(fullPath, newLines.join('\n'));
-      
+
       // Invalidate cache for this file
       const cacheKey = `${projectPath}:${suggestion.file}`;
       this.suggestionCache.delete(cacheKey);
-      
     } catch (error) {
       this.logger.error('Failed to apply suggestion', { error, suggestionId: suggestion.id });
       throw error;

@@ -53,7 +53,8 @@ export const AlfredProvider: React.FC<AlfredProviderProps> = ({ children }) => {
     const initializeServices = () => {
       if ((window as any).alfred?.services) {
         logger.info('Using real Alfred services from window.alfred');
-        const { alfredService, streamingService, projectAnalyzer, codeGenerator, templateManager } = (window as any).alfred.services;
+        const { alfredService, streamingService, projectAnalyzer, codeGenerator, templateManager } =
+          (window as any).alfred.services;
         setServices({
           alfredService,
           streamingService,
@@ -100,11 +101,7 @@ export const AlfredProvider: React.FC<AlfredProviderProps> = ({ children }) => {
     }
   }, []);
 
-  return (
-    <AlfredContext.Provider value={services}>
-      {children}
-    </AlfredContext.Provider>
-  );
+  return <AlfredContext.Provider value={services}>{children}</AlfredContext.Provider>;
 };
 
 // Create mock services for development

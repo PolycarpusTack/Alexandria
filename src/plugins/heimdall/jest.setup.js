@@ -84,7 +84,7 @@ global.testUtils = {
     },
     ...overrides
   }),
-  
+
   // Wait for async operations
   waitFor: (condition, timeout = 5000) => {
     return new Promise((resolve, reject) => {

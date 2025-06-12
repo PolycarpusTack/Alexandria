@@ -1,6 +1,6 @@
 /**
  * Storage Service Factory
- * 
+ *
  * Creates and configures the storage service implementation.
  */
 
@@ -18,14 +18,14 @@ export function createStorageService(
 ): StorageService {
   // Check if Postgres should be used
   const usePostgres = process.env.USE_POSTGRES === 'true';
-  
+
   if (!usePostgres) {
     logger.info('Using in-memory storage service (USE_POSTGRES=false)', {
       component: 'StorageServiceFactory'
     });
     return new InMemoryStorageService(logger);
   }
-  
+
   // Merge with defaults from environment
   const fullConfig: StorageConfig = {
     postgres: {
@@ -43,7 +43,7 @@ export function createStorageService(
     },
     ...config
   };
-  
+
   // PostgreSQL implementation
   return new PostgresStorageService(fullConfig, logger);
 }

@@ -1,17 +1,17 @@
 /**
  * OpenAI Service Implementation
- * 
+ *
  * Implements the AIService interface for OpenAI's API
  */
 
 import { EventEmitter } from 'events';
 import { Logger } from '../../../utils/logger';
-import { 
-  AIService, 
-  AIServiceConfig, 
-  AIModel, 
-  ModelStatus, 
-  CompletionOptions, 
+import {
+  AIService,
+  AIServiceConfig,
+  AIModel,
+  ModelStatus,
+  CompletionOptions,
   ChatCompletionOptions,
   CompletionResponse,
   StreamOptions,
@@ -91,7 +91,7 @@ export class OpenAIService extends EventEmitter implements AIService {
   async listModels(): Promise<AIModel[]> {
     try {
       // For OpenAI, we use predefined models since the API doesn't provide capability info
-      return this.availableModels.map(model => ({
+      return this.availableModels.map((model) => ({
         ...model,
         loaded: this.loadedModels.has(model.id),
         lastUsed: this.modelUsage.get(model.id)?.lastUsed
@@ -103,7 +103,7 @@ export class OpenAIService extends EventEmitter implements AIService {
   }
 
   async loadModel(modelId: string): Promise<void> {
-    const model = this.availableModels.find(m => m.id === modelId);
+    const model = this.availableModels.find((m) => m.id === modelId);
     if (!model) {
       throw new ModelNotFoundError(modelId);
     }
@@ -111,24 +111,24 @@ export class OpenAIService extends EventEmitter implements AIService {
     // For OpenAI, "loading" just means marking as available
     this.loadedModels.add(modelId);
     this.emit('model:loaded', { modelId, model });
-    
+
     this.logger.info('OpenAI model loaded', { modelId });
   }
 
   async unloadModel(modelId: string): Promise<void> {
     this.loadedModels.delete(modelId);
     this.emit('model:unloaded', { modelId });
-    
+
     this.logger.info('OpenAI model unloaded', { modelId });
   }
 
   getActiveModels(): AIModel[] {
-    return this.availableModels.filter(model => this.loadedModels.has(model.id));
+    return this.availableModels.filter((model) => this.loadedModels.has(model.id));
   }
 
   async getModelStatus(modelId: string): Promise<ModelStatus> {
     const usage = this.modelUsage.get(modelId);
-    
+
     return {
       modelId,
       loaded: this.loadedModels.has(modelId),
@@ -149,7 +149,7 @@ export class OpenAIService extends EventEmitter implements AIService {
     }
 
     const model = options?.model || this.config.defaultModel || 'gpt-3.5-turbo';
-    
+
     try {
       const response = await this.makeRequest('/chat/completions', {
         model,
@@ -178,8 +178,15 @@ export class OpenAIService extends EventEmitter implements AIService {
         finishReason: this.mapFinishReason(response.choices[0]?.finish_reason)
       };
     } catch (error) {
-      this.logger.error('OpenAI completion failed', { error, model, prompt: prompt.substring(0, 100) });
-      throw new CompletionError(`OpenAI completion failed: ${error instanceof Error ? error.message : String(error)}`, error);
+      this.logger.error('OpenAI completion failed', {
+        error,
+        model,
+        prompt: prompt.substring(0, 100)
+      });
+      throw new CompletionError(
+        `OpenAI completion failed: ${error instanceof Error ? error.message : String(error)}`,
+        error
+      );
     }
   }
 
@@ -189,7 +196,7 @@ export class OpenAIService extends EventEmitter implements AIService {
     }
 
     const model = options.model || this.config.defaultModel || 'gpt-3.5-turbo';
-    
+
     try {
       const requestBody: any = {
         model,
@@ -212,7 +219,7 @@ export class OpenAIService extends EventEmitter implements AIService {
       this.trackModelUsage(model);
 
       const choice = response.choices[0];
-      
+
       return {
         text: choice?.message?.content || '',
         model,
@@ -222,29 +229,34 @@ export class OpenAIService extends EventEmitter implements AIService {
           totalTokens: usage.total_tokens
         },
         finishReason: this.mapFinishReason(choice?.finish_reason),
-        functionCall: choice?.message?.function_call ? {
-          name: choice.message.function_call.name,
-          arguments: choice.message.function_call.arguments
-        } : undefined
+        functionCall: choice?.message?.function_call
+          ? {
+              name: choice.message.function_call.name,
+              arguments: choice.message.function_call.arguments
+            }
+          : undefined
       };
     } catch (error) {
       this.logger.error('OpenAI chat completion failed', { error, model });
-      throw new CompletionError(`OpenAI chat completion failed: ${error instanceof Error ? error.message : String(error)}`, error);
+      throw new CompletionError(
+        `OpenAI chat completion failed: ${error instanceof Error ? error.message : String(error)}`,
+        error
+      );
     }
   }
 
-  async* stream(prompt: string, options?: StreamOptions): AsyncGenerator<string> {
+  async *stream(prompt: string, options?: StreamOptions): AsyncGenerator<string> {
     if (!this.apiKey) {
       throw new AIServiceError('OpenAI API key not configured', 'NO_API_KEY');
     }
 
     const model = options?.model || this.config.defaultModel || 'gpt-3.5-turbo';
-    
+
     try {
       const response = await fetch(`${this.baseUrl}/chat/completions`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
+          Authorization: `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -307,22 +319,25 @@ export class OpenAIService extends EventEmitter implements AIService {
     } catch (error) {
       this.logger.error('OpenAI streaming failed', { error, model });
       options?.onError?.(error instanceof Error ? error : new Error(String(error)));
-      throw new CompletionError(`OpenAI streaming failed: ${error instanceof Error ? error.message : String(error)}`, error);
+      throw new CompletionError(
+        `OpenAI streaming failed: ${error instanceof Error ? error.message : String(error)}`,
+        error
+      );
     }
   }
 
-  async* streamChat(options: ChatCompletionOptions & StreamOptions): AsyncGenerator<string> {
+  async *streamChat(options: ChatCompletionOptions & StreamOptions): AsyncGenerator<string> {
     if (!this.apiKey) {
       throw new AIServiceError('OpenAI API key not configured', 'NO_API_KEY');
     }
 
     const model = options.model || this.config.defaultModel || 'gpt-3.5-turbo';
-    
+
     try {
       const response = await fetch(`${this.baseUrl}/chat/completions`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${this.apiKey}`,
+          Authorization: `Bearer ${this.apiKey}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -382,7 +397,10 @@ export class OpenAIService extends EventEmitter implements AIService {
     } catch (error) {
       this.logger.error('OpenAI chat streaming failed', { error, model });
       options?.onError?.(error instanceof Error ? error : new Error(String(error)));
-      throw new CompletionError(`OpenAI chat streaming failed: ${error instanceof Error ? error.message : String(error)}`, error);
+      throw new CompletionError(
+        `OpenAI chat streaming failed: ${error instanceof Error ? error.message : String(error)}`,
+        error
+      );
     }
   }
 
@@ -392,7 +410,7 @@ export class OpenAIService extends EventEmitter implements AIService {
     }
 
     const model = options?.model || this.config.defaultEmbeddingModel || 'text-embedding-ada-002';
-    
+
     try {
       const response = await this.makeRequest('/embeddings', {
         model,
@@ -403,7 +421,10 @@ export class OpenAIService extends EventEmitter implements AIService {
       return response.data[0]?.embedding || [];
     } catch (error) {
       this.logger.error('OpenAI embedding failed', { error, model, text: text.substring(0, 100) });
-      throw new CompletionError(`OpenAI embedding failed: ${error instanceof Error ? error.message : String(error)}`, error);
+      throw new CompletionError(
+        `OpenAI embedding failed: ${error instanceof Error ? error.message : String(error)}`,
+        error
+      );
     }
   }
 
@@ -413,7 +434,7 @@ export class OpenAIService extends EventEmitter implements AIService {
     }
 
     const model = options?.model || this.config.defaultEmbeddingModel || 'text-embedding-ada-002';
-    
+
     try {
       const response = await this.makeRequest('/embeddings', {
         model,
@@ -424,7 +445,10 @@ export class OpenAIService extends EventEmitter implements AIService {
       return response.data?.map((item: any) => item.embedding) || [];
     } catch (error) {
       this.logger.error('OpenAI batch embedding failed', { error, model, count: texts.length });
-      throw new CompletionError(`OpenAI batch embedding failed: ${error instanceof Error ? error.message : String(error)}`, error);
+      throw new CompletionError(
+        `OpenAI batch embedding failed: ${error instanceof Error ? error.message : String(error)}`,
+        error
+      );
     }
   }
 
@@ -465,7 +489,7 @@ export class OpenAIService extends EventEmitter implements AIService {
     const options: RequestInit = {
       method,
       headers: {
-        'Authorization': `Bearer ${this.apiKey}`,
+        Authorization: `Bearer ${this.apiKey}`,
         'Content-Type': 'application/json'
       }
     };
@@ -491,8 +515,10 @@ export class OpenAIService extends EventEmitter implements AIService {
         } catch {
           errorData = { message: errorText };
         }
-        
-        throw new Error(`OpenAI API error: ${response.status} ${response.statusText} - ${errorData.error?.message || errorData.message || 'Unknown error'}`);
+
+        throw new Error(
+          `OpenAI API error: ${response.status} ${response.statusText} - ${errorData.error?.message || errorData.message || 'Unknown error'}`
+        );
       }
 
       return await response.json();

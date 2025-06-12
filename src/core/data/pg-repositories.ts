@@ -1,26 +1,21 @@
 /**
  * PostgreSQL Repository Implementations for the Alexandria Platform
- * 
+ *
  * This file contains repository implementations for the data models
  * using the PostgreSQL data service.
  */
 
-import { v4 as uuidv4 } from 'uuid';
-import { 
-  UserRepository, 
-  CaseRepository, 
-  LogEntryRepository, 
+import {
+  UserRepository,
+  CaseRepository,
+  LogEntryRepository,
   PluginStorageRepository,
   UserSchema,
   CaseSchema,
   LogEntrySchema,
   PluginStorageSchema
 } from './interfaces';
-import { 
-  Entity, 
-  Repository, 
-  PostgresDataService 
-} from './pg-interfaces';
+import { Entity, Repository, PostgresDataService } from './pg-interfaces';
 import { User, Case, LogEntry } from '../system/interfaces';
 
 /**
@@ -38,31 +33,40 @@ export abstract class BaseRepository<T extends Entity> implements Repository<T> 
   /**
    * Find entities by criteria
    */
-  async find(criteria?: Record<string, any>, options?: {
-    limit?: number;
-    offset?: number;
-    orderBy?: string;
-    orderDirection?: 'ASC' | 'DESC';
-    select?: string[];
-  }): Promise<T[]> {
+  async find(
+    criteria?: Record<string, any>,
+    options?: {
+      limit?: number;
+      offset?: number;
+      orderBy?: string;
+      orderDirection?: 'ASC' | 'DESC';
+      select?: string[];
+    }
+  ): Promise<T[]> {
     return this.dataService.find<T>(this.entityType, criteria, options);
   }
 
   /**
    * Find an entity by ID
    */
-  async findById(id: string, options?: {
-    select?: string[];
-  }): Promise<T | null> {
+  async findById(
+    id: string,
+    options?: {
+      select?: string[];
+    }
+  ): Promise<T | null> {
     return this.dataService.findById<T>(this.entityType, id, options);
   }
 
   /**
    * Find a single entity by criteria
    */
-  async findOne(criteria: Record<string, any>, options?: {
-    select?: string[];
-  }): Promise<T | null> {
+  async findOne(
+    criteria: Record<string, any>,
+    options?: {
+      select?: string[];
+    }
+  ): Promise<T | null> {
     return this.dataService.findOne<T>(this.entityType, criteria, options);
   }
 
@@ -82,7 +86,7 @@ export abstract class BaseRepository<T extends Entity> implements Repository<T> 
     if (!entityData.id) {
       entityData.id = uuidv4();
     }
-    
+
     return this.dataService.create<T>(this.entityType, entityData);
   }
 
@@ -107,7 +111,7 @@ export abstract class BaseRepository<T extends Entity> implements Repository<T> 
  */
 export class PgUserRepository implements UserRepository {
   private baseRepo: BaseRepository<UserSchema>;
-  
+
   constructor(dataService: PostgresDataService) {
     // Create a private implementation class that extends BaseRepository
     class UserSchemaRepository extends BaseRepository<UserSchema> {
@@ -115,7 +119,7 @@ export class PgUserRepository implements UserRepository {
         super('users', ds);
       }
     }
-    
+
     this.baseRepo = new UserSchemaRepository(dataService);
   }
 
@@ -164,14 +168,17 @@ export class PgUserRepository implements UserRepository {
   }): Promise<User[]> {
     // Convert 'asc'/'desc' to uppercase
     const orderDirection = options?.orderDirection?.toUpperCase() as 'ASC' | 'DESC';
-    
-    const result = await this.baseRepo.find({}, {
-      limit: options?.limit,
-      offset: options?.offset,
-      orderBy: options?.orderBy,
-      orderDirection: orderDirection
-    });
-    
+
+    const result = await this.baseRepo.find(
+      {},
+      {
+        limit: options?.limit,
+        offset: options?.offset,
+        orderBy: options?.orderBy,
+        orderDirection: orderDirection
+      }
+    );
+
     return result.map(this.mapToUser);
   }
 
@@ -193,7 +200,7 @@ export class PgUserRepository implements UserRepository {
       locked_until: userData.lockedUntil,
       last_login_at: userData.lastLoginAt
     };
-    
+
     const result = await this.baseRepo.create(data);
     return this.mapToUser(result);
   }
@@ -204,7 +211,7 @@ export class PgUserRepository implements UserRepository {
   async update(id: string, userData: Partial<User>): Promise<User> {
     // Create data for the database schema
     const data: Partial<UserSchema> = {};
-    
+
     if (userData.username !== undefined) data.username = userData.username;
     if (userData.email !== undefined) data.email = userData.email;
     if (userData.hashedPassword !== undefined) {
@@ -213,13 +220,14 @@ export class PgUserRepository implements UserRepository {
     if (userData.roles !== undefined) data.roles = userData.roles;
     if (userData.permissions !== undefined) data.permissions = userData.permissions;
     if (userData.isActive !== undefined) data.is_active = userData.isActive;
-    if (userData.failedLoginAttempts !== undefined) data.failed_login_attempts = userData.failedLoginAttempts;
+    if (userData.failedLoginAttempts !== undefined)
+      data.failed_login_attempts = userData.failedLoginAttempts;
     if (userData.lockedUntil !== undefined) data.locked_until = userData.lockedUntil;
     if (userData.lastLoginAt !== undefined) data.last_login_at = userData.lastLoginAt;
-    
+
     // Set updated_at
     data.updated_at = new Date();
-    
+
     const result = await this.baseRepo.update(id, data);
     return this.mapToUser(result);
   }
@@ -244,21 +252,21 @@ export class PgUserRepository implements UserRepository {
       lastLoginAt: schema.last_login_at
     };
   }
-  
+
   /**
    * Delete a user
    */
   async delete(id: string): Promise<boolean> {
     return this.baseRepo.delete(id);
   }
-  
+
   /**
    * Count users with optional filter
    */
   async count(criteria?: Partial<User>): Promise<number> {
     // Convert User criteria to UserSchema criteria
     const schemaCriteria: Partial<UserSchema> = {};
-    
+
     if (criteria) {
       if (criteria.username !== undefined) schemaCriteria.username = criteria.username;
       if (criteria.email !== undefined) schemaCriteria.email = criteria.email;
@@ -266,7 +274,7 @@ export class PgUserRepository implements UserRepository {
       if (criteria.permissions !== undefined) schemaCriteria.permissions = criteria.permissions;
       if (criteria.isActive !== undefined) schemaCriteria.is_active = criteria.isActive;
     }
-    
+
     return this.baseRepo.count(schemaCriteria);
   }
 }
@@ -277,7 +285,7 @@ export class PgUserRepository implements UserRepository {
  */
 export class PgCaseRepository implements CaseRepository {
   private baseRepo: BaseRepository<CaseSchema>;
-  
+
   constructor(dataService: PostgresDataService) {
     // Create a private implementation class that extends BaseRepository
     class CaseSchemaRepository extends BaseRepository<CaseSchema> {
@@ -285,12 +293,12 @@ export class PgCaseRepository implements CaseRepository {
         super('cases', ds);
       }
     }
-    
+
     this.baseRepo = new CaseSchemaRepository(dataService);
   }
-  
+
   /**
-   * Find case by ID 
+   * Find case by ID
    */
   async findById(id: string, options?: { select?: string[] }): Promise<Case | null> {
     const result = await this.baseRepo.findById(id, options);
@@ -351,24 +359,25 @@ export class PgCaseRepository implements CaseRepository {
   }): Promise<Case[]> {
     // Convert case data model to database schema
     const filters: Partial<CaseSchema> = {};
-    
+
     if (options?.filters) {
       if (options.filters.status !== undefined) filters.status = options.filters.status;
       if (options.filters.priority !== undefined) filters.priority = options.filters.priority;
-      if (options.filters.assignedTo !== undefined) filters.assigned_to = options.filters.assignedTo;
+      if (options.filters.assignedTo !== undefined)
+        filters.assigned_to = options.filters.assignedTo;
       if (options.filters.createdBy !== undefined) filters.created_by = options.filters.createdBy;
     }
-    
+
     // Convert 'asc'/'desc' to uppercase
     const orderDirection = options?.orderDirection?.toUpperCase() as 'ASC' | 'DESC';
-    
+
     const result = await this.baseRepo.find(filters, {
       limit: options?.limit,
       offset: options?.offset,
       orderBy: options?.orderBy,
       orderDirection: orderDirection
     });
-    
+
     return result.map(this.mapToCase);
   }
 
@@ -389,7 +398,7 @@ export class PgCaseRepository implements CaseRepository {
       created_at: new Date(),
       updated_at: new Date()
     };
-    
+
     const result = await this.baseRepo.create(data);
     return this.mapToCase(result);
   }
@@ -400,7 +409,7 @@ export class PgCaseRepository implements CaseRepository {
   async update(id: string, caseData: Partial<Case>): Promise<Case> {
     // Create data for the database schema
     const data: Partial<CaseSchema> = {};
-    
+
     if (caseData.title !== undefined) data.title = caseData.title;
     if (caseData.description !== undefined) data.description = caseData.description;
     if (caseData.status !== undefined) data.status = caseData.status;
@@ -408,10 +417,10 @@ export class PgCaseRepository implements CaseRepository {
     if (caseData.assignedTo !== undefined) data.assigned_to = caseData.assignedTo;
     if (caseData.tags !== undefined) data.tags = caseData.tags;
     if (caseData.metadata !== undefined) data.metadata = caseData.metadata;
-    
+
     // Set updated_at
     data.updated_at = new Date();
-    
+
     const result = await this.baseRepo.update(id, data);
     return this.mapToCase(result);
   }
@@ -434,28 +443,28 @@ export class PgCaseRepository implements CaseRepository {
       metadata: schema.metadata
     };
   }
-  
+
   /**
    * Delete a case
    */
   async delete(id: string): Promise<boolean> {
     return this.baseRepo.delete(id);
   }
-  
+
   /**
    * Count cases with optional filter
    */
   async count(criteria?: Partial<Case>): Promise<number> {
     // Convert Case criteria to CaseSchema criteria
     const schemaCriteria: Partial<CaseSchema> = {};
-    
+
     if (criteria) {
       if (criteria.status !== undefined) schemaCriteria.status = criteria.status;
       if (criteria.priority !== undefined) schemaCriteria.priority = criteria.priority;
       if (criteria.assignedTo !== undefined) schemaCriteria.assigned_to = criteria.assignedTo;
       if (criteria.createdBy !== undefined) schemaCriteria.created_by = criteria.createdBy;
     }
-    
+
     return this.baseRepo.count(schemaCriteria);
   }
 }
@@ -464,11 +473,14 @@ export class PgCaseRepository implements CaseRepository {
  * LogEntry Repository implementation for PostgreSQL
  * @implements LogEntryRepository
  */
-export class PgLogEntryRepository extends BaseRepository<LogEntrySchema> implements LogEntryRepository {
+export class PgLogEntryRepository
+  extends BaseRepository<LogEntrySchema>
+  implements LogEntryRepository
+{
   constructor(dataService: PostgresDataService) {
     super('logs', dataService);
   }
-  
+
   /**
    * Find log entry by ID - overriding base method to handle type conversion
    */
@@ -514,7 +526,7 @@ export class PgLogEntryRepository extends BaseRepository<LogEntrySchema> impleme
       context: logEntry.context || {},
       source: logEntry.source
     };
-    
+
     const result = await super.create(data);
     return this.mapToLogEntry(result);
   }
@@ -540,22 +552,22 @@ export class PgLogEntryRepository extends BaseRepository<LogEntrySchema> impleme
   }): Promise<LogEntry[]> {
     // Convert log entry data model to database schema
     const filters: Partial<LogEntrySchema> = {};
-    
+
     if (options?.filters) {
       if (options.filters.level !== undefined) filters.level = options.filters.level;
       if (options.filters.source !== undefined) filters.source = options.filters.source;
     }
-    
+
     // Convert 'asc'/'desc' to uppercase
     const orderDirection = options?.orderDirection?.toUpperCase() as 'ASC' | 'DESC';
-    
+
     const result = await this.find(filters, {
       limit: options?.limit,
       offset: options?.offset,
       orderBy: options?.orderBy || 'timestamp',
       orderDirection: orderDirection || 'DESC'
     });
-    
+
     return result.map(this.mapToLogEntry);
   }
 
@@ -592,7 +604,7 @@ export class PgPluginStorageRepository implements PluginStorageRepository {
     // Find the entry
     const sql = `SELECT value FROM "${this.tableName}" WHERE plugin_id = $1 AND key = $2`;
     const result = await this.dataService.query<{ value: any }>(sql, [pluginId, key]);
-    
+
     return result.rows.length > 0 ? result.rows[0].value : null;
   }
 
@@ -607,7 +619,7 @@ export class PgPluginStorageRepository implements PluginStorageRepository {
       ON CONFLICT (plugin_id, key) DO UPDATE
       SET value = $3, updated_at = NOW()
     `;
-    
+
     await this.dataService.query(sql, [pluginId, key, value]);
   }
 
@@ -618,7 +630,7 @@ export class PgPluginStorageRepository implements PluginStorageRepository {
     // Delete the entry
     const sql = `DELETE FROM "${this.tableName}" WHERE plugin_id = $1 AND key = $2`;
     const result = await this.dataService.query(sql, [pluginId, key]);
-    
+
     return result.rowCount > 0;
   }
 
@@ -629,8 +641,8 @@ export class PgPluginStorageRepository implements PluginStorageRepository {
     // Get all keys
     const sql = `SELECT key FROM "${this.tableName}" WHERE plugin_id = $1`;
     const result = await this.dataService.query<{ key: string }>(sql, [pluginId]);
-    
-    return result.rows.map(row => row.key);
+
+    return result.rows.map((row) => row.key);
   }
 
   /**

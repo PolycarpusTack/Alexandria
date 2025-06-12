@@ -57,7 +57,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ content }) => {
   const copyCode = (code: string, index: number) => {
     navigator.clipboard.writeText(code);
     setCopiedBlocks(new Set([...copiedBlocks, index]));
-    
+
     toast({
       title: 'Copied',
       description: 'Code copied to clipboard'
@@ -65,7 +65,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ content }) => {
 
     // Reset copied state after 2 seconds
     setTimeout(() => {
-      setCopiedBlocks(prev => {
+      setCopiedBlocks((prev) => {
         const next = new Set(prev);
         next.delete(index);
         return next;
@@ -76,7 +76,7 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ content }) => {
   const renderPart = (part: any, index: number) => {
     if (part.type === 'text') {
       return (
-        <div key={index} className="whitespace-pre-wrap">
+        <div key={index} className='whitespace-pre-wrap'>
           {part.content.split('\n').map((line, i) => (
             <React.Fragment key={i}>
               {line}
@@ -89,43 +89,39 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ content }) => {
 
     if (part.type === 'code') {
       const isCopied = copiedBlocks.has(part.index);
-      
+
       return (
-        <div key={index} className="my-3">
-          <div className="relative group">
-            <div className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div key={index} className='my-3'>
+          <div className='relative group'>
+            <div className='absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity'>
               <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 px-2"
+                variant='ghost'
+                size='sm'
+                className='h-8 px-2'
                 onClick={() => copyCode(part.content, part.index)}
               >
                 {isCopied ? (
                   <>
-                    <Check className="h-4 w-4 mr-1" />
+                    <Check className='h-4 w-4 mr-1' />
                     Copied
                   </>
                 ) : (
                   <>
-                    <Copy className="h-4 w-4 mr-1" />
+                    <Copy className='h-4 w-4 mr-1' />
                     Copy
                   </>
                 )}
               </Button>
             </div>
-            
-            <div className="bg-muted rounded-md p-4 overflow-x-auto">
-              <pre className="text-sm">
-                <code className={`language-${part.language}`}>
-                  {part.content}
-                </code>
+
+            <div className='bg-muted rounded-md p-4 overflow-x-auto'>
+              <pre className='text-sm'>
+                <code className={`language-${part.language}`}>{part.content}</code>
               </pre>
             </div>
-            
+
             {part.language && part.language !== 'plaintext' && (
-              <div className="text-xs text-muted-foreground mt-1">
-                {part.language}
-              </div>
+              <div className='text-xs text-muted-foreground mt-1'>{part.language}</div>
             )}
           </div>
         </div>
@@ -137,9 +133,5 @@ export const CodeBlock: React.FC<CodeBlockProps> = ({ content }) => {
 
   const parts = parseContent(content);
 
-  return (
-    <div className="space-y-2">
-      {parts.map((part, index) => renderPart(part, index))}
-    </div>
-  );
+  return <div className='space-y-2'>{parts.map((part, index) => renderPart(part, index))}</div>;
 };

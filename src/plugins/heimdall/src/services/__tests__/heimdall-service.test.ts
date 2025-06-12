@@ -111,14 +111,16 @@ describe('EnhancedHeimdallService', () => {
       shutdown: jest.fn().mockResolvedValue(undefined)
     } as any;
 
-    (KafkaService as jest.MockedClass<typeof KafkaService>)
-      .mockImplementation(() => mockKafkaService);
-    (StorageManager as jest.MockedClass<typeof StorageManager>)
-      .mockImplementation(() => mockStorageManager);
-    (MLService as jest.MockedClass<typeof MLService>)
-      .mockImplementation(() => mockMLService);
-    (HyperionResourceManager as jest.MockedClass<typeof HyperionResourceManager>)
-      .mockImplementation(() => mockResourceManager);
+    (KafkaService as jest.MockedClass<typeof KafkaService>).mockImplementation(
+      () => mockKafkaService
+    );
+    (StorageManager as jest.MockedClass<typeof StorageManager>).mockImplementation(
+      () => mockStorageManager
+    );
+    (MLService as jest.MockedClass<typeof MLService>).mockImplementation(() => mockMLService);
+    (
+      HyperionResourceManager as jest.MockedClass<typeof HyperionResourceManager>
+    ).mockImplementation(() => mockResourceManager);
 
     heimdallService = new HeimdallService(mockContext, mockLogger);
   });
@@ -237,8 +239,7 @@ describe('EnhancedHeimdallService', () => {
         insights: []
       };
 
-      jest.spyOn(heimdallService as any, 'executeQuery')
-        .mockResolvedValue(mockResults);
+      jest.spyOn(heimdallService as any, 'executeQuery').mockResolvedValue(mockResults);
 
       const result = await heimdallService.query(mockQuery);
 
@@ -258,11 +259,7 @@ describe('EnhancedHeimdallService', () => {
       await heimdallService.initialize();
 
       const callback = jest.fn();
-      const subscription = await heimdallService.subscribe(
-        mockQuery,
-        { batchSize: 10 },
-        callback
-      );
+      const subscription = await heimdallService.subscribe(mockQuery, { batchSize: 10 }, callback);
 
       expect(subscription).toHaveProperty('id');
       expect(subscription.status).toBe('active');
@@ -295,9 +292,9 @@ describe('EnhancedHeimdallService', () => {
       await heimdallService.unsubscribe(subscription.id);
 
       // Verify subscription is removed
-      await expect(
-        heimdallService.unsubscribe(subscription.id)
-      ).rejects.toThrow('Subscription not found');
+      await expect(heimdallService.unsubscribe(subscription.id)).rejects.toThrow(
+        'Subscription not found'
+      );
     });
   });
 
@@ -356,9 +353,9 @@ describe('EnhancedHeimdallService', () => {
       await heimdallService.stop();
 
       // Verify subscription is cleared
-      await expect(
-        heimdallService.unsubscribe(subscription.id)
-      ).rejects.toThrow('Subscription not found');
+      await expect(heimdallService.unsubscribe(subscription.id)).rejects.toThrow(
+        'Subscription not found'
+      );
     });
   });
 
@@ -426,21 +423,20 @@ describe('EnhancedHeimdallService', () => {
       };
 
       // Mock internal query implementation with performance tracking
-      jest.spyOn(heimdallService as any, 'executeQuery')
-        .mockResolvedValue({
-          logs: [],
-          total: 0,
-          aggregations: {},
-          insights: [],
-          performance: {
-            queryTime: 150,
-            cacheHit: false,
-            resourcesUsed: {
-              connections: 2,
-              memory: 50
-            }
+      jest.spyOn(heimdallService as any, 'executeQuery').mockResolvedValue({
+        logs: [],
+        total: 0,
+        aggregations: {},
+        insights: [],
+        performance: {
+          queryTime: 150,
+          cacheHit: false,
+          resourcesUsed: {
+            connections: 2,
+            memory: 50
           }
-        });
+        }
+      });
 
       const result = await heimdallService.query(mockQuery);
       expect(result.performance).toBeDefined();

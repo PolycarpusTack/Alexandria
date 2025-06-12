@@ -1,6 +1,6 @@
 /**
  * Comprehensive Test Suite for RbacAuthorizationService
- * 
+ *
  * This test suite provides complete coverage for the authorization service,
  * testing all RBAC functionality, permission management, edge cases,
  * security considerations, and performance characteristics.
@@ -10,11 +10,7 @@ import { RbacAuthorizationService } from '../authorization-service';
 import { Logger } from '../../../utils/logger';
 import { DataService } from '../../data/interfaces';
 import { User } from '../../system/interfaces';
-import { 
-  PERMISSION_CATEGORIES, 
-  ALL_PERMISSIONS, 
-  ROLE_PERMISSIONS 
-} from '../permissions';
+import { PERMISSION_CATEGORIES, ALL_PERMISSIONS, ROLE_PERMISSIONS } from '../permissions';
 
 describe('RbacAuthorizationService', () => {
   let authService: RbacAuthorizationService;
@@ -75,12 +71,12 @@ describe('RbacAuthorizationService', () => {
       error: jest.fn(),
       child: jest.fn(() => mockLogger)
     } as any;
-    
+
     mockDataService = {
       initialize: jest.fn(),
       shutdown: jest.fn()
     } as any;
-    
+
     authService = new RbacAuthorizationService(mockLogger, mockDataService);
   });
 
@@ -113,7 +109,7 @@ describe('RbacAuthorizationService', () => {
     it('should set up all default roles', async () => {
       await authService.initialize();
       const roles = await authService.getAllRoles();
-      const roleNames = roles.map(r => r.role);
+      const roleNames = roles.map((r) => r.role);
 
       // Check all expected roles exist
       expect(roleNames).toContain('admin');
@@ -181,44 +177,33 @@ describe('RbacAuthorizationService', () => {
 
     describe('hasAnyPermission', () => {
       it('should grant if user has any permission', () => {
-        const result = authService.hasAnyPermission(
-          mockUser,
-          ['system:write', 'system:read', 'logs:write']
-        );
+        const result = authService.hasAnyPermission(mockUser, [
+          'system:write',
+          'system:read',
+          'logs:write'
+        ]);
         expect(result.granted).toBe(true);
       });
 
       it('should deny if user has none', () => {
-        const result = authService.hasAnyPermission(
-          mockUser,
-          ['system:write', 'users:write']
-        );
+        const result = authService.hasAnyPermission(mockUser, ['system:write', 'users:write']);
         expect(result.granted).toBe(false);
       });
 
       it('should grant to admin for any permissions', () => {
-        const result = authService.hasAnyPermission(
-          mockAdminUser,
-          ['any:permission']
-        );
+        const result = authService.hasAnyPermission(mockAdminUser, ['any:permission']);
         expect(result.granted).toBe(true);
       });
     });
 
     describe('hasAllPermissions', () => {
       it('should grant if user has all permissions', () => {
-        const result = authService.hasAllPermissions(
-          mockUser,
-          ['system:read', 'logs:read']
-        );
+        const result = authService.hasAllPermissions(mockUser, ['system:read', 'logs:read']);
         expect(result.granted).toBe(true);
       });
 
       it('should deny if missing any permission', () => {
-        const result = authService.hasAllPermissions(
-          mockUser,
-          ['system:read', 'system:write']
-        );
+        const result = authService.hasAllPermissions(mockUser, ['system:read', 'system:write']);
         expect(result.granted).toBe(false);
         expect(result.reason).toContain('system:write');
       });
@@ -253,19 +238,19 @@ describe('RbacAuthorizationService', () => {
         'ml:execute',
         'analytics:write'
       ];
-      
-      requiredPermissions.forEach(perm => {
+
+      requiredPermissions.forEach((perm) => {
         expect(authService.isValidPermission(perm)).toBe(true);
       });
     });
-    
+
     it('should handle wildcard permissions', () => {
       expect(authService.isValidPermission('*')).toBe(true);
       expect(authService.isValidPermission('plugin:*')).toBe(true);
       expect(authService.isValidPermission('database:*')).toBe(true);
       expect(authService.isValidPermission('event:*')).toBe(true);
     });
-    
+
     it('should reject invalid permissions', () => {
       expect(authService.isValidPermission('invalid:permission')).toBe(false);
       expect(authService.isValidPermission('notreal:action')).toBe(false);
@@ -287,19 +272,19 @@ describe('RbacAuthorizationService', () => {
     it('should get permissions by category', () => {
       const pluginPerms = authService.getPermissionsByCategory('plugin');
       expect(pluginPerms).toEqual(PERMISSION_CATEGORIES.PLUGIN);
-      
+
       const dbPerms = authService.getPermissionsByCategory('database');
       expect(dbPerms).toEqual(PERMISSION_CATEGORIES.DATABASE);
-      
+
       const aiPerms = authService.getPermissionsByCategory('ai');
       expect(aiPerms).toEqual(PERMISSION_CATEGORIES.AI);
     });
-    
+
     it('should return empty array for invalid category', () => {
       const perms = authService.getPermissionsByCategory('invalid');
       expect(perms).toEqual([]);
     });
-    
+
     it('should get all permission categories', () => {
       const categories = authService.getPermissionCategories();
       expect(categories).toContain('PLUGIN');
@@ -321,14 +306,14 @@ describe('RbacAuthorizationService', () => {
         'event:publish',
         'notreal:action'
       ];
-      
+
       const result = authService.validatePermissions(permissions);
-      
+
       expect(result.valid).toContain('plugin:install');
       expect(result.valid).toContain('database:access');
       expect(result.valid).toContain('event:publish');
       expect(result.valid).toHaveLength(3);
-      
+
       expect(result.invalid).toContain('invalid:permission');
       expect(result.invalid).toContain('notreal:action');
       expect(result.invalid).toHaveLength(2);
@@ -350,21 +335,21 @@ describe('RbacAuthorizationService', () => {
     it('should set permissions for new role', async () => {
       const newPerms = ['system:read', 'logs:read'];
       await authService.setPermissionsForRole('custom', newPerms);
-      
+
       const stored = await authService.getPermissionsForRole('custom');
       expect(stored).toEqual(newPerms);
     });
 
     it('should reject invalid permissions in role', async () => {
-      await expect(
-        authService.setPermissionsForRole('test', ['invalid:perm'])
-      ).rejects.toThrow('Invalid permissions: invalid:perm');
+      await expect(authService.setPermissionsForRole('test', ['invalid:perm'])).rejects.toThrow(
+        'Invalid permissions: invalid:perm'
+      );
     });
 
     it('should get all roles', async () => {
       const roles = await authService.getAllRoles();
-      const roleNames = roles.map(r => r.role);
-      
+      const roleNames = roles.map((r) => r.role);
+
       expect(roleNames).toContain('admin');
       expect(roleNames).toContain('user');
       expect(roleNames).toContain('developer');
@@ -410,18 +395,15 @@ describe('RbacAuthorizationService', () => {
         roles: ['__proto__'],
         permissions: ['constructor.prototype.admin']
       };
-      
+
       const result = authService.hasPermission(maliciousUser, 'system:write');
       expect(result.granted).toBe(false);
     });
 
     it('should validate permission format strictly', () => {
-      const injections = [
-        'system:read; DROP TABLE;',
-        '<script>alert()</script>:read'
-      ];
-      
-      injections.forEach(attempt => {
+      const injections = ['system:read; DROP TABLE;', '<script>alert()</script>:read'];
+
+      injections.forEach((attempt) => {
         expect(authService.isValidPermission(attempt)).toBe(false);
       });
     });
@@ -445,17 +427,12 @@ describe('RbacAuthorizationService', () => {
     });
 
     it('should enforce developer permissions', () => {
-      const devPerms = [
-        'plugin:install',
-        'database:access',
-        'code:generate',
-        'template:manage'
-      ];
-      
-      devPerms.forEach(perm => {
+      const devPerms = ['plugin:install', 'database:access', 'code:generate', 'template:manage'];
+
+      devPerms.forEach((perm) => {
         expect(authService.hasPermission(mockDeveloper, perm).granted).toBe(true);
       });
-      
+
       expect(authService.hasPermission(mockDeveloper, 'users:write').granted).toBe(false);
     });
   });
@@ -467,11 +444,11 @@ describe('RbacAuthorizationService', () => {
 
     it('should handle many permission checks efficiently', () => {
       const start = Date.now();
-      
+
       for (let i = 0; i < 1000; i++) {
         authService.hasPermission(mockUser, 'system:read');
       }
-      
+
       const duration = Date.now() - start;
       expect(duration).toBeLessThan(100); // Should complete in < 100ms
     });
@@ -483,11 +460,11 @@ describe('RbacAuthorizationService', () => {
       };
 
       const start = Date.now();
-      
+
       for (let i = 0; i < 100; i++) {
         authService.hasPermission(manyRolesUser, 'some:permission');
       }
-      
+
       const duration = Date.now() - start;
       expect(duration).toBeLessThan(50);
     });

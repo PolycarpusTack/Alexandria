@@ -58,17 +58,12 @@ describe('EnhancedQueryCache', () => {
       recordCacheStats: jest.fn()
     } as any;
 
-    cache = new EnhancedQueryCache(
-      mockLogger,
-      mockResourceManager,
-      mockPerformanceMonitor,
-      {
-        maxSizeBytes: 100 * 1024 * 1024, // 100MB
-        maxEntries: 1000,
-        ttlMs: 5 * 60 * 1000, // 5 minutes
-        l1CacheRatio: 0.3
-      }
-    );
+    cache = new EnhancedQueryCache(mockLogger, mockResourceManager, mockPerformanceMonitor, {
+      maxSizeBytes: 100 * 1024 * 1024, // 100MB
+      maxEntries: 1000,
+      ttlMs: 5 * 60 * 1000, // 5 minutes
+      l1CacheRatio: 0.3
+    });
   });
 
   afterEach(async () => {
@@ -98,10 +93,10 @@ describe('EnhancedQueryCache', () => {
       );
 
       await shortTtlCache.set(mockQuery, mockResult);
-      
+
       // Wait for expiration
-      await new Promise(resolve => setTimeout(resolve, 150));
-      
+      await new Promise((resolve) => setTimeout(resolve, 150));
+
       const retrieved = await shortTtlCache.get(mockQuery);
       expect(retrieved).toBeNull();
 
@@ -239,7 +234,7 @@ describe('EnhancedQueryCache', () => {
   describe('cache invalidation', () => {
     it('should invalidate entries by tags', async () => {
       await cache.set(mockQuery, mockResult, { tags: ['service:auth', 'timerange:short'] });
-      
+
       const secondQuery = {
         ...mockQuery,
         timeRange: { from: new Date(Date.now() - 7200000), to: new Date() }
@@ -363,9 +358,7 @@ describe('EnhancedQueryCache', () => {
       await cacheWithoutPredictive.get(mockQuery);
 
       // Should not attempt predictive caching
-      expect(mockLogger.debug).not.toHaveBeenCalledWith(
-        expect.stringContaining('predictive')
-      );
+      expect(mockLogger.debug).not.toHaveBeenCalledWith(expect.stringContaining('predictive'));
 
       await cacheWithoutPredictive.shutdown();
     });
@@ -386,7 +379,7 @@ describe('EnhancedQueryCache', () => {
       await shortTtlCache.set(mockQuery, mockResult);
 
       // Wait for cleanup
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise((resolve) => setTimeout(resolve, 200));
 
       const stats = shortTtlCache.getStats();
       expect(stats.entryCount).toBe(0);

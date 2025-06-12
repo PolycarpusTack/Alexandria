@@ -1,12 +1,17 @@
 /**
  * Template Integrity Validator
- * 
+ *
  * Validates template integrity through checksum verification and security scanning
  * Detects secrets, vulnerabilities, and malicious code patterns
  */
 
 import { Logger } from '../../../../../utils/logger';
-import { TemplateManifest, SecurityScanResult, SecurityViolation, ValidationResult, ValidationError } from './interfaces';
+import {
+  TemplateManifest,
+  SecurityScanResult,
+  SecurityViolation,
+  ValidationError
+} from './interfaces';
 import * as crypto from 'crypto';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -37,25 +42,73 @@ export class TemplateIntegrityValidator {
     { name: 'AWS Secret Key', pattern: /[A-Za-z0-9/+=]{40}/, severity: 'critical' as const },
     { name: 'GitHub Token', pattern: /gh[ps]_[A-Za-z0-9]{36}/, severity: 'critical' as const },
     { name: 'Slack Token', pattern: /xox[baprs]-([0-9a-zA-Z]{10,48})/, severity: 'high' as const },
-    { name: 'Generic API Key', pattern: /api[_-]?key["\s]*[:=]["\s]*[a-zA-Z0-9]{16,}/, severity: 'high' as const },
-    { name: 'JWT Token', pattern: /eyJ[A-Za-z0-9_-]*\.eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*/, severity: 'medium' as const },
-    { name: 'Private Key', pattern: /-----BEGIN [A-Z]+ PRIVATE KEY-----/, severity: 'critical' as const },
-    { name: 'Database URL', pattern: /(mongodb|mysql|postgres):\/\/[^\s]+/, severity: 'high' as const },
-    { name: 'Email/Password', pattern: /(password|passwd|pwd)["\s]*[:=]["\s]*[^\s"]+/, severity: 'medium' as const }
+    {
+      name: 'Generic API Key',
+      pattern: /api[_-]?key["\s]*[:=]["\s]*[a-zA-Z0-9]{16,}/,
+      severity: 'high' as const
+    },
+    {
+      name: 'JWT Token',
+      pattern: /eyJ[A-Za-z0-9_-]*\.eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*/,
+      severity: 'medium' as const
+    },
+    {
+      name: 'Private Key',
+      pattern: /-----BEGIN [A-Z]+ PRIVATE KEY-----/,
+      severity: 'critical' as const
+    },
+    {
+      name: 'Database URL',
+      pattern: /(mongodb|mysql|postgres):\/\/[^\s]+/,
+      severity: 'high' as const
+    },
+    {
+      name: 'Email/Password',
+      pattern: /(password|passwd|pwd)["\s]*[:=]["\s]*[^\s"]+/,
+      severity: 'medium' as const
+    }
   ];
 
   // Malicious code patterns
   private maliciousPatterns = [
     { name: 'eval() usage', pattern: /eval\s*\(/, severity: 'high' as const },
     { name: 'Function constructor', pattern: /new\s+Function\s*\(/, severity: 'high' as const },
-    { name: 'setTimeout with string', pattern: /setTimeout\s*\(\s*["'`]/, severity: 'medium' as const },
-    { name: 'Child process execution', pattern: /(exec|spawn|execSync)\s*\(/, severity: 'high' as const },
-    { name: 'File system write', pattern: /(writeFile|writeFileSync|createWriteStream)\s*\(/, severity: 'medium' as const },
-    { name: 'Network requests', pattern: /(fetch|XMLHttpRequest|axios\.get|request\()/g, severity: 'medium' as const },
-    { name: 'Script injection', pattern: /<script[^>]*>[\s\S]*?<\/script>/gi, severity: 'high' as const },
-    { name: 'SQL injection patterns', pattern: /(union|select|insert|delete|drop)\s+(select|from|table|database)/gi, severity: 'high' as const },
+    {
+      name: 'setTimeout with string',
+      pattern: /setTimeout\s*\(\s*["'`]/,
+      severity: 'medium' as const
+    },
+    {
+      name: 'Child process execution',
+      pattern: /(exec|spawn|execSync)\s*\(/,
+      severity: 'high' as const
+    },
+    {
+      name: 'File system write',
+      pattern: /(writeFile|writeFileSync|createWriteStream)\s*\(/,
+      severity: 'medium' as const
+    },
+    {
+      name: 'Network requests',
+      pattern: /(fetch|XMLHttpRequest|axios\.get|request\()/g,
+      severity: 'medium' as const
+    },
+    {
+      name: 'Script injection',
+      pattern: /<script[^>]*>[\s\S]*?<\/script>/gi,
+      severity: 'high' as const
+    },
+    {
+      name: 'SQL injection patterns',
+      pattern: /(union|select|insert|delete|drop)\s+(select|from|table|database)/gi,
+      severity: 'high' as const
+    },
     { name: 'Path traversal', pattern: /\.\.[\/\\]/, severity: 'high' as const },
-    { name: 'Backdoor patterns', pattern: /(backdoor|malware|trojan|virus)/gi, severity: 'critical' as const }
+    {
+      name: 'Backdoor patterns',
+      pattern: /(backdoor|malware|trojan|virus)/gi,
+      severity: 'critical' as const
+    }
   ];
 
   // Known vulnerable dependencies (simplified - real implementation would use CVE database)
@@ -75,9 +128,32 @@ export class TemplateIntegrityValidator {
       enableMaliciousCodeDetection: options.enableMaliciousCodeDetection ?? true,
       maxFileSize: options.maxFileSize ?? 10 * 1024 * 1024, // 10MB
       allowedFileTypes: options.allowedFileTypes ?? [
-        '.js', '.ts', '.tsx', '.jsx', '.json', '.md', '.txt', '.yml', '.yaml',
-        '.css', '.scss', '.sass', '.html', '.hbs', '.mustache', '.py', '.go',
-        '.rs', '.java', '.c', '.cpp', '.h', '.sh', '.bat', '.ps1', '.dockerfile'
+        '.js',
+        '.ts',
+        '.tsx',
+        '.jsx',
+        '.json',
+        '.md',
+        '.txt',
+        '.yml',
+        '.yaml',
+        '.css',
+        '.scss',
+        '.sass',
+        '.html',
+        '.hbs',
+        '.mustache',
+        '.py',
+        '.go',
+        '.rs',
+        '.java',
+        '.c',
+        '.cpp',
+        '.h',
+        '.sh',
+        '.bat',
+        '.ps1',
+        '.dockerfile'
       ]
     };
   }
@@ -86,7 +162,7 @@ export class TemplateIntegrityValidator {
    * Validate template integrity comprehensively
    */
   async validateTemplate(
-    templatePath: string, 
+    templatePath: string,
     manifest: TemplateManifest,
     options: Partial<ScanOptions> = {}
   ): Promise<IntegrityCheckResult> {
@@ -94,9 +170,9 @@ export class TemplateIntegrityValidator {
     const errors: ValidationError[] = [];
     const warnings: string[] = [];
 
-    this.logger.info('Starting template integrity validation', { 
-      templatePath, 
-      templateId: manifest.id 
+    this.logger.info('Starting template integrity validation', {
+      templatePath,
+      templateId: manifest.id
     });
 
     try {
@@ -108,10 +184,10 @@ export class TemplateIntegrityValidator {
 
       // 3. Perform security scanning
       const securityScan = await this.performSecurityScan(
-        templatePath, 
-        manifest, 
-        scanOptions, 
-        errors, 
+        templatePath,
+        manifest,
+        scanOptions,
+        errors,
         warnings
       );
 
@@ -134,7 +210,6 @@ export class TemplateIntegrityValidator {
       });
 
       return result;
-
     } catch (error) {
       errors.push({
         code: 'VALIDATION_ERROR',
@@ -160,8 +235,8 @@ export class TemplateIntegrityValidator {
    * Validate template checksum
    */
   private async validateChecksum(
-    templatePath: string, 
-    manifest: TemplateManifest, 
+    templatePath: string,
+    manifest: TemplateManifest,
     errors: ValidationError[]
   ): Promise<boolean> {
     if (!manifest.security.checksum) {
@@ -186,12 +261,11 @@ export class TemplateIntegrityValidator {
         return false;
       }
 
-      this.logger.debug('Template checksum validation passed', { 
+      this.logger.debug('Template checksum validation passed', {
         templateId: manifest.id,
         checksum: calculatedChecksum
       });
       return true;
-
     } catch (error) {
       errors.push({
         code: 'CHECKSUM_ERROR',
@@ -207,10 +281,10 @@ export class TemplateIntegrityValidator {
    */
   async calculateDirectoryChecksum(dirPath: string): Promise<string> {
     const hash = crypto.createHash('sha256');
-    
+
     async function processDirectory(currentPath: string): Promise<void> {
       const entries = await fs.readdir(currentPath, { withFileTypes: true });
-      
+
       // Sort entries for consistent hashing
       entries.sort((a, b) => a.name.localeCompare(b.name));
 
@@ -275,10 +349,9 @@ export class TemplateIntegrityValidator {
         violations,
         riskLevel
       };
-
     } catch (error) {
       this.logger.error('Security scan failed', { templatePath, error });
-      
+
       violations.push({
         type: 'malicious-code',
         description: `Security scan failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
@@ -301,29 +374,33 @@ export class TemplateIntegrityValidator {
     violations: SecurityViolation[],
     options: Required<ScanOptions>
   ): Promise<void> {
-    await this.scanDirectory(templatePath, async (filePath: string, content: string) => {
-      // Skip binary files and overly large files
-      if (content.length > options.maxFileSize) return;
-      
-      const relativePath = path.relative(templatePath, filePath);
-      const lines = content.split('\n');
+    await this.scanDirectory(
+      templatePath,
+      async (filePath: string, content: string) => {
+        // Skip binary files and overly large files
+        if (content.length > options.maxFileSize) return;
 
-      for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
-        const line = lines[lineIndex];
-        
-        for (const pattern of this.secretPatterns) {
-          if (pattern.pattern.test(line)) {
-            violations.push({
-              type: 'secret',
-              description: `Potential ${pattern.name} detected`,
-              file: relativePath,
-              line: lineIndex + 1,
-              severity: pattern.severity
-            });
+        const relativePath = path.relative(templatePath, filePath);
+        const lines = content.split('\n');
+
+        for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+          const line = lines[lineIndex];
+
+          for (const pattern of this.secretPatterns) {
+            if (pattern.pattern.test(line)) {
+              violations.push({
+                type: 'secret',
+                description: `Potential ${pattern.name} detected`,
+                file: relativePath,
+                line: lineIndex + 1,
+                severity: pattern.severity
+              });
+            }
           }
         }
-      }
-    }, options);
+      },
+      options
+    );
   }
 
   /**
@@ -341,10 +418,9 @@ export class TemplateIntegrityValidator {
       await fs.access(packageJsonPath);
       const packageContent = await fs.readFile(packageJsonPath, 'utf-8');
       const packageJson = JSON.parse(packageContent);
-      
+
       this.checkDependencies(packageJson.dependencies || {}, violations, 'package.json');
       this.checkDependencies(packageJson.devDependencies || {}, violations, 'package.json');
-
     } catch {
       // package.json doesn't exist or is invalid - not an error
     }
@@ -354,7 +430,6 @@ export class TemplateIntegrityValidator {
       await fs.access(requirementsPath);
       const reqContent = await fs.readFile(requirementsPath, 'utf-8');
       this.checkPythonRequirements(reqContent, violations);
-
     } catch {
       // requirements.txt doesn't exist - not an error
     }
@@ -388,7 +463,7 @@ export class TemplateIntegrityValidator {
    */
   private checkPythonRequirements(content: string, violations: SecurityViolation[]): void {
     const lines = content.split('\n');
-    
+
     for (const line of lines) {
       if (line.trim() && !line.startsWith('#')) {
         // Basic parsing - real implementation would be more sophisticated
@@ -417,29 +492,33 @@ export class TemplateIntegrityValidator {
     violations: SecurityViolation[],
     options: Required<ScanOptions>
   ): Promise<void> {
-    await this.scanDirectory(templatePath, async (filePath: string, content: string) => {
-      if (content.length > options.maxFileSize) return;
-      
-      const relativePath = path.relative(templatePath, filePath);
-      const lines = content.split('\n');
+    await this.scanDirectory(
+      templatePath,
+      async (filePath: string, content: string) => {
+        if (content.length > options.maxFileSize) return;
 
-      for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
-        const line = lines[lineIndex];
-        
-        for (const pattern of this.maliciousPatterns) {
-          const matches = line.match(pattern.pattern);
-          if (matches) {
-            violations.push({
-              type: 'malicious-code',
-              description: `Potentially dangerous pattern: ${pattern.name}`,
-              file: relativePath,
-              line: lineIndex + 1,
-              severity: pattern.severity
-            });
+        const relativePath = path.relative(templatePath, filePath);
+        const lines = content.split('\n');
+
+        for (let lineIndex = 0; lineIndex < lines.length; lineIndex++) {
+          const line = lines[lineIndex];
+
+          for (const pattern of this.maliciousPatterns) {
+            const matches = line.match(pattern.pattern);
+            if (matches) {
+              violations.push({
+                type: 'malicious-code',
+                description: `Potentially dangerous pattern: ${pattern.name}`,
+                file: relativePath,
+                line: lineIndex + 1,
+                severity: pattern.severity
+              });
+            }
           }
         }
-      }
-    }, options);
+      },
+      options
+    );
   }
 
   /**
@@ -503,14 +582,21 @@ export class TemplateIntegrityValidator {
       }
 
       // Check for unexpected files
-      const declaredFiles = new Set(manifest.files.map(f => f.template));
-      await this.scanDirectory(templatePath, async (filePath: string) => {
-        const relativePath = path.relative(templatePath, filePath);
-        if (!declaredFiles.has(relativePath) && !relativePath.startsWith('.') && relativePath !== 'manifest.json') {
-          warnings.push(`Undeclared template file found: ${relativePath}`);
-        }
-      }, this.defaultOptions);
-
+      const declaredFiles = new Set(manifest.files.map((f) => f.template));
+      await this.scanDirectory(
+        templatePath,
+        async (filePath: string) => {
+          const relativePath = path.relative(templatePath, filePath);
+          if (
+            !declaredFiles.has(relativePath) &&
+            !relativePath.startsWith('.') &&
+            relativePath !== 'manifest.json'
+          ) {
+            warnings.push(`Undeclared template file found: ${relativePath}`);
+          }
+        },
+        this.defaultOptions
+      );
     } catch (error) {
       errors.push({
         code: 'FILE_STRUCTURE_ERROR',
@@ -536,7 +622,7 @@ export class TemplateIntegrityValidator {
 
         if (entry.isFile()) {
           const ext = path.extname(entry.name).toLowerCase();
-          
+
           if (options.allowedFileTypes.includes(ext) || options.allowedFileTypes.includes('*')) {
             try {
               const stats = await fs.stat(fullPath);
@@ -560,14 +646,16 @@ export class TemplateIntegrityValidator {
   /**
    * Calculate overall risk level based on violations
    */
-  private calculateRiskLevel(violations: SecurityViolation[]): 'low' | 'medium' | 'high' | 'critical' {
+  private calculateRiskLevel(
+    violations: SecurityViolation[]
+  ): 'low' | 'medium' | 'high' | 'critical' {
     if (violations.length === 0) return 'low';
 
     const severityCounts = {
-      critical: violations.filter(v => v.severity === 'critical').length,
-      high: violations.filter(v => v.severity === 'high').length,
-      medium: violations.filter(v => v.severity === 'medium').length,
-      low: violations.filter(v => v.severity === 'low').length
+      critical: violations.filter((v) => v.severity === 'critical').length,
+      high: violations.filter((v) => v.severity === 'high').length,
+      medium: violations.filter((v) => v.severity === 'medium').length,
+      low: violations.filter((v) => v.severity === 'low').length
     };
 
     if (severityCounts.critical > 0) return 'critical';
@@ -583,7 +671,7 @@ export class TemplateIntegrityValidator {
    */
   generateSecurityReport(result: IntegrityCheckResult): string {
     const report = [];
-    
+
     report.push('# Template Security Report\n');
     report.push(`**Overall Status**: ${result.valid ? '✅ PASS' : '❌ FAIL'}`);
     report.push(`**Risk Level**: ${result.securityScan.riskLevel.toUpperCase()}`);
@@ -591,7 +679,7 @@ export class TemplateIntegrityValidator {
 
     if (result.securityScan.violations.length > 0) {
       report.push('## Security Violations\n');
-      
+
       for (const violation of result.securityScan.violations) {
         const icon = this.getSeverityIcon(violation.severity);
         report.push(`${icon} **${violation.type}**: ${violation.description}`);
@@ -625,11 +713,16 @@ export class TemplateIntegrityValidator {
    */
   private getSeverityIcon(severity: string): string {
     switch (severity) {
-      case 'critical': return '🚨';
-      case 'high': return '❌';
-      case 'medium': return '⚠️';
-      case 'low': return 'ℹ️';
-      default: return '❓';
+      case 'critical':
+        return '🚨';
+      case 'high':
+        return '❌';
+      case 'medium':
+        return '⚠️';
+      case 'low':
+        return 'ℹ️';
+      default:
+        return '❓';
     }
   }
 }

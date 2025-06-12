@@ -1,6 +1,6 @@
 /**
  * Plugin System Integration Test Suite
- * 
+ *
  * Comprehensive integration tests for the complete plugin system including:
  * - Plugin discovery, installation, and lifecycle management
  * - Cross-plugin communication and dependencies
@@ -26,7 +26,7 @@ import {
   Plugin,
   PluginManifest,
   PluginState,
-  PluginLifecycle,
+  PluginLifecycle
 } from '../../core/plugin-registry/interfaces';
 import * as fs from 'fs/promises';
 import * as path from 'path';
@@ -56,13 +56,11 @@ describe('Plugin System Integration', () => {
     minPlatformVersion: '1.0.0',
     permissions: ['system:read', 'events:publish'],
     capabilities: ['data-processor'],
-    eventSubscriptions: [
-      { topic: 'plugin-b.data-ready', handler: 'handleDataReady' },
-    ],
+    eventSubscriptions: [{ topic: 'plugin-b.data-ready', handler: 'handleDataReady' }],
     apiEndpoints: [
       { path: '/api/plugin-a/status', method: 'GET', handler: 'getStatus' },
-      { path: '/api/plugin-a/process', method: 'POST', handler: 'processData' },
-    ],
+      { path: '/api/plugin-a/process', method: 'POST', handler: 'processData' }
+    ]
   };
 
   const testPluginB: PluginManifest = {
@@ -75,15 +73,13 @@ describe('Plugin System Integration', () => {
     minPlatformVersion: '1.0.0',
     permissions: ['system:read', 'events:publish', 'database:write'],
     dependencies: {
-      'test-plugin-a': '^1.0.0',
+      'test-plugin-a': '^1.0.0'
     },
-    eventSubscriptions: [
-      { topic: 'system.startup', handler: 'onSystemStartup' },
-    ],
+    eventSubscriptions: [{ topic: 'system.startup', handler: 'onSystemStartup' }],
     apiEndpoints: [
       { path: '/api/plugin-b/data', method: 'GET', handler: 'getData' },
-      { path: '/api/plugin-b/generate', method: 'POST', handler: 'generateData' },
-    ],
+      { path: '/api/plugin-b/generate', method: 'POST', handler: 'generateData' }
+    ]
   };
 
   // Mock plugin instances
@@ -126,31 +122,31 @@ describe('Plugin System Integration', () => {
         status: 'active',
         isProcessing: this.isProcessing,
         processedCount: this.processedCount,
-        uptime: Date.now() - (this as any).startTime,
+        uptime: Date.now() - (this as any).startTime
       });
     }
 
     async processData(req: any, res: any): Promise<void> {
       this.isProcessing = true;
-      
+
       try {
         const { data } = req.body;
-        
+
         // Simulate processing
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
+        await new Promise((resolve) => setTimeout(resolve, 100));
+
         const processedData = {
           ...data,
           processedAt: new Date().toISOString(),
           processedBy: 'test-plugin-a',
-          id: `processed-${Date.now()}`,
+          id: `processed-${Date.now()}`
         };
 
         // Publish processed data event
         await this.api.events.publish('plugin-a.data-processed', {
           originalData: data,
           processedData,
-          timestamp: new Date(),
+          timestamp: new Date()
         });
 
         this.processedCount++;
@@ -179,7 +175,7 @@ describe('Plugin System Integration', () => {
 
     async onActivate(): Promise<void> {
       this.api.log('info', 'Plugin B activated');
-      
+
       // Register API endpoints
       this.api.registerRoute('GET', '/api/plugin-b/data', this.getData.bind(this));
       this.api.registerRoute('POST', '/api/plugin-b/generate', this.generateData.bind(this));
@@ -201,29 +197,29 @@ describe('Plugin System Integration', () => {
     }
 
     async onDataProcessed(event: any): Promise<void> {
-      this.api.log('info', 'Data processed by Plugin A', { 
-        processedData: event.processedData 
+      this.api.log('info', 'Data processed by Plugin A', {
+        processedData: event.processedData
       });
-      
+
       // Store processed data
       this.dataStore.push(event.processedData);
-      
+
       // Notify that data is ready for further processing
       await this.api.events.publish('plugin-b.data-ready', {
         dataId: event.processedData.id,
-        timestamp: new Date(),
+        timestamp: new Date()
       });
     }
 
     async getData(req: any, res: any): Promise<void> {
       const { limit = 10, offset = 0 } = req.query;
       const data = this.dataStore.slice(offset, offset + limit);
-      
+
       res.json({
         data,
         total: this.dataStore.length,
         limit: parseInt(limit),
-        offset: parseInt(offset),
+        offset: parseInt(offset)
       });
     }
 
@@ -236,7 +232,7 @@ describe('Plugin System Integration', () => {
           id: `generated-${Date.now()}-${i}`,
           value: Math.random() * 100,
           timestamp: new Date().toISOString(),
-          source: 'test-plugin-b',
+          source: 'test-plugin-b'
         };
         generatedData.push(data);
       }
@@ -248,15 +244,15 @@ describe('Plugin System Integration', () => {
             .post('/api/plugin-a/process')
             .send({ data })
             .expect(200);
-          
-          this.api.log('debug', 'Data sent to Plugin A', { 
+
+          this.api.log('debug', 'Data sent to Plugin A', {
             dataId: data.id,
-            processed: response.body.success 
+            processed: response.body.success
           });
         } catch (error) {
-          this.api.log('error', 'Failed to send data to Plugin A', { 
+          this.api.log('error', 'Failed to send data to Plugin A', {
             dataId: data.id,
-            error 
+            error
           });
         }
       }
@@ -264,7 +260,7 @@ describe('Plugin System Integration', () => {
       res.json({
         success: true,
         generated: generatedData.length,
-        data: generatedData,
+        data: generatedData
       });
     }
   }
@@ -276,7 +272,7 @@ describe('Plugin System Integration', () => {
       warn: jest.fn(),
       error: jest.fn(),
       debug: jest.fn(),
-      child: jest.fn().mockReturnThis(),
+      child: jest.fn().mockReturnThis()
     } as any;
 
     // Setup Express app
@@ -285,35 +281,35 @@ describe('Plugin System Integration', () => {
 
     // Initialize core services
     eventBus = new EventBusImpl(mockLogger);
-    
+
     // Mock data service
     dataService = {
       initialize: jest.fn(),
       users: {
         findById: jest.fn(),
-        findByUsername: jest.fn(),
+        findByUsername: jest.fn()
       },
       plugins: {
         findById: jest.fn(),
         create: jest.fn(),
         update: jest.fn(),
-        delete: jest.fn(),
-      },
+        delete: jest.fn()
+      }
     } as any;
 
     // Mock auth services
     authService = {
       validateToken: jest.fn(),
-      getUserFromToken: jest.fn(),
+      getUserFromToken: jest.fn()
     } as any;
 
     authzService = {
       hasPermission: jest.fn().mockReturnValue({ granted: true }),
-      hasAnyPermission: jest.fn().mockReturnValue({ granted: true }),
+      hasAnyPermission: jest.fn().mockReturnValue({ granted: true })
     } as any;
 
     userService = {
-      getUserById: jest.fn(),
+      getUserById: jest.fn()
     } as any;
 
     // Initialize plugin registry
@@ -334,7 +330,7 @@ describe('Plugin System Integration', () => {
         id: 'test-user',
         username: 'testuser',
         roles: ['admin'],
-        permissions: ['*'],
+        permissions: ['*']
       };
       next();
     });
@@ -347,7 +343,7 @@ describe('Plugin System Integration', () => {
     // Mock filesystem for plugin discovery
     (fs.readdir as jest.Mock).mockResolvedValue([
       { name: 'test-plugin-a', isDirectory: () => true },
-      { name: 'test-plugin-b', isDirectory: () => true },
+      { name: 'test-plugin-b', isDirectory: () => true }
     ]);
 
     (fs.readFile as jest.Mock).mockImplementation((filePath: string) => {
@@ -361,44 +357,53 @@ describe('Plugin System Integration', () => {
     });
 
     // Mock plugin module loading
-    jest.doMock('/plugins/test-plugin-a/index.js', () => ({
-      default: MockPluginA,
-    }), { virtual: true });
+    jest.doMock(
+      '/plugins/test-plugin-a/index.js',
+      () => ({
+        default: MockPluginA
+      }),
+      { virtual: true }
+    );
 
-    jest.doMock('/plugins/test-plugin-b/index.js', () => ({
-      default: MockPluginB,
-    }), { virtual: true });
+    jest.doMock(
+      '/plugins/test-plugin-b/index.js',
+      () => ({
+        default: MockPluginB
+      }),
+      { virtual: true }
+    );
   });
 
   describe('Plugin Discovery and Installation', () => {
     it('should discover and install plugins with dependencies', async () => {
       // Discover plugins
       const discoveredPlugins = await pluginRegistry.discoverPlugins('/plugins');
-      
+
       expect(discoveredPlugins).toHaveLength(2);
-      expect(discoveredPlugins.map(p => p.manifest.id)).toContain('test-plugin-a');
-      expect(discoveredPlugins.map(p => p.manifest.id)).toContain('test-plugin-b');
+      expect(discoveredPlugins.map((p) => p.manifest.id)).toContain('test-plugin-a');
+      expect(discoveredPlugins.map((p) => p.manifest.id)).toContain('test-plugin-b');
 
       // Install Plugin A first (dependency)
-      const pluginA = discoveredPlugins.find(p => p.manifest.id === 'test-plugin-a')!;
+      const pluginA = discoveredPlugins.find((p) => p.manifest.id === 'test-plugin-a')!;
       await pluginRegistry.installPlugin(pluginA);
-      
+
       expect(pluginA.state).toBe(PluginState.INSTALLED);
 
       // Install Plugin B (depends on A)
-      const pluginB = discoveredPlugins.find(p => p.manifest.id === 'test-plugin-b')!;
+      const pluginB = discoveredPlugins.find((p) => p.manifest.id === 'test-plugin-b')!;
       await pluginRegistry.installPlugin(pluginB);
-      
+
       expect(pluginB.state).toBe(PluginState.INSTALLED);
     });
 
     it('should handle dependency resolution correctly', async () => {
       const discoveredPlugins = await pluginRegistry.discoverPlugins('/plugins');
-      const pluginB = discoveredPlugins.find(p => p.manifest.id === 'test-plugin-b')!;
+      const pluginB = discoveredPlugins.find((p) => p.manifest.id === 'test-plugin-b')!;
 
       // Try to install Plugin B without Plugin A
-      await expect(pluginRegistry.installPlugin(pluginB))
-        .rejects.toThrow(/unresolved dependencies.*test-plugin-a/);
+      await expect(pluginRegistry.installPlugin(pluginB)).rejects.toThrow(
+        /unresolved dependencies.*test-plugin-a/
+      );
     });
   });
 
@@ -406,7 +411,7 @@ describe('Plugin System Integration', () => {
     beforeEach(async () => {
       // Install both plugins
       const discoveredPlugins = await pluginRegistry.discoverPlugins('/plugins');
-      
+
       for (const plugin of discoveredPlugins) {
         await pluginRegistry.installPlugin(plugin);
       }
@@ -415,13 +420,13 @@ describe('Plugin System Integration', () => {
     it('should activate plugins in dependency order', async () => {
       // Activate Plugin A first
       await pluginRegistry.activatePlugin('test-plugin-a');
-      
+
       const pluginA = pluginRegistry.getPlugin('test-plugin-a');
       expect(pluginA?.state).toBe(PluginState.ACTIVE);
 
       // Activate Plugin B (depends on A)
       await pluginRegistry.activatePlugin('test-plugin-b');
-      
+
       const pluginB = pluginRegistry.getPlugin('test-plugin-b');
       expect(pluginB?.state).toBe(PluginState.ACTIVE);
     });
@@ -433,7 +438,7 @@ describe('Plugin System Integration', () => {
 
       // Test event communication
       const eventData = { message: 'test communication' };
-      
+
       // Plugin A should handle data-ready events from Plugin B
       await eventBus.publish('plugin-b.data-ready', eventData);
 
@@ -459,16 +464,12 @@ describe('Plugin System Integration', () => {
       expect(response.body.generated).toBe(2);
 
       // Check that Plugin A received and processed the data
-      const pluginAStatus = await request(app)
-        .get('/api/plugin-a/status')
-        .expect(200);
+      const pluginAStatus = await request(app).get('/api/plugin-a/status').expect(200);
 
       expect(pluginAStatus.body.processedCount).toBeGreaterThan(0);
 
       // Check that Plugin B stored the processed data
-      const pluginBData = await request(app)
-        .get('/api/plugin-b/data')
-        .expect(200);
+      const pluginBData = await request(app).get('/api/plugin-b/data').expect(200);
 
       expect(pluginBData.body.data.length).toBeGreaterThan(0);
       expect(pluginBData.body.data[0]).toHaveProperty('processedBy', 'test-plugin-a');
@@ -479,7 +480,7 @@ describe('Plugin System Integration', () => {
     beforeEach(async () => {
       // Setup complete system
       const discoveredPlugins = await pluginRegistry.discoverPlugins('/plugins');
-      
+
       for (const plugin of discoveredPlugins) {
         await pluginRegistry.installPlugin(plugin);
         await pluginRegistry.activatePlugin(plugin.manifest.id);
@@ -496,19 +497,15 @@ describe('Plugin System Integration', () => {
       expect(generateResponse.body.generated).toBe(3);
 
       // 2. Wait for processing to complete
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise((resolve) => setTimeout(resolve, 500));
 
       // 3. Check Plugin A processed the data
-      const statusResponse = await request(app)
-        .get('/api/plugin-a/status')
-        .expect(200);
+      const statusResponse = await request(app).get('/api/plugin-a/status').expect(200);
 
       expect(statusResponse.body.processedCount).toBe(3);
 
       // 4. Check Plugin B received processed data
-      const dataResponse = await request(app)
-        .get('/api/plugin-b/data')
-        .expect(200);
+      const dataResponse = await request(app).get('/api/plugin-b/data').expect(200);
 
       expect(dataResponse.body.data.length).toBe(3);
       dataResponse.body.data.forEach((item: any) => {
@@ -533,18 +530,14 @@ describe('Plugin System Integration', () => {
       expect(generateResponse.body.generated).toBe(50);
 
       // Wait for processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
 
       // Verify all data was processed
-      const statusResponse = await request(app)
-        .get('/api/plugin-a/status')
-        .expect(200);
+      const statusResponse = await request(app).get('/api/plugin-a/status').expect(200);
 
       expect(statusResponse.body.processedCount).toBe(50);
 
-      const dataResponse = await request(app)
-        .get('/api/plugin-b/data?limit=100')
-        .expect(200);
+      const dataResponse = await request(app).get('/api/plugin-b/data?limit=100').expect(200);
 
       expect(dataResponse.body.total).toBe(50);
     });
@@ -553,7 +546,7 @@ describe('Plugin System Integration', () => {
   describe('Error Handling and Recovery', () => {
     beforeEach(async () => {
       const discoveredPlugins = await pluginRegistry.discoverPlugins('/plugins');
-      
+
       for (const plugin of discoveredPlugins) {
         await pluginRegistry.installPlugin(plugin);
         await pluginRegistry.activatePlugin(plugin.manifest.id);
@@ -587,11 +580,11 @@ describe('Plugin System Integration', () => {
       // Try to process data
       const response = await request(app)
         .post('/api/plugin-a/process')
-        .send({ 
-          data: { 
+        .send({
+          data: {
             id: 'test-data',
-            value: 100 
-          } 
+            value: 100
+          }
         })
         .expect(500); // Should fail due to event publishing error
 
@@ -603,14 +596,12 @@ describe('Plugin System Integration', () => {
 
     it('should handle database failures during plugin operations', async () => {
       // Mock database failure
-      dataService.plugins.create = jest.fn().mockRejectedValue(
-        new Error('Database connection lost')
-      );
+      dataService.plugins.create = jest
+        .fn()
+        .mockRejectedValue(new Error('Database connection lost'));
 
       // Plugin operations should still work without database
-      const response = await request(app)
-        .get('/api/plugin-a/status')
-        .expect(200);
+      const response = await request(app).get('/api/plugin-a/status').expect(200);
 
       expect(response.body.status).toBe('active');
     });
@@ -619,7 +610,7 @@ describe('Plugin System Integration', () => {
   describe('Security and Permissions', () => {
     beforeEach(async () => {
       const discoveredPlugins = await pluginRegistry.discoverPlugins('/plugins');
-      
+
       for (const plugin of discoveredPlugins) {
         await pluginRegistry.installPlugin(plugin);
         await pluginRegistry.activatePlugin(plugin.manifest.id);
@@ -629,7 +620,7 @@ describe('Plugin System Integration', () => {
     it('should enforce plugin permissions', async () => {
       // Mock authorization to deny database:write permission
       authzService.hasPermission = jest.fn().mockImplementation((user, permission) => ({
-        granted: permission !== 'database:write',
+        granted: permission !== 'database:write'
       }));
 
       // Plugin B should not be able to perform database operations
@@ -639,13 +630,9 @@ describe('Plugin System Integration', () => {
 
     it('should isolate plugin execution contexts', async () => {
       // Each plugin should have its own context and not interfere
-      const pluginAData = await request(app)
-        .get('/api/plugin-a/status')
-        .expect(200);
+      const pluginAData = await request(app).get('/api/plugin-a/status').expect(200);
 
-      const pluginBData = await request(app)
-        .get('/api/plugin-b/data')
-        .expect(200);
+      const pluginBData = await request(app).get('/api/plugin-b/data').expect(200);
 
       // Plugins should operate independently
       expect(pluginAData.body).not.toEqual(pluginBData.body);
@@ -654,10 +641,8 @@ describe('Plugin System Integration', () => {
     it('should validate API access between plugins', async () => {
       // Plugins should only access their own endpoints and public APIs
       // This is enforced by the routing system and plugin API wrapper
-      
-      const response = await request(app)
-        .get('/api/plugin-a/status')
-        .expect(200);
+
+      const response = await request(app).get('/api/plugin-a/status').expect(200);
 
       expect(response.body.status).toBe('active');
     });
@@ -666,7 +651,7 @@ describe('Plugin System Integration', () => {
   describe('Performance and Scalability', () => {
     beforeEach(async () => {
       const discoveredPlugins = await pluginRegistry.discoverPlugins('/plugins');
-      
+
       for (const plugin of discoveredPlugins) {
         await pluginRegistry.installPlugin(plugin);
         await pluginRegistry.activatePlugin(plugin.manifest.id);
@@ -678,16 +663,14 @@ describe('Plugin System Integration', () => {
 
       // Generate multiple concurrent requests
       const requests = Array.from({ length: 20 }, () =>
-        request(app)
-          .post('/api/plugin-b/generate')
-          .send({ count: 1 })
+        request(app).post('/api/plugin-b/generate').send({ count: 1 })
       );
 
       const responses = await Promise.all(requests);
       const duration = Date.now() - startTime;
 
       // All requests should succeed
-      responses.forEach(response => {
+      responses.forEach((response) => {
         expect(response.status).toBe(200);
         expect(response.body.success).toBe(true);
       });
@@ -699,16 +682,11 @@ describe('Plugin System Integration', () => {
     it('should handle memory usage efficiently', async () => {
       // Generate large amount of data to test memory handling
       for (let i = 0; i < 100; i++) {
-        await request(app)
-          .post('/api/plugin-b/generate')
-          .send({ count: 10 })
-          .expect(200);
+        await request(app).post('/api/plugin-b/generate').send({ count: 10 }).expect(200);
       }
 
       // System should remain responsive
-      const response = await request(app)
-        .get('/api/plugin-a/status')
-        .expect(200);
+      const response = await request(app).get('/api/plugin-a/status').expect(200);
 
       expect(response.body.status).toBe('active');
     });
@@ -723,16 +701,14 @@ describe('Plugin System Integration', () => {
       expect(mockLogger.info).toHaveBeenCalledWith('Plugin B deactivated');
 
       // APIs should no longer be available
-      await request(app)
-        .get('/api/plugin-a/status')
-        .expect(404);
+      await request(app).get('/api/plugin-a/status').expect(404);
     });
   });
 
   describe('Plugin Updates and Hot Reloading', () => {
     beforeEach(async () => {
       const discoveredPlugins = await pluginRegistry.discoverPlugins('/plugins');
-      
+
       for (const plugin of discoveredPlugins) {
         await pluginRegistry.installPlugin(plugin);
         await pluginRegistry.activatePlugin(plugin.manifest.id);
@@ -741,31 +717,27 @@ describe('Plugin System Integration', () => {
 
     it('should handle plugin updates without service interruption', async () => {
       // Test current functionality
-      const initialResponse = await request(app)
-        .get('/api/plugin-a/status')
-        .expect(200);
+      const initialResponse = await request(app).get('/api/plugin-a/status').expect(200);
 
       expect(initialResponse.body.status).toBe('active');
 
       // Simulate plugin update
       const updatedManifest = {
         ...testPluginA,
-        version: '1.1.0',
+        version: '1.1.0'
       };
 
       const updatedPlugin: Plugin = {
         manifest: updatedManifest,
         state: PluginState.DISCOVERED,
-        path: '/plugins/test-plugin-a',
+        path: '/plugins/test-plugin-a'
       };
 
       // Update plugin
       await pluginRegistry.updatePlugin('test-plugin-a', updatedPlugin);
 
       // Verify updated plugin is still functional
-      const updatedResponse = await request(app)
-        .get('/api/plugin-a/status')
-        .expect(200);
+      const updatedResponse = await request(app).get('/api/plugin-a/status').expect(200);
 
       expect(updatedResponse.body.status).toBe('active');
 
@@ -778,7 +750,7 @@ describe('Plugin System Integration', () => {
   describe('Monitoring and Observability', () => {
     beforeEach(async () => {
       const discoveredPlugins = await pluginRegistry.discoverPlugins('/plugins');
-      
+
       for (const plugin of discoveredPlugins) {
         await pluginRegistry.installPlugin(plugin);
         await pluginRegistry.activatePlugin(plugin.manifest.id);
@@ -787,24 +759,14 @@ describe('Plugin System Integration', () => {
 
     it('should provide comprehensive logging', async () => {
       // Perform operations that should generate logs
-      await request(app)
-        .post('/api/plugin-b/generate')
-        .send({ count: 1 })
-        .expect(200);
+      await request(app).post('/api/plugin-b/generate').send({ count: 1 }).expect(200);
 
-      await new Promise(resolve => setTimeout(resolve, 200));
+      await new Promise((resolve) => setTimeout(resolve, 200));
 
       // Verify logs were generated
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        'Plugin A activated'
-      );
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        'Plugin B activated'
-      );
-      expect(mockLogger.debug).toHaveBeenCalledWith(
-        'Data sent to Plugin A',
-        expect.any(Object)
-      );
+      expect(mockLogger.info).toHaveBeenCalledWith('Plugin A activated');
+      expect(mockLogger.info).toHaveBeenCalledWith('Plugin B activated');
+      expect(mockLogger.debug).toHaveBeenCalledWith('Data sent to Plugin A', expect.any(Object));
     });
 
     it('should track plugin performance metrics', async () => {
@@ -814,11 +776,11 @@ describe('Plugin System Integration', () => {
       for (let i = 0; i < 10; i++) {
         await request(app)
           .post('/api/plugin-a/process')
-          .send({ 
-            data: { 
+          .send({
+            data: {
               id: `test-${i}`,
-              value: i * 10 
-            } 
+              value: i * 10
+            }
           })
           .expect(200);
       }
@@ -827,9 +789,7 @@ describe('Plugin System Integration', () => {
       const duration = endTime - startTime;
 
       // Check performance
-      const statusResponse = await request(app)
-        .get('/api/plugin-a/status')
-        .expect(200);
+      const statusResponse = await request(app).get('/api/plugin-a/status').expect(200);
 
       expect(statusResponse.body.processedCount).toBe(10);
       expect(duration).toBeLessThan(2000); // Should complete quickly
@@ -838,9 +798,9 @@ describe('Plugin System Integration', () => {
     it('should provide plugin health information', async () => {
       // Get health status for all plugins
       const activePlugins = pluginRegistry.getActivePlugins();
-      
+
       expect(activePlugins).toHaveLength(2);
-      activePlugins.forEach(plugin => {
+      activePlugins.forEach((plugin) => {
         expect(plugin.state).toBe(PluginState.ACTIVE);
         expect(plugin.activatedAt).toBeDefined();
       });

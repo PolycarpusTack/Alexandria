@@ -4,12 +4,7 @@
  */
 
 import { Logger } from '@utils/logger';
-import { 
-  HeimdallQuery,
-  HeimdallQueryResult,
-  QueryHints,
-  StorageTier
-} from '../interfaces';
+import { HeimdallQuery, HeimdallQueryResult, QueryHints, StorageTier } from '../interfaces';
 import { StorageManager } from './storage-manager';
 
 export interface QueryPlan {
@@ -42,20 +37,20 @@ export class QueryPlanner {
    */
   async plan(query: HeimdallQuery): Promise<QueryPlan> {
     const startTime = Date.now();
-    
+
     // Analyze query complexity
     const complexity = this.analyzeQueryComplexity(query);
-    
+
     // Determine optimal storage tier
     const preferredStorage = this.selectStorageTier(query, complexity);
-    
+
     // Generate query steps
     const steps = this.generateQuerySteps(query, preferredStorage);
-    
+
     // Estimate cost and time
     const estimatedCost = this.estimateCost(steps, complexity);
     const estimatedTime = this.estimateTime(steps, complexity);
-    
+
     const plan: QueryPlan = {
       id: `plan-${Date.now()}`,
       query,
@@ -64,14 +59,14 @@ export class QueryPlanner {
       estimatedTime,
       preferredStorage
     };
-    
+
     this.logger.debug('Query plan created', {
       planId: plan.id,
       steps: steps.length,
       estimatedTime,
       planningTime: Date.now() - startTime
     });
-    
+
     return plan;
   }
 
@@ -91,23 +86,23 @@ export class QueryPlanner {
         storageAccessed: []
       }
     };
-    
+
     try {
       // Execute each step
       for (const step of plan.steps) {
         await this.executeStep(step, plan.query, results);
       }
-      
+
       // Finalize results
       results.performance!.took = Date.now() - startTime;
-      results.performance!.storageAccessed = [...new Set(plan.steps.map(s => s.storage))];
-      
+      results.performance!.storageAccessed = [...new Set(plan.steps.map((s) => s.storage))];
+
       this.logger.info('Query executed successfully', {
         planId: plan.id,
         resultCount: results.total,
         executionTime: results.performance.took
       });
-      
+
       return results;
     } catch (error) {
       this.logger.error('Query execution failed', {
@@ -123,31 +118,31 @@ export class QueryPlanner {
    */
   private analyzeQueryComplexity(query: HeimdallQuery): number {
     let complexity = 1;
-    
+
     // Time range factor
     const timeRangeMs = query.timeRange.to.getTime() - query.timeRange.from.getTime();
     complexity *= Math.log10(timeRangeMs / (60 * 60 * 1000)); // Hours
-    
+
     // Filter complexity
     if (query.structured?.filters) {
-      complexity *= 1 + (query.structured.filters.length * 0.2);
+      complexity *= 1 + query.structured.filters.length * 0.2;
     }
-    
+
     // Aggregation complexity
     if (query.structured?.aggregations) {
-      complexity *= 1 + (query.structured.aggregations.length * 0.5);
+      complexity *= 1 + query.structured.aggregations.length * 0.5;
     }
-    
+
     // Natural language complexity
     if (query.naturalLanguage) {
       complexity *= 2; // NLP adds significant overhead
     }
-    
+
     // ML features complexity
     if (query.mlFeatures) {
       complexity *= 3; // ML operations are expensive
     }
-    
+
     return Math.max(1, complexity);
   }
 
@@ -159,21 +154,21 @@ export class QueryPlanner {
     if (query.hints?.preferredStorage) {
       return query.hints.preferredStorage;
     }
-    
+
     // Check time range
     const timeRangeMs = query.timeRange.to.getTime() - query.timeRange.from.getTime();
     const hoursSinceEnd = (Date.now() - query.timeRange.to.getTime()) / (60 * 60 * 1000);
-    
+
     // Recent data (< 24 hours old) - use hot storage
     if (hoursSinceEnd < 24) {
       return 'hot';
     }
-    
+
     // Medium-term data (< 7 days old) and moderate complexity - use warm storage
     if (hoursSinceEnd < 7 * 24 && complexity < 5) {
       return 'warm';
     }
-    
+
     // Historical data or complex queries - use cold storage
     return 'cold';
   }
@@ -186,7 +181,7 @@ export class QueryPlanner {
     preferredStorage: StorageTier['name']
   ): QueryStep[] {
     const steps: QueryStep[] = [];
-    
+
     // Time range filter (always first)
     steps.push({
       type: 'filter',
@@ -194,7 +189,7 @@ export class QueryPlanner {
       parallel: false,
       estimatedRows: this.estimateTimeRangeRows(query.timeRange)
     });
-    
+
     // Additional filters
     if (query.structured?.filters) {
       for (const filter of query.structured.filters) {
@@ -206,7 +201,7 @@ export class QueryPlanner {
         });
       }
     }
-    
+
     // Aggregations
     if (query.structured?.aggregations) {
       for (const agg of query.structured.aggregations) {
@@ -218,7 +213,7 @@ export class QueryPlanner {
         });
       }
     }
-    
+
     // Sorting
     if (query.structured?.sort) {
       steps.push({
@@ -228,7 +223,7 @@ export class QueryPlanner {
         estimatedRows: steps[steps.length - 1].estimatedRows
       });
     }
-    
+
     // Limit
     if (query.structured?.limit) {
       steps.push({
@@ -238,7 +233,7 @@ export class QueryPlanner {
         estimatedRows: Math.min(query.structured.limit, steps[steps.length - 1].estimatedRows)
       });
     }
-    
+
     return steps;
   }
 
@@ -247,7 +242,7 @@ export class QueryPlanner {
    */
   private estimateCost(steps: QueryStep[], complexity: number): number {
     let cost = 0;
-    
+
     for (const step of steps) {
       const baseCost = {
         filter: 1,
@@ -256,11 +251,11 @@ export class QueryPlanner {
         limit: 0.1,
         join: 10
       }[step.type];
-      
+
       const rowFactor = Math.log10(step.estimatedRows + 1);
       cost += baseCost * rowFactor * (step.parallel ? 0.7 : 1);
     }
-    
+
     return cost * complexity;
   }
 
@@ -269,7 +264,7 @@ export class QueryPlanner {
    */
   private estimateTime(steps: QueryStep[], complexity: number): number {
     const cost = this.estimateCost(steps, complexity);
-    
+
     // Rough estimate: 10ms per cost unit
     return Math.round(cost * 10);
   }
@@ -279,7 +274,7 @@ export class QueryPlanner {
    */
   private estimateTimeRangeRows(timeRange: { from: Date; to: Date }): number {
     const hours = (timeRange.to.getTime() - timeRange.from.getTime()) / (60 * 60 * 1000);
-    
+
     // Assume 100K logs per hour on average
     return Math.round(hours * 100000);
   }
@@ -298,26 +293,26 @@ export class QueryPlanner {
       storage: step.storage,
       estimatedRows: step.estimatedRows
     });
-    
+
     // Placeholder implementation
     switch (step.type) {
       case 'filter':
         // Apply filters
         break;
-      
+
       case 'aggregate':
         // Apply aggregations
         results.aggregations = results.aggregations || {};
         break;
-      
+
       case 'sort':
         // Sort results
         break;
-      
+
       case 'limit':
         // Limit results
         break;
-      
+
       case 'join':
         // Join with other data
         break;

@@ -37,7 +37,7 @@
     {
       "id": "heimdall-analytics",
       "name": "Analytics",
-      "location": "main", 
+      "location": "main",
       "component": "ui/components/HeimdallAnalytics"
     }
   ],

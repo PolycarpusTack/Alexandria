@@ -52,17 +52,17 @@ export const ALLOWED_INDEX_FIELDS = new Set([
 export function validateTableName(tableName: string): string {
   // Remove any whitespace and convert to lowercase
   const normalized = tableName.trim().toLowerCase();
-  
+
   // Check against whitelist
   if (!ALLOWED_TABLES.has(normalized)) {
     throw new Error(`Invalid table name: ${tableName}. Table not in whitelist.`);
   }
-  
+
   // Additional safety check - ensure no SQL injection characters
   if (!/^[a-z_]+$/.test(normalized)) {
     throw new Error(`Invalid table name format: ${tableName}`);
   }
-  
+
   return normalized;
 }
 
@@ -75,17 +75,17 @@ export function validateTableName(tableName: string): string {
 export function validateIndexField(fieldName: string): string {
   // Remove any whitespace and convert to lowercase
   const normalized = fieldName.trim().toLowerCase();
-  
+
   // Check against whitelist
   if (!ALLOWED_INDEX_FIELDS.has(normalized)) {
     throw new Error(`Invalid index field: ${fieldName}. Field not in whitelist.`);
   }
-  
+
   // Additional safety check - ensure no SQL injection characters
   if (!/^[a-z_]+$/.test(normalized)) {
     throw new Error(`Invalid field name format: ${fieldName}`);
   }
-  
+
   return normalized;
 }
 
@@ -111,7 +111,7 @@ export function buildJsonbCondition(field: string, paramIndex: number): string {
   if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(field)) {
     throw new Error(`Invalid field name: ${field}`);
   }
-  
+
   // Use parameterized query for the value, but escape the field name
   return `data->>$${paramIndex + 1} = $${paramIndex + 2}`;
 }
@@ -122,13 +122,13 @@ export function buildJsonbCondition(field: string, paramIndex: number): string {
  * @returns A safe column list string
  */
 export function buildSafeColumnList(columns: string[]): string {
-  const safeColumns = columns.map(col => {
+  const safeColumns = columns.map((col) => {
     // Validate column name format
     if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(col)) {
       throw new Error(`Invalid column name: ${col}`);
     }
     return escapeIdentifier(col);
   });
-  
+
   return safeColumns.join(', ');
 }

@@ -24,7 +24,7 @@ describe('AuthenticationService', () => {
   let authService: AuthenticationService;
   let dataService: IDataService;
   let logger: MockLogger;
-  
+
   const mockUser = {
     id: 'user-123',
     username: 'testuser',
@@ -38,16 +38,16 @@ describe('AuthenticationService', () => {
   beforeEach(() => {
     logger = new MockLogger();
     dataService = new InMemoryDataService();
-    
+
     // Set up environment variables
     process.env.JWT_SECRET = 'test-secret';
     process.env.JWT_EXPIRY = '24h';
-    
+
     authService = new AuthenticationService(dataService, logger);
-    
+
     // Reset mocks
     jest.clearAllMocks();
-    
+
     // Set up default mock implementations
     (bcrypt.hash as jest.Mock).mockResolvedValue('hashed-password');
     (bcrypt.compare as jest.Mock).mockResolvedValue(true);
@@ -75,7 +75,7 @@ describe('AuthenticationService', () => {
       expect(result.user?.username).toBe(userData.username);
       expect(result.user?.email).toBe(userData.email);
       expect(result.token).toBe('mock-jwt-token');
-      
+
       expect(bcrypt.hash).toHaveBeenCalledWith(userData.password, 10);
       expect(logger.info).toHaveBeenCalledWith(
         'User registered successfully',
@@ -175,7 +175,7 @@ describe('AuthenticationService', () => {
       expect(result.user).toBeDefined();
       expect(result.user?.username).toBe('testuser');
       expect(result.token).toBe('mock-jwt-token');
-      
+
       expect(bcrypt.compare).toHaveBeenCalledWith('correct-password', 'hashed-password');
       expect(logger.info).toHaveBeenCalledWith(
         'User logged in successfully',
@@ -217,7 +217,7 @@ describe('AuthenticationService', () => {
       const result = await authService.login('testuser', 'correct-password');
 
       expect(result.success).toBe(true);
-      
+
       const updatedUser = await dataService.findById('users', mockUser.id);
       expect(updatedUser.lastLogin).toBeDefined();
     });
@@ -258,7 +258,7 @@ describe('AuthenticationService', () => {
 
     it('should handle missing JWT secret', async () => {
       delete process.env.JWT_SECRET;
-      
+
       const newAuthService = new AuthenticationService(dataService, logger);
       const result = await newAuthService.validateToken('any-token');
 
@@ -274,11 +274,9 @@ describe('AuthenticationService', () => {
       expect(result.success).toBe(true);
       expect(result.token).toBe('mock-jwt-token');
       expect(jwt.verify).toHaveBeenCalledWith('valid-token', 'test-secret');
-      expect(jwt.sign).toHaveBeenCalledWith(
-        { userId: 'user-123' },
-        'test-secret',
-        { expiresIn: '24h' }
-      );
+      expect(jwt.sign).toHaveBeenCalledWith({ userId: 'user-123' }, 'test-secret', {
+        expiresIn: '24h'
+      });
     });
 
     it('should not refresh an invalid token', async () => {
@@ -347,11 +345,7 @@ describe('AuthenticationService', () => {
     });
 
     it('should validate new password strength', async () => {
-      const result = await authService.changePassword(
-        'user-123',
-        'old-password',
-        'weak'
-      );
+      const result = await authService.changePassword('user-123', 'old-password', 'weak');
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('Password must be at least');

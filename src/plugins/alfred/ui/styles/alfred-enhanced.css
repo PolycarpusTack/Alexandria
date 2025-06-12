@@ -242,8 +242,12 @@
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Empty States */
@@ -281,11 +285,11 @@
   .alfred-chat-content {
     max-width: 85%;
   }
-  
+
   .alfred-template-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .alfred-quick-actions {
     padding: 8px 16px;
   }

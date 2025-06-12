@@ -28,44 +28,54 @@ export function validateLogEntry(log: any): HeimdallLogEntry {
       structured: z.record(z.any()).optional(),
       template: z.string().optional()
     }),
-    trace: z.object({
-      traceId: z.string(),
-      spanId: z.string(),
-      parentSpanId: z.string().optional(),
-      flags: z.string().optional()
-    }).optional(),
-    entities: z.object({
-      userId: z.string().optional(),
-      sessionId: z.string().optional(),
-      organizationId: z.string().optional(),
-      requestId: z.string().optional(),
-      resourceId: z.string().optional(),
-      custom: z.record(z.string()).optional()
-    }).optional(),
-    metrics: z.object({
-      duration: z.number().optional(),
-      cpu: z.number().optional(),
-      memory: z.number().optional(),
-      custom: z.record(z.number()).optional()
-    }).optional(),
+    trace: z
+      .object({
+        traceId: z.string(),
+        spanId: z.string(),
+        parentSpanId: z.string().optional(),
+        flags: z.string().optional()
+      })
+      .optional(),
+    entities: z
+      .object({
+        userId: z.string().optional(),
+        sessionId: z.string().optional(),
+        organizationId: z.string().optional(),
+        requestId: z.string().optional(),
+        resourceId: z.string().optional(),
+        custom: z.record(z.string()).optional()
+      })
+      .optional(),
+    metrics: z
+      .object({
+        duration: z.number().optional(),
+        cpu: z.number().optional(),
+        memory: z.number().optional(),
+        custom: z.record(z.number()).optional()
+      })
+      .optional(),
     security: z.object({
       classification: z.string(),
       sanitized: z.boolean(),
       compliance: z.array(z.string()).optional(),
       redactedFields: z.array(z.string()).optional()
     }),
-    ml: z.object({
-      anomalyScore: z.number().min(0).max(1).optional(),
-      confidence: z.number().min(0).max(1).optional(),
-      predictedCategory: z.string().optional(),
-      suggestedActions: z.array(z.string()).optional(),
-      relatedPatterns: z.array(z.string()).optional()
-    }).optional(),
-    storage: z.object({
-      tier: z.string().optional(),
-      compressed: z.boolean().optional(),
-      indexed: z.boolean().optional()
-    }).optional()
+    ml: z
+      .object({
+        anomalyScore: z.number().min(0).max(1).optional(),
+        confidence: z.number().min(0).max(1).optional(),
+        predictedCategory: z.string().optional(),
+        suggestedActions: z.array(z.string()).optional(),
+        relatedPatterns: z.array(z.string()).optional()
+      })
+      .optional(),
+    storage: z
+      .object({
+        tier: z.string().optional(),
+        compressed: z.boolean().optional(),
+        indexed: z.boolean().optional()
+      })
+      .optional()
   });
 
   return schema.parse(log);
@@ -104,7 +114,7 @@ export function validateTimeRange(from: any, to: any): { from: Date; to: Date } 
  */
 export function validateStorageTier(tier: string): 'hot' | 'warm' | 'cold' {
   const validTiers = ['hot', 'warm', 'cold'];
-  
+
   if (!validTiers.includes(tier)) {
     throw new Error(`Invalid storage tier: ${tier}. Must be one of: ${validTiers.join(', ')}`);
   }
@@ -124,17 +134,17 @@ export function sanitizeLogMessage(message: string, fields?: string[]): string {
     /\b\d{3}-\d{2}-\d{4}\b/g, // SSN
     /\b\d{16}\b/g, // Credit card
     /Bearer\s+[A-Za-z0-9\-._~+\/]+=*/g, // Bearer token
-    /api[_-]?key[\s:=]+[A-Za-z0-9\-._~+\/]+=*/gi, // API key
+    /api[_-]?key[\s:=]+[A-Za-z0-9\-._~+\/]+=*/gi // API key
   ];
 
   // Replace sensitive patterns
-  patterns.forEach(pattern => {
+  patterns.forEach((pattern) => {
     sanitized = sanitized.replace(pattern, '[REDACTED]');
   });
 
   // Redact specific fields if provided
   if (fields) {
-    fields.forEach(field => {
+    fields.forEach((field) => {
       const regex = new RegExp(`${field}[\s:=]+[^\s,;}]+`, 'gi');
       sanitized = sanitized.replace(regex, `${field}=[REDACTED]`);
     });
@@ -167,7 +177,7 @@ export function validateQueryLimit(limit?: number): number {
  */
 export function validateAggregationInterval(interval: string): string {
   const validIntervals = ['1m', '5m', '10m', '30m', '1h', '6h', '12h', '1d', '7d', '30d'];
-  
+
   if (!validIntervals.includes(interval)) {
     throw new Error(`Invalid interval: ${interval}. Must be one of: ${validIntervals.join(', ')}`);
   }

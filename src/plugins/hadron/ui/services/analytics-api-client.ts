@@ -126,7 +126,10 @@ export class AnalyticsAPIClient {
   /**
    * Get comprehensive analytics summary
    */
-  async getAnalyticsSummary(start?: Date, end?: Date): Promise<{
+  async getAnalyticsSummary(
+    start?: Date,
+    end?: Date
+  ): Promise<{
     timeRange: TimeRange;
     timeSeries: TimeSeriesData;
     rootCauses: RootCauseDistribution;

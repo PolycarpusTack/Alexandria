@@ -7,7 +7,7 @@ import { injectable, inject } from 'tsyringe';
 import { EventBus } from '../../../../core/event-bus/event-bus';
 import { IDataService } from '../../../../core/data/interfaces';
 import { createLogger } from '../../../../core/services/logging-service';
-import { AlertRule, AlertEvent, AlertSeverity, AlertChannel } from '../../interfaces/alerts';
+import { AlertRule, AlertEvent, AlertSeverity } from '../../interfaces/alerts';
 import { TimeRange } from '../../interfaces/analytics';
 import { NotificationService } from './notification-service';
 import { AlertRuleEngine } from './alert-rule-engine';
@@ -38,14 +38,14 @@ export class AlertManager {
    */
   registerRule(rule: AlertRule): void {
     logger.info('Registering alert rule', { ruleId: rule.id, name: rule.name });
-    
+
     // Validate rule
     if (!this.ruleEngine.validateRule(rule)) {
       throw new Error(`Invalid alert rule: ${rule.name}`);
     }
 
     this.rules.set(rule.id, rule);
-    
+
     // Emit event
     this.eventBus.emit('alert:rule_registered', { rule });
   }
@@ -60,7 +60,7 @@ export class AlertManager {
     }
 
     const updatedRule = { ...existingRule, ...updates };
-    
+
     if (!this.ruleEngine.validateRule(updatedRule)) {
       throw new Error(`Invalid rule update: ${updatedRule.name}`);
     }
@@ -108,8 +108,8 @@ export class AlertManager {
     logger.debug('Starting alert check cycle');
 
     const checkPromises = Array.from(this.rules.values())
-      .filter(rule => rule.enabled)
-      .map(rule => this.checkRule(rule));
+      .filter((rule) => rule.enabled)
+      .map((rule) => this.checkRule(rule));
 
     await Promise.all(checkPromises);
 
@@ -136,19 +136,15 @@ export class AlertManager {
     let filtered = [...this.alertHistory];
 
     if (options?.startTime) {
-      filtered = filtered.filter(alert => 
-        new Date(alert.timestamp) >= options.startTime!
-      );
+      filtered = filtered.filter((alert) => new Date(alert.timestamp) >= options.startTime!);
     }
 
     if (options?.endTime) {
-      filtered = filtered.filter(alert => 
-        new Date(alert.timestamp) <= options.endTime!
-      );
+      filtered = filtered.filter((alert) => new Date(alert.timestamp) <= options.endTime!);
     }
 
     if (options?.severity) {
-      filtered = filtered.filter(alert => alert.severity === options.severity);
+      filtered = filtered.filter((alert) => alert.severity === options.severity);
     }
 
     if (options?.limit) {
@@ -167,7 +163,7 @@ export class AlertManager {
       alert.acknowledged = true;
       alert.acknowledgedBy = acknowledgedBy;
       alert.acknowledgedAt = new Date();
-      
+
       logger.info('Alert acknowledged', { alertId, acknowledgedBy });
       this.eventBus.emit('alert:acknowledged', { alert });
     }
@@ -183,16 +179,16 @@ export class AlertManager {
       alert.resolvedBy = resolvedBy;
       alert.resolvedAt = new Date();
       alert.resolution = resolution;
-      
+
       // Move to history
       this.alertHistory.push(alert);
       this.activeAlerts.delete(alertId);
-      
+
       // Keep history size manageable
       if (this.alertHistory.length > 10000) {
         this.alertHistory = this.alertHistory.slice(-5000);
       }
-      
+
       logger.info('Alert resolved', { alertId, resolvedBy, resolution });
       this.eventBus.emit('alert:resolved', { alert });
     }
@@ -205,12 +201,9 @@ export class AlertManager {
     try {
       // Get metric value
       const value = await this.getMetricValue(rule.metric, rule.timeWindow);
-      
+
       // Evaluate condition
-      const triggered = this.ruleEngine.evaluateCondition(
-        value,
-        rule.condition
-      );
+      const triggered = this.ruleEngine.evaluateCondition(value, rule.condition);
 
       const alertKey = rule.id;
       const existingAlert = this.activeAlerts.get(alertKey);
@@ -241,13 +234,13 @@ export class AlertManager {
 
   private buildMetricQuery(metric: string, timeRange: TimeRange): string {
     const metricQueries: Record<string, string> = {
-      'crash_rate': `
+      crash_rate: `
         SELECT COUNT(*) as value 
         FROM crash_logs 
         WHERE created_at >= '${timeRange.start.toISOString()}' 
         AND created_at <= '${timeRange.end.toISOString()}'
       `,
-      'error_rate': `
+      error_rate: `
         SELECT 
           COUNT(CASE WHEN status = 'error' THEN 1 END)::float / 
           NULLIF(COUNT(*), 0) as value
@@ -255,26 +248,26 @@ export class AlertManager {
         WHERE created_at >= '${timeRange.start.toISOString()}' 
         AND created_at <= '${timeRange.end.toISOString()}'
       `,
-      'response_time_p95': `
+      response_time_p95: `
         SELECT percentile_cont(0.95) WITHIN GROUP (ORDER BY latency_ms) as value
         FROM analysis_results
         WHERE created_at >= '${timeRange.start.toISOString()}' 
         AND created_at <= '${timeRange.end.toISOString()}'
       `,
-      'critical_crashes': `
+      critical_crashes: `
         SELECT COUNT(*) as value
         FROM crash_logs
         WHERE severity = 'critical'
         AND created_at >= '${timeRange.start.toISOString()}' 
         AND created_at <= '${timeRange.end.toISOString()}'
       `,
-      'unique_users_affected': `
+      unique_users_affected: `
         SELECT COUNT(DISTINCT user_id) as value
         FROM crash_logs
         WHERE created_at >= '${timeRange.start.toISOString()}' 
         AND created_at <= '${timeRange.end.toISOString()}'
       `,
-      'model_accuracy': `
+      model_accuracy: `
         SELECT AVG(confidence_score) as value
         FROM analysis_results
         WHERE created_at >= '${timeRange.start.toISOString()}' 
@@ -311,13 +304,13 @@ export class AlertManager {
     };
 
     this.activeAlerts.set(rule.id, alert);
-    
+
     // Send notifications
     await this.notificationService.sendAlert(alert, rule.channels);
-    
+
     // Emit event
     this.eventBus.emit('alert:triggered', { alert });
-    
+
     logger.warn('Alert triggered', {
       ruleName: rule.name,
       value,
@@ -328,15 +321,18 @@ export class AlertManager {
 
   private formatAlertMessage(rule: AlertRule, value: number): string {
     const templates: Record<string, string> = {
-      'crash_rate': `Crash rate (${value.toFixed(0)}) has ${rule.condition.operator} threshold (${rule.condition.value})`,
-      'error_rate': `Error rate (${(value * 100).toFixed(1)}%) has ${rule.condition.operator} threshold (${rule.condition.value * 100}%)`,
-      'response_time_p95': `95th percentile response time (${value.toFixed(0)}ms) has ${rule.condition.operator} threshold (${rule.condition.value}ms)`,
-      'critical_crashes': `Critical crashes (${value}) have ${rule.condition.operator} threshold (${rule.condition.value})`,
-      'unique_users_affected': `Unique users affected (${value}) has ${rule.condition.operator} threshold (${rule.condition.value})`,
-      'model_accuracy': `Model accuracy (${(value * 100).toFixed(1)}%) has ${rule.condition.operator} threshold (${rule.condition.value * 100}%)`
+      crash_rate: `Crash rate (${value.toFixed(0)}) has ${rule.condition.operator} threshold (${rule.condition.value})`,
+      error_rate: `Error rate (${(value * 100).toFixed(1)}%) has ${rule.condition.operator} threshold (${rule.condition.value * 100}%)`,
+      response_time_p95: `95th percentile response time (${value.toFixed(0)}ms) has ${rule.condition.operator} threshold (${rule.condition.value}ms)`,
+      critical_crashes: `Critical crashes (${value}) have ${rule.condition.operator} threshold (${rule.condition.value})`,
+      unique_users_affected: `Unique users affected (${value}) has ${rule.condition.operator} threshold (${rule.condition.value})`,
+      model_accuracy: `Model accuracy (${(value * 100).toFixed(1)}%) has ${rule.condition.operator} threshold (${rule.condition.value * 100}%)`
     };
 
-    return templates[rule.metric] || `${rule.metric} (${value}) ${rule.condition.operator} ${rule.condition.value}`;
+    return (
+      templates[rule.metric] ||
+      `${rule.metric} (${value}) ${rule.condition.operator} ${rule.condition.value}`
+    );
   }
 
   private parseTimeWindow(window: string, now: Date): TimeRange {
@@ -429,14 +425,14 @@ export class AlertManager {
       }
     ];
 
-    defaultRules.forEach(rule => this.registerRule(rule));
+    defaultRules.forEach((rule) => this.registerRule(rule));
     logger.info('Initialized default alert rules', { count: defaultRules.length });
   }
 
   private startMonitoring(): void {
     // Check alerts every minute
     this.checkInterval = setInterval(() => {
-      this.checkAlerts().catch(error => {
+      this.checkAlerts().catch((error) => {
         logger.error('Alert check failed', { error });
       });
     }, 60000);

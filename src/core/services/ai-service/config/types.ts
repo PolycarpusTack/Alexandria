@@ -1,6 +1,6 @@
 /**
  * Dynamic AI Model Configuration Types
- * 
+ *
  * Types for managing both local (Ollama) and API-based models
  */
 
@@ -26,7 +26,7 @@ export interface APIModelConfig {
   temperature?: number;
   capabilities?: string[];
   cost?: {
-    input: number;  // Cost per 1k tokens
+    input: number; // Cost per 1k tokens
     output: number; // Cost per 1k tokens
   };
   rateLimit?: {

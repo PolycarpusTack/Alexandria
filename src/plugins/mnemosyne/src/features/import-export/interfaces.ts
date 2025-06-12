@@ -131,7 +131,7 @@ export interface ExportOptions {
   includeBacklinks: boolean;
   includeGraph: boolean;
   preserveIds: boolean;
-  
+
   // Format-specific options
   pdf?: PDFOptions;
   html?: HTMLOptions;
@@ -357,9 +357,15 @@ export interface MnemosyneWebhook {
 }
 
 export interface WebhookEvent {
-  type: 'document.created' | 'document.updated' | 'document.deleted' | 
-        'import.completed' | 'export.completed' | 'sync.completed' |
-        'template.used' | 'graph.updated';
+  type:
+    | 'document.created'
+    | 'document.updated'
+    | 'document.deleted'
+    | 'import.completed'
+    | 'export.completed'
+    | 'sync.completed'
+    | 'template.used'
+    | 'graph.updated';
 }
 
 export interface WebhookFilter {
@@ -395,22 +401,22 @@ export interface WebhookResponse {
 export interface ImportAdapter {
   sourceType: ImportSourceType;
   version: string;
-  
+
   // Detection and analysis
   detect(source: ImportSource): Promise<boolean>;
   analyze(source: ImportSource): Promise<ImportAnalysis>;
-  
+
   // Parsing and transformation
   parse(source: ImportSource): Promise<ParsedContent>;
   transform(content: ParsedContent, options: ImportOptions): Promise<MnemosyneDocument[]>;
-  
+
   // Knowledge graph integration
   mapRelationships(docs: MnemosyneDocument[]): Promise<KnowledgeGraphUpdate>;
   trackProvenance(doc: MnemosyneDocument, source: ImportSource): Promise<ProvenanceNode>;
-  
+
   // AI enhancement
   enhanceWithAI?(doc: MnemosyneDocument, context: TemplateContext): Promise<MnemosyneDocument>;
-  
+
   // Sync support
   supportsBidirectionalSync(): boolean;
   getChangesSince?(date: Date): Promise<DocumentChange[]>;

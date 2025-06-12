@@ -1,6 +1,6 @@
 /**
  * Mnemosyne Authentication Middleware
- * 
+ *
  * Handles authentication, authorization, and permission validation
  * for all API endpoints with integration to Alexandria security system
  */
@@ -36,7 +36,7 @@ export interface PermissionOptions {
 
 /**
  * Authentication and Authorization Middleware
- * 
+ *
  * Provides comprehensive authentication and permission checking
  * for the Mnemosyne API with Alexandria platform integration
  */
@@ -101,7 +101,6 @@ export class AuthenticationMiddleware {
       });
 
       next();
-
     } catch (error) {
       this.logger.error('Authentication error', {
         requestId: req.requestId,
@@ -166,8 +165,8 @@ export class AuthenticationMiddleware {
 
       // Check permissions
       const hasPermissions = requireAll
-        ? permissions.every(perm => req.user!.permissions.includes(perm))
-        : permissions.some(perm => req.user!.permissions.includes(perm));
+        ? permissions.every((perm) => req.user!.permissions.includes(perm))
+        : permissions.some((perm) => req.user!.permissions.includes(perm));
 
       if (!hasPermissions) {
         this.logger.warn('Permission denied', {
@@ -194,20 +193,17 @@ export class AuthenticationMiddleware {
   /**
    * Role checking middleware factory
    */
-  public requireRole = (
-    role: string | string[],
-    requireAll = false
-  ) => {
+  public requireRole = (role: string | string[], requireAll = false) => {
     return (req: AuthenticatedRequest, res: Response, next: NextFunction): void => {
       if (!req.user) {
         return this.sendUnauthorizedResponse(res, 'Authentication required');
       }
 
       const roles = Array.isArray(role) ? role : [role];
-      
+
       const hasRoles = requireAll
-        ? roles.every(r => req.user!.roles.includes(r))
-        : roles.some(r => req.user!.roles.includes(r));
+        ? roles.every((r) => req.user!.roles.includes(r))
+        : roles.some((r) => req.user!.roles.includes(r));
 
       if (!hasRoles) {
         this.logger.warn('Role access denied', {
@@ -228,10 +224,7 @@ export class AuthenticationMiddleware {
   /**
    * Resource ownership middleware
    */
-  public requireOwnership = (
-    resourceIdParam: string,
-    ownershipField = 'author'
-  ) => {
+  public requireOwnership = (resourceIdParam: string, ownershipField = 'author') => {
     return async (req: AuthenticatedRequest, res: Response, next: NextFunction): Promise<void> => {
       if (!req.user) {
         return this.sendUnauthorizedResponse(res, 'Authentication required');
@@ -244,13 +237,10 @@ export class AuthenticationMiddleware {
         }
 
         // Check if user owns the resource or has admin privileges
-        const isOwner = await this.checkResourceOwnership(
-          resourceId,
-          req.user.id,
-          ownershipField
-        );
+        const isOwner = await this.checkResourceOwnership(resourceId, req.user.id, ownershipField);
 
-        const hasAdminRole = req.user.roles.includes('admin') || req.user.roles.includes('superuser');
+        const hasAdminRole =
+          req.user.roles.includes('admin') || req.user.roles.includes('superuser');
 
         if (!isOwner && !hasAdminRole) {
           this.logger.warn('Resource ownership denied', {
@@ -264,7 +254,6 @@ export class AuthenticationMiddleware {
         }
 
         next();
-
       } catch (error) {
         this.logger.error('Ownership check error', {
           requestId: req.requestId,
@@ -298,7 +287,7 @@ export class AuthenticationMiddleware {
 
     try {
       const isValid = await this.validateApiKey(apiKey);
-      
+
       if (!isValid) {
         this.logger.warn('Invalid API key', {
           requestId: req.requestId,
@@ -310,7 +299,6 @@ export class AuthenticationMiddleware {
       }
 
       next();
-
     } catch (error) {
       this.logger.error('API key validation error', {
         requestId: req.requestId,

@@ -46,10 +46,8 @@ export const LastUpdated: React.FC<LastUpdatedProps> = ({
 
   return (
     <div className={`flex items-center gap-2 text-sm text-muted-foreground ${className}`}>
-      <Clock className="h-3 w-3" />
-      <span>
-        Last updated: {isRefreshing ? 'Updating...' : relativeTime}
-      </span>
+      <Clock className='h-3 w-3' />
+      <span>Last updated: {isRefreshing ? 'Updating...' : relativeTime}</span>
     </div>
   );
 };

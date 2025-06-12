@@ -1,6 +1,6 @@
 /**
  * Few-Shot Learning Examples for Crash Analysis
- * 
+ *
  * Provides curated examples to improve LLM analysis accuracy
  */
 
@@ -108,7 +108,8 @@ export class FewShotExamples {
       },
       output: {
         primaryError: 'Unsafe method chaining without null checks',
-        rootCause: 'Multiple potential null points in user.getProfile().getContactInfo().getEmail()',
+        rootCause:
+          'Multiple potential null points in user.getProfile().getContactInfo().getEmail()',
         confidence: 95,
         fixes: [
           'Use Optional chaining: Optional.ofNullable(user).map(User::getProfile).map(Profile::getContactInfo).map(ContactInfo::getEmail)',
@@ -135,7 +136,10 @@ export class FewShotExamples {
   - waiting to lock <0x000000076ab621a8> (a com.app.model.Account)
   - locked <0x000000076ab62208> (a com.app.model.Account)`,
         context: {
-          lockOrder: { 'Thread-1': ['Account-A', 'Account-B'], 'Thread-2': ['Account-B', 'Account-A'] }
+          lockOrder: {
+            'Thread-1': ['Account-A', 'Account-B'],
+            'Thread-2': ['Account-B', 'Account-A']
+          }
         }
       },
       output: {
@@ -156,7 +160,8 @@ export class FewShotExamples {
       id: 'connection-pool-exhausted',
       crashType: 'ConnectionTimeout',
       input: {
-        errorMessage: 'org.apache.commons.dbcp.SQLNestedException: Cannot get a connection, pool error Timeout waiting for idle object',
+        errorMessage:
+          'org.apache.commons.dbcp.SQLNestedException: Cannot get a connection, pool error Timeout waiting for idle object',
         stackTrace: `Caused by: java.util.NoSuchElementException: Timeout waiting for idle object
   at org.apache.commons.pool.impl.GenericObjectPool.borrowObject(GenericObjectPool.java:1167)
   at org.apache.commons.dbcp.PoolingDataSource.getConnection(PoolingDataSource.java:106)
@@ -239,8 +244,12 @@ export class FewShotExamples {
   /**
    * Find most relevant examples for given error
    */
-  static findRelevantExamples(errorMessage: string, stackTrace: string, limit: number = 3): FewShotExample[] {
-    const relevantExamples: Array<{example: FewShotExample; score: number}> = [];
+  static findRelevantExamples(
+    errorMessage: string,
+    stackTrace: string,
+    limit: number = 3
+  ): FewShotExample[] {
+    const relevantExamples: Array<{ example: FewShotExample; score: number }> = [];
 
     // Score each example based on similarity
     for (const [crashType, examples] of this.examples) {
@@ -256,13 +265,17 @@ export class FewShotExamples {
     return relevantExamples
       .sort((a, b) => b.score - a.score)
       .slice(0, limit)
-      .map(item => item.example);
+      .map((item) => item.example);
   }
 
   /**
    * Calculate similarity score between error and example
    */
-  private static calculateSimilarity(errorMessage: string, stackTrace: string, example: FewShotExample): number {
+  private static calculateSimilarity(
+    errorMessage: string,
+    stackTrace: string,
+    example: FewShotExample
+  ): number {
     let score = 0;
     const errorLower = errorMessage.toLowerCase();
     const stackLower = stackTrace.toLowerCase();
@@ -278,7 +291,7 @@ export class FewShotExamples {
     // Check stack trace patterns
     const errorClasses = this.extractClassNames(stackTrace);
     const exampleClasses = this.extractClassNames(example.input.stackTrace);
-    
+
     for (const className of errorClasses) {
       if (exampleClasses.has(className)) {
         score += 5;
@@ -300,14 +313,14 @@ export class FewShotExamples {
     const classes = new Set<string>();
     const classPattern = /at\s+([\w.]+)\./g;
     let match;
-    
+
     while ((match = classPattern.exec(stackTrace)) !== null) {
       const className = match[1].split('.').pop();
       if (className) {
         classes.add(className);
       }
     }
-    
+
     return classes;
   }
 
@@ -315,8 +328,9 @@ export class FewShotExamples {
    * Format examples for prompt inclusion
    */
   static formatExamplesForPrompt(examples: FewShotExample[]): string {
-    return examples.map((example, index) => {
-      return `### Example ${index + 1}: ${example.crashType}
+    return examples
+      .map((example, index) => {
+        return `### Example ${index + 1}: ${example.crashType}
 
 **Input:**
 Error: ${example.input.errorMessage}
@@ -329,10 +343,11 @@ Primary Error: ${example.output.primaryError}
 Root Cause: ${example.output.rootCause}
 Confidence: ${example.output.confidence}%
 Fixes:
-${example.output.fixes.map(fix => `- ${fix}`).join('\n')}
+${example.output.fixes.map((fix) => `- ${fix}`).join('\n')}
 
 ${example.explanation ? `**Explanation:** ${example.explanation}` : ''}
 `;
-    }).join('\n---\n\n');
+      })
+      .join('\n---\n\n');
   }
 }

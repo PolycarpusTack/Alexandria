@@ -17,7 +17,7 @@ export class SessionRepository {
   async saveSession(session: ChatSession): Promise<void> {
     try {
       await this.dataService.upsert(
-        this.COLLECTION_NAME, 
+        this.COLLECTION_NAME,
         session.id,
         this.serializeSession(session)
       );
@@ -47,7 +47,7 @@ export class SessionRepository {
   async getAllSessions(): Promise<ChatSession[]> {
     try {
       const data = await this.dataService.find(this.COLLECTION_NAME, {});
-      return data.map(item => this.deserializeSession(item));
+      return data.map((item) => this.deserializeSession(item));
     } catch (error) {
       this.logger.error('Failed to get all sessions', { error });
       throw error;
@@ -70,7 +70,7 @@ export class SessionRepository {
       const data = await this.dataService.find(this.COLLECTION_NAME, {
         projectId
       });
-      return data.map(item => this.deserializeSession(item));
+      return data.map((item) => this.deserializeSession(item));
     } catch (error) {
       this.logger.error('Failed to get sessions by project', { error, projectId });
       throw error;
@@ -86,9 +86,9 @@ export class SessionRepository {
         updatedAt: { $lt: cutoffDate.toISOString() }
       });
 
-      this.logger.info('Cleaned old sessions', { 
+      this.logger.info('Cleaned old sessions', {
         deletedCount: result.deletedCount,
-        cutoffDate 
+        cutoffDate
       });
 
       return result.deletedCount || 0;
@@ -105,15 +105,17 @@ export class SessionRepository {
       id: session.id,
       name: session.name,
       projectId: session.projectId,
-      messages: session.messages.map(msg => this.serializeMessage(msg)),
+      messages: session.messages.map((msg) => this.serializeMessage(msg)),
       createdAt: session.createdAt.toISOString(),
       updatedAt: session.updatedAt.toISOString(),
       metadata: {
         ...session.metadata,
-        context: session.metadata.context ? {
-          ...session.metadata.context,
-          analyzedAt: session.metadata.context.analyzedAt.toISOString()
-        } : undefined
+        context: session.metadata.context
+          ? {
+              ...session.metadata.context,
+              analyzedAt: session.metadata.context.analyzedAt.toISOString()
+            }
+          : undefined
       }
     };
   }
@@ -128,10 +130,12 @@ export class SessionRepository {
       updatedAt: new Date(data.updatedAt),
       metadata: {
         ...data.metadata,
-        context: data.metadata.context ? {
-          ...data.metadata.context,
-          analyzedAt: new Date(data.metadata.context.analyzedAt)
-        } : undefined
+        context: data.metadata.context
+          ? {
+              ...data.metadata.context,
+              analyzedAt: new Date(data.metadata.context.analyzedAt)
+            }
+          : undefined
       }
     };
   }

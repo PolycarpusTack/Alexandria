@@ -1,6 +1,6 @@
 /**
  * Model-Specific Optimizations for Crash Analysis
- * 
+ *
  * Optimizes prompts and parameters for different LLM models
  */
 
@@ -57,11 +57,7 @@ export class ModelOptimizations {
           'Be concise and direct',
           'Focus on the primary issue'
         ],
-        avoidPatterns: [
-          'complex reasoning chains',
-          'detailed explanations',
-          'multiple hypotheses'
-        ]
+        avoidPatterns: ['complex reasoning chains', 'detailed explanations', 'multiple hypotheses']
       },
       capabilities: {
         supportsJSON: true,
@@ -71,7 +67,7 @@ export class ModelOptimizations {
       }
     });
 
-    // Medium models (7B parameters) 
+    // Medium models (7B parameters)
     this.addOptimization({
       modelPattern: /^(llama2?|mistral|vicuna|zephyr).*7b/i,
       name: 'Medium Models (7B)',
@@ -83,7 +79,8 @@ export class ModelOptimizations {
         topP: 0.95,
         topK: 40,
         repeatPenalty: 1.05,
-        systemPrompt: 'You are a technical expert analyzing software crashes. Be precise and structured.',
+        systemPrompt:
+          'You are a technical expert analyzing software crashes. Be precise and structured.',
         formatHints: [
           'Provide analysis in clean JSON format',
           'Include confidence scores',
@@ -110,7 +107,8 @@ export class ModelOptimizations {
         topP: 0.95,
         topK: 50,
         repeatPenalty: 1.02,
-        systemPrompt: 'You are an expert software engineer specializing in crash analysis and debugging. Provide thorough technical analysis.',
+        systemPrompt:
+          'You are an expert software engineer specializing in crash analysis and debugging. Provide thorough technical analysis.',
         formatHints: [
           'Use structured JSON with detailed fields',
           'Include supporting evidence for each finding',
@@ -136,7 +134,8 @@ export class ModelOptimizations {
         temperature: 0.1,
         topP: 0.95,
         repeatPenalty: 1.0,
-        systemPrompt: 'Analyze this code crash with focus on implementation details and code-level fixes.',
+        systemPrompt:
+          'Analyze this code crash with focus on implementation details and code-level fixes.',
         formatHints: [
           'Include code snippets in solutions',
           'Reference specific functions and lines',
@@ -219,7 +218,7 @@ export class ModelOptimizations {
         return opt;
       }
     }
-    
+
     // Return default optimization
     return this.getDefaultOptimization();
   }
@@ -276,7 +275,7 @@ export class ModelOptimizations {
     // Truncate if needed
     if (optimization.capabilities.maxContextLength < optimizedPrompt.length) {
       optimizedPrompt = this.intelligentTruncate(
-        optimizedPrompt, 
+        optimizedPrompt,
         optimization.capabilities.maxContextLength * 0.8 // Leave room for response
       );
     }
@@ -309,12 +308,9 @@ export class ModelOptimizations {
   private static simplifyChainOfThought(prompt: string): string {
     // Remove step-by-step instructions
     let simplified = prompt.replace(/Step \d+:.*?\n/g, '');
-    
+
     // Consolidate the ask
-    simplified = simplified.replace(
-      /Follow these steps.*?:\n/i,
-      'Analyze and provide:\n'
-    );
+    simplified = simplified.replace(/Follow these steps.*?:\n/i, 'Analyze and provide:\n');
 
     // Remove complex reasoning requirements
     simplified = simplified.replace(
@@ -336,7 +332,7 @@ export class ModelOptimizations {
       { pattern: /Your Task:[\s\S]*?(?=\n## |$)/i, priority: 1 },
       { pattern: /Error Messages:[\s\S]*?(?=\n## |$)/i, priority: 2 },
       { pattern: /Stack Trace:[\s\S]*?(?=\n## |$)/i, priority: 3 },
-      { pattern: /JSON format:[\s\S]*?}$/i, priority: 1 },
+      { pattern: /JSON format:[\s\S]*?}$/i, priority: 1 }
     ];
 
     // Extract priority content
@@ -360,7 +356,10 @@ export class ModelOptimizations {
   /**
    * Check if model supports a feature
    */
-  static modelSupports(modelName: string, feature: keyof ModelOptimization['capabilities']): boolean {
+  static modelSupports(
+    modelName: string,
+    feature: keyof ModelOptimization['capabilities']
+  ): boolean {
     const optimization = this.getOptimization(modelName);
     return optimization?.capabilities[feature] ?? false;
   }

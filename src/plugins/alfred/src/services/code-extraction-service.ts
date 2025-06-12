@@ -1,6 +1,6 @@
 /**
  * Code Extraction Service
- * 
+ *
  * Extracts code blocks from AI responses with intelligent file path detection
  * Based on the original Alfred's code extraction functionality
  */
@@ -44,7 +44,7 @@ export class CodeExtractionService {
   private logger: Logger;
   private storageService?: StorageService;
   private eventBus?: EventBus;
-  
+
   // Enhanced patterns for better AI response detection
   private readonly filePatterns = {
     python: /(?:^|\s|`)([a-zA-Z_][\w]*\.py)(?:\s|$|`)/g,
@@ -58,20 +58,22 @@ export class CodeExtractionService {
     sql: /(?:^|\s|`)([\w-/.]+\.sql)(?:\s|$|`)/g,
     shell: /(?:^|\s|`)([\w-/.]+\.(?:sh|bash|zsh))(?:\s|$|`)/g,
     dockerfile: /(?:^|\s|`)(Dockerfile|dockerfile)(?:\s|$|`)/g,
-    config: /(?:^|\s|`)([\w-/.]+\.(?:conf|config|cfg|ini|toml|env))(?:\s|$|`)/g,
+    config: /(?:^|\s|`)([\w-/.]+\.(?:conf|config|cfg|ini|toml|env))(?:\s|$|`)/g
   };
-  
+
   private readonly pathPatterns = {
     // Enhanced file path patterns with better AI response detection
-    explicit: /(?:(?:in|at|to|file:?|path:?|filename:?|create|update|save)\s+)([./]?(?:[\w@-]+\/)*[\w@.-]+\.[\w]+)/gi,
+    explicit:
+      /(?:(?:in|at|to|file:?|path:?|filename:?|create|update|save)\s+)([./]?(?:[\w@-]+\/)*[\w@.-]+\.[\w]+)/gi,
     // Import/export/require statements
     import: /(?:from|import|require\()\s*['"`]([^'"`]+)['"`]/g,
     // Create/modify file mentions with action words
-    fileOperation: /(?:create|update|modify|edit|add|save|write|generate|make)\s+(?:(?:a|an|the|new)\s+)?(?:file\s+)?(?:called\s+|named\s+)?([./]?(?:[\w@-]+\/)*[\w@.-]+\.[\w]+)/gi,
+    fileOperation:
+      /(?:create|update|modify|edit|add|save|write|generate|make)\s+(?:(?:a|an|the|new)\s+)?(?:file\s+)?(?:called\s+|named\s+)?([./]?(?:[\w@-]+\/)*[\w@.-]+\.[\w]+)/gi,
     // File paths in backticks or quotes
     quoted: /['"`]([./]?(?:[\w@-]+\/)*[\w@.-]+\.[\w]+)['"`]/g,
     // Relative paths starting with ./ or ../
-    relative: /(\.[/.]+(?:[\w@-]+\/)*[\w@.-]+\.[\w]+)/g,
+    relative: /(\.[/.]+(?:[\w@-]+\/)*[\w@.-]+\.[\w]+)/g
   };
 
   constructor(logger: Logger, storageService?: StorageService, eventBus?: EventBus) {
@@ -95,15 +97,15 @@ export class CodeExtractionService {
     while ((match = codeBlockRegex.exec(text)) !== null) {
       const language = match[1] || 'plaintext';
       const content = match[2].trim();
-      
+
       // Look for file information in the surrounding context
       const contextStart = Math.max(0, match.index - 200);
       const contextEnd = Math.min(text.length, match.index + match[0].length + 200);
       const context = text.substring(contextStart, contextEnd);
-      
+
       const extractedBlock = this.analyzeCodeBlock(content, language, context);
       blocks.push(extractedBlock);
-      
+
       // Check for file operations
       if (this.detectFileOperation(context)) {
         hasFileOperations = true;
@@ -210,11 +212,7 @@ export class CodeExtractionService {
    * Extract line numbers from context
    */
   private extractLineNumbers(context: string): { start: number; end: number } | undefined {
-    const patterns = [
-      /lines?\s+(\d+)(?:\s*-\s*(\d+))?/i,
-      /L(\d+)(?:-L(\d+))?/,
-      /(\d+):(\d+)/
-    ];
+    const patterns = [/lines?\s+(\d+)(?:\s*-\s*(\d+))?/i, /L(\d+)(?:-L(\d+))?/, /(\d+):(\d+)/];
 
     for (const pattern of patterns) {
       const match = pattern.exec(context);
@@ -235,7 +233,7 @@ export class CodeExtractionService {
     // Look for common description patterns
     const patterns = [
       /(?:this|the following|here's|here is)\s+(?:code|function|class|component)\s+(?:that|to|for)\s+([^.]+)\./i,
-      /(?:implement|create|add|update)\s+(?:a|an|the)?\s*([^.]+)\./i,
+      /(?:implement|create|add|update)\s+(?:a|an|the)?\s*([^.]+)\./i
     ];
 
     for (const pattern of patterns) {
@@ -253,7 +251,7 @@ export class CodeExtractionService {
    */
   private isCompleteCode(content: string, language: string): boolean {
     const lines = content.split('\n');
-    
+
     // Check for common incomplete patterns
     if (content.includes('...') || content.includes('// ...')) {
       return false;
@@ -265,20 +263,20 @@ export class CodeExtractionService {
         // Check for incomplete function/class definitions
         const lastLine = lines[lines.length - 1].trim();
         return !lastLine.endsWith(':') && !content.includes('pass  # TODO');
-        
+
       case 'javascript':
       case 'typescript':
         // Check for balanced braces
         const openBraces = (content.match(/{/g) || []).length;
         const closeBraces = (content.match(/}/g) || []).length;
         return openBraces === closeBraces;
-        
+
       case 'html':
         // Check for balanced tags (simplified)
         const openTags = (content.match(/<[^/][^>]*>/g) || []).length;
         const closeTags = (content.match(/<\/[^>]+>/g) || []).length;
         return Math.abs(openTags - closeTags) <= 1; // Allow for self-closing tags
-        
+
       default:
         return true;
     }
@@ -298,7 +296,7 @@ export class CodeExtractionService {
       yaml: ['yml', 'yaml'],
       markdown: ['md'],
       sql: ['sql'],
-      shell: ['sh', 'bash'],
+      shell: ['sh', 'bash']
     };
 
     const ext = filename.split('.').pop()?.toLowerCase();
@@ -324,7 +322,7 @@ export class CodeExtractionService {
     ];
 
     const lowerContext = context.toLowerCase();
-    return fileOpKeywords.some(keyword => lowerContext.includes(keyword));
+    return fileOpKeywords.some((keyword) => lowerContext.includes(keyword));
   }
 
   /**
@@ -337,7 +335,7 @@ export class CodeExtractionService {
     const isValidPattern = /^[\w.-]+$/.test(str);
     // Check if it's not too long
     const reasonableLength = str.length < 50;
-    
+
     return hasExtension && isValidPattern && reasonableLength;
   }
 
@@ -347,19 +345,19 @@ export class CodeExtractionService {
   private extractFileStructure(text: string): string[] {
     const files: string[] = [];
     const lines = text.split('\n');
-    
+
     // Look for tree-like structures
     const treePattern = /[│├└]\s*[-─]\s*([\w.-]+)/;
     // Look for indented file lists
     const indentPattern = /^\s{2,}([\w.-]+\.\w+)$/;
-    
-    lines.forEach(line => {
+
+    lines.forEach((line) => {
       let match = treePattern.exec(line);
       if (match && match[1]) {
         files.push(match[1]);
         return;
       }
-      
+
       match = indentPattern.exec(line);
       if (match && match[1]) {
         files.push(match[1]);
@@ -375,7 +373,7 @@ export class CodeExtractionService {
   processForSaving(blocks: ExtractedCode[]): Map<string, string> {
     const fileMap = new Map<string, string>();
 
-    blocks.forEach(block => {
+    blocks.forEach((block) => {
       if (block.filepath && block.isComplete) {
         // If we have line numbers, this might be a partial update
         if (block.startLine !== undefined) {
@@ -384,7 +382,7 @@ export class CodeExtractionService {
             lines: `${block.startLine}-${block.endLine}`
           });
         }
-        
+
         fileMap.set(block.filepath, block.content);
       }
     });
@@ -396,7 +394,7 @@ export class CodeExtractionService {
    * Write extracted code blocks to files
    */
   async writeCodeBlocks(
-    blocks: ExtractedCode[], 
+    blocks: ExtractedCode[],
     options: CodeExtractionOptions = {}
   ): Promise<FileWriteResult[]> {
     if (!this.storageService) {
@@ -429,8 +427,8 @@ export class CodeExtractionService {
 
       try {
         // Construct full path
-        const fullPath = path.isAbsolute(block.filepath) 
-          ? block.filepath 
+        const fullPath = path.isAbsolute(block.filepath)
+          ? block.filepath
           : path.join(projectPath, block.filepath);
 
         // Check if file exists
@@ -445,9 +443,9 @@ export class CodeExtractionService {
           existed
         });
 
-        // Emit event
+        // Publish event
         if (this.eventBus) {
-          this.eventBus.emit('alfred:file:written', {
+          this.eventBus.publish('alfred:file:written', {
             filepath: fullPath,
             language: block.language,
             size: block.content.length,
@@ -460,7 +458,6 @@ export class CodeExtractionService {
           size: block.content.length,
           existed
         });
-
       } catch (error) {
         const errorMsg = error instanceof Error ? error.message : 'Unknown error';
         results.push({
@@ -560,7 +557,7 @@ services:
     testResponses.forEach((response, index) => {
       this.logger.info(`\nTest case ${index + 1}:`);
       const result = this.extractCodeBlocks(response);
-      
+
       this.logger.info(`Found ${result.blocks.length} code blocks`);
       result.blocks.forEach((block, blockIndex) => {
         this.logger.info(`  Block ${blockIndex + 1}: ${block.language}`, {
@@ -581,19 +578,19 @@ services:
    */
   private extractFilename(context: string, language: string): string | undefined {
     // Reset regex lastIndex to avoid issues with global regexes
-    Object.values(this.pathPatterns).forEach(pattern => pattern.lastIndex = 0);
-    Object.values(this.filePatterns).forEach(pattern => pattern.lastIndex = 0);
+    Object.values(this.pathPatterns).forEach((pattern) => (pattern.lastIndex = 0));
+    Object.values(this.filePatterns).forEach((pattern) => (pattern.lastIndex = 0));
 
     // First try explicit path patterns
     for (const [patternName, pattern] of Object.entries(this.pathPatterns)) {
       pattern.lastIndex = 0; // Reset global regex
       const matches = Array.from(context.matchAll(pattern));
-      
+
       for (const match of matches) {
         if (match[1]) {
           const pathStr = match[1];
           const filename = pathStr.split('/').pop();
-          
+
           if (filename && this.hasValidExtension(filename, language)) {
             this.logger.debug(`Found filename via ${patternName} pattern: ${filename}`);
             return filename;
@@ -607,7 +604,7 @@ services:
     if (langPattern) {
       langPattern.lastIndex = 0;
       const matches = Array.from(context.matchAll(langPattern));
-      
+
       for (const match of matches) {
         if (match[1]) {
           this.logger.debug(`Found filename via language pattern: ${match[1]}`);
@@ -626,9 +623,9 @@ services:
     // Look for full path mentions containing the filename
     const escapedFilename = filename.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const pathRegex = new RegExp(`([./]?(?:[\\w@-]+/)*${escapedFilename})`, 'gi');
-    
+
     const matches = Array.from(context.matchAll(pathRegex));
-    
+
     for (const match of matches) {
       if (match[1]) {
         const foundPath = match[1];

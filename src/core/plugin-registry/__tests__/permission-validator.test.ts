@@ -110,30 +110,40 @@ describe('PermissionValidator', () => {
   describe('validateResourceAccess', () => {
     it('should allow access to permitted resources', () => {
       const permission: PluginPermission = 'file:read';
-      
+
       expect(permissionValidator.validateResourceAccess(permission, './data/file.txt')).toBe(true);
-      expect(permissionValidator.validateResourceAccess(permission, './config/settings.json')).toBe(true);
+      expect(permissionValidator.validateResourceAccess(permission, './config/settings.json')).toBe(
+        true
+      );
       expect(permissionValidator.validateResourceAccess(permission, './logs/app.log')).toBe(true);
     });
 
     it('should block access to non-permitted resources', () => {
       const permission: PluginPermission = 'file:read';
-      
+
       expect(permissionValidator.validateResourceAccess(permission, '/etc/passwd')).toBe(false);
-      expect(permissionValidator.validateResourceAccess(permission, '../../../secret.txt')).toBe(false);
+      expect(permissionValidator.validateResourceAccess(permission, '../../../secret.txt')).toBe(
+        false
+      );
     });
 
     it('should handle Windows-style paths', () => {
       const permission: PluginPermission = 'file:write';
-      
-      expect(permissionValidator.validateResourceAccess(permission, '.\\data\\plugins\\file.txt')).toBe(true);
-      expect(permissionValidator.validateResourceAccess(permission, 'C:\\Windows\\System32\\file.txt')).toBe(false);
+
+      expect(
+        permissionValidator.validateResourceAccess(permission, '.\\data\\plugins\\file.txt')
+      ).toBe(true);
+      expect(
+        permissionValidator.validateResourceAccess(permission, 'C:\\Windows\\System32\\file.txt')
+      ).toBe(false);
     });
 
     it('should allow any resource for permissions without restrictions', () => {
       const permission: PluginPermission = 'network:http';
-      
-      expect(permissionValidator.validateResourceAccess(permission, 'https://example.com')).toBe(true);
+
+      expect(permissionValidator.validateResourceAccess(permission, 'https://example.com')).toBe(
+        true
+      );
       expect(permissionValidator.validateResourceAccess(permission, 'any-resource')).toBe(true);
     });
   });
@@ -141,7 +151,7 @@ describe('PermissionValidator', () => {
   describe('getPermissionInfo', () => {
     it('should return permission info for valid permissions', () => {
       const info = permissionValidator.getPermissionInfo('file:read');
-      
+
       expect(info).toBeDefined();
       expect(info?.permission).toBe('file:read');
       expect(info?.description).toBe('Read files from the file system');
@@ -157,10 +167,10 @@ describe('PermissionValidator', () => {
   describe('getAllPermissions', () => {
     it('should return all defined permissions', () => {
       const permissions = permissionValidator.getAllPermissions();
-      
+
       expect(permissions).toBeInstanceOf(Array);
       expect(permissions.length).toBeGreaterThan(0);
-      expect(permissions.every(p => p.permission && p.description && p.riskLevel)).toBe(true);
+      expect(permissions.every((p) => p.permission && p.description && p.riskLevel)).toBe(true);
     });
   });
 
@@ -168,18 +178,23 @@ describe('PermissionValidator', () => {
     it('should filter permissions by risk level', () => {
       const lowRisk = permissionValidator.getPermissionsByRiskLevel('low');
       const highRisk = permissionValidator.getPermissionsByRiskLevel('high');
-      
-      expect(lowRisk.every(p => p.riskLevel === 'low')).toBe(true);
-      expect(highRisk.every(p => p.riskLevel === 'high')).toBe(true);
-      expect(highRisk.some(p => p.permission === 'file:write')).toBe(true);
+
+      expect(lowRisk.every((p) => p.riskLevel === 'low')).toBe(true);
+      expect(highRisk.every((p) => p.riskLevel === 'high')).toBe(true);
+      expect(highRisk.some((p) => p.permission === 'file:write')).toBe(true);
     });
   });
 
   describe('generatePermissionReport', () => {
     it('should generate a comprehensive permission report', () => {
-      const permissions: PluginPermission[] = ['file:read', 'file:write', 'network:http', 'event:emit'];
+      const permissions: PluginPermission[] = [
+        'file:read',
+        'file:write',
+        'network:http',
+        'event:emit'
+      ];
       const report = permissionValidator.generatePermissionReport(permissions);
-      
+
       expect(report.summary).toContain('4 permissions');
       expect(report.details).toHaveLength(4);
       expect(report.riskScore).toBeGreaterThan(0);
@@ -188,10 +203,10 @@ describe('PermissionValidator', () => {
     it('should calculate correct risk scores', () => {
       const lowRiskPermissions: PluginPermission[] = ['event:emit', 'buffer:access'];
       const highRiskPermissions: PluginPermission[] = ['file:write', 'database:write'];
-      
+
       const lowRiskReport = permissionValidator.generatePermissionReport(lowRiskPermissions);
       const highRiskReport = permissionValidator.generatePermissionReport(highRiskPermissions);
-      
+
       expect(highRiskReport.riskScore).toBeGreaterThan(lowRiskReport.riskScore);
     });
   });
@@ -200,15 +215,15 @@ describe('PermissionValidator', () => {
     it('should clear rate limit trackers for specific plugin', () => {
       const pluginId = 'test-plugin';
       const permission: PluginPermission = 'network:http';
-      
+
       // Use up some rate limit
       for (let i = 0; i < 50; i++) {
         permissionValidator.checkRateLimit(pluginId, permission);
       }
-      
+
       // Clear trackers for this plugin
       permissionValidator.clearRateLimitTrackers(pluginId);
-      
+
       // Should be able to make requests again
       for (let i = 0; i < 50; i++) {
         const result = permissionValidator.checkRateLimit(pluginId, permission);
@@ -222,10 +237,10 @@ describe('PermissionValidator', () => {
         permissionValidator.checkRateLimit('plugin-1', 'network:http');
         permissionValidator.checkRateLimit('plugin-2', 'database:read');
       }
-      
+
       // Clear all trackers
       permissionValidator.clearRateLimitTrackers();
-      
+
       // All plugins should have fresh rate limits
       for (let i = 0; i < 50; i++) {
         expect(permissionValidator.checkRateLimit('plugin-1', 'network:http')).toBe(true);

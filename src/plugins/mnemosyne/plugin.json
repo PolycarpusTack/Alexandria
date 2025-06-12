@@ -9,7 +9,7 @@
   "type": "full-featured",
   "entryPoint": "src/index.ts",
   "uiComponent": "ui/index.tsx",
-  
+
   "capabilities": {
     "knowledgeManagement": {
       "enabled": true,
@@ -64,25 +64,9 @@
 
   "permissions": {
     "dataAccess": {
-      "read": [
-        "documents",
-        "relationships",
-        "templates",
-        "user-preferences",
-        "analytics"
-      ],
-      "write": [
-        "documents",
-        "relationships",
-        "templates",
-        "user-preferences",
-        "import-sessions"
-      ],
-      "delete": [
-        "documents",
-        "relationships",
-        "templates"
-      ]
+      "read": ["documents", "relationships", "templates", "user-preferences", "analytics"],
+      "write": ["documents", "relationships", "templates", "user-preferences", "import-sessions"],
+      "delete": ["documents", "relationships", "templates"]
     },
     "systemAccess": {
       "filesystem": {
@@ -106,10 +90,7 @@
         "core": ["event-bus", "data-service", "user-context"],
         "plugins": ["alfred"]
       },
-      "external": [
-        "ai-services",
-        "export-services"
-      ]
+      "external": ["ai-services", "export-services"]
     }
   },
 

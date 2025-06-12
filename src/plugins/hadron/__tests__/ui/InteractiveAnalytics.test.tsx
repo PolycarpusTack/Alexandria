@@ -25,13 +25,7 @@ describe('Interactive Analytics Features', () => {
       const end = new Date('2024-01-07');
       const onRangeChange = jest.fn();
 
-      render(
-        <DateRangePicker
-          start={start}
-          end={end}
-          onRangeChange={onRangeChange}
-        />
-      );
+      render(<DateRangePicker start={start} end={end} onRangeChange={onRangeChange} />);
 
       expect(screen.getByText(/Jan 01, 2024/)).toBeInTheDocument();
       expect(screen.getByText(/Jan 07, 2024/)).toBeInTheDocument();
@@ -42,13 +36,7 @@ describe('Interactive Analytics Features', () => {
       const end = new Date('2024-01-07');
       const onRangeChange = jest.fn();
 
-      render(
-        <DateRangePicker
-          start={start}
-          end={end}
-          onRangeChange={onRangeChange}
-        />
-      );
+      render(<DateRangePicker start={start} end={end} onRangeChange={onRangeChange} />);
 
       // Open the picker
       fireEvent.click(screen.getByRole('button'));
@@ -56,10 +44,7 @@ describe('Interactive Analytics Features', () => {
       // Click on "Last 30 days" preset
       fireEvent.click(screen.getByText('Last 30 days'));
 
-      expect(onRangeChange).toHaveBeenCalledWith(
-        expect.any(Date),
-        expect.any(Date)
-      );
+      expect(onRangeChange).toHaveBeenCalledWith(expect.any(Date), expect.any(Date));
     });
   });
 
@@ -124,12 +109,7 @@ describe('Interactive Analytics Features', () => {
 
       render(
         <BrowserRouter>
-          <DrillDownModal
-            isOpen={true}
-            onClose={jest.fn()}
-            data={data}
-            onApplyFilter={jest.fn()}
-          />
+          <DrillDownModal isOpen={true} onClose={jest.fn()} data={data} onApplyFilter={jest.fn()} />
         </BrowserRouter>
       );
 
@@ -185,11 +165,7 @@ describe('Interactive Analytics Features', () => {
     it('should render with interactive features enabled', () => {
       render(
         <BrowserRouter>
-          <TimeSeriesChart
-            data={mockData}
-            enableInteractions={true}
-            onDrillDown={jest.fn()}
-          />
+          <TimeSeriesChart data={mockData} enableInteractions={true} onDrillDown={jest.fn()} />
         </BrowserRouter>
       );
 
@@ -208,16 +184,13 @@ describe('Interactive Analytics Features', () => {
 
       render(
         <BrowserRouter>
-          <TimeSeriesChart
-            data={mockData}
-            enableInteractions={true}
-          />
+          <TimeSeriesChart data={mockData} enableInteractions={true} />
         </BrowserRouter>
       );
 
       // Simulate zoom event
       const canvas = screen.getByRole('img', { hidden: true }) as HTMLCanvasElement;
-      
+
       // Trigger zoom
       fireEvent.wheel(canvas, { deltaY: -100 });
 

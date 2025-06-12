@@ -188,7 +188,7 @@ export interface IRootCause {
  */
 export interface IEvidence {
   description: string;
-  location: string; 
+  location: string;
   snippet?: string;
 }
 

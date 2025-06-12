@@ -1,12 +1,11 @@
 /**
  * Validation Service
- * 
+ *
  * Provides comprehensive input validation for the Hadron plugin,
  * including file validation, metadata validation, and business rule validation.
  */
 
 import { Logger } from '../../../../../utils/logger';
-import { ValidationError } from '../../../../../core/errors';
 
 export interface ValidationConfig {
   maxFileSize: number;
@@ -81,7 +80,9 @@ export class ValidationService {
       if (fileSize === 0) {
         errors.push('File is empty');
       } else if (fileSize > this.config.maxFileSize) {
-        errors.push(`File size ${this.formatBytes(fileSize)} exceeds maximum allowed size ${this.formatBytes(this.config.maxFileSize)}`);
+        errors.push(
+          `File size ${this.formatBytes(fileSize)} exceeds maximum allowed size ${this.formatBytes(this.config.maxFileSize)}`
+        );
       }
 
       // Validate filename
@@ -109,7 +110,7 @@ export class ValidationService {
         warnings.push(...contentValidation.warnings);
         detectedMimeType = contentValidation.detectedMimeType;
         detectedEncoding = contentValidation.detectedEncoding;
-        
+
         if (contentValidation.securityRisk === 'high') {
           securityRisk = 'high';
         } else if (contentValidation.securityRisk === 'medium' && securityRisk === 'low') {
@@ -132,7 +133,7 @@ export class ValidationService {
         securityRisk
       };
 
-      this.logger.info('File upload validation completed', { 
+      this.logger.info('File upload validation completed', {
         filename,
         isValid: result.isValid,
         errorCount: errors.length,
@@ -142,7 +143,7 @@ export class ValidationService {
 
       return result;
     } catch (error) {
-      this.logger.error('File upload validation failed', { 
+      this.logger.error('File upload validation failed', {
         filename,
         error: error instanceof Error ? error.message : String(error)
       });
@@ -194,10 +195,26 @@ export class ValidationService {
 
     // Check for suspicious executable extensions
     const executableExtensions = [
-      '.exe', '.bat', '.cmd', '.scr', '.pif', '.com', '.msi', '.vbs', '.js', '.jar',
-      '.app', '.deb', '.pkg', '.dmg', '.sh', '.bash', '.ps1', '.psm1'
+      '.exe',
+      '.bat',
+      '.cmd',
+      '.scr',
+      '.pif',
+      '.com',
+      '.msi',
+      '.vbs',
+      '.js',
+      '.jar',
+      '.app',
+      '.deb',
+      '.pkg',
+      '.dmg',
+      '.sh',
+      '.bash',
+      '.ps1',
+      '.psm1'
     ];
-    
+
     const extension = this.getFileExtension(filename).toLowerCase();
     if (executableExtensions.includes(extension)) {
       errors.push('Executable file types are not allowed');
@@ -242,7 +259,9 @@ export class ValidationService {
     }
 
     if (!this.config.allowedExtensions.includes(extension)) {
-      errors.push(`File extension '${extension}' is not allowed. Supported extensions: ${this.config.allowedExtensions.join(', ')}`);
+      errors.push(
+        `File extension '${extension}' is not allowed. Supported extensions: ${this.config.allowedExtensions.join(', ')}`
+      );
     }
 
     return { errors, warnings };
@@ -293,7 +312,10 @@ export class ValidationService {
       const detectedMimeType = this.detectMimeType(content, filename);
 
       // Validate MIME type
-      if (this.config.allowedMimeTypes.length > 0 && !this.config.allowedMimeTypes.includes(detectedMimeType)) {
+      if (
+        this.config.allowedMimeTypes.length > 0 &&
+        !this.config.allowedMimeTypes.includes(detectedMimeType)
+      ) {
         if (this.config.strictValidation) {
           errors.push(`File type '${detectedMimeType}' is not allowed`);
         } else {
@@ -311,7 +333,11 @@ export class ValidationService {
         { pattern: /cmd\.exe/gi, description: 'Command line reference detected', risk: 'medium' },
         { pattern: /powershell/gi, description: 'PowerShell reference detected', risk: 'medium' },
         { pattern: /\/bin\/bash/gi, description: 'Bash shell reference detected', risk: 'medium' },
-        { pattern: /rm\s+-rf/gi, description: 'Dangerous file deletion command detected', risk: 'high' },
+        {
+          pattern: /rm\s+-rf/gi,
+          description: 'Dangerous file deletion command detected',
+          risk: 'high'
+        },
         { pattern: /sudo\s+/gi, description: 'Sudo command detected', risk: 'medium' }
       ];
 
@@ -399,7 +425,9 @@ export class ValidationService {
     // Check metadata size
     const metadataString = JSON.stringify(metadata);
     if (metadataString.length > this.config.maxMetadataSize) {
-      errors.push(`Metadata size ${this.formatBytes(metadataString.length)} exceeds maximum allowed size ${this.formatBytes(this.config.maxMetadataSize)}`);
+      errors.push(
+        `Metadata size ${this.formatBytes(metadataString.length)} exceeds maximum allowed size ${this.formatBytes(this.config.maxMetadataSize)}`
+      );
     }
 
     // Validate specific metadata fields
@@ -486,7 +514,9 @@ export class ValidationService {
     if (params.modelTier) {
       const validTiers = ['small', 'medium', 'large', 'xl'];
       if (!validTiers.includes(params.modelTier)) {
-        errors.push(`Invalid model tier '${params.modelTier}'. Valid options: ${validTiers.join(', ')}`);
+        errors.push(
+          `Invalid model tier '${params.modelTier}'. Valid options: ${validTiers.join(', ')}`
+        );
       }
     }
 
@@ -494,7 +524,9 @@ export class ValidationService {
     if (params.priority) {
       const validPriorities = ['low', 'medium', 'high', 'critical'];
       if (!validPriorities.includes(params.priority)) {
-        errors.push(`Invalid priority '${params.priority}'. Valid options: ${validPriorities.join(', ')}`);
+        errors.push(
+          `Invalid priority '${params.priority}'. Valid options: ${validPriorities.join(', ')}`
+        );
       }
     }
 
@@ -502,7 +534,8 @@ export class ValidationService {
     if (params.maxProcessingTime !== undefined) {
       if (typeof params.maxProcessingTime !== 'number' || params.maxProcessingTime <= 0) {
         errors.push('Maximum processing time must be a positive number');
-      } else if (params.maxProcessingTime > 600000) { // 10 minutes
+      } else if (params.maxProcessingTime > 600000) {
+        // 10 minutes
         warnings.push('Maximum processing time is very high (>10 minutes)');
       }
     }

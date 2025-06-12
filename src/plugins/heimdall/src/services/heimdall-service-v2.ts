@@ -4,7 +4,7 @@
  */
 
 import { Logger } from '@utils/logger';
-import { 
+import {
   HeimdallPluginContext,
   HeimdallLogEntry,
   HeimdallQuery,
@@ -25,26 +25,25 @@ import { BatchProcessor, Monitor } from '../utils/performance';
 import { ErrorHandler, ValidationError } from '../utils/errors';
 import { validateLogEntry, validateTimeRange } from '../utils/validation';
 import { DEFAULT_LIMITS, METRICS_NAMES } from '../utils/constants';
-import { v4 as uuidv4 } from 'uuid';
 
 export class HeimdallServiceV2 {
   private readonly context: HeimdallPluginContext;
   private readonly logger: Logger;
-  
+
   // Core services
   private storageManager: StorageManager;
   private cacheService: CacheService;
   private retryService: RetryService;
   private metricsService: MetricsService;
   private patternDetector: PatternDetector;
-  
+
   // Optional services
   private kafkaService?: KafkaService;
   private mlService?: MLService;
-  
+
   // Batch processors
   private logProcessor: BatchProcessor<HeimdallLogEntry, void>;
-  
+
   // State
   private subscriptions: Map<string, Subscription> = new Map();
   private isInitialized = false;
@@ -52,14 +51,14 @@ export class HeimdallServiceV2 {
   constructor(context: HeimdallPluginContext) {
     this.context = context;
     this.logger = context.getLogger();
-    
+
     // Initialize core services
     this.storageManager = new StorageManager(context, this.logger);
     this.cacheService = new CacheService(this.logger, DEFAULT_LIMITS.CACHE_SIZE);
     this.retryService = new RetryService(this.logger);
     this.metricsService = new MetricsService(this.logger);
     this.patternDetector = new PatternDetector(this.logger);
-    
+
     // Initialize batch processor
     this.logProcessor = new BatchProcessor<HeimdallLogEntry, void>(
       (logs) => this.processBatch(logs),
@@ -110,7 +109,10 @@ export class HeimdallServiceV2 {
       this.isInitialized = true;
       this.logger.info('Heimdall service v2 initialized successfully');
     } catch (error) {
-      this.logger.error('Failed to initialize Heimdall service', ErrorHandler.extractDetails(error));
+      this.logger.error(
+        'Failed to initialize Heimdall service',
+        ErrorHandler.extractDetails(error)
+      );
       throw ErrorHandler.normalize(error, 'Service initialization failed');
     }
   }
@@ -157,17 +159,15 @@ export class HeimdallServiceV2 {
       // Validate and enrich
       const validatedLog = validateLogEntry(log);
       const enrichedLog = await this.enrichLog(validatedLog);
-      
+
       // Add to batch processor
       await this.logProcessor.add(enrichedLog);
-      
+
       // Update metrics
       this.metricsService.incrementCounter(METRICS_NAMES.LOGS_INGESTED);
-      this.metricsService.incrementCounter(
-        `${METRICS_NAMES.LOGS_INGESTED}.by_level`,
-        1,
-        { level: enrichedLog.level }
-      );
+      this.metricsService.incrementCounter(`${METRICS_NAMES.LOGS_INGESTED}.by_level`, 1, {
+        level: enrichedLog.level
+      });
     } catch (error) {
       this.metricsService.incrementCounter(METRICS_NAMES.LOGS_FAILED);
       throw ErrorHandler.normalize(error, 'Failed to ingest log');
@@ -181,19 +181,17 @@ export class HeimdallServiceV2 {
   async ingestBatch(logs: HeimdallLogEntry[]): Promise<void> {
     try {
       // Validate all logs
-      const validatedLogs = logs.map(log => validateLogEntry(log));
-      
+      const validatedLogs = logs.map((log) => validateLogEntry(log));
+
       // Enrich logs in parallel
-      const enrichedLogs = await Promise.all(
-        validatedLogs.map(log => this.enrichLog(log))
-      );
-      
+      const enrichedLogs = await Promise.all(validatedLogs.map((log) => this.enrichLog(log)));
+
       // Add to batch processor
       await this.logProcessor.addBatch(enrichedLogs);
-      
+
       // Update metrics
       this.metricsService.incrementCounter(METRICS_NAMES.LOGS_INGESTED, logs.length);
-      
+
       // Detect patterns for large batches
       if (logs.length > 100) {
         this.detectPatternsAsync(enrichedLogs);
@@ -225,10 +223,10 @@ export class HeimdallServiceV2 {
       this.metricsService.incrementCounter(METRICS_NAMES.CACHE_MISSES);
 
       // Execute query with retry
-      const result = await this.retryService.withRetry(
-        () => this.executeQuery(query),
-        { maxAttempts: 2, initialDelay: 500 }
-      );
+      const result = await this.retryService.withRetry(() => this.executeQuery(query), {
+        maxAttempts: 2,
+        initialDelay: 500
+      });
 
       // Cache result
       const ttl = this.calculateCacheTTL(query);
@@ -261,10 +259,7 @@ export class HeimdallServiceV2 {
     };
 
     this.subscriptions.set(subscription.id, subscription);
-    this.metricsService.setGauge(
-      METRICS_NAMES.ACTIVE_SUBSCRIPTIONS,
-      this.subscriptions.size
-    );
+    this.metricsService.setGauge(METRICS_NAMES.ACTIVE_SUBSCRIPTIONS, this.subscriptions.size);
 
     return subscription;
   }
@@ -277,10 +272,7 @@ export class HeimdallServiceV2 {
       throw new ValidationError('Subscription not found');
     }
 
-    this.metricsService.setGauge(
-      METRICS_NAMES.ACTIVE_SUBSCRIPTIONS,
-      this.subscriptions.size
-    );
+    this.metricsService.setGauge(METRICS_NAMES.ACTIVE_SUBSCRIPTIONS, this.subscriptions.size);
   }
 
   /**
@@ -311,8 +303,9 @@ export class HeimdallServiceV2 {
       components.ml = this.mlService.health();
     }
 
-    const unhealthyComponents = Object.entries(components)
-      .filter(([_, health]) => health.status === 'down' || health.status === 'degraded');
+    const unhealthyComponents = Object.entries(components).filter(
+      ([_, health]) => health.status === 'down' || health.status === 'degraded'
+    );
 
     return {
       status: unhealthyComponents.length === 0 ? 'healthy' : 'degraded',
@@ -372,27 +365,21 @@ export class HeimdallServiceV2 {
 
     // Store in storage
     promises.push(
-      this.retryService.withCircuitBreaker(
-        'storage',
-        () => this.storageManager.storeBatch(logs)
-      )
+      this.retryService.withCircuitBreaker('storage', () => this.storageManager.storeBatch(logs))
     );
 
     // Send to Kafka
     if (this.kafkaService) {
       promises.push(
-        this.retryService.withCircuitBreaker(
-          'kafka',
-          () => this.kafkaService!.sendBatch(logs)
-        )
+        this.retryService.withCircuitBreaker('kafka', () => this.kafkaService!.sendBatch(logs))
       );
     }
 
     // Notify subscribers
-    logs.forEach(log => this.notifySubscribers(log));
+    logs.forEach((log) => this.notifySubscribers(log));
 
     const results = await Promise.allSettled(promises);
-    
+
     // Log failures
     results.forEach((result, index) => {
       if (result.status === 'rejected') {
@@ -460,10 +447,7 @@ export class HeimdallServiceV2 {
 
     // Generate ML insights if requested
     if (query.mlFeatures && this.mlService && result.logs.length > 0) {
-      result.insights = await this.mlService.generateInsights(
-        result.logs,
-        query.mlFeatures
-      );
+      result.insights = await this.mlService.generateInsights(result.logs, query.mlFeatures);
     }
 
     return result;
@@ -495,7 +479,7 @@ export class HeimdallServiceV2 {
         if (patterns.length > 0) {
           this.logger.info('Patterns detected', {
             count: patterns.length,
-            types: patterns.map(p => p.type)
+            types: patterns.map((p) => p.type)
           });
         }
       } catch (error) {

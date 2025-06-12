@@ -198,7 +198,7 @@ describe('Security Fixes', () => {
   describe('SQL Injection Prevention', () => {
     // This would be tested more thoroughly with integration tests
     // Here we test the validation function
-    
+
     it('should validate column names', () => {
       const safeColumnName = (col: string): string => {
         if (!/^[a-zA-Z0-9_]+(.[a-zA-Z0-9_]+)?$/.test(col)) {
@@ -235,14 +235,14 @@ describe('Security Fixes', () => {
 
       const maliciousContent = '<div>Hello<script>alert("XSS")</script></div>';
       const sanitized = DOMPurify.sanitize(maliciousContent);
-      
+
       expect(sanitized).toBe('<div>Hello</div>');
       expect(sanitized).not.toContain('<script>');
       expect(sanitized).not.toContain('alert');
 
       const maliciousEvent = '<div onclick="alert(\'XSS\')">Click me</div>';
       const sanitizedEvent = DOMPurify.sanitize(maliciousEvent);
-      
+
       expect(sanitizedEvent).not.toContain('onclick');
     });
   });
@@ -254,18 +254,18 @@ describe('Security Fixes', () => {
       const generateSessionId = () => crypto.randomBytes(32).toString('hex');
 
       const sessionIds = new Set<string>();
-      
+
       // Generate 1000 session IDs
       for (let i = 0; i < 1000; i++) {
         const id = generateSessionId();
-        
+
         // Should be 64 characters (32 bytes * 2 for hex)
         expect(id).toHaveLength(64);
-        
+
         // Should be unique
         expect(sessionIds.has(id)).toBe(false);
         sessionIds.add(id);
-        
+
         // Should only contain hex characters
         expect(id).toMatch(/^[a-f0-9]+$/);
       }

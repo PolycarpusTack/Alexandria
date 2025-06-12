@@ -1,6 +1,6 @@
 /**
  * Plugin API Integration Test Suite
- * 
+ *
  * This test suite provides comprehensive integration testing for plugin-specific APIs,
  * including Alfred, Hadron crash analyzer, file uploads, analytics, and streaming endpoints.
  */
@@ -33,11 +33,11 @@ describe('Plugin API Integration Tests', () => {
     process.env.NODE_ENV = 'test';
     process.env.JWT_SECRET = 'test-secret-key';
     process.env.DISABLE_RATE_LIMITING = 'true';
-    
+
     // Initialize core system
     dataService = new InMemoryDataService();
     await dataService.initialize();
-    
+
     mockLogger = {
       info: jest.fn(),
       debug: jest.fn(),
@@ -45,11 +45,11 @@ describe('Plugin API Integration Tests', () => {
       error: jest.fn(),
       child: jest.fn(() => mockLogger)
     } as any;
-    
+
     const coreSystem = await initializeCore(dataService, mockLogger);
     app = coreSystem.getApp();
     authService = coreSystem.getAuthenticationService();
-    
+
     // Create test users
     testUser = await authService.createUser({
       username: 'testuser',
@@ -58,7 +58,7 @@ describe('Plugin API Integration Tests', () => {
       roles: ['user'],
       permissions: ['system:read', 'logs:read']
     });
-    
+
     testDeveloper = await authService.createUser({
       username: 'developer',
       password: 'dev123',
@@ -66,7 +66,7 @@ describe('Plugin API Integration Tests', () => {
       roles: ['developer'],
       permissions: ['plugin:*', 'database:access', 'code:generate']
     });
-    
+
     userToken = await authService.generateToken(testUser);
     devToken = await authService.generateToken(testDeveloper);
   }, 30000);
@@ -94,7 +94,7 @@ describe('Plugin API Integration Tests', () => {
           expect(response.body).toHaveProperty('createdAt');
           expect(response.body).toHaveProperty('messages');
           expect(Array.isArray(response.body.messages)).toBe(true);
-          
+
           sessionId = response.body.id; // Store for later tests
         });
 
@@ -110,10 +110,7 @@ describe('Plugin API Integration Tests', () => {
         });
 
         it('should require authentication', async () => {
-          const response = await request(app)
-            .post('/alfred/sessions')
-            .send({})
-            .expect(401);
+          const response = await request(app).post('/alfred/sessions').send({}).expect(401);
 
           expect(response.body).toHaveProperty('error');
         });
@@ -129,7 +126,7 @@ describe('Plugin API Integration Tests', () => {
           expect(response.body).toHaveProperty('sessions');
           expect(Array.isArray(response.body.sessions)).toBe(true);
           expect(response.body.sessions.length).toBeGreaterThan(0);
-          
+
           const session = response.body.sessions[0];
           expect(session).toHaveProperty('id');
           expect(session).toHaveProperty('createdAt');
@@ -231,7 +228,7 @@ describe('Plugin API Integration Tests', () => {
 
         it('should handle long messages', async () => {
           const longMessage = 'x'.repeat(10000);
-          
+
           const response = await request(app)
             .post(`/alfred/sessions/${sessionId}/messages`)
             .set('Authorization', `Bearer ${userToken}`)
@@ -256,13 +253,13 @@ describe('Plugin API Integration Tests', () => {
             .expect('Content-Type', /text\/event-stream/);
 
           let receivedData = false;
-          
+
           req.on('data', (chunk) => {
             const data = chunk.toString();
             if (data.includes('data:')) {
               receivedData = true;
               try {
-                const lines = data.split('\n').filter(line => line.startsWith('data:'));
+                const lines = data.split('\n').filter((line) => line.startsWith('data:'));
                 for (const line of lines) {
                   const jsonData = line.substring(5).trim();
                   if (jsonData && jsonData !== '[DONE]') {
@@ -354,7 +351,7 @@ describe('Plugin API Integration Tests', () => {
             .expect('Content-Type', /text\/event-stream/);
 
           let receivedCode = false;
-          
+
           req.on('data', (chunk) => {
             const data = chunk.toString();
             if (data.includes('data:')) {
@@ -450,7 +447,7 @@ Exception in thread "main" java.lang.NullPointerException
         expect(response.body.analysis).toHaveProperty('rootCause');
         expect(response.body.analysis).toHaveProperty('severity');
         expect(response.body.analysis).toHaveProperty('suggestions');
-        
+
         crashLogId = response.body.logId;
       });
 
@@ -475,7 +472,7 @@ Exception in thread "main" java.lang.NullPointerException
 
         expect(Array.isArray(response.body)).toBe(true);
         expect(response.body.length).toBeGreaterThan(0);
-        
+
         const log = response.body[0];
         expect(log).toHaveProperty('id');
         expect(log).toHaveProperty('fileName');
@@ -513,7 +510,8 @@ Exception in thread "main" java.lang.NullPointerException
           .post('/api/crash-analyzer/analyze')
           .set('Authorization', `Bearer ${userToken}`)
           .send({
-            content: 'TypeError: Cannot read property "length" of undefined\n  at processArray (app.js:15:23)',
+            content:
+              'TypeError: Cannot read property "length" of undefined\n  at processArray (app.js:15:23)',
             metadata: {
               language: 'javascript'
             }
@@ -633,7 +631,7 @@ Exception in thread "main" java.lang.NullPointerException
         expect(response.body).toHaveProperty('rootCauses');
         expect(response.body).toHaveProperty('modelPerformance');
         expect(response.body).toHaveProperty('severityTrends');
-        
+
         expect(Array.isArray(response.body.timeSeries)).toBe(true);
         expect(Array.isArray(response.body.rootCauses)).toBe(true);
       });
@@ -676,7 +674,7 @@ Exception in thread "main" java.lang.NullPointerException
         expect(response.body).toHaveProperty('mimeType');
         expect(response.body).toHaveProperty('securityScan');
         expect(response.body.securityScan).toHaveProperty('safe', true);
-        
+
         uploadedFileId = response.body.fileId;
       });
 
@@ -694,7 +692,7 @@ Exception in thread "main" java.lang.NullPointerException
       });
 
       it('should reject binary files', async () => {
-        const binaryBuffer = Buffer.from([0x89, 0x50, 0x4E, 0x47]); // PNG header
+        const binaryBuffer = Buffer.from([0x89, 0x50, 0x4e, 0x47]); // PNG header
 
         const response = await request(app)
           .post(`/api/files/upload/${sessionId}`)
@@ -764,7 +762,7 @@ Exception in thread "main" java.lang.NullPointerException
 
         expect(Array.isArray(response.body)).toBe(true);
         expect(response.body.length).toBeGreaterThan(0);
-        
+
         const file = response.body[0];
         expect(file).toHaveProperty('id');
         expect(file).toHaveProperty('fileName');
@@ -814,7 +812,7 @@ Exception in thread "main" java.lang.NullPointerException
           expect(response.body).toHaveProperty('id');
           expect(response.body).toHaveProperty('title', 'Test Document');
           expect(response.body).toHaveProperty('indexed', true);
-          
+
           documentId = response.body.id;
         });
       });
@@ -863,7 +861,9 @@ Exception in thread "main" java.lang.NullPointerException
     describe('Vector Operations', () => {
       describe('POST /storage/vectors', () => {
         it('should store vector embedding', async () => {
-          const vector = Array(384).fill(0).map(() => Math.random()); // Random 384-dim vector
+          const vector = Array(384)
+            .fill(0)
+            .map(() => Math.random()); // Random 384-dim vector
 
           const response = await request(app)
             .post('/storage/vectors')
@@ -882,7 +882,7 @@ Exception in thread "main" java.lang.NullPointerException
             status: 'stored',
             id: 'test-vector-1'
           });
-          
+
           vectorId = 'test-vector-1';
         });
 
@@ -902,7 +902,9 @@ Exception in thread "main" java.lang.NullPointerException
 
       describe('POST /storage/vectors/search', () => {
         it('should perform similarity search', async () => {
-          const queryVector = Array(384).fill(0).map(() => Math.random());
+          const queryVector = Array(384)
+            .fill(0)
+            .map(() => Math.random());
 
           const response = await request(app)
             .post('/storage/vectors/search')
@@ -915,7 +917,7 @@ Exception in thread "main" java.lang.NullPointerException
 
           expect(response.body).toHaveProperty('results');
           expect(Array.isArray(response.body.results)).toBe(true);
-          
+
           response.body.results.forEach((result: any) => {
             expect(result).toHaveProperty('id');
             expect(result).toHaveProperty('score');
@@ -936,7 +938,7 @@ Exception in thread "main" java.lang.NullPointerException
         expect(response.body).toHaveProperty('vectors');
         expect(response.body).toHaveProperty('files');
         expect(response.body).toHaveProperty('totalSize');
-        
+
         expect(typeof response.body.documents.count).toBe('number');
         expect(typeof response.body.vectors.count).toBe('number');
         expect(typeof response.body.files.count).toBe('number');

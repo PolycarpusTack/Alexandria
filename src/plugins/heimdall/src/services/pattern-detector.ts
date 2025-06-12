@@ -65,11 +65,7 @@ export class PatternDetector {
     this.updateSequenceBuffer(logs);
 
     // 1. Detect frequency patterns
-    const frequencyPatterns = await this.detectFrequencyPatterns(
-      logs,
-      minSupport,
-      minConfidence
-    );
+    const frequencyPatterns = await this.detectFrequencyPatterns(logs, minSupport, minConfidence);
     patterns.push(...frequencyPatterns);
 
     // 2. Detect sequence patterns
@@ -90,10 +86,7 @@ export class PatternDetector {
     patterns.push(...correlationPatterns);
 
     // 4. Detect anomaly patterns
-    const anomalyPatterns = await this.detectAnomalyPatterns(
-      logs,
-      minSupport
-    );
+    const anomalyPatterns = await this.detectAnomalyPatterns(logs, minSupport);
     patterns.push(...anomalyPatterns);
 
     // Add metadata if requested
@@ -104,7 +97,7 @@ export class PatternDetector {
     }
 
     // Update cache
-    patterns.forEach(pattern => {
+    patterns.forEach((pattern) => {
       this.patternCache.set(pattern.id, pattern);
     });
 
@@ -124,7 +117,10 @@ export class PatternDetector {
   /**
    * Find similar patterns
    */
-  async findSimilarPatterns(referencePattern: string, threshold: number = 0.7): Promise<LogPattern[]> {
+  async findSimilarPatterns(
+    referencePattern: string,
+    threshold: number = 0.7
+  ): Promise<LogPattern[]> {
     const similar: LogPattern[] = [];
     const refTokens = this.tokenizePattern(referencePattern);
 
@@ -171,16 +167,11 @@ export class PatternDetector {
 
     // Maintain buffer size
     if (this.sequenceBuffer.length > this.maxBufferSize) {
-      this.sequenceBuffer.splice(
-        0,
-        this.sequenceBuffer.length - this.maxBufferSize
-      );
+      this.sequenceBuffer.splice(0, this.sequenceBuffer.length - this.maxBufferSize);
     }
 
     // Sort by timestamp
-    this.sequenceBuffer.sort((a, b) => 
-      Number(a.timestamp - b.timestamp)
-    );
+    this.sequenceBuffer.sort((a, b) => Number(a.timestamp - b.timestamp));
   }
 
   private async detectFrequencyPatterns(
@@ -194,15 +185,12 @@ export class PatternDetector {
     // Extract and normalize message patterns
     for (const log of logs) {
       const normalized = this.normalizeMessage(log.message.raw);
-      messagePatterns.set(
-        normalized,
-        (messagePatterns.get(normalized) || 0) + 1
-      );
+      messagePatterns.set(normalized, (messagePatterns.get(normalized) || 0) + 1);
     }
 
     // Find patterns meeting support threshold
     const threshold = logs.length * minSupport;
-    
+
     for (const [pattern, count] of messagePatterns.entries()) {
       if (count >= threshold) {
         const support = count / logs.length;
@@ -240,13 +228,10 @@ export class PatternDetector {
       for (let i = 0; i <= logs.length - length; i++) {
         const sequence = logs
           .slice(i, i + length)
-          .map(log => this.getLogSignature(log))
+          .map((log) => this.getLogSignature(log))
           .join(' -> ');
 
-        sequences.set(
-          sequence,
-          (sequences.get(sequence) || 0) + 1
-        );
+        sequences.set(sequence, (sequences.get(sequence) || 0) + 1);
       }
     }
 
@@ -305,10 +290,7 @@ export class PatternDetector {
         }
 
         const correlationMap = correlations.get(sig1)!;
-        correlationMap.set(
-          sig2,
-          (correlationMap.get(sig2) || 0) + 1
-        );
+        correlationMap.set(sig2, (correlationMap.get(sig2) || 0) + 1);
       }
     }
 
@@ -354,7 +336,7 @@ export class PatternDetector {
 
       if (anomalyScore > 0.7) {
         const pattern = this.describeAnomaly(baseline, current);
-        
+
         patterns.push({
           id: `anom-${this.hashPattern(pattern)}`,
           pattern,
@@ -364,10 +346,12 @@ export class PatternDetector {
           occurrences: 1,
           examples: [pattern],
           metadata: {
-            timeWindows: [{
-              start: new Date(Number(current.logs[0].timestamp) / 1000000),
-              end: new Date(Number(current.logs[current.logs.length - 1].timestamp) / 1000000)
-            }]
+            timeWindows: [
+              {
+                start: new Date(Number(current.logs[0].timestamp) / 1000000),
+                end: new Date(Number(current.logs[current.logs.length - 1].timestamp) / 1000000)
+              }
+            ]
           }
         });
       }
@@ -398,9 +382,9 @@ export class PatternDetector {
   private calculateSimilarity(tokens1: string[], tokens2: string[]): number {
     const set1 = new Set(tokens1);
     const set2 = new Set(tokens2);
-    const intersection = new Set([...set1].filter(x => set2.has(x)));
+    const intersection = new Set([...set1].filter((x) => set2.has(x)));
     const union = new Set([...set1, ...set2]);
-    
+
     return intersection.size / union.size;
   }
 
@@ -424,10 +408,10 @@ export class PatternDetector {
 
   private getPatternExamples(pattern: string, logs: HeimdallLogEntry[], count: number): string[] {
     const examples: string[] = [];
-    
+
     for (const log of logs) {
       if (examples.length >= count) break;
-      
+
       const normalized = this.normalizeMessage(log.message.raw);
       if (normalized === pattern && !examples.includes(log.message.raw)) {
         examples.push(log.message.raw);
@@ -461,10 +445,11 @@ export class PatternDetector {
     current: { slot: number; logs: HeimdallLogEntry[] }
   ): number {
     // Calculate baseline statistics
-    const baselineCounts = baseline.map(slot => slot.logs.length);
+    const baselineCounts = baseline.map((slot) => slot.logs.length);
     const baselineAvg = baselineCounts.reduce((a, b) => a + b, 0) / baselineCounts.length;
     const baselineStdDev = Math.sqrt(
-      baselineCounts.reduce((sum, count) => sum + Math.pow(count - baselineAvg, 2), 0) / baselineCounts.length
+      baselineCounts.reduce((sum, count) => sum + Math.pow(count - baselineAvg, 2), 0) /
+        baselineCounts.length
     );
 
     // Calculate z-score
@@ -472,18 +457,18 @@ export class PatternDetector {
 
     // Check for pattern changes
     const baselinePatterns = new Set<string>();
-    baseline.forEach(slot => {
-      slot.logs.forEach(log => {
+    baseline.forEach((slot) => {
+      slot.logs.forEach((log) => {
         baselinePatterns.add(this.getLogSignature(log));
       });
     });
 
     const currentPatterns = new Set<string>();
-    current.logs.forEach(log => {
+    current.logs.forEach((log) => {
       currentPatterns.add(this.getLogSignature(log));
     });
 
-    const newPatterns = [...currentPatterns].filter(p => !baselinePatterns.has(p));
+    const newPatterns = [...currentPatterns].filter((p) => !baselinePatterns.has(p));
     const patternAnomalyScore = newPatterns.length / currentPatterns.size;
 
     // Combine scores
@@ -495,7 +480,7 @@ export class PatternDetector {
     current: { slot: number; logs: HeimdallLogEntry[] }
   ): string {
     const baselineAvg = baseline.reduce((sum, slot) => sum + slot.logs.length, 0) / baseline.length;
-    const changePercent = ((current.logs.length - baselineAvg) / baselineAvg * 100).toFixed(1);
+    const changePercent = (((current.logs.length - baselineAvg) / baselineAvg) * 100).toFixed(1);
 
     if (current.logs.length > baselineAvg * 1.5) {
       return `Spike in log volume: ${changePercent}% increase`;
@@ -510,24 +495,25 @@ export class PatternDetector {
     let hash = 0;
     for (let i = 0; i < pattern.length; i++) {
       const char = pattern.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash;
     }
     return Math.abs(hash).toString(36);
   }
 
   private enrichPatternMetadata(pattern: LogPattern, logs: HeimdallLogEntry[]): void {
-    const matchingLogs = logs.filter(log => {
+    const matchingLogs = logs.filter((log) => {
       const normalized = this.normalizeMessage(log.message.raw);
-      return normalized.includes(pattern.pattern) || 
-             this.getLogSignature(log).includes(pattern.pattern);
+      return (
+        normalized.includes(pattern.pattern) || this.getLogSignature(log).includes(pattern.pattern)
+      );
     });
 
     // Extract services
     const services = new Set<string>();
     const levels = new Set<LogLevel>();
 
-    matchingLogs.forEach(log => {
+    matchingLogs.forEach((log) => {
       services.add(log.source.service);
       levels.add(log.level);
     });

@@ -10,13 +10,7 @@
   "license": "MIT",
   "main": "src/index.ts",
   "minPlatformVersion": "0.1.0",
-  "permissions": [
-    "file:read",
-    "llm:access",
-    "database:access",
-    "event:subscribe",
-    "event:publish"
-  ],
+  "permissions": ["file:read", "llm:access", "database:access", "event:subscribe", "event:publish"],
   "dependencies": [],
   "uiEntryPoints": [
     {
@@ -40,9 +34,5 @@
       "routes": ["/hadron/analysis/:snippetId"]
     }
   ],
-  "eventSubscriptions": [
-    "system:initialized",
-    "user:authenticated",
-    "log:uploaded"
-  ]
+  "eventSubscriptions": ["system:initialized", "user:authenticated", "log:uploaded"]
 }

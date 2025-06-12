@@ -1,11 +1,10 @@
 /**
  * Theme Provider component for the Alexandria Platform
- * 
+ *
  * This component provides the styled-components theme to the application.
  */
 
 import React from 'react';
-import { ThemeProvider as StyledThemeProvider } from 'styled-components';
 import theme from './theme';
 
 interface ThemeProviderProps {
@@ -13,11 +12,7 @@ interface ThemeProviderProps {
 }
 
 export const ThemeProvider: React.FC<ThemeProviderProps> = ({ children }) => {
-  return (
-    <StyledThemeProvider theme={theme}>
-      {children}
-    </StyledThemeProvider>
-  );
+  return <StyledThemeProvider theme={theme}>{children}</StyledThemeProvider>;
 };
 
 export default ThemeProvider;

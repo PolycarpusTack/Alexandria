@@ -7,10 +7,10 @@ import { Logger } from '../../../../../utils/logger';
  */
 export class CodeSnippetRepository {
   private readonly collectionName = 'hadron_snippets';
-  
+
   /**
    * Create a new code snippet repository
-   * 
+   *
    * @param dataService Data service
    * @param logger Logger instance
    */
@@ -18,7 +18,7 @@ export class CodeSnippetRepository {
     private dataService: PostgresCollectionService,
     private logger: Logger
   ) {}
-  
+
   /**
    * Initialize the repository
    */
@@ -28,13 +28,13 @@ export class CodeSnippetRepository {
     await this.dataService.createIndex(this.collectionName, 'userId');
     await this.dataService.createIndex(this.collectionName, 'language');
     await this.dataService.createIndex(this.collectionName, 'createdAt');
-    
+
     this.logger.info('Code snippet repository initialized');
   }
-  
+
   /**
    * Save a code snippet
-   * 
+   *
    * @param snippet Code snippet to save
    * @returns Saved code snippet
    */
@@ -53,10 +53,10 @@ export class CodeSnippetRepository {
       throw error;
     }
   }
-  
+
   /**
    * Find a code snippet by ID
-   * 
+   *
    * @param id Code snippet ID
    * @returns Code snippet or null if not found
    */
@@ -72,17 +72,17 @@ export class CodeSnippetRepository {
       throw error;
     }
   }
-  
+
   /**
    * Find code snippets by session
-   * 
+   *
    * @param sessionId Analysis session ID
    * @returns Array of code snippets
    */
   async findBySession(sessionId: string): Promise<CodeSnippet[]> {
     try {
       const records = await this.dataService.find(this.collectionName, { sessionId });
-      return records.map(record => CodeSnippet.fromRecord(record));
+      return records.map((record) => CodeSnippet.fromRecord(record));
     } catch (error) {
       this.logger.error('Error finding code snippets by session', {
         sessionId,
@@ -91,17 +91,17 @@ export class CodeSnippetRepository {
       throw error;
     }
   }
-  
+
   /**
    * Find code snippets by user
-   * 
+   *
    * @param userId User ID
    * @returns Array of code snippets
    */
   async findByUser(userId: string): Promise<CodeSnippet[]> {
     try {
       const records = await this.dataService.find(this.collectionName, { userId });
-      return records.map(record => CodeSnippet.fromRecord(record));
+      return records.map((record) => CodeSnippet.fromRecord(record));
     } catch (error) {
       this.logger.error('Error finding code snippets by user', {
         userId,
@@ -110,17 +110,17 @@ export class CodeSnippetRepository {
       throw error;
     }
   }
-  
+
   /**
    * Find code snippets by programming language
-   * 
+   *
    * @param language Programming language
    * @returns Array of code snippets
    */
   async findByLanguage(language: string): Promise<CodeSnippet[]> {
     try {
       const records = await this.dataService.find(this.collectionName, { language });
-      return records.map(record => CodeSnippet.fromRecord(record));
+      return records.map((record) => CodeSnippet.fromRecord(record));
     } catch (error) {
       this.logger.error('Error finding code snippets by language', {
         language,
@@ -129,16 +129,16 @@ export class CodeSnippetRepository {
       throw error;
     }
   }
-  
+
   /**
    * Find all code snippets
-   * 
+   *
    * @returns Array of all code snippets
    */
   async findAll(): Promise<CodeSnippet[]> {
     try {
       const records = await this.dataService.find(this.collectionName, {});
-      return records.map(record => CodeSnippet.fromRecord(record));
+      return records.map((record) => CodeSnippet.fromRecord(record));
     } catch (error) {
       this.logger.error('Error finding all code snippets', {
         error: error instanceof Error ? error.message : String(error)
@@ -146,10 +146,10 @@ export class CodeSnippetRepository {
       throw error;
     }
   }
-  
+
   /**
    * Search code snippets by content
-   * 
+   *
    * @param searchTerm Term to search for in content
    * @returns Array of matching code snippets
    */
@@ -158,10 +158,11 @@ export class CodeSnippetRepository {
       // This would need full-text search in a real PostgreSQL implementation
       const allSnippets = await this.findAll();
       const lowerSearchTerm = searchTerm.toLowerCase();
-      
-      return allSnippets.filter(snippet => 
-        snippet.content.toLowerCase().includes(lowerSearchTerm) ||
-        (snippet.description && snippet.description.toLowerCase().includes(lowerSearchTerm))
+
+      return allSnippets.filter(
+        (snippet) =>
+          snippet.content.toLowerCase().includes(lowerSearchTerm) ||
+          (snippet.description && snippet.description.toLowerCase().includes(lowerSearchTerm))
       );
     } catch (error) {
       this.logger.error('Error searching code snippets by content', {
@@ -171,10 +172,10 @@ export class CodeSnippetRepository {
       throw error;
     }
   }
-  
+
   /**
    * Delete a code snippet
-   * 
+   *
    * @param id Code snippet ID
    * @returns True if the code snippet was deleted
    */
@@ -189,10 +190,10 @@ export class CodeSnippetRepository {
       throw error;
     }
   }
-  
+
   /**
    * Update a code snippet's content
-   * 
+   *
    * @param id Snippet ID
    * @param content New content
    * @returns Updated snippet or null if not found
@@ -203,7 +204,7 @@ export class CodeSnippetRepository {
       if (!snippet) {
         return null;
       }
-      
+
       snippet.updateContent(content);
       return this.save(snippet);
     } catch (error) {
@@ -214,10 +215,10 @@ export class CodeSnippetRepository {
       throw error;
     }
   }
-  
+
   /**
    * Get statistics about code snippets for a user
-   * 
+   *
    * @param userId User ID
    * @returns Code snippet statistics
    */
@@ -229,7 +230,7 @@ export class CodeSnippetRepository {
   }> {
     try {
       const snippets = await this.findByUser(userId);
-      
+
       if (snippets.length === 0) {
         return {
           totalSnippets: 0,
@@ -238,34 +239,36 @@ export class CodeSnippetRepository {
           snippetsByMonth: []
         };
       }
-      
+
       // Count by language
       const languageCounts = new Map<string, number>();
       let totalLines = 0;
-      
+
       for (const snippet of snippets) {
         languageCounts.set(snippet.language, (languageCounts.get(snippet.language) || 0) + 1);
         totalLines += snippet.getLineCount();
       }
-      
+
       const languageBreakdown = Array.from(languageCounts.entries())
         .map(([language, count]) => ({ language, count }))
         .sort((a, b) => b.count - a.count);
-      
+
       const averageLineCount = totalLines / snippets.length;
-      
+
       // Count by month
       const monthCounts = new Map<string, number>();
       for (const snippet of snippets) {
-        const monthKey = snippet.createdAt.getFullYear() + '-' + 
-                        String(snippet.createdAt.getMonth() + 1).padStart(2, '0');
+        const monthKey =
+          snippet.createdAt.getFullYear() +
+          '-' +
+          String(snippet.createdAt.getMonth() + 1).padStart(2, '0');
         monthCounts.set(monthKey, (monthCounts.get(monthKey) || 0) + 1);
       }
-      
+
       const snippetsByMonth = Array.from(monthCounts.entries())
         .map(([month, count]) => ({ month, count }))
         .sort((a, b) => a.month.localeCompare(b.month));
-      
+
       return {
         totalSnippets: snippets.length,
         languageBreakdown,

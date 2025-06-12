@@ -1,6 +1,6 @@
 /**
  * Secure Hook Execution System
- * 
+ *
  * Executes template hooks in a sandboxed environment with strict timeouts
  * Uses VM2 if available, falls back to isolated execution patterns
  */
@@ -67,14 +67,14 @@ export class SecureHookExecutor {
   ): Promise<HookResult> {
     const execOptions = { ...this.defaultOptions, ...options };
     const startTime = Date.now();
-    
+
     // Validate hook code before execution
     const validation = this.validateHookCode(hookCode);
     if (!validation.valid) {
       return {
         success: false,
         logs: [],
-        errors: validation.errors.map(e => e.message),
+        errors: validation.errors.map((e) => e.message),
         warnings: validation.warnings,
         executionTime: Date.now() - startTime,
         memoryUsed: 0
@@ -124,7 +124,7 @@ export class SecureHookExecutor {
 
       // Wrap hook code with error handling
       const wrappedCode = this.wrapHookCode(hookCode);
-      
+
       const result = await vm.run(wrappedCode);
 
       return {
@@ -136,7 +136,6 @@ export class SecureHookExecutor {
         executionTime: Date.now() - startTime,
         memoryUsed: this.estimateMemoryUsage(result)
       };
-
     } catch (error) {
       const errorMsg = error instanceof Error ? error.message : 'Unknown VM2 error';
       errors.push(errorMsg);
@@ -166,11 +165,11 @@ export class SecureHookExecutor {
 
     // For fallback, we only allow very simple predefined functions
     const allowedFunctions = this.createAllowedFunctions(context, logs, warnings);
-    
+
     try {
       // Very restrictive - only allow function calls from whitelist
       const result = this.executeSafeFunctions(hookCode, allowedFunctions);
-      
+
       return {
         success: true,
         output: result,
@@ -180,7 +179,6 @@ export class SecureHookExecutor {
         executionTime: Date.now() - startTime,
         memoryUsed: this.estimateMemoryUsage(result)
       };
-
     } catch (error) {
       return {
         success: false,
@@ -197,8 +195,8 @@ export class SecureHookExecutor {
    * Create a safe sandbox environment
    */
   private createSafeSandbox(
-    context: HookContext, 
-    logs: string[], 
+    context: HookContext,
+    logs: string[],
     warnings: string[],
     allowConsole: boolean
   ): any {
@@ -219,7 +217,11 @@ export class SecureHookExecutor {
         isNumber: (val: any) => typeof val === 'number',
         isBoolean: (val: any) => typeof val === 'boolean',
         isEmpty: (val: any) => val == null || val === '',
-        slugify: (str: string) => str.toLowerCase().replace(/[^a-z0-9]/g, '-').replace(/-+/g, '-'),
+        slugify: (str: string) =>
+          str
+            .toLowerCase()
+            .replace(/[^a-z0-9]/g, '-')
+            .replace(/-+/g, '-'),
         capitalize: (str: string) => str.charAt(0).toUpperCase() + str.slice(1),
         camelCase: (str: string) => str.replace(/-([a-z])/g, (g) => g[1].toUpperCase()),
         pascalCase: (str: string) => this.toPascalCase(str)
@@ -246,13 +248,13 @@ export class SecureHookExecutor {
     if (allowConsole) {
       sandbox.console = {
         log: (...args: any[]) => {
-          logs.push(args.map(a => String(a)).join(' '));
+          logs.push(args.map((a) => String(a)).join(' '));
         },
         warn: (...args: any[]) => {
-          warnings.push(args.map(a => String(a)).join(' '));
+          warnings.push(args.map((a) => String(a)).join(' '));
         },
         error: (...args: any[]) => {
-          warnings.push('ERROR: ' + args.map(a => String(a)).join(' '));
+          warnings.push('ERROR: ' + args.map((a) => String(a)).join(' '));
         }
       };
     }
@@ -299,7 +301,7 @@ export class SecureHookExecutor {
       { pattern: /path\./, message: 'Path manipulation is not allowed' },
       { pattern: /child_process/, message: 'Child process execution is not allowed' },
       { pattern: /spawn|exec/, message: 'Process spawning is not allowed' },
-      { pattern: /fetch|XMLHttpRequest/, message: 'Network access is not allowed' },
+      { pattern: /fetch|XMLHttpRequest/, message: 'Network access is not allowed' }
     ];
 
     for (const { pattern, message } of dangerousPatterns) {
@@ -377,14 +379,14 @@ export class SecureHookExecutor {
     while ((match = functionCallPattern.exec(hookCode)) !== null) {
       const functionName = match[1];
       const argsStr = match[2];
-      
+
       if (allowedFunctions.has(functionName)) {
         try {
           // Parse simple string arguments only
-          const args = argsStr ? argsStr.split(',').map(arg => 
-            arg.trim().replace(/['"]/g, '')
-          ) : [];
-          
+          const args = argsStr
+            ? argsStr.split(',').map((arg) => arg.trim().replace(/['"]/g, ''))
+            : [];
+
           const result = allowedFunctions.get(functionName)!(...args);
           calls.push({ function: functionName, result });
         } catch (error) {

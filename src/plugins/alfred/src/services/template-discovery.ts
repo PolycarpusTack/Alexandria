@@ -1,6 +1,6 @@
 /**
  * Template Discovery Service
- * 
+ *
  * Advanced template search and recommendation system with
  * fuzzy matching, AI-powered suggestions, and usage analytics
  */
@@ -115,7 +115,7 @@ export class TemplateDiscoveryService {
   async loadTemplates(templatesPath: string): Promise<void> {
     try {
       const templateDirs = await fs.readdir(templatesPath, { withFileTypes: true });
-      
+
       for (const dir of templateDirs) {
         if (dir.isDirectory()) {
           await this.loadTemplate(path.join(templatesPath, dir.name));
@@ -124,7 +124,6 @@ export class TemplateDiscoveryService {
 
       this.buildSearchIndex();
       this.logger.info('Templates loaded', { count: this.templates.size });
-
     } catch (error) {
       this.logger.error('Failed to load templates', { error, templatesPath });
       throw error;
@@ -146,7 +145,7 @@ export class TemplateDiscoveryService {
       }
 
       this.templates.set(manifest.id, manifest);
-      
+
       // Initialize usage stats if not exists
       if (!this.usageStats.has(manifest.id)) {
         this.usageStats.set(manifest.id, {
@@ -158,7 +157,6 @@ export class TemplateDiscoveryService {
           userFeedback: []
         });
       }
-
     } catch (error) {
       this.logger.warn('Failed to load template', { error, templatePath });
     }
@@ -199,7 +197,7 @@ export class TemplateDiscoveryService {
     if (query.trim()) {
       results = this.performTextSearch(candidates, query);
     } else {
-      results = candidates.map(template => ({
+      results = candidates.map((template) => ({
         template,
         score: 1.0,
         matchedFields: []
@@ -245,12 +243,14 @@ export class TemplateDiscoveryService {
 
       // Get trending templates
       const trending = this.getTrendingTemplates();
-      recommendations.push(...trending.map(template => ({
-        template,
-        reason: 'Currently trending in the community',
-        confidence: 0.7,
-        category: 'trending' as const
-      })));
+      recommendations.push(
+        ...trending.map((template) => ({
+          template,
+          reason: 'Currently trending in the community',
+          confidence: 0.7,
+          category: 'trending' as const
+        }))
+      );
 
       // Get AI suggestions if available
       if (this.aiService && projectAnalysis) {
@@ -265,7 +265,6 @@ export class TemplateDiscoveryService {
       // Sort by confidence and limit
       recommendations.sort((a, b) => b.confidence - a.confidence);
       return recommendations.slice(0, 10);
-
     } catch (error) {
       this.logger.error('Failed to generate recommendations', { error });
       return [];
@@ -278,13 +277,13 @@ export class TemplateDiscoveryService {
   async analyzeProject(projectPath: string): Promise<ProjectAnalysis> {
     try {
       const files = await fs.readdir(projectPath);
-      
+
       // Detect project type and language
       let projectType = 'unknown';
       let language = 'unknown';
       let framework: string | undefined;
       const dependencies: string[] = [];
-      
+
       const structure = {
         hasTests: false,
         hasTypeScript: false,
@@ -295,26 +294,23 @@ export class TemplateDiscoveryService {
       if (files.includes('package.json')) {
         projectType = 'node';
         language = 'javascript';
-        
+
         // Analyze package.json
         try {
-          const packageContent = await fs.readFile(
-            path.join(projectPath, 'package.json'), 
-            'utf-8'
-          );
+          const packageContent = await fs.readFile(path.join(projectPath, 'package.json'), 'utf-8');
           const packageJson = JSON.parse(packageContent);
-          
+
           dependencies.push(...Object.keys(packageJson.dependencies || {}));
           dependencies.push(...Object.keys(packageJson.devDependencies || {}));
-          
+
           // Detect framework
           if (dependencies.includes('react')) framework = 'react';
           else if (dependencies.includes('vue')) framework = 'vue';
           else if (dependencies.includes('@angular/core')) framework = 'angular';
           else if (dependencies.includes('express')) framework = 'express';
-          
+
           // Check for TypeScript
-          if (dependencies.includes('typescript') || files.some(f => f.endsWith('.ts'))) {
+          if (dependencies.includes('typescript') || files.some((f) => f.endsWith('.ts'))) {
             structure.hasTypeScript = true;
             language = 'typescript';
           }
@@ -333,14 +329,12 @@ export class TemplateDiscoveryService {
       }
 
       // Check for tests
-      structure.hasTests = files.some(f => 
-        f.includes('test') || f.includes('spec') || f === '__tests__'
+      structure.hasTests = files.some(
+        (f) => f.includes('test') || f.includes('spec') || f === '__tests__'
       );
 
       // Check for docs
-      structure.hasDocs = files.some(f => 
-        f.toLowerCase().includes('readme') || f === 'docs'
-      );
+      structure.hasDocs = files.some((f) => f.toLowerCase().includes('readme') || f === 'docs');
 
       // Suggest categories based on analysis
       const suggestedCategories: string[] = [];
@@ -357,7 +351,6 @@ export class TemplateDiscoveryService {
         structure,
         suggestedCategories
       };
-
     } catch (error) {
       this.logger.error('Project analysis failed', { error, projectPath });
       throw error;
@@ -378,14 +371,14 @@ export class TemplateDiscoveryService {
       if (template.name.toLowerCase().includes(queryLower)) {
         suggestions.add(template.name);
       }
-      
+
       // Search tags
-      template.tags?.forEach(tag => {
+      template.tags?.forEach((tag) => {
         if (tag.toLowerCase().includes(queryLower)) {
           suggestions.add(tag);
         }
       });
-      
+
       // Search categories
       if (template.category.toLowerCase().includes(queryLower)) {
         suggestions.add(template.category);
@@ -411,7 +404,7 @@ export class TemplateDiscoveryService {
         ...feedback,
         timestamp: new Date()
       });
-      
+
       // Recalculate average rating
       const totalRating = stats.userFeedback.reduce((sum, f) => sum + f.rating, 0);
       stats.rating = totalRating / stats.userFeedback.length;
@@ -426,7 +419,7 @@ export class TemplateDiscoveryService {
     // Keep only last 50 entries
     this.userHistory = this.userHistory.slice(0, 50);
 
-    this.eventBus.emit('template:usage-recorded', { templateId, stats });
+    this.eventBus.publish('alfred:template:usage:recorded', { templateId, stats });
   }
 
   /**
@@ -436,7 +429,7 @@ export class TemplateDiscoveryService {
     templates: TemplateManifest[],
     filters: Omit<SearchOptions, 'query' | 'sortBy' | 'limit'>
   ): TemplateManifest[] {
-    return templates.filter(template => {
+    return templates.filter((template) => {
       // Category filter
       if (filters.category && template.category !== filters.category) {
         return false;
@@ -444,9 +437,7 @@ export class TemplateDiscoveryService {
 
       // Tags filter
       if (filters.tags && filters.tags.length > 0) {
-        const hasAllTags = filters.tags.every(tag => 
-          template.tags?.includes(tag)
-        );
+        const hasAllTags = filters.tags.every((tag) => template.tags?.includes(tag));
         if (!hasAllTags) return false;
       }
 
@@ -470,10 +461,11 @@ export class TemplateDiscoveryService {
       if (filters.framework) {
         const projectTypes = template.requirements?.projectTypes || [];
         const dependencies = template.requirements?.dependencies || [];
-        
-        const hasFramework = projectTypes.includes(filters.framework) ||
-          dependencies.some(dep => dep.includes(filters.framework));
-        
+
+        const hasFramework =
+          projectTypes.includes(filters.framework) ||
+          dependencies.some((dep) => dep.includes(filters.framework));
+
         if (!hasFramework) return false;
       }
 
@@ -492,19 +484,16 @@ export class TemplateDiscoveryService {
   /**
    * Perform text search with fuzzy matching
    */
-  private performTextSearch(
-    templates: TemplateManifest[],
-    query: string
-  ): TemplateSearchResult[] {
+  private performTextSearch(templates: TemplateManifest[], query: string): TemplateSearchResult[] {
     const results: TemplateSearchResult[] = [];
     const queryWords = this.tokenizeQuery(query);
 
     for (const template of templates) {
       const score = this.calculateRelevanceScore(template, queryWords);
-      
+
       if (score > 0) {
         const matchedFields = this.getMatchedFields(template, queryWords);
-        
+
         results.push({
           template,
           score,
@@ -519,10 +508,7 @@ export class TemplateDiscoveryService {
   /**
    * Calculate relevance score for template
    */
-  private calculateRelevanceScore(
-    template: TemplateManifest,
-    queryWords: string[]
-  ): number {
+  private calculateRelevanceScore(template: TemplateManifest, queryWords: string[]): number {
     let totalScore = 0;
 
     // Name matching
@@ -568,7 +554,7 @@ export class TemplateDiscoveryService {
 
     for (const queryWord of queryWords) {
       let bestMatch = 0;
-      
+
       for (const fieldWord of fieldWords) {
         if (fieldWord === queryWord) {
           exactMatches++;
@@ -583,7 +569,7 @@ export class TemplateDiscoveryService {
           }
         }
       }
-      
+
       if (bestMatch > 0) {
         matchCount += bestMatch;
       }
@@ -604,7 +590,7 @@ export class TemplateDiscoveryService {
     // Simple Levenshtein-based similarity
     const maxLen = Math.max(str1.length, str2.length);
     const distance = this.levenshteinDistance(str1, str2);
-    
+
     return Math.max(0, (maxLen - distance) / maxLen);
   }
 
@@ -653,7 +639,7 @@ export class TemplateDiscoveryService {
     return text
       .replace(/[^\w\s]/g, ' ')
       .split(/\s+/)
-      .filter(word => word.length > 0);
+      .filter((word) => word.length > 0);
   }
 
   /**
@@ -720,20 +706,20 @@ export class TemplateDiscoveryService {
 
     for (const template of this.templates.values()) {
       const words = new Set<string>();
-      
+
       // Index name
-      this.tokenizeText(template.name.toLowerCase()).forEach(word => words.add(word));
-      
+      this.tokenizeText(template.name.toLowerCase()).forEach((word) => words.add(word));
+
       // Index description
-      this.tokenizeText(template.description.toLowerCase()).forEach(word => words.add(word));
-      
+      this.tokenizeText(template.description.toLowerCase()).forEach((word) => words.add(word));
+
       // Index tags
-      template.tags?.forEach(tag => {
-        this.tokenizeText(tag.toLowerCase()).forEach(word => words.add(word));
+      template.tags?.forEach((tag) => {
+        this.tokenizeText(tag.toLowerCase()).forEach((word) => words.add(word));
       });
-      
+
       // Index category
-      this.tokenizeText(template.category.toLowerCase()).forEach(word => words.add(word));
+      this.tokenizeText(template.category.toLowerCase()).forEach((word) => words.add(word));
 
       // Add to search index
       for (const word of words) {
@@ -773,7 +759,6 @@ export class TemplateDiscoveryService {
           };
         }
       }
-
     } catch (error) {
       this.logger.debug('Failed to add AI recommendations', { error });
     }
@@ -791,7 +776,7 @@ export class TemplateDiscoveryService {
       `Language: ${options.language || 'unknown'}`,
       `Framework: ${options.framework || 'none'}`,
       '',
-      'Consider the user\'s intent and recommend templates that would be most helpful.',
+      "Consider the user's intent and recommend templates that would be most helpful.",
       'Focus on practical utility and common development needs.'
     ];
 
@@ -840,26 +825,28 @@ Recommend the most suitable code templates for this project.`;
       // This would parse the AI response and match to actual templates
       // For now, return framework-specific suggestions
       const suggestions: TemplateRecommendation[] = [];
-      
+
       if (analysis.framework) {
         const frameworkTemplates = Array.from(this.templates.values())
-          .filter(t => 
-            t.category === analysis.framework ||
-            t.tags?.includes(analysis.framework) ||
-            t.requirements?.projectTypes?.includes(analysis.framework)
+          .filter(
+            (t) =>
+              t.category === analysis.framework ||
+              t.tags?.includes(analysis.framework) ||
+              t.requirements?.projectTypes?.includes(analysis.framework)
           )
           .slice(0, 3);
 
-        suggestions.push(...frameworkTemplates.map(template => ({
-          template,
-          reason: `Perfect for ${analysis.framework} projects`,
-          confidence: 0.9,
-          category: 'ai-suggested' as const
-        })));
+        suggestions.push(
+          ...frameworkTemplates.map((template) => ({
+            template,
+            reason: `Perfect for ${analysis.framework} projects`,
+            confidence: 0.9,
+            category: 'ai-suggested' as const
+          }))
+        );
       }
 
       return suggestions;
-
     } catch (error) {
       this.logger.debug('Failed to get AI suggestions', { error });
       return [];
@@ -871,11 +858,9 @@ Recommend the most suitable code templates for this project.`;
    */
   private getHistoryBasedRecommendations(): TemplateRecommendation[] {
     const recommendations: TemplateRecommendation[] = [];
-    
+
     // Get templates similar to recently used ones
-    const recentTemplateIds = this.userHistory
-      .slice(0, 5)
-      .map(entry => entry.templateId);
+    const recentTemplateIds = this.userHistory.slice(0, 5).map((entry) => entry.templateId);
 
     for (const templateId of recentTemplateIds) {
       const template = this.templates.get(templateId);
@@ -883,19 +868,22 @@ Recommend the most suitable code templates for this project.`;
 
       // Find similar templates
       const similar = Array.from(this.templates.values())
-        .filter(t => 
-          t.id !== templateId &&
-          (t.category === template.category ||
-           t.tags?.some(tag => template.tags?.includes(tag)))
+        .filter(
+          (t) =>
+            t.id !== templateId &&
+            (t.category === template.category ||
+              t.tags?.some((tag) => template.tags?.includes(tag)))
         )
         .slice(0, 2);
 
-      recommendations.push(...similar.map(similarTemplate => ({
-        template: similarTemplate,
-        reason: `Similar to ${template.name} you used recently`,
-        confidence: 0.6,
-        category: 'similar' as const
-      })));
+      recommendations.push(
+        ...similar.map((similarTemplate) => ({
+          template: similarTemplate,
+          reason: `Similar to ${template.name} you used recently`,
+          confidence: 0.6,
+          category: 'similar' as const
+        }))
+      );
     }
 
     return recommendations;
@@ -905,11 +893,13 @@ Recommend the most suitable code templates for this project.`;
    * Setup event listeners
    */
   private setupEventListeners(): void {
-    this.eventBus.on('template:installed', (data) => {
+    this.eventBus.subscribe('alfred:template:installed', (event) => {
+      const data = event.data;
       this.loadTemplate(data.path);
     });
 
-    this.eventBus.on('template:uninstalled', (data) => {
+    this.eventBus.subscribe('alfred:template:uninstalled', (event) => {
+      const data = event.data;
       this.templates.delete(data.templateId);
       this.usageStats.delete(data.templateId);
       this.buildSearchIndex();

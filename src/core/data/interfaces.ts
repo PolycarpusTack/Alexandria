@@ -1,6 +1,6 @@
 /**
  * Data Model interfaces for the Alexandria Platform
- * 
+ *
  * These interfaces define the core data models used throughout the platform.
  */
 
@@ -14,37 +14,37 @@ export interface UserRepository {
    * Find a user by ID
    */
   findById(id: string): Promise<User | null>;
-  
+
   /**
    * Find a user by username
    */
   findByUsername(username: string): Promise<User | null>;
-  
+
   /**
    * Find a user by email
    */
   findByEmail(email: string): Promise<User | null>;
-  
+
   /**
    * Find users by role
    */
   findByRole(role: string): Promise<User[]>;
-  
+
   /**
    * Create a new user
    */
   create(user: Omit<User, 'id'>): Promise<User>;
-  
+
   /**
    * Update an existing user
    */
   update(id: string, user: Partial<User>): Promise<User>;
-  
+
   /**
    * Delete a user
    */
   delete(id: string): Promise<boolean>;
-  
+
   /**
    * Find all users with pagination
    */
@@ -54,7 +54,7 @@ export interface UserRepository {
     orderBy?: string;
     orderDirection?: 'asc' | 'desc';
   }): Promise<User[]>;
-  
+
   /**
    * Count total users
    */
@@ -69,47 +69,47 @@ export interface CaseRepository {
    * Find a case by ID
    */
   findById(id: string): Promise<Case | null>;
-  
+
   /**
    * Find cases by status
    */
   findByStatus(status: Case['status']): Promise<Case[]>;
-  
+
   /**
    * Find cases by assigned user
    */
   findByAssignedTo(userId: string): Promise<Case[]>;
-  
+
   /**
    * Find cases created by a user
    */
   findByCreatedBy(userId: string): Promise<Case[]>;
-  
+
   /**
    * Find cases by priority
    */
   findByPriority(priority: Case['priority']): Promise<Case[]>;
-  
+
   /**
    * Find cases by tag
    */
   findByTag(tag: string): Promise<Case[]>;
-  
+
   /**
    * Create a new case
    */
   create(caseData: Omit<Case, 'id' | 'createdAt' | 'updatedAt'>): Promise<Case>;
-  
+
   /**
    * Update an existing case
    */
   update(id: string, caseData: Partial<Case>): Promise<Case>;
-  
+
   /**
    * Delete a case
    */
   delete(id: string): Promise<boolean>;
-  
+
   /**
    * Find all cases with pagination and filters
    */
@@ -120,7 +120,7 @@ export interface CaseRepository {
     orderDirection?: 'asc' | 'desc';
     filters?: Partial<Case>;
   }): Promise<Case[]>;
-  
+
   /**
    * Count total cases
    */
@@ -135,32 +135,32 @@ export interface LogEntryRepository {
    * Find a log entry by ID
    */
   findById(id: string): Promise<LogEntry | null>;
-  
+
   /**
    * Find log entries by level
    */
   findByLevel(level: LogEntry['level']): Promise<LogEntry[]>;
-  
+
   /**
    * Find log entries by source
    */
   findBySource(source: string): Promise<LogEntry[]>;
-  
+
   /**
    * Find log entries within a time range
    */
   findByTimeRange(from: Date, to: Date): Promise<LogEntry[]>;
-  
+
   /**
    * Create a new log entry
    */
   create(logEntry: Omit<LogEntry, 'id'>): Promise<LogEntry>;
-  
+
   /**
    * Delete log entries older than a specified date
    */
   deleteOlderThan(date: Date): Promise<number>;
-  
+
   /**
    * Find all log entries with pagination and filters
    */
@@ -171,7 +171,7 @@ export interface LogEntryRepository {
     orderDirection?: 'asc' | 'desc';
     filters?: Partial<LogEntry>;
   }): Promise<LogEntry[]>;
-  
+
   /**
    * Count total log entries
    */
@@ -185,23 +185,23 @@ export interface PluginStorageRepository {
   /**
    * Get a value from plugin storage
    */
-  get(pluginId: string, key: string): Promise<any>;
-  
+  get<T = unknown>(pluginId: string, key: string): Promise<T | null>;
+
   /**
    * Set a value in plugin storage
    */
-  set(pluginId: string, key: string, value: any): Promise<void>;
-  
+  set<T = unknown>(pluginId: string, key: string, value: T): Promise<void>;
+
   /**
    * Remove a value from plugin storage
    */
   remove(pluginId: string, key: string): Promise<boolean>;
-  
+
   /**
    * Get all keys for a plugin
    */
   keys(pluginId: string): Promise<string[]>;
-  
+
   /**
    * Clear all storage for a plugin
    */
@@ -216,27 +216,27 @@ export interface DataService {
    * User repository
    */
   users: UserRepository;
-  
+
   /**
    * Case repository
    */
   cases: CaseRepository;
-  
+
   /**
    * Log entry repository
    */
   logs: LogEntryRepository;
-  
+
   /**
    * Plugin storage repository
    */
   pluginStorage: PluginStorageRepository;
-  
+
   /**
    * Initialize the data service
    */
   initialize(): Promise<void>;
-  
+
   /**
    * Disconnect and cleanup resources
    */
@@ -279,7 +279,7 @@ export interface CaseSchema {
   assigned_to: string | null;
   created_by: string;
   tags: string[];
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
 }
 
 /**
@@ -290,7 +290,7 @@ export interface LogEntrySchema {
   timestamp: Date;
   level: string;
   message: string;
-  context: Record<string, any>;
+  context: Record<string, unknown>;
   source: string;
 }
 
@@ -300,7 +300,7 @@ export interface LogEntrySchema {
 export interface PluginStorageSchema {
   plugin_id: string;
   key: string;
-  value: any;
+  value: unknown;
   created_at: Date;
   updated_at: Date;
 }

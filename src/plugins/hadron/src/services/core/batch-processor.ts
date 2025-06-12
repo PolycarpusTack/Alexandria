@@ -1,6 +1,6 @@
 /**
  * Batch Processor Service
- * 
+ *
  * Handles batch processing of multiple crash logs with intelligent scheduling,
  * resource management, and progress tracking.
  */
@@ -8,8 +8,7 @@
 import { Logger } from '../../../../../utils/logger';
 import { EventBus } from '../../../../../core/event-bus/event-bus';
 import { CrashAnalysisOrchestrator } from './crash-analysis-orchestrator';
-import { CrashLog, CrashAnalysisResult } from '../../interfaces';
-import { v4 as uuidv4 } from 'uuid';
+import { CrashAnalysisResult } from '../../interfaces';
 
 export interface BatchProcessingConfig {
   maxConcurrentJobs: number;
@@ -113,7 +112,7 @@ export class BatchProcessor {
     }
   ): Promise<string> {
     try {
-      this.logger.info('Submitting batch job', { 
+      this.logger.info('Submitting batch job', {
         crashLogCount: crashLogIds.length,
         priority: options.priority || 'medium',
         requestedBy: options.requestedBy
@@ -125,13 +124,15 @@ export class BatchProcessor {
       }
 
       if (crashLogIds.length > this.config.maxBatchSize) {
-        throw new Error(`Batch size ${crashLogIds.length} exceeds maximum allowed size ${this.config.maxBatchSize}`);
+        throw new Error(
+          `Batch size ${crashLogIds.length} exceeds maximum allowed size ${this.config.maxBatchSize}`
+        );
       }
 
       // Create batch job
       const jobId = uuidv4();
       const priority = options.priority || 'medium';
-      
+
       const batchJob: BatchJob = {
         id: jobId,
         crashLogIds: [...crashLogIds], // Create a copy
@@ -172,7 +173,7 @@ export class BatchProcessor {
         estimatedTime: batchJob.metadata.estimatedTime
       });
 
-      this.logger.info('Batch job submitted', { 
+      this.logger.info('Batch job submitted', {
         jobId,
         crashLogCount: crashLogIds.length,
         priority,
@@ -181,7 +182,7 @@ export class BatchProcessor {
 
       return jobId;
     } catch (error) {
-      this.logger.error('Failed to submit batch job', { 
+      this.logger.error('Failed to submit batch job', {
         crashLogCount: crashLogIds.length,
         error: error instanceof Error ? error.message : String(error)
       });
@@ -194,7 +195,7 @@ export class BatchProcessor {
    */
   async getBatchJobStatus(jobId: string): Promise<BatchJob | null> {
     const job = this.jobQueue.get(jobId) || this.completedJobs.get(jobId);
-    
+
     if (!job) {
       this.logger.warn('Batch job not found', { jobId });
       return null;
@@ -211,7 +212,7 @@ export class BatchProcessor {
       this.logger.info('Cancelling batch job', { jobId });
 
       const job = this.jobQueue.get(jobId);
-      
+
       if (!job) {
         this.logger.warn('Cannot cancel job - not found', { jobId });
         return false;
@@ -251,7 +252,7 @@ export class BatchProcessor {
       this.logger.info('Batch job cancelled', { jobId });
       return true;
     } catch (error) {
-      this.logger.error('Failed to cancel batch job', { 
+      this.logger.error('Failed to cancel batch job', {
         jobId,
         error: error instanceof Error ? error.message : String(error)
       });
@@ -263,27 +264,30 @@ export class BatchProcessor {
    * Get batch processing metrics
    */
   async getBatchProcessingMetrics(): Promise<BatchProcessingMetrics> {
-    const allJobs = Array.from(this.jobQueue.values()).concat(Array.from(this.completedJobs.values()));
-    
+    const allJobs = Array.from(this.jobQueue.values()).concat(
+      Array.from(this.completedJobs.values())
+    );
+
     const totalJobs = allJobs.length;
-    const queuedJobs = allJobs.filter(job => job.status === 'queued').length;
-    const processingJobs = allJobs.filter(job => job.status === 'processing').length;
-    const completedJobs = allJobs.filter(job => job.status === 'completed').length;
-    const failedJobs = allJobs.filter(job => job.status === 'failed').length;
+    const queuedJobs = allJobs.filter((job) => job.status === 'queued').length;
+    const processingJobs = allJobs.filter((job) => job.status === 'processing').length;
+    const completedJobs = allJobs.filter((job) => job.status === 'completed').length;
+    const failedJobs = allJobs.filter((job) => job.status === 'failed').length;
 
     // Calculate average job time
-    const finishedJobs = allJobs.filter(job => job.completedAt && job.startedAt);
-    const averageJobTime = finishedJobs.length > 0 
-      ? finishedJobs.reduce((sum, job) => {
-          const duration = job.completedAt!.getTime() - job.startedAt!.getTime();
-          return sum + duration;
-        }, 0) / finishedJobs.length
-      : 0;
+    const finishedJobs = allJobs.filter((job) => job.completedAt && job.startedAt);
+    const averageJobTime =
+      finishedJobs.length > 0
+        ? finishedJobs.reduce((sum, job) => {
+            const duration = job.completedAt!.getTime() - job.startedAt!.getTime();
+            return sum + duration;
+          }, 0) / finishedJobs.length
+        : 0;
 
     // Calculate throughput per hour
     const lastHour = new Date(Date.now() - 3600000);
-    const recentCompletedJobs = allJobs.filter(job => 
-      job.status === 'completed' && job.completedAt && job.completedAt > lastHour
+    const recentCompletedJobs = allJobs.filter(
+      (job) => job.status === 'completed' && job.completedAt && job.completedAt > lastHour
     ).length;
 
     // Resource utilization (simplified estimates)
@@ -308,32 +312,36 @@ export class BatchProcessor {
   /**
    * Get list of batch jobs with filtering
    */
-  async getBatchJobs(filters: {
-    status?: string;
-    priority?: string;
-    requestedBy?: string;
-    limit?: number;
-    offset?: number;
-  } = {}): Promise<{
+  async getBatchJobs(
+    filters: {
+      status?: string;
+      priority?: string;
+      requestedBy?: string;
+      limit?: number;
+      offset?: number;
+    } = {}
+  ): Promise<{
     jobs: BatchJob[];
     total: number;
     hasMore: boolean;
   }> {
-    const allJobs = Array.from(this.jobQueue.values()).concat(Array.from(this.completedJobs.values()));
-    
+    const allJobs = Array.from(this.jobQueue.values()).concat(
+      Array.from(this.completedJobs.values())
+    );
+
     let filteredJobs = allJobs;
 
     // Apply filters
     if (filters.status) {
-      filteredJobs = filteredJobs.filter(job => job.status === filters.status);
+      filteredJobs = filteredJobs.filter((job) => job.status === filters.status);
     }
 
     if (filters.priority) {
-      filteredJobs = filteredJobs.filter(job => job.priority === filters.priority);
+      filteredJobs = filteredJobs.filter((job) => job.priority === filters.priority);
     }
 
     if (filters.requestedBy) {
-      filteredJobs = filteredJobs.filter(job => job.metadata.requestedBy === filters.requestedBy);
+      filteredJobs = filteredJobs.filter((job) => job.metadata.requestedBy === filters.requestedBy);
     }
 
     // Sort by creation date (newest first)
@@ -363,7 +371,7 @@ export class BatchProcessor {
     }
 
     this.processingIntervalId = setInterval(() => {
-      this.processNextJob().catch(error => {
+      this.processNextJob().catch((error) => {
         this.logger.error('Error in processing loop', {
           error: error instanceof Error ? error.message : String(error)
         });
@@ -412,9 +420,9 @@ export class BatchProcessor {
     } else {
       // Get oldest queued job
       const queuedJobs = Array.from(this.jobQueue.values())
-        .filter(job => job.status === 'queued')
+        .filter((job) => job.status === 'queued')
         .sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime());
-      
+
       return queuedJobs.length > 0 ? queuedJobs[0].id : null;
     }
 
@@ -426,7 +434,7 @@ export class BatchProcessor {
    */
   private async processJob(job: BatchJob): Promise<void> {
     try {
-      this.logger.info('Starting batch job processing', { 
+      this.logger.info('Starting batch job processing', {
         jobId: job.id,
         crashLogCount: job.crashLogIds.length,
         priority: job.priority
@@ -484,7 +492,7 @@ export class BatchProcessor {
         failedCount: job.results.failed.length
       });
 
-      this.logger.info('Batch job completed', { 
+      this.logger.info('Batch job completed', {
         jobId: job.id,
         actualTime: job.metadata.actualTime,
         successfulCount: job.results.successful.length,
@@ -494,7 +502,7 @@ export class BatchProcessor {
       // Handle job failure
       job.status = 'failed';
       job.completedAt = new Date();
-      
+
       // Move to completed jobs
       this.completedJobs.set(job.id, job);
       this.jobQueue.delete(job.id);
@@ -507,7 +515,7 @@ export class BatchProcessor {
         progress: job.progress
       });
 
-      this.logger.error('Batch job failed', { 
+      this.logger.error('Batch job failed', {
         jobId: job.id,
         error: error instanceof Error ? error.message : String(error)
       });
@@ -521,7 +529,7 @@ export class BatchProcessor {
     const promises = crashLogIds.map(async (logId) => {
       try {
         job.progress.inProgress++;
-        
+
         // Emit progress update
         this.eventBus.publish('hadron:batch:progress', {
           jobId: job.id,
@@ -529,7 +537,7 @@ export class BatchProcessor {
         });
 
         const result = await this.crashAnalyzer.analyzeLog(logId);
-        
+
         job.results.successful.push(result);
         job.progress.completed++;
         job.progress.inProgress--;
@@ -578,7 +586,7 @@ export class BatchProcessor {
       cutoffDate.setDate(cutoffDate.getDate() - retentionDays);
 
       let cleanedCount = 0;
-      
+
       for (const [jobId, job] of this.completedJobs) {
         if (job.completedAt && job.completedAt < cutoffDate) {
           this.completedJobs.delete(jobId);
@@ -587,7 +595,7 @@ export class BatchProcessor {
       }
 
       if (cleanedCount > 0) {
-        this.logger.info('Cleaned up old batch jobs', { 
+        this.logger.info('Cleaned up old batch jobs', {
           cleanedCount,
           retentionDays
         });

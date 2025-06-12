@@ -1,16 +1,16 @@
 /**
  * Mnemosyne Plugin - Advanced Knowledge Management System
- * 
+ *
  * Enterprise-grade knowledge management plugin for Alexandria Platform
  * Features: Knowledge graphs, AI-enhanced templates, intelligent import/export,
  * advanced search, collaboration, and comprehensive analytics
- * 
+ *
  * @author Alexandria Team
  * @version 1.0.0
  * @license MIT
  */
 
-import { 
+import {
   AlexandriaPlugin,
   PluginContext,
   PluginInterface,
@@ -25,7 +25,7 @@ import {
   PluginLifecycleHooks
 } from '@alexandria/plugin-interface';
 
-import { 
+import {
   CoreSystemError,
   ValidationError,
   ConfigurationError,
@@ -33,7 +33,7 @@ import {
 } from '@alexandria/core/errors';
 
 import { MnemosyneCore } from './core/MnemosyneCore';
-import { MnemosyneConfiguration, MnemosyneConfig } from './core/config/Configuration';
+import { MnemosyneConfiguration } from './core/config/Configuration';
 import { MnemosyneServiceRegistry } from './core/services/ServiceRegistry';
 import { MnemosyneEventHandlers } from './core/events/EventHandlers';
 import { MnemosyneSecurityManager } from './core/security/SecurityManager';
@@ -57,7 +57,7 @@ import { ImportExportFeatureProvider } from './features/import-export/providers/
 import { KnowledgeGraphFeatureProvider } from './features/knowledge-graph/providers/KnowledgeGraphFeatureProvider';
 
 // Types and Interfaces
-import { 
+import {
   MnemosynePlugin as IMnemosynePlugin,
   MnemosyneContext,
   MnemosyneServices,
@@ -68,7 +68,7 @@ import {
 
 /**
  * Mnemosyne Plugin Implementation
- * 
+ *
  * Comprehensive knowledge management plugin providing:
  * - Advanced knowledge graph management
  * - AI-enhanced template system
@@ -164,13 +164,11 @@ export class MnemosynePlugin implements AlexandriaPlugin, IMnemosynePlugin {
 
       this.isInitialized = true;
       this.logger.info('Mnemosyne plugin initialized successfully');
-
     } catch (error) {
       this.logger?.error('Failed to initialize Mnemosyne plugin', { error });
-      throw new CoreSystemError(
-        `Failed to initialize Mnemosyne plugin: ${error.message}`,
-        { originalError: error }
-      );
+      throw new CoreSystemError(`Failed to initialize Mnemosyne plugin: ${error.message}`, {
+        originalError: error
+      });
     }
   }
 
@@ -207,7 +205,7 @@ export class MnemosynePlugin implements AlexandriaPlugin, IMnemosynePlugin {
       await this.warmupSystems();
 
       this.isActivated = true;
-      
+
       const result: PluginActivationResult = {
         success: true,
         message: 'Mnemosyne plugin activated successfully',
@@ -217,18 +215,16 @@ export class MnemosynePlugin implements AlexandriaPlugin, IMnemosynePlugin {
       };
 
       this.logger?.info('Mnemosyne plugin activated successfully', result);
-      
+
       // Emit activation event
       this.context?.eventBus.emit('mnemosyne:plugin:activated', result);
 
       return result;
-
     } catch (error) {
       this.logger?.error('Failed to activate Mnemosyne plugin', { error });
-      throw new CoreSystemError(
-        `Failed to activate Mnemosyne plugin: ${error.message}`,
-        { originalError: error }
-      );
+      throw new CoreSystemError(`Failed to activate Mnemosyne plugin: ${error.message}`, {
+        originalError: error
+      });
     }
   }
 
@@ -263,18 +259,16 @@ export class MnemosynePlugin implements AlexandriaPlugin, IMnemosynePlugin {
       };
 
       this.logger?.info('Mnemosyne plugin deactivated successfully');
-      
+
       // Emit deactivation event
       this.context?.eventBus.emit('mnemosyne:plugin:deactivated', result);
 
       return result;
-
     } catch (error) {
       this.logger?.error('Failed to deactivate Mnemosyne plugin', { error });
-      throw new CoreSystemError(
-        `Failed to deactivate Mnemosyne plugin: ${error.message}`,
-        { originalError: error }
-      );
+      throw new CoreSystemError(`Failed to deactivate Mnemosyne plugin: ${error.message}`, {
+        originalError: error
+      });
     }
   }
 
@@ -319,11 +313,9 @@ export class MnemosynePlugin implements AlexandriaPlugin, IMnemosynePlugin {
         this.checkServiceHealth()
       ]);
 
-      const results = checks.map(check => 
-        check.status === 'fulfilled' ? check.value : false
-      );
+      const results = checks.map((check) => (check.status === 'fulfilled' ? check.value : false));
 
-      const healthy = results.every(result => result === true);
+      const healthy = results.every((result) => result === true);
 
       return {
         healthy,
@@ -335,7 +327,6 @@ export class MnemosynePlugin implements AlexandriaPlugin, IMnemosynePlugin {
           timestamp: new Date().toISOString()
         }
       };
-
     } catch (error) {
       return {
         healthy: false,
@@ -355,8 +346,12 @@ export class MnemosynePlugin implements AlexandriaPlugin, IMnemosynePlugin {
     }
 
     const requiredProperties = [
-      'eventBus', 'dataService', 'configManager', 
-      'logger', 'security', 'userContext'
+      'eventBus',
+      'dataService',
+      'configManager',
+      'logger',
+      'security',
+      'userContext'
     ];
 
     for (const prop of requiredProperties) {
@@ -371,16 +366,14 @@ export class MnemosynePlugin implements AlexandriaPlugin, IMnemosynePlugin {
       const configData = await this.context!.configManager.getPluginConfig(this.id);
       this.config = new MnemosyneConfiguration(configData);
       await this.config.validate();
-      
-      this.logger?.debug('Configuration initialized', { 
-        config: this.config.getSafeConfig() 
-      });
 
+      this.logger?.debug('Configuration initialized', {
+        config: this.config.getSafeConfig()
+      });
     } catch (error) {
-      throw new ConfigurationError(
-        `Failed to initialize configuration: ${error.message}`,
-        { originalError: error }
-      );
+      throw new ConfigurationError(`Failed to initialize configuration: ${error.message}`, {
+        originalError: error
+      });
     }
   }
 
@@ -403,7 +396,7 @@ export class MnemosynePlugin implements AlexandriaPlugin, IMnemosynePlugin {
 
     // Register core services
     await this.registerCoreServices();
-    
+
     // Initialize service registry
     await this.serviceRegistry.initialize();
   }
@@ -412,75 +405,80 @@ export class MnemosynePlugin implements AlexandriaPlugin, IMnemosynePlugin {
     const serviceDefinitions = [
       {
         name: 'knowledgeGraph',
-        factory: () => new KnowledgeGraphService({
-          context: this.context!,
-          config: this.config!,
-          logger: this.logger!
-        })
+        factory: () =>
+          new KnowledgeGraphService({
+            context: this.context!,
+            config: this.config!,
+            logger: this.logger!
+          })
       },
       {
         name: 'documents',
-        factory: () => new DocumentService({
-          context: this.context!,
-          config: this.config!,
-          logger: this.logger!
-        })
+        factory: () =>
+          new DocumentService({
+            context: this.context!,
+            config: this.config!,
+            logger: this.logger!
+          })
       },
       {
         name: 'templates',
-        factory: () => new TemplateService({
-          context: this.context!,
-          config: this.config!,
-          logger: this.logger!
-        })
+        factory: () =>
+          new TemplateService({
+            context: this.context!,
+            config: this.config!,
+            logger: this.logger!
+          })
       },
       {
         name: 'importExport',
-        factory: () => new ImportExportService({
-          context: this.context!,
-          config: this.config!,
-          logger: this.logger!
-        })
+        factory: () =>
+          new ImportExportService({
+            context: this.context!,
+            config: this.config!,
+            logger: this.logger!
+          })
       },
       {
         name: 'search',
-        factory: () => new SearchService({
-          context: this.context!,
-          config: this.config!,
-          logger: this.logger!
-        })
+        factory: () =>
+          new SearchService({
+            context: this.context!,
+            config: this.config!,
+            logger: this.logger!
+          })
       },
       {
         name: 'analytics',
-        factory: () => new AnalyticsService({
-          context: this.context!,
-          config: this.config!,
-          logger: this.logger!
-        })
+        factory: () =>
+          new AnalyticsService({
+            context: this.context!,
+            config: this.config!,
+            logger: this.logger!
+          })
       },
       {
         name: 'cache',
-        factory: () => new CacheService({
-          context: this.context!,
-          config: this.config!,
-          logger: this.logger!
-        })
+        factory: () =>
+          new CacheService({
+            context: this.context!,
+            config: this.config!,
+            logger: this.logger!
+          })
       },
       {
         name: 'notifications',
-        factory: () => new NotificationService({
-          context: this.context!,
-          config: this.config!,
-          logger: this.logger!
-        })
+        factory: () =>
+          new NotificationService({
+            context: this.context!,
+            config: this.config!,
+            logger: this.logger!
+          })
       }
     ];
 
     for (const definition of serviceDefinitions) {
-      await this.serviceRegistry!.register(
-        definition.name,
-        definition.factory
-      );
+      await this.serviceRegistry!.register(definition.name, definition.factory);
     }
 
     // Store service references
@@ -594,7 +592,6 @@ export class MnemosynePlugin implements AlexandriaPlugin, IMnemosynePlugin {
       } else {
         this.logger?.warn('Express app not available, API routes not mounted');
       }
-
     } catch (error) {
       this.logger?.error('Failed to register API routes', { error: error.message });
       throw error;
@@ -666,12 +663,7 @@ export class MnemosynePlugin implements AlexandriaPlugin, IMnemosynePlugin {
         config: this.config?.getSafeConfig()
       };
 
-      await this.context?.dataService.store(
-        'plugin_state',
-        { pluginId: this.id },
-        state
-      );
-
+      await this.context?.dataService.store('plugin_state', { pluginId: this.id }, state);
     } catch (error) {
       this.logger?.error('Failed to save plugin state', { error });
     }
@@ -717,9 +709,7 @@ export class MnemosynePlugin implements AlexandriaPlugin, IMnemosynePlugin {
       })
     );
 
-    return healthChecks.every(check => 
-      check.status === 'fulfilled' && check.value === true
-    );
+    return healthChecks.every((check) => check.status === 'fulfilled' && check.value === true);
   }
 }
 

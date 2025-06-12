@@ -1,11 +1,12 @@
 /**
  * Mnemosyne Graph Query Builder
- * 
+ *
  * Enterprise-grade PostgreSQL query builder specifically designed for
  * knowledge graph operations with advanced traversal, analytics, and optimization
  */
 
 import { DataService } from '@alexandria/plugin-interface';
+import { logger } from '../../../../../utils/logger';
 import {
   GraphQuery,
   GraphFilter,
@@ -51,7 +52,7 @@ export interface GraphAnalyticsOptions {
 
 /**
  * Advanced Graph Query Builder
- * 
+ *
  * Provides high-performance query building for knowledge graph operations
  * with intelligent optimization, caching, and analytics support
  */
@@ -59,7 +60,7 @@ export class GraphQueryBuilder {
   private readonly dataService: DataService;
   private queryCache: Map<string, GraphQueryResult> = new Map();
   private executionStats: Map<string, number> = new Map();
-  
+
   // Query optimization settings
   private readonly enableOptimization = true;
   private readonly cacheTimeout = 300000; // 5 minutes
@@ -74,7 +75,7 @@ export class GraphQueryBuilder {
    */
   public async executeQuery(query: GraphQuery): Promise<GraphQueryResult> {
     const startTime = Date.now();
-    
+
     try {
       // Check cache first
       const cacheKey = this.generateCacheKey(query);
@@ -85,24 +86,24 @@ export class GraphQueryBuilder {
 
       // Build and optimize query
       const sqlQuery = await this.buildQuery(query);
-      const optimizedQuery = this.enableOptimization ? 
-        await this.optimizeQuery(sqlQuery, query) : sqlQuery;
+      const optimizedQuery = this.enableOptimization
+        ? await this.optimizeQuery(sqlQuery, query)
+        : sqlQuery;
 
       // Execute query
       const result = await this.executeRawQuery(optimizedQuery);
-      
+
       // Process and format results
       const formattedResult = await this.formatQueryResult(result, query);
-      
+
       // Update execution stats
       const executionTime = Date.now() - startTime;
       this.updateExecutionStats(query.type, executionTime);
-      
+
       // Cache result
       this.cacheResult(cacheKey, formattedResult);
-      
+
       return formattedResult;
-      
     } catch (error) {
       throw new Error(`Graph query execution failed: ${error.message}`);
     }
@@ -180,8 +181,8 @@ export class GraphQueryBuilder {
     `;
 
     const params = [
-      startNodeId, 
-      endNodeId, 
+      startNodeId,
+      endNodeId,
       options.maxDepth || 6,
       ...(options.strengthThreshold ? [options.strengthThreshold] : []),
       ...(options.confidenceThreshold ? [options.confidenceThreshold] : [])
@@ -317,11 +318,15 @@ export class GraphQueryBuilder {
       `;
 
       const result = await this.dataService.query(updateQuery, [dampingFactor]);
-      
+
       // Check convergence
-      const maxChange = Math.max(...result.map(row => row.rank_change));
+      const maxChange = Math.max(...result.map((row) => row.rank_change));
       if (maxChange < convergenceThreshold) {
-        console.log(`PageRank converged after ${iteration + 1} iterations`);
+        logger.info('PageRank algorithm converged', {
+          iterations: iteration + 1,
+          convergenceThreshold,
+          maxChange
+        });
         break;
       }
     }
@@ -399,7 +404,7 @@ export class GraphQueryBuilder {
         FROM mnemosyne_active_nodes
         GROUP BY type;
       `,
-      
+
       relationshipStats: `
         SELECT 
           type,
@@ -410,7 +415,7 @@ export class GraphQueryBuilder {
         FROM mnemosyne_active_relationships
         GROUP BY type;
       `,
-      
+
       graphMetrics: `
         SELECT 
           (SELECT COUNT(*) FROM mnemosyne_active_nodes) as total_nodes,
@@ -421,7 +426,7 @@ export class GraphQueryBuilder {
           (SELECT COUNT(DISTINCT source_id) FROM mnemosyne_active_relationships) as nodes_with_outbound,
           (SELECT COUNT(DISTINCT target_id) FROM mnemosyne_active_relationships) as nodes_with_inbound;
       `,
-      
+
       topNodes: `
         SELECT id, title, type, page_rank, centrality, connections_count
         FROM mnemosyne_active_nodes
@@ -431,7 +436,7 @@ export class GraphQueryBuilder {
     };
 
     const results: Record<string, any> = {};
-    
+
     for (const [key, query] of Object.entries(queries)) {
       results[key] = await this.dataService.query(query);
     }
@@ -451,7 +456,7 @@ export class GraphQueryBuilder {
   public async optimizeQuery(sqlQuery: string, originalQuery: GraphQuery): Promise<string> {
     // Query optimization strategies
     let optimizedQuery = sqlQuery;
-    
+
     // Add appropriate indexes hint
     if (originalQuery.type === 'traversal') {
       optimizedQuery = this.addIndexHints(optimizedQuery, [
@@ -459,15 +464,15 @@ export class GraphQueryBuilder {
         'idx_relationships_target'
       ]);
     }
-    
+
     // Add LIMIT if not present and reasonable
     if (!optimizedQuery.toLowerCase().includes('limit') && originalQuery.limit) {
       optimizedQuery += ` LIMIT ${originalQuery.limit}`;
     }
-    
+
     // Add result size estimation
     optimizedQuery = this.addResultSizeEstimation(optimizedQuery);
-    
+
     return optimizedQuery;
   }
 
@@ -476,13 +481,13 @@ export class GraphQueryBuilder {
    */
   public async getQueryPlan(query: GraphQuery): Promise<QueryPlan> {
     const sqlQuery = await this.buildQuery(query);
-    
+
     // Get PostgreSQL execution plan
     const explainQuery = `EXPLAIN (FORMAT JSON, ANALYZE false) ${sqlQuery}`;
     const planResult = await this.dataService.query(explainQuery);
-    
+
     const plan = planResult[0]['QUERY PLAN'][0];
-    
+
     return {
       estimatedCost: plan['Total Cost'],
       executionStrategy: this.determineExecutionStrategy(plan),
@@ -511,7 +516,7 @@ export class GraphQueryBuilder {
   private buildTraversalQuery(query: GraphQuery): string {
     const whereConditions = this.buildWhereConditions(query.filters || []);
     const depthLimit = query.depth || 3;
-    
+
     return `
       WITH RECURSIVE graph_traversal AS (
         -- Base case
@@ -584,34 +589,37 @@ export class GraphQueryBuilder {
 
   private buildWhereConditions(filters: GraphFilter[]): string {
     if (!filters.length) return '';
-    
-    return filters.map(filter => {
-      switch (filter.operator) {
-        case 'eq':
-          return `${filter.field} = '${filter.value}'`;
-        case 'ne':
-          return `${filter.field} != '${filter.value}'`;
-        case 'gt':
-          return `${filter.field} > ${filter.value}`;
-        case 'gte':
-          return `${filter.field} >= ${filter.value}`;
-        case 'lt':
-          return `${filter.field} < ${filter.value}`;
-        case 'lte':
-          return `${filter.field} <= ${filter.value}`;
-        case 'in':
-          return `${filter.field} = ANY(ARRAY[${filter.value.map(v => `'${v}'`).join(',')}])`;
-        case 'contains':
-          return `${filter.field} ILIKE '%${filter.value}%'`;
-        default:
-          return '';
-      }
-    }).filter(Boolean).join(' AND ');
+
+    return filters
+      .map((filter) => {
+        switch (filter.operator) {
+          case 'eq':
+            return `${filter.field} = '${filter.value}'`;
+          case 'ne':
+            return `${filter.field} != '${filter.value}'`;
+          case 'gt':
+            return `${filter.field} > ${filter.value}`;
+          case 'gte':
+            return `${filter.field} >= ${filter.value}`;
+          case 'lt':
+            return `${filter.field} < ${filter.value}`;
+          case 'lte':
+            return `${filter.field} <= ${filter.value}`;
+          case 'in':
+            return `${filter.field} = ANY(ARRAY[${filter.value.map((v) => `'${v}'`).join(',')}])`;
+          case 'contains':
+            return `${filter.field} ILIKE '%${filter.value}%'`;
+          default:
+            return '';
+        }
+      })
+      .filter(Boolean)
+      .join(' AND ');
   }
 
   private buildTraversalFilters(options: GraphTraversalOptions): GraphFilter[] {
     const filters: GraphFilter[] = [];
-    
+
     if (options.relationshipTypes) {
       filters.push({
         field: 'r.type',
@@ -619,7 +627,7 @@ export class GraphQueryBuilder {
         value: options.relationshipTypes
       });
     }
-    
+
     if (options.nodeTypes) {
       filters.push({
         field: 'n.type',
@@ -627,7 +635,7 @@ export class GraphQueryBuilder {
         value: options.nodeTypes
       });
     }
-    
+
     if (options.strengthThreshold) {
       filters.push({
         field: 'r.strength',
@@ -635,7 +643,7 @@ export class GraphQueryBuilder {
         value: options.strengthThreshold
       });
     }
-    
+
     if (options.confidenceThreshold) {
       filters.push({
         field: 'r.confidence',
@@ -643,7 +651,7 @@ export class GraphQueryBuilder {
         value: options.confidenceThreshold
       });
     }
-    
+
     return filters;
   }
 
@@ -654,7 +662,7 @@ export class GraphQueryBuilder {
   private async formatQueryResult(result: any[], query: GraphQuery): Promise<GraphQueryResult> {
     const nodes: KnowledgeNode[] = [];
     const relationships: KnowledgeRelationship[] = [];
-    
+
     // Process results based on query type
     for (const row of result) {
       if (row.id && row.title) {
@@ -711,7 +719,7 @@ export class GraphQueryBuilder {
   }
 
   private formatSimilarityResult(result: any[]): GraphQueryResult {
-    const nodes = result.map(row => ({
+    const nodes = result.map((row) => ({
       id: row.id,
       title: row.title,
       type: row.type,
@@ -736,7 +744,7 @@ export class GraphQueryBuilder {
   }
 
   private formatCommunityResult(result: any[]): GraphQueryResult {
-    const nodes = result.map(row => ({
+    const nodes = result.map((row) => ({
       id: row.id,
       title: row.title,
       type: row.type,
@@ -756,7 +764,7 @@ export class GraphQueryBuilder {
         totalRelationships: 0,
         executionTime: 0,
         algorithm: 'community-detection',
-        communities: [...new Set(result.map(r => r.community_id))].length
+        communities: [...new Set(result.map((r) => r.community_id))].length
       }
     };
   }
@@ -776,7 +784,7 @@ export class GraphQueryBuilder {
       const oldestKey = this.queryCache.keys().next().value;
       this.queryCache.delete(oldestKey);
     }
-    
+
     this.queryCache.set(key, result);
   }
 
@@ -784,9 +792,9 @@ export class GraphQueryBuilder {
     const key = `${queryType}_avg_time`;
     const currentAvg = this.executionStats.get(key) || 0;
     const currentCount = this.executionStats.get(`${queryType}_count`) || 0;
-    
+
     const newAvg = (currentAvg * currentCount + executionTime) / (currentCount + 1);
-    
+
     this.executionStats.set(key, newAvg);
     this.executionStats.set(`${queryType}_count`, currentCount + 1);
   }

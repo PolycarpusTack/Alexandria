@@ -4,13 +4,13 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { 
-  HeimdallQuery, 
-  HeimdallQueryResult, 
+import {
+  HeimdallQuery,
+  HeimdallQueryResult,
   TimeRange,
   DashboardStats,
   AnalyticsInsight,
-  DetectedPattern 
+  DetectedPattern
 } from '../../src/interfaces';
 import { createApiUrl, handleApiError } from '../utils/common';
 
@@ -157,11 +157,14 @@ export const useDashboardData = (timeRange: TimeRange, autoRefresh = true) => {
 
 // ============= Pattern Detection Hook =============
 
-export const usePatternDetection = (timeRange: TimeRange, options?: {
-  minConfidence?: number;
-  analysisDepth?: 'fast' | 'thorough' | 'deep';
-  autoRefresh?: boolean;
-}) => {
+export const usePatternDetection = (
+  timeRange: TimeRange,
+  options?: {
+    minConfidence?: number;
+    analysisDepth?: 'fast' | 'thorough' | 'deep';
+    autoRefresh?: boolean;
+  }
+) => {
   const [patterns, setPatterns] = useState<DetectedPattern[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -284,11 +287,14 @@ export const useAnalytics = (timeRange: TimeRange, aggregationLevel = 'hourly') 
 
 // ============= WebSocket Stream Hook =============
 
-export const useLogStream = (query: HeimdallQuery | null, options?: {
-  batchSize?: number;
-  batchInterval?: number;
-  quality?: 'realtime' | 'near-realtime' | 'batch';
-}) => {
+export const useLogStream = (
+  query: HeimdallQuery | null,
+  options?: {
+    batchSize?: number;
+    batchInterval?: number;
+    quality?: 'realtime' | 'near-realtime' | 'batch';
+  }
+) => {
   const [logs, setLogs] = useState<any[]>([]);
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -304,27 +310,29 @@ export const useLogStream = (query: HeimdallQuery | null, options?: {
       wsRef.current.onopen = () => {
         setConnected(true);
         setError(null);
-        
+
         // Send subscription message
         if (wsRef.current) {
-          wsRef.current.send(JSON.stringify({
-            type: 'subscribe',
-            query,
-            options: {
-              batchSize: options?.batchSize || 10,
-              batchInterval: options?.batchInterval || 1000,
-              quality: options?.quality || 'near-realtime'
-            }
-          }));
+          wsRef.current.send(
+            JSON.stringify({
+              type: 'subscribe',
+              query,
+              options: {
+                batchSize: options?.batchSize || 10,
+                batchInterval: options?.batchInterval || 1000,
+                quality: options?.quality || 'near-realtime'
+              }
+            })
+          );
         }
       };
 
       wsRef.current.onmessage = (event) => {
         try {
           const message = JSON.parse(event.data);
-          
+
           if (message.type === 'logs') {
-            setLogs(prev => [...message.data, ...prev.slice(0, 1000)]); // Keep last 1000
+            setLogs((prev) => [...message.data, ...prev.slice(0, 1000)]); // Keep last 1000
           }
         } catch (err) {
           console.error('Failed to parse WebSocket message:', err);
@@ -385,15 +393,18 @@ export const useLocalStorage = <T>(key: string, defaultValue: T) => {
     }
   });
 
-  const setStoredValue = useCallback((newValue: T | ((prev: T) => T)) => {
-    try {
-      const valueToStore = newValue instanceof Function ? newValue(value) : newValue;
-      setValue(valueToStore);
-      localStorage.setItem(`heimdall_${key}`, JSON.stringify(valueToStore));
-    } catch (error) {
-      console.error('Failed to save to localStorage:', error);
-    }
-  }, [key, value]);
+  const setStoredValue = useCallback(
+    (newValue: T | ((prev: T) => T)) => {
+      try {
+        const valueToStore = newValue instanceof Function ? newValue(value) : newValue;
+        setValue(valueToStore);
+        localStorage.setItem(`heimdall_${key}`, JSON.stringify(valueToStore));
+      } catch (error) {
+        console.error('Failed to save to localStorage:', error);
+      }
+    },
+    [key, value]
+  );
 
   const removeStoredValue = useCallback(() => {
     try {

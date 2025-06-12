@@ -92,7 +92,7 @@ describe('HeimdallPlugin Integration', () => {
       await plugin.install(mockContext);
 
       expect(mockLogger.info).toHaveBeenCalledWith('Heimdall plugin installed');
-      
+
       // Verify database tables were created
       expect(mockDataService.query).toHaveBeenCalledWith(
         expect.stringContaining('CREATE TABLE IF NOT EXISTS heimdall_logs')
@@ -108,7 +108,7 @@ describe('HeimdallPlugin Integration', () => {
 
       expect(mockLogger.info).toHaveBeenCalledWith('Heimdall plugin activated');
       expect(mockContext.registerAPI).toHaveBeenCalled();
-      
+
       // Verify event handlers are registered
       expect(mockEventBus.on).toHaveBeenCalledWith('log:created', expect.any(Function));
       expect(mockEventBus.on).toHaveBeenCalledWith('log:batch', expect.any(Function));
@@ -150,8 +150,9 @@ describe('HeimdallPlugin Integration', () => {
       };
 
       // Get the event handler
-      const logCreatedHandler = mockEventBus.on.mock.calls
-        .find(call => call[0] === 'log:created')?.[1];
+      const logCreatedHandler = mockEventBus.on.mock.calls.find(
+        (call) => call[0] === 'log:created'
+      )?.[1];
 
       expect(logCreatedHandler).toBeDefined();
 
@@ -184,8 +185,7 @@ describe('HeimdallPlugin Integration', () => {
       ];
 
       // Get the event handler
-      const batchHandler = mockEventBus.on.mock.calls
-        .find(call => call[0] === 'log:batch')?.[1];
+      const batchHandler = mockEventBus.on.mock.calls.find((call) => call[0] === 'log:batch')?.[1];
 
       expect(batchHandler).toBeDefined();
 
@@ -219,9 +219,7 @@ describe('HeimdallPlugin Integration', () => {
       } as any as express.Response;
 
       // Find health route handler
-      const healthRoute = apiRouter.stack.find(
-        layer => layer.route?.path === '/health'
-      );
+      const healthRoute = apiRouter.stack.find((layer) => layer.route?.path === '/health');
       expect(healthRoute).toBeDefined();
 
       // Call the handler
@@ -252,7 +250,7 @@ describe('HeimdallPlugin Integration', () => {
 
       // Find query route
       const queryRoute = apiRouter.stack.find(
-        layer => layer.route?.path === '/query' && layer.route.methods.post
+        (layer) => layer.route?.path === '/query' && layer.route.methods.post
       );
       expect(queryRoute).toBeDefined();
 
@@ -271,20 +269,14 @@ describe('HeimdallPlugin Integration', () => {
 
   describe('Error Handling', () => {
     it('should handle activation without installation', async () => {
-      await expect(plugin.activate()).rejects.toThrow(
-        'Plugin must be installed before activation'
-      );
+      await expect(plugin.activate()).rejects.toThrow('Plugin must be installed before activation');
     });
 
     it('should handle service initialization errors', async () => {
       // Mock storage initialization failure
-      mockDataService.query.mockRejectedValueOnce(
-        new Error('Database connection failed')
-      );
+      mockDataService.query.mockRejectedValueOnce(new Error('Database connection failed'));
 
-      await expect(plugin.install(mockContext)).rejects.toThrow(
-        'Database connection failed'
-      );
+      await expect(plugin.install(mockContext)).rejects.toThrow('Database connection failed');
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         'Failed to create Heimdall tables',
@@ -321,7 +313,7 @@ describe('HeimdallPlugin Integration', () => {
       // Get API handler
       const apiRouter = mockContext.registerAPI.mock.calls[0]?.[1];
       const queryRoute = apiRouter.stack.find(
-        layer => layer.route?.path === '/query' && layer.route.methods.post
+        (layer) => layer.route?.path === '/query' && layer.route.methods.post
       );
 
       // Skip validation middleware and call handler directly

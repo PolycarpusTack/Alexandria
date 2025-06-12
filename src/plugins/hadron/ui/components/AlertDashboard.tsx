@@ -3,9 +3,9 @@
  * Displays active alerts, alert history, and alert configuration
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 
-import {    
+import {
   Bell,
   BellOff,
   AlertTriangle,
@@ -20,22 +20,27 @@ import {
   RefreshCw,
   Download,
   Filter
-    } from 'lucide-react';
+} from 'lucide-react';
 import { useAlertService } from '../hooks/useAlertService';
 import { AlertRule, AlertEvent, AlertSeverity } from '../../src/interfaces/alerts';
 import { format } from 'date-fns';
 import { cn } from '../../../../client/lib/utils';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../../client/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../../../../client/components/ui/card';
 import { Button } from '../../../../client/components/ui/button';
 import { Badge } from '../../../../client/components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../../../../client/components/ui/table';
-import { Input } from '../../../../client/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../../../../client/components/ui/select';
+import { Table } from '../../../../client/components/ui/table';
+import { Select } from '../../../../client/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../client/components/ui/tabs';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '../../../../client/components/ui/dialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from '../../../../client/components/ui/dialog';
 import { Switch } from '../../../../client/components/ui/switch';
-import { useToast } from '../../../../client/components/ui/use-toast'
+import { useToast } from '../../../../client/components/ui/use-toast';
 export const AlertDashboard: React.FC = () => {
   const { toast } = useToast();
   const {
@@ -78,13 +83,15 @@ export const AlertDashboard: React.FC = () => {
   };
 
   // Filter alerts by severity
-  const filteredActiveAlerts = filterSeverity === 'all' 
-    ? activeAlerts 
-    : activeAlerts.filter(alert => alert.severity === filterSeverity);
+  const filteredActiveAlerts =
+    filterSeverity === 'all'
+      ? activeAlerts
+      : activeAlerts.filter((alert) => alert.severity === filterSeverity);
 
-  const filteredHistory = filterSeverity === 'all'
-    ? alertHistory
-    : alertHistory.filter(alert => alert.severity === filterSeverity);
+  const filteredHistory =
+    filterSeverity === 'all'
+      ? alertHistory
+      : alertHistory.filter((alert) => alert.severity === filterSeverity);
 
   const handleAcknowledge = async (alert: AlertEvent) => {
     try {
@@ -106,11 +113,7 @@ export const AlertDashboard: React.FC = () => {
     if (!showResolveModal) return;
 
     try {
-      await resolveAlert(
-        showResolveModal.id,
-        'current-user',
-        resolution
-      );
+      await resolveAlert(showResolveModal.id, 'current-user', resolution);
       toast({
         title: 'Alert Resolved',
         description: `Alert "${showResolveModal.ruleName}" has been resolved`
@@ -161,109 +164,96 @@ export const AlertDashboard: React.FC = () => {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <div className='p-6 space-y-6'>
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className='flex justify-between items-center'>
         <div>
-          <h1 className="text-2xl font-bold flex items-center gap-2">
-            <Bell className="h-6 w-6" />
+          <h1 className='text-2xl font-bold flex items-center gap-2'>
+            <Bell className='h-6 w-6' />
             Alert Management
           </h1>
-          <p className="text-muted-foreground">
-            Monitor and manage analytics alerts
-          </p>
+          <p className='text-muted-foreground'>Monitor and manage analytics alerts</p>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={refreshAlerts}
-            disabled={loading}
-          >
+        <div className='flex gap-2'>
+          <Button variant='outline' size='sm' onClick={refreshAlerts} disabled={loading}>
             <RefreshCw className={cn('h-4 w-4 mr-1', loading && 'animate-spin')} />
             Refresh
           </Button>
           <Button
-            size="sm"
+            size='sm'
             onClick={() => {
               setEditingRule(null);
               setShowRuleModal(true);
             }}
           >
-            <Plus className="h-4 w-4 mr-1" />
+            <Plus className='h-4 w-4 mr-1' />
             New Rule
           </Button>
         </div>
       </div>
 
       {/* Metrics Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className='grid grid-cols-1 md:grid-cols-4 gap-4'>
         <MetricCard
-          title="Active Alerts"
+          title='Active Alerts'
           value={metrics.activeAlerts}
           icon={Bell}
-          color="red"
+          color='red'
           trend={metrics.activeAlerts > 0 ? 'up' : 'stable'}
         />
         <MetricCard
-          title="Acknowledged"
+          title='Acknowledged'
           value={metrics.acknowledgedAlerts}
           icon={CheckCircle}
-          color="yellow"
+          color='yellow'
         />
         <MetricCard
-          title="Resolved Today"
+          title='Resolved Today'
           value={metrics.resolvedAlerts}
           icon={CheckCircle}
-          color="green"
+          color='green'
         />
         <MetricCard
-          title="Avg Resolution Time"
+          title='Avg Resolution Time'
           value={`${Math.round(metrics.averageResolutionTime / 60)}m`}
           icon={Clock}
-          color="blue"
+          color='blue'
         />
       </div>
 
       {/* Alert Tabs */}
       <Card>
         <CardHeader>
-          <div className="flex justify-between items-center">
+          <div className='flex justify-between items-center'>
             <CardTitle>Alerts</CardTitle>
             <Select
               value={filterSeverity}
               onValueChange={(value) => setFilterSeverity(value as any)}
             >
-              <option value="all">All Severities</option>
-              <option value="critical">Critical</option>
-              <option value="warning">Warning</option>
-              <option value="info">Info</option>
+              <option value='all'>All Severities</option>
+              <option value='critical'>Critical</option>
+              <option value='warning'>Warning</option>
+              <option value='info'>Info</option>
             </Select>
           </div>
         </CardHeader>
         <CardContent>
           <Tabs value={selectedTab} onValueChange={setSelectedTab}>
             <TabsList>
-              <TabsTrigger value="active">
-                Active ({filteredActiveAlerts.length})
-              </TabsTrigger>
-              <TabsTrigger value="history">
-                History
-              </TabsTrigger>
-              <TabsTrigger value="rules">
-                Rules ({rules.length})
-              </TabsTrigger>
+              <TabsTrigger value='active'>Active ({filteredActiveAlerts.length})</TabsTrigger>
+              <TabsTrigger value='history'>History</TabsTrigger>
+              <TabsTrigger value='rules'>Rules ({rules.length})</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="active" className="mt-4">
+            <TabsContent value='active' className='mt-4'>
               {filteredActiveAlerts.length === 0 ? (
-                <div className="text-center py-8 text-muted-foreground">
-                  <CheckCircle className="h-12 w-12 mx-auto mb-4 text-green-500" />
+                <div className='text-center py-8 text-muted-foreground'>
+                  <CheckCircle className='h-12 w-12 mx-auto mb-4 text-green-500' />
                   <p>No active alerts</p>
                 </div>
               ) : (
-                <div className="space-y-3">
-                  {filteredActiveAlerts.map(alert => (
+                <div className='space-y-3'>
+                  {filteredActiveAlerts.map((alert) => (
                     <AlertCard
                       key={alert.id}
                       alert={alert}
@@ -277,8 +267,8 @@ export const AlertDashboard: React.FC = () => {
               )}
             </TabsContent>
 
-            <TabsContent value="history" className="mt-4">
-              <div className="space-y-2">
+            <TabsContent value='history' className='mt-4'>
+              <div className='space-y-2'>
                 <Table>
                   <thead>
                     <tr>
@@ -291,7 +281,7 @@ export const AlertDashboard: React.FC = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredHistory.slice(0, 20).map(alert => (
+                    {filteredHistory.slice(0, 20).map((alert) => (
                       <tr key={alert.id}>
                         <td>{format(alert.timestamp, 'MMM dd HH:mm')}</td>
                         <td>{alert.ruleName}</td>
@@ -303,22 +293,23 @@ export const AlertDashboard: React.FC = () => {
                         <td>{alert.value.toFixed(2)}</td>
                         <td>
                           {alert.resolved ? (
-                            <Badge variant="outline" className="text-green-600">
+                            <Badge variant='outline' className='text-green-600'>
                               Resolved
                             </Badge>
                           ) : (
-                            <Badge variant="outline" className="text-yellow-600">
+                            <Badge variant='outline' className='text-yellow-600'>
                               Acknowledged
                             </Badge>
                           )}
                         </td>
                         <td>
-                          {alert.resolvedAt && alert.timestamp ? (
-                            `${Math.round(
-                              (new Date(alert.resolvedAt).getTime() - 
-                               new Date(alert.timestamp).getTime()) / 60000
-                            )}m`
-                          ) : '-'}
+                          {alert.resolvedAt && alert.timestamp
+                            ? `${Math.round(
+                                (new Date(alert.resolvedAt).getTime() -
+                                  new Date(alert.timestamp).getTime()) /
+                                  60000
+                              )}m`
+                            : '-'}
                         </td>
                       </tr>
                     ))}
@@ -327,9 +318,9 @@ export const AlertDashboard: React.FC = () => {
               </div>
             </TabsContent>
 
-            <TabsContent value="rules" className="mt-4">
-              <div className="space-y-3">
-                {rules.map(rule => (
+            <TabsContent value='rules' className='mt-4'>
+              <div className='space-y-3'>
+                {rules.map((rule) => (
                   <RuleCard
                     key={rule.id}
                     rule={rule}
@@ -353,25 +344,23 @@ export const AlertDashboard: React.FC = () => {
           <DialogHeader>
             <DialogTitle>Resolve Alert</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className='space-y-4'>
             <div>
-              <label className="text-sm font-medium">Resolution Notes</label>
+              <label className='text-sm font-medium'>Resolution Notes</label>
               <textarea
-                className="w-full mt-1 p-2 border rounded-md"
+                className='w-full mt-1 p-2 border rounded-md'
                 rows={4}
                 value={resolution}
                 onChange={(e) => setResolution(e.target.value)}
-                placeholder="Describe how the alert was resolved..."
+                placeholder='Describe how the alert was resolved...'
               />
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setShowResolveModal(null)}>
+            <Button variant='outline' onClick={() => setShowResolveModal(null)}>
               Cancel
             </Button>
-            <Button onClick={handleResolve}>
-              Resolve Alert
-            </Button>
+            <Button onClick={handleResolve}>Resolve Alert</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -388,20 +377,22 @@ const MetricCard: React.FC<{
   trend?: 'up' | 'down' | 'stable';
 }> = ({ title, value, icon: Icon, color }) => (
   <Card>
-    <CardContent className="p-6">
-      <div className="flex items-center justify-between">
+    <CardContent className='p-6'>
+      <div className='flex items-center justify-between'>
         <div>
-          <p className="text-sm text-muted-foreground">{title}</p>
-          <p className="text-2xl font-bold mt-1">{value}</p>
+          <p className='text-sm text-muted-foreground'>{title}</p>
+          <p className='text-2xl font-bold mt-1'>{value}</p>
         </div>
-        <div className={cn(
-          'p-3 rounded-lg',
-          color === 'red' && 'bg-red-100 dark:bg-red-900/20',
-          color === 'yellow' && 'bg-yellow-100 dark:bg-yellow-900/20',
-          color === 'green' && 'bg-green-100 dark:bg-green-900/20',
-          color === 'blue' && 'bg-blue-100 dark:bg-blue-900/20'
-        )}>
-          <Icon className="h-5 w-5" />
+        <div
+          className={cn(
+            'p-3 rounded-lg',
+            color === 'red' && 'bg-red-100 dark:bg-red-900/20',
+            color === 'yellow' && 'bg-yellow-100 dark:bg-yellow-900/20',
+            color === 'green' && 'bg-green-100 dark:bg-green-900/20',
+            color === 'blue' && 'bg-blue-100 dark:bg-blue-900/20'
+          )}
+        >
+          <Icon className='h-5 w-5' />
         </div>
       </div>
     </CardContent>
@@ -433,37 +424,28 @@ const AlertCard: React.FC<{
 
   return (
     <Card className={cn('border-l-4', config.color)}>
-      <CardContent className="p-4">
-        <div className="flex items-start justify-between">
-          <div className="flex items-start gap-3">
-            <Icon className="h-5 w-5 mt-0.5" />
+      <CardContent className='p-4'>
+        <div className='flex items-start justify-between'>
+          <div className='flex items-start gap-3'>
+            <Icon className='h-5 w-5 mt-0.5' />
             <div>
-              <h4 className="font-medium">{alert.ruleName}</h4>
-              <p className="text-sm text-muted-foreground mt-1">
-                {alert.message}
-              </p>
-              <div className="flex items-center gap-4 mt-2 text-sm text-muted-foreground">
+              <h4 className='font-medium'>{alert.ruleName}</h4>
+              <p className='text-sm text-muted-foreground mt-1'>{alert.message}</p>
+              <div className='flex items-center gap-4 mt-2 text-sm text-muted-foreground'>
                 <span>{format(alert.timestamp, 'MMM dd HH:mm:ss')}</span>
                 <span>Value: {alert.value.toFixed(2)}</span>
                 <span>Threshold: {alert.threshold.toFixed(2)}</span>
               </div>
             </div>
           </div>
-          <div className="flex gap-2">
+          <div className='flex gap-2'>
             {!alert.acknowledged && (
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={onAcknowledge}
-              >
+              <Button size='sm' variant='outline' onClick={onAcknowledge}>
                 Acknowledge
               </Button>
             )}
             {alert.acknowledged && !alert.resolved && (
-              <Button
-                size="sm"
-                onClick={onResolve}
-              >
+              <Button size='sm' onClick={onResolve}>
                 Resolve
               </Button>
             )}
@@ -481,36 +463,25 @@ const RuleCard: React.FC<{
   onDelete: () => void;
 }> = ({ rule, onToggle, onEdit, onDelete }) => (
   <Card>
-    <CardContent className="p-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Switch
-            checked={rule.enabled}
-            onCheckedChange={onToggle}
-          />
+    <CardContent className='p-4'>
+      <div className='flex items-center justify-between'>
+        <div className='flex items-center gap-3'>
+          <Switch checked={rule.enabled} onCheckedChange={onToggle} />
           <div>
-            <h4 className="font-medium">{rule.name}</h4>
-            <p className="text-sm text-muted-foreground">
-              {rule.metric} {rule.condition.operator} {rule.condition.value} 
+            <h4 className='font-medium'>{rule.name}</h4>
+            <p className='text-sm text-muted-foreground'>
+              {rule.metric} {rule.condition.operator} {rule.condition.value}
               (last {rule.timeWindow})
             </p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Badge variant="outline">{rule.severity}</Badge>
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={onEdit}
-          >
-            <Edit className="h-4 w-4" />
+        <div className='flex items-center gap-2'>
+          <Badge variant='outline'>{rule.severity}</Badge>
+          <Button size='icon' variant='ghost' onClick={onEdit}>
+            <Edit className='h-4 w-4' />
           </Button>
-          <Button
-            size="icon"
-            variant="ghost"
-            onClick={onDelete}
-          >
-            <Trash2 className="h-4 w-4" />
+          <Button size='icon' variant='ghost' onClick={onDelete}>
+            <Trash2 className='h-4 w-4' />
           </Button>
         </div>
       </div>

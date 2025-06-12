@@ -34,13 +34,10 @@ export class DataAggregator {
         : sortedData;
 
       // Calculate total count
-      const totalCount = processedData.reduce(
-        (sum, point) => sum + (point.count || 0),
-        0
-      );
+      const totalCount = processedData.reduce((sum, point) => sum + (point.count || 0), 0);
 
       // Transform to final format
-      const series = processedData.map(point => ({
+      const series = processedData.map((point) => ({
         timestamp: point.timestamp,
         count: point.count || 0,
         metadata: options.includeMetadata ? point.metadata : undefined
@@ -68,7 +65,7 @@ export class DataAggregator {
    * Transform data to severity trends format
    */
   transformToSeverityTrends(rawData: any[]): any[] {
-    return rawData.map(row => ({
+    return rawData.map((row) => ({
       timestamp: row.timestamp,
       distribution: row.distribution || {
         critical: 0,
@@ -92,11 +89,8 @@ export class DataAggregator {
     for (const item of data) {
       const category = String(item[categoryField]);
       const value = Number(item[valueField]) || 0;
-      
-      aggregated.set(
-        category,
-        (aggregated.get(category) || 0) + value
-      );
+
+      aggregated.set(category, (aggregated.get(category) || 0) + value);
     }
 
     return aggregated;
@@ -110,13 +104,12 @@ export class DataAggregator {
     windowSize: number
   ): Array<{ timestamp: string; value: number; average: number }> {
     const result = [];
-    
+
     for (let i = 0; i < data.length; i++) {
       const windowStart = Math.max(0, i - windowSize + 1);
       const window = data.slice(windowStart, i + 1);
-      const average = 
-        window.reduce((sum, point) => sum + point.value, 0) / window.length;
-      
+      const average = window.reduce((sum, point) => sum + point.value, 0) / window.length;
+
       result.push({
         ...data[i],
         average
@@ -134,14 +127,13 @@ export class DataAggregator {
     threshold: number = 2
   ): Array<{ timestamp: string; value: number; isAnomaly: boolean }> {
     // Calculate mean and standard deviation
-    const values = data.map(d => d.value);
+    const values = data.map((d) => d.value);
     const mean = values.reduce((a, b) => a + b, 0) / values.length;
-    const variance = 
-      values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
+    const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
     const stdDev = Math.sqrt(variance);
 
     // Mark anomalies
-    return data.map(point => ({
+    return data.map((point) => ({
       ...point,
       isAnomaly: Math.abs(point.value - mean) > threshold * stdDev
     }));
@@ -150,10 +142,7 @@ export class DataAggregator {
   /**
    * Aggregate percentiles efficiently
    */
-  calculatePercentiles(
-    values: number[],
-    percentiles: number[]
-  ): Record<string, number> {
+  calculatePercentiles(values: number[], percentiles: number[]): Record<string, number> {
     const sorted = [...values].sort((a, b) => a - b);
     const result: Record<string, number> = {};
 
@@ -169,19 +158,12 @@ export class DataAggregator {
    * Private helper methods
    */
   private sortByTimestamp(data: any[]): any[] {
-    return data.sort((a, b) => 
-      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-    );
+    return data.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
   }
 
-  private fillTimeGaps(
-    data: any[],
-    timeRange: TimeRange
-  ): any[] {
+  private fillTimeGaps(data: any[], timeRange: TimeRange): any[] {
     const filled = [];
-    const dataMap = new Map(
-      data.map(point => [point.timestamp, point])
-    );
+    const dataMap = new Map(data.map((point) => [point.timestamp, point]));
 
     // Generate all expected timestamps
     const current = new Date(timeRange.start);
@@ -191,7 +173,7 @@ export class DataAggregator {
     while (current <= end) {
       const timestamp = current.toISOString();
       const existingData = dataMap.get(timestamp);
-      
+
       filled.push(
         existingData || {
           timestamp,

@@ -8,7 +8,6 @@ import {
 } from './interfaces';
 import { TemplateRepository } from './TemplateRepository';
 import { TemplateEngine } from './TemplateEngine';
-import { v4 as uuidv4 } from 'uuid';
 
 export class AITemplateGenerator {
   private templateRepository: TemplateRepository;
@@ -200,7 +199,7 @@ export class AITemplateGenerator {
 
     // Get usage analytics
     const usageData = await this.getUsageAnalytics(templateId);
-    
+
     // Analyze with AI
     const alfredPlugin = this.context.plugins?.get('alfred');
     if (!alfredPlugin) {
@@ -217,10 +216,13 @@ export class AITemplateGenerator {
         Modification Rate: ${template.analytics.modificationRate}
         
         Common Modifications:
-        ${template.analytics.commonModifications.map(m => `- ${m.section}: ${m.changeType} (${m.frequency}% of users)`).join('\n')}
+        ${template.analytics.commonModifications.map((m) => `- ${m.section}: ${m.changeType} (${m.frequency}% of users)`).join('\n')}
         
         User Feedback:
-        ${template.analytics.userFeedback.slice(0, 5).map(f => `- ${f.rating}/5: ${f.comment}`).join('\n')}
+        ${template.analytics.userFeedback
+          .slice(0, 5)
+          .map((f) => `- ${f.rating}/5: ${f.comment}`)
+          .join('\n')}
         
         Content: ${template.content}
         
@@ -280,12 +282,12 @@ export class AITemplateGenerator {
     // Add context information
     if (request.context) {
       enhancedPrompt += '\n\nContext:';
-      
+
       if (request.context.project) {
         enhancedPrompt += `\n- Project: ${request.context.project.name} (${request.context.project.type})`;
         enhancedPrompt += `\n- Technologies: ${request.context.project.technologies.join(', ')}`;
       }
-      
+
       if (request.context.user) {
         enhancedPrompt += `\n- User expertise: ${request.context.user.expertise.join(', ')}`;
       }
@@ -294,15 +296,15 @@ export class AITemplateGenerator {
     // Add constraints
     if (request.constraints) {
       enhancedPrompt += '\n\nRequirements:';
-      
+
       if (request.constraints.targetAudience) {
         enhancedPrompt += `\n- Target audience: ${request.constraints.targetAudience}`;
       }
-      
+
       if (request.constraints.includeVariables) {
         enhancedPrompt += '\n- Include template variables for customization';
       }
-      
+
       if (request.constraints.includeExamples) {
         enhancedPrompt += '\n- Include practical examples';
       }
@@ -323,7 +325,10 @@ Template should follow these best practices:
     return enhancedPrompt;
   }
 
-  private async callAlfredGeneration(prompt: string, request: TemplateGenerationRequest): Promise<string> {
+  private async callAlfredGeneration(
+    prompt: string,
+    request: TemplateGenerationRequest
+  ): Promise<string> {
     // This would call the actual ALFRED plugin
     // For now, simulate AI generation
     return this.simulateAIGeneration(prompt, request);
@@ -499,21 +504,21 @@ Create a \`{{configFile}}\` file:
 
   private extractTemplateType(prompt: string): string {
     const lowerPrompt = prompt.toLowerCase();
-    
+
     if (lowerPrompt.includes('api') || lowerPrompt.includes('documentation')) {
       return 'api-documentation';
     }
     if (lowerPrompt.includes('meeting') || lowerPrompt.includes('notes')) {
       return 'meeting-notes';
     }
-    
+
     return 'project-readme';
   }
 
   private extractVariablesFromContent(content: string): TemplateVariable[] {
     const variables = this.templateEngine.extractVariables(content);
-    
-    return variables.map(name => ({
+
+    return variables.map((name) => ({
       name,
       type: this.inferVariableType(name, content),
       description: this.generateVariableDescription(name),
@@ -523,7 +528,7 @@ Create a \`{{configFile}}\` file:
 
   private inferVariableType(name: string, content: string): TemplateVariable['type'] {
     const lowerName = name.toLowerCase();
-    
+
     if (lowerName.includes('date') || lowerName.includes('time')) {
       return 'date';
     }
@@ -536,7 +541,7 @@ Create a \`{{configFile}}\` file:
     if (lowerName.includes('list') || lowerName.includes('items') || lowerName.includes('tags')) {
       return 'array';
     }
-    
+
     return 'string';
   }
 
@@ -544,7 +549,7 @@ Create a \`{{configFile}}\` file:
     // Generate human-readable description from variable name
     return name
       .replace(/([A-Z])/g, ' $1')
-      .replace(/^./, str => str.toUpperCase())
+      .replace(/^./, (str) => str.toUpperCase())
       .trim();
   }
 
@@ -554,7 +559,10 @@ Create a \`{{configFile}}\` file:
     return !conditionalRegex.test(content);
   }
 
-  private async generateMetadata(request: TemplateGenerationRequest, content: string): Promise<any> {
+  private async generateMetadata(
+    request: TemplateGenerationRequest,
+    content: string
+  ): Promise<any> {
     return {
       category: request.category || this.inferCategory(request.prompt),
       tags: this.generateTags(request, content),
@@ -576,7 +584,7 @@ Create a \`{{configFile}}\` file:
 
   private inferCategory(prompt: string): string {
     const lowerPrompt = prompt.toLowerCase();
-    
+
     if (lowerPrompt.includes('api') || lowerPrompt.includes('documentation')) {
       return 'documentation';
     }
@@ -586,28 +594,28 @@ Create a \`{{configFile}}\` file:
     if (lowerPrompt.includes('project') || lowerPrompt.includes('readme')) {
       return 'project-management';
     }
-    
+
     return 'general';
   }
 
   private generateTags(request: TemplateGenerationRequest, content: string): string[] {
     const tags = ['ai-generated'];
-    
+
     if (request.category) {
       tags.push(request.category);
     }
-    
+
     // Extract tags from content analysis
     const contentTags = this.extractTagsFromContent(content);
     tags.push(...contentTags);
-    
+
     return [...new Set(tags)]; // Remove duplicates
   }
 
   private extractTagsFromContent(content: string): string[] {
     const tags: string[] = [];
     const lowerContent = content.toLowerCase();
-    
+
     // Common patterns
     if (lowerContent.includes('api')) tags.push('api');
     if (lowerContent.includes('rest')) tags.push('rest');
@@ -615,7 +623,7 @@ Create a \`{{configFile}}\` file:
     if (lowerContent.includes('documentation')) tags.push('docs');
     if (lowerContent.includes('meeting')) tags.push('meeting');
     if (lowerContent.includes('project')) tags.push('project');
-    
+
     return tags;
   }
 
@@ -627,7 +635,7 @@ Create a \`{{configFile}}\` file:
     // Estimate based on content length and complexity
     const wordCount = content.split(/\s+/).length;
     const variableCount = (content.match(/\{\{[^}]+\}\}/g) || []).length;
-    
+
     // Base time + variable complexity
     return Math.max(5, Math.ceil(wordCount / 100) + variableCount * 2);
   }
@@ -641,7 +649,7 @@ Create a \`{{configFile}}\` file:
   private generateTemplateName(request: TemplateGenerationRequest): string {
     // Extract name from prompt
     const prompt = request.prompt.toLowerCase();
-    
+
     if (prompt.includes('api')) {
       return 'API Documentation Template';
     }
@@ -651,7 +659,7 @@ Create a \`{{configFile}}\` file:
     if (prompt.includes('readme')) {
       return 'Project README Template';
     }
-    
+
     return 'Generated Template';
   }
 
@@ -674,7 +682,7 @@ Create a \`{{configFile}}\` file:
             'Add security best practices'
           ]
         };
-      
+
       case 'analyze':
         if (params.task === 'variable_suggestion') {
           return {
@@ -685,7 +693,7 @@ Create a \`{{configFile}}\` file:
             ]
           };
         }
-        
+
         if (params.task === 'template_improvement') {
           return {
             improvements: [
@@ -698,9 +706,9 @@ Create a \`{{configFile}}\` file:
             ]
           };
         }
-        
+
         return {};
-      
+
       default:
         return {};
     }
@@ -728,7 +736,7 @@ Create a \`{{configFile}}\` file:
   }
 
   private parseVariableSuggestions(suggestions: any[]): TemplateVariable[] {
-    return suggestions.map(s => ({
+    return suggestions.map((s) => ({
       name: s.name,
       type: s.type || 'string',
       description: s.description,
@@ -737,7 +745,7 @@ Create a \`{{configFile}}\` file:
   }
 
   private parseImprovementSuggestions(improvements: any[]): TemplateEvolutionSuggestion[] {
-    return improvements.map(imp => ({
+    return improvements.map((imp) => ({
       type: imp.type,
       description: imp.description,
       impact: imp.impact || 'medium',
@@ -760,14 +768,17 @@ Create a \`{{configFile}}\` file:
       FROM mnemosyne_template_usage
       WHERE template_id = $1
     `;
-    
+
     const result = await this.context.db.query(query, [templateId]);
     return result.rows[0] || {};
   }
 
-  private getRuleBasedSuggestions(template: MnemosyneTemplate, usageData: any): TemplateEvolutionSuggestion[] {
+  private getRuleBasedSuggestions(
+    template: MnemosyneTemplate,
+    usageData: any
+  ): TemplateEvolutionSuggestion[] {
     const suggestions: TemplateEvolutionSuggestion[] = [];
-    
+
     // Rule-based analysis
     if (template.analytics.modificationRate > 0.7) {
       suggestions.push({
@@ -782,7 +793,7 @@ Create a \`{{configFile}}\` file:
         suggestedChange: 'Add more variables or conditional sections'
       });
     }
-    
+
     if (template.analytics.satisfactionScore < 3) {
       suggestions.push({
         type: 'add_section',
@@ -796,7 +807,7 @@ Create a \`{{configFile}}\` file:
         suggestedChange: 'Add examples, improve descriptions, or add missing sections'
       });
     }
-    
+
     return suggestions;
   }
 
@@ -840,9 +851,10 @@ Create a \`{{configFile}}\` file:
   }
 
   private addExamplesToTemplate(content: string, examples: string[]): string {
-    const exampleSection = '\n\n## Examples\n\n' + 
+    const exampleSection =
+      '\n\n## Examples\n\n' +
       examples.map((example, i) => `### Example ${i + 1}\n${example}`).join('\n\n');
-    
+
     return content + exampleSection;
   }
 
@@ -863,7 +875,10 @@ Create a \`{{configFile}}\` file:
   private async addErrorHandling(content: string): Promise<string> {
     // Add error handling sections where appropriate
     if (!content.includes('Error') && !content.includes('Troubleshooting')) {
-      return content + '\n\n## Error Handling\n\n{{#if hasErrors}}\nCommon issues and solutions:\n{{#each errors}}\n- **{{error}}**: {{solution}}\n{{/each}}\n{{/if}}';
+      return (
+        content +
+        '\n\n## Error Handling\n\n{{#if hasErrors}}\nCommon issues and solutions:\n{{#each errors}}\n- **{{error}}**: {{solution}}\n{{/each}}\n{{/if}}'
+      );
     }
     return content;
   }

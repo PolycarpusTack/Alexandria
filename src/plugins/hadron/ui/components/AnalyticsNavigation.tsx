@@ -1,16 +1,9 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-import { 
-  BarChart3,
-  FileText,
-  TrendingUp,
-  Home,
-  FileSearch
- } from 'lucide-react';
+import { BarChart3, FileText, TrendingUp, Home, FileSearch } from 'lucide-react';
 import { cn } from '../../../../client/lib/utils';
 
-import { Button } from '../../../../client/components/ui/button'
 interface NavigationItem {
   path: string;
   label: string;
@@ -26,30 +19,30 @@ export const AnalyticsNavigation: React.FC = () => {
     {
       path: '/crash-analyzer',
       label: 'Dashboard',
-      icon: <Home className="h-4 w-4" />,
+      icon: <Home className='h-4 w-4' />,
       description: 'Crash logs overview'
     },
     {
       path: '/crash-analyzer/analytics',
       label: 'Analytics',
-      icon: <BarChart3 className="h-4 w-4" />,
+      icon: <BarChart3 className='h-4 w-4' />,
       description: 'Insights & trends'
     },
     {
       path: '/crash-analyzer/reports',
       label: 'Reports',
-      icon: <FileText className="h-4 w-4" />,
+      icon: <FileText className='h-4 w-4' />,
       description: 'Generate reports'
     }
   ];
 
   return (
-    <div className="border-b">
-      <div className="px-6 py-3">
-        <nav className="flex space-x-6">
+    <div className='border-b'>
+      <div className='px-6 py-3'>
+        <nav className='flex space-x-6'>
           {navItems.map((item) => {
             const isActive = location.pathname === item.path;
-            
+
             return (
               <button
                 key={item.path}

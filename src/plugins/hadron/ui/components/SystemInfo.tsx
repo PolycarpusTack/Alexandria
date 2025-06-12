@@ -1,8 +1,6 @@
 import React from 'react';
 
-import { SystemInfo as SystemInfoType } from '../../src/interfaces';
-
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../../client/components/ui/card'
+import { Card } from '../../../../client/components/ui/card';
 interface SystemInfoProps {
   systemInfo: SystemInfoType;
   metadata: Record<string, any>;
@@ -17,9 +15,9 @@ export const SystemInfo: React.FC<SystemInfoProps> = ({ systemInfo, metadata }) 
     osType: metadata.osType || systemInfo.osType,
     osVersion: metadata.osVersion || systemInfo.osVersion,
     deviceModel: metadata.device || systemInfo.deviceModel,
-    appVersion: metadata.appVersion || systemInfo.appVersion,
+    appVersion: metadata.appVersion || systemInfo.appVersion
   };
-  
+
   // Function to format the system info for display
   const formatSystemInfo = () => {
     const sections = [
@@ -46,7 +44,7 @@ export const SystemInfo: React.FC<SystemInfoProps> = ({ systemInfo, metadata }) 
         ]
       }
     ];
-    
+
     // Add other hardware info if available
     if (combinedInfo.otherHardwareInfo && Object.keys(combinedInfo.otherHardwareInfo).length > 0) {
       sections.push({
@@ -57,7 +55,7 @@ export const SystemInfo: React.FC<SystemInfoProps> = ({ systemInfo, metadata }) 
         }))
       });
     }
-    
+
     // Add other software info if available
     if (combinedInfo.otherSoftwareInfo && Object.keys(combinedInfo.otherSoftwareInfo).length > 0) {
       sections.push({
@@ -68,12 +66,12 @@ export const SystemInfo: React.FC<SystemInfoProps> = ({ systemInfo, metadata }) 
         }))
       });
     }
-    
+
     // Add other metadata if available
     const otherMetadata = Object.entries(metadata).filter(
       ([key]) => !['osType', 'osVersion', 'device', 'appVersion', 'source'].includes(key)
     );
-    
+
     if (otherMetadata.length > 0) {
       sections.push({
         title: 'Other Metadata',
@@ -83,22 +81,22 @@ export const SystemInfo: React.FC<SystemInfoProps> = ({ systemInfo, metadata }) 
         }))
       });
     }
-    
+
     return sections;
   };
-  
+
   const infoSections = formatSystemInfo();
-  
+
   return (
-    <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div className='mt-4 grid grid-cols-1 md:grid-cols-2 gap-4'>
       {infoSections.map((section, index) => (
         <Card key={index}>
-          <h2 className="text-lg font-medium mb-3">{section.title}</h2>
-          <div className="space-y-2">
+          <h2 className='text-lg font-medium mb-3'>{section.title}</h2>
+          <div className='space-y-2'>
             {section.items.map((item, itemIndex) => (
-              <div key={itemIndex} className="flex border-b border-gray-100 pb-2">
-                <div className="w-1/3 font-medium text-gray-600">{item.label}:</div>
-                <div className="w-2/3 text-gray-800 break-words">
+              <div key={itemIndex} className='flex border-b border-gray-100 pb-2'>
+                <div className='w-1/3 font-medium text-gray-600'>{item.label}:</div>
+                <div className='w-2/3 text-gray-800 break-words'>
                   {item.value ?? 'Not available'}
                 </div>
               </div>

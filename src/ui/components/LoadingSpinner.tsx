@@ -1,6 +1,6 @@
 /**
  * LoadingSpinner Component
- * 
+ *
  * A spinner component to indicate loading states in the UI.
  * This component is often directly imported from its file path.
  */
@@ -13,12 +13,12 @@ export interface LoadingSpinnerProps {
    * Size of the spinner
    */
   size?: 'small' | 'medium' | 'large';
-  
+
   /**
    * Color of the spinner, defaults to current text color
    */
   color?: string;
-  
+
   /**
    * Additional CSS class names
    */
@@ -40,23 +40,29 @@ const SpinnerElement = styled.div<{ size: string; color: string }>`
   display: inline-block;
   border-radius: 50%;
   border: 2px solid transparent;
-  border-top-color: ${props => props.color || 'currentColor'};
-  border-right-color: ${props => props.color || 'currentColor'};
+  border-top-color: ${(props) => props.color || 'currentColor'};
+  border-right-color: ${(props) => props.color || 'currentColor'};
   animation: ${spin} 0.8s linear infinite;
-  
-  ${props => props.size === 'small' && `
+
+  ${(props) =>
+    props.size === 'small' &&
+    `
     width: 16px;
     height: 16px;
     border-width: 2px;
   `}
-  
-  ${props => props.size === 'medium' && `
+
+  ${(props) =>
+    props.size === 'medium' &&
+    `
     width: 24px;
     height: 24px;
     border-width: 3px;
   `}
   
-  ${props => props.size === 'large' && `
+  ${(props) =>
+    props.size === 'large' &&
+    `
     width: 32px;
     height: 32px;
     border-width: 4px;
@@ -69,15 +75,15 @@ const SpinnerElement = styled.div<{ size: string; color: string }>`
 export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   size = 'medium',
   color = 'currentColor',
-  className = '',
+  className = ''
 }) => {
   return (
-    <SpinnerElement 
-      size={size} 
-      color={color} 
+    <SpinnerElement
+      size={size}
+      color={color}
       className={className}
-      role="status"
-      aria-label="Loading"
+      role='status'
+      aria-label='Loading'
     />
   );
 };

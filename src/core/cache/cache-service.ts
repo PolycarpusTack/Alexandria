@@ -1,6 +1,6 @@
 /**
  * Global Caching Service for Alexandria Platform
- * 
+ *
  * Provides a centralized caching mechanism to improve performance
  * and reduce database/API calls.
  */
@@ -31,7 +31,7 @@ export class CacheService {
   constructor(options: CacheOptions = {}) {
     this.maxSize = options.maxSize || 1000;
     this.onEvict = options.onEvict;
-    
+
     // Start cleanup interval
     this.cleanupInterval = setInterval(() => {
       this.cleanup();
@@ -43,21 +43,21 @@ export class CacheService {
    */
   get<T>(key: string): T | null {
     const entry = this.cache.get(key);
-    
+
     if (!entry) {
       return null;
     }
-    
+
     // Check if expired
     if (Date.now() > entry.expires) {
       this.delete(key);
       return null;
     }
-    
+
     // Update access order for LRU
     this.updateAccessOrder(key);
     entry.hits++;
-    
+
     return entry.value as T;
   }
 
@@ -66,20 +66,20 @@ export class CacheService {
    */
   set<T>(key: string, value: T, ttl?: number): void {
     const expires = Date.now() + (ttl || this.defaultTTL);
-    
+
     // Check if we need to evict
     if (!this.cache.has(key) && this.cache.size >= this.maxSize) {
       this.evictLRU();
     }
-    
+
     this.cache.set(key, {
       value,
       expires,
       hits: 0
     });
-    
+
     this.updateAccessOrder(key);
-    
+
     this.logger.debug('Cache set', { key, ttl: ttl || this.defaultTTL });
   }
 
@@ -89,22 +89,22 @@ export class CacheService {
   delete(key: string): boolean {
     const entry = this.cache.get(key);
     const deleted = this.cache.delete(key);
-    
+
     if (deleted) {
       // Remove from access order
       const index = this.accessOrder.indexOf(key);
       if (index > -1) {
         this.accessOrder.splice(index, 1);
       }
-      
+
       // Call eviction callback
       if (this.onEvict && entry) {
         this.onEvict(key, entry.value);
       }
-      
+
       this.logger.debug('Cache delete', { key });
     }
-    
+
     return deleted;
   }
 
@@ -118,10 +118,10 @@ export class CacheService {
         this.onEvict!(key, entry.value);
       });
     }
-    
+
     this.cache.clear();
     this.accessOrder = [];
-    
+
     this.logger.info('Cache cleared');
   }
 
@@ -137,12 +137,12 @@ export class CacheService {
   } {
     let totalHits = 0;
     let totalRequests = 0;
-    
-    this.cache.forEach(entry => {
+
+    this.cache.forEach((entry) => {
       totalHits += entry.hits;
       totalRequests += entry.hits + 1; // +1 for the initial set
     });
-    
+
     return {
       size: this.cache.size,
       maxSize: this.maxSize,
@@ -157,40 +157,36 @@ export class CacheService {
    */
   has(key: string): boolean {
     const entry = this.cache.get(key);
-    
+
     if (!entry) {
       return false;
     }
-    
+
     // Check if expired
     if (Date.now() > entry.expires) {
       this.delete(key);
       return false;
     }
-    
+
     return true;
   }
 
   /**
    * Get or set a value with a factory function
    */
-  async getOrSet<T>(
-    key: string,
-    factory: () => Promise<T> | T,
-    ttl?: number
-  ): Promise<T> {
+  async getOrSet<T>(key: string, factory: () => Promise<T> | T, ttl?: number): Promise<T> {
     // Check cache first
     const cached = this.get<T>(key);
     if (cached !== null) {
       return cached;
     }
-    
+
     // Generate value
     const value = await factory();
-    
+
     // Store in cache
     this.set(key, value, ttl);
-    
+
     return value;
   }
 
@@ -200,20 +196,20 @@ export class CacheService {
   invalidatePattern(pattern: string | RegExp): number {
     const regex = typeof pattern === 'string' ? new RegExp(pattern) : pattern;
     const keysToDelete: string[] = [];
-    
+
     this.cache.forEach((_, key) => {
       if (regex.test(key)) {
         keysToDelete.push(key);
       }
     });
-    
-    keysToDelete.forEach(key => this.delete(key));
-    
-    this.logger.debug('Cache invalidate pattern', { 
-      pattern: pattern.toString(), 
-      invalidated: keysToDelete.length 
+
+    keysToDelete.forEach((key) => this.delete(key));
+
+    this.logger.debug('Cache invalidate pattern', {
+      pattern: pattern.toString(),
+      invalidated: keysToDelete.length
     });
-    
+
     return keysToDelete.length;
   }
 
@@ -225,7 +221,7 @@ export class CacheService {
       clearInterval(this.cleanupInterval);
       this.cleanupInterval = null;
     }
-    
+
     this.clear();
   }
 
@@ -247,10 +243,10 @@ export class CacheService {
     if (this.accessOrder.length === 0) {
       return;
     }
-    
+
     const lruKey = this.accessOrder[0];
     this.delete(lruKey);
-    
+
     this.logger.debug('Cache LRU eviction', { key: lruKey });
   }
 
@@ -260,15 +256,15 @@ export class CacheService {
   private cleanup(): void {
     const now = Date.now();
     const keysToDelete: string[] = [];
-    
+
     this.cache.forEach((entry, key) => {
       if (now > entry.expires) {
         keysToDelete.push(key);
       }
     });
-    
-    keysToDelete.forEach(key => this.delete(key));
-    
+
+    keysToDelete.forEach((key) => this.delete(key));
+
     if (keysToDelete.length > 0) {
       this.logger.debug('Cache cleanup', { removed: keysToDelete.length });
     }
@@ -284,7 +280,10 @@ export const globalCache = new CacheService({
 });
 
 // Namespace-specific cache factories
-export function createNamespacedCache(namespace: string, options?: CacheOptions): {
+export function createNamespacedCache(
+  namespace: string,
+  options?: CacheOptions
+): {
   get: <T>(key: string) => T | null;
   set: <T>(key: string, value: T, ttl?: number) => void;
   delete: (key: string) => boolean;
@@ -294,19 +293,20 @@ export function createNamespacedCache(namespace: string, options?: CacheOptions)
   invalidatePattern: (pattern: string | RegExp) => number;
 } {
   const cache = new CacheService(options);
-  
+
   return {
     get: <T>(key: string) => cache.get<T>(`${namespace}:${key}`),
     set: <T>(key: string, value: T, ttl?: number) => cache.set(`${namespace}:${key}`, value, ttl),
     delete: (key: string) => cache.delete(`${namespace}:${key}`),
     clear: () => cache.invalidatePattern(new RegExp(`^${namespace}:`)),
     has: (key: string) => cache.has(`${namespace}:${key}`),
-    getOrSet: <T>(key: string, factory: () => Promise<T> | T, ttl?: number) => 
+    getOrSet: <T>(key: string, factory: () => Promise<T> | T, ttl?: number) =>
       cache.getOrSet(`${namespace}:${key}`, factory, ttl),
     invalidatePattern: (pattern: string | RegExp) => {
-      const namespacePattern = typeof pattern === 'string' 
-        ? `^${namespace}:${pattern}`
-        : new RegExp(`^${namespace}:${pattern.source}`);
+      const namespacePattern =
+        typeof pattern === 'string'
+          ? `^${namespace}:${pattern}`
+          : new RegExp(`^${namespace}:${pattern.source}`);
       return cache.invalidatePattern(namespacePattern);
     }
   };

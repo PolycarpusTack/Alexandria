@@ -1,16 +1,21 @@
 /**
  * Analysis Workflow Service
- * 
+ *
  * Manages the AI analysis workflow for crash logs, including queue management,
  * Enterprise Chunker integration, and analysis execution.
  */
 
 import { Logger } from '../../../../../utils/logger';
 import { EventBus } from '../../../../../core/event-bus/event-bus';
-import { ILogParser, ILlmService, CrashLog, CrashAnalysisResult, ParsedCrashData } from '../../interfaces';
-import { v4 as uuidv4 } from 'uuid';
+import {
+  ILogParser,
+  ILlmService,
+  CrashLog,
+  CrashAnalysisResult,
+  ParsedCrashData
+} from '../../interfaces';
 import { EnterpriseChunker } from '../../../../../tools/enterprise_chunker/chunker';
-import { NotFoundError, ValidationError } from '../../../../../core/errors';
+import { ValidationError } from '../../../../../core/errors';
 
 export interface AnalysisWorkflowConfig {
   maxConcurrentAnalyses: number;
@@ -95,8 +100,8 @@ export class AnalysisWorkflowService {
     const startTime = Date.now();
 
     try {
-      this.logger.info('Starting analysis workflow', { 
-        analysisId, 
+      this.logger.info('Starting analysis workflow', {
+        analysisId,
         logId: crashLog.id,
         priority: options.priority || 'medium'
       });
@@ -128,9 +133,9 @@ export class AnalysisWorkflowService {
       );
 
       const processingTime = Date.now() - startTime;
-      
-      this.logger.info('Analysis workflow completed', { 
-        analysisId, 
+
+      this.logger.info('Analysis workflow completed', {
+        analysisId,
         logId: crashLog.id,
         processingTime,
         confidence: finalResult.confidence
@@ -148,9 +153,9 @@ export class AnalysisWorkflowService {
       return finalResult;
     } catch (error) {
       const processingTime = Date.now() - startTime;
-      
-      this.logger.error('Analysis workflow failed', { 
-        analysisId, 
+
+      this.logger.error('Analysis workflow failed', {
+        analysisId,
         logId: crashLog.id,
         processingTime,
         error: error instanceof Error ? error.message : String(error)
@@ -180,11 +185,11 @@ export class AnalysisWorkflowService {
 
       // First, try standard parsing
       let parsedData: ParsedCrashData;
-      
+
       try {
         parsedData = await logParser.parse(crashLog.content);
       } catch (error) {
-        this.logger.warn('Standard parsing failed, attempting chunked parsing', { 
+        this.logger.warn('Standard parsing failed, attempting chunked parsing', {
           logId: crashLog.id,
           error: error instanceof Error ? error.message : String(error)
         });
@@ -195,7 +200,7 @@ export class AnalysisWorkflowService {
 
       // If content is very large, use chunking for optimization
       if (crashLog.content.length > this.config.chunkSize * 2) {
-        this.logger.info('Content size exceeds threshold, applying chunking optimization', { 
+        this.logger.info('Content size exceeds threshold, applying chunking optimization', {
           logId: crashLog.id,
           contentSize: crashLog.content.length
         });
@@ -205,7 +210,7 @@ export class AnalysisWorkflowService {
 
       return parsedData;
     } catch (error) {
-      this.logger.error('Parsing with chunking failed', { 
+      this.logger.error('Parsing with chunking failed', {
         logId: crashLog.id,
         error: error instanceof Error ? error.message : String(error)
       });
@@ -228,7 +233,7 @@ export class AnalysisWorkflowService {
         preserveStructure: true
       });
 
-      this.logger.info('Content chunked for parsing', { 
+      this.logger.info('Content chunked for parsing', {
         logId: crashLog.id,
         chunkCount: chunks.length
       });
@@ -239,7 +244,7 @@ export class AnalysisWorkflowService {
           try {
             return await logParser.parse(chunk.content);
           } catch (error) {
-            this.logger.warn('Chunk parsing failed', { 
+            this.logger.warn('Chunk parsing failed', {
               logId: crashLog.id,
               chunkIndex: index,
               error: error instanceof Error ? error.message : String(error)
@@ -250,15 +255,15 @@ export class AnalysisWorkflowService {
       );
 
       // Combine parsed chunks into a single result
-      const validChunks = parsedChunks.filter(chunk => chunk !== null) as ParsedCrashData[];
-      
+      const validChunks = parsedChunks.filter((chunk) => chunk !== null) as ParsedCrashData[];
+
       if (validChunks.length === 0) {
         throw new Error('All chunks failed to parse');
       }
 
       return this.combineChunkedParseResults(validChunks);
     } catch (error) {
-      this.logger.error('Chunked parsing approach failed', { 
+      this.logger.error('Chunked parsing approach failed', {
         logId: crashLog.id,
         error: error instanceof Error ? error.message : String(error)
       });
@@ -285,9 +290,11 @@ export class AnalysisWorkflowService {
         const relevantChunks = stackChunks
           .slice(0, 2) // First 2 chunks
           .concat(stackChunks.slice(-2)) // Last 2 chunks
-          .filter((chunk, index, arr) => arr.findIndex(c => c.content === chunk.content) === index); // Remove duplicates
+          .filter(
+            (chunk, index, arr) => arr.findIndex((c) => c.content === chunk.content) === index
+          ); // Remove duplicates
 
-        parsedData.stackTrace = relevantChunks.map(chunk => chunk.content).join('\n---\n');
+        parsedData.stackTrace = relevantChunks.map((chunk) => chunk.content).join('\n---\n');
       }
 
       // Optimize error details
@@ -300,13 +307,13 @@ export class AnalysisWorkflowService {
         // Keep most relevant error chunks
         parsedData.errorDetails = errorChunks
           .slice(0, 3) // First 3 chunks usually contain the most important error info
-          .map(chunk => chunk.content)
+          .map((chunk) => chunk.content)
           .join('\n');
       }
 
       return parsedData;
     } catch (error) {
-      this.logger.warn('Chunking optimization failed, using original parsed data', { 
+      this.logger.warn('Chunking optimization failed, using original parsed data', {
         error: error instanceof Error ? error.message : String(error)
       });
       return parsedData;
@@ -318,17 +325,25 @@ export class AnalysisWorkflowService {
    */
   private combineChunkedParseResults(chunks: ParsedCrashData[]): ParsedCrashData {
     const combined: ParsedCrashData = {
-      crashType: chunks.find(c => c.crashType)?.crashType || 'Unknown',
-      timestamp: chunks.find(c => c.timestamp)?.timestamp || new Date(),
-      stackTrace: chunks.map(c => c.stackTrace).filter(Boolean).join('\n---\n') || '',
-      errorDetails: chunks.map(c => c.errorDetails).filter(Boolean).join('\n') || '',
-      systemInfo: chunks.find(c => c.systemInfo)?.systemInfo || {},
-      appInfo: chunks.find(c => c.appInfo)?.appInfo || {},
-      threads: chunks.flatMap(c => c.threads || []),
-      memoryInfo: chunks.find(c => c.memoryInfo)?.memoryInfo || {},
-      registers: chunks.find(c => c.registers)?.registers || {},
-      libraries: chunks.flatMap(c => c.libraries || []),
-      metadata: Object.assign({}, ...chunks.map(c => c.metadata || {}))
+      crashType: chunks.find((c) => c.crashType)?.crashType || 'Unknown',
+      timestamp: chunks.find((c) => c.timestamp)?.timestamp || new Date(),
+      stackTrace:
+        chunks
+          .map((c) => c.stackTrace)
+          .filter(Boolean)
+          .join('\n---\n') || '',
+      errorDetails:
+        chunks
+          .map((c) => c.errorDetails)
+          .filter(Boolean)
+          .join('\n') || '',
+      systemInfo: chunks.find((c) => c.systemInfo)?.systemInfo || {},
+      appInfo: chunks.find((c) => c.appInfo)?.appInfo || {},
+      threads: chunks.flatMap((c) => c.threads || []),
+      memoryInfo: chunks.find((c) => c.memoryInfo)?.memoryInfo || {},
+      registers: chunks.find((c) => c.registers)?.registers || {},
+      libraries: chunks.flatMap((c) => c.libraries || []),
+      metadata: Object.assign({}, ...chunks.map((c) => c.metadata || {}))
     };
 
     return combined;
@@ -429,9 +444,9 @@ ${parsedData.errorDetails}
         maxChunkSize: this.config.chunkSize
       });
 
-      return promptChunks.map(chunk => chunk.content);
+      return promptChunks.map((chunk) => chunk.content);
     } catch (error) {
-      this.logger.error('Failed to prepare analysis prompts', { 
+      this.logger.error('Failed to prepare analysis prompts', {
         logId: crashLog.id,
         error: error instanceof Error ? error.message : String(error)
       });
@@ -450,7 +465,7 @@ ${parsedData.errorDetails}
     enableDeepAnalysis: boolean
   ): Promise<any> {
     try {
-      this.logger.info('Executing AI analysis', { 
+      this.logger.info('Executing AI analysis', {
         analysisId,
         promptCount: prompts.length,
         modelTier,
@@ -477,7 +492,7 @@ ${parsedData.errorDetails}
             });
             return { index, result };
           } catch (error) {
-            this.logger.warn('Chunk analysis failed', { 
+            this.logger.warn('Chunk analysis failed', {
               analysisId,
               chunkIndex: index,
               error: error instanceof Error ? error.message : String(error)
@@ -489,8 +504,8 @@ ${parsedData.errorDetails}
 
       // Combine chunk analyses
       const validAnalyses = chunkAnalyses
-        .filter(analysis => analysis.result !== null)
-        .map(analysis => analysis.result);
+        .filter((analysis) => analysis.result !== null)
+        .map((analysis) => analysis.result);
 
       if (validAnalyses.length === 0) {
         throw new Error('All chunk analyses failed');
@@ -500,10 +515,14 @@ ${parsedData.errorDetails}
       const synthesisPrompt = `
 Based on the following partial analyses of a crash log, provide a comprehensive final analysis:
 
-${validAnalyses.map((analysis, index) => `
+${validAnalyses
+  .map(
+    (analysis, index) => `
 Analysis ${index + 1}:
 ${JSON.stringify(analysis)}
-`).join('\n')}
+`
+  )
+  .join('\n')}
 
 Please synthesize these analyses into a single comprehensive result with:
 1. Primary Error
@@ -518,7 +537,7 @@ Please synthesize these analyses into a single comprehensive result with:
         temperature: 0.1
       });
     } catch (error) {
-      this.logger.error('AI analysis execution failed', { 
+      this.logger.error('AI analysis execution failed', {
         analysisId,
         error: error instanceof Error ? error.message : String(error)
       });
@@ -558,7 +577,7 @@ Please synthesize these analyses into a single comprehensive result with:
 
       return analysisResult;
     } catch (error) {
-      this.logger.error('Post-processing failed', { 
+      this.logger.error('Post-processing failed', {
         analysisId,
         error: error instanceof Error ? error.message : String(error)
       });

@@ -147,7 +147,12 @@ export interface IAuthenticatedRequest {
  * Generic object for nested value access
  */
 export interface INestedObject {
-  [key: string]: string | number | boolean | INestedObject | Array<string | number | boolean | INestedObject>;
+  [key: string]:
+    | string
+    | number
+    | boolean
+    | INestedObject
+    | Array<string | number | boolean | INestedObject>;
 }
 
 /**

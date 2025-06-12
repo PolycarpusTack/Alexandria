@@ -1,6 +1,6 @@
 /**
  * Optimized Log Parser
- * 
+ *
  * High-performance log parser that handles large files efficiently
  * using streaming, parallel processing, and intelligent parsing strategies
  */
@@ -65,8 +65,8 @@ export class OptimizedLogParser {
     });
 
     try {
-      const stats = await import('fs').then(fs => fs.promises.stat(filePath));
-      
+      const stats = await import('fs').then((fs) => fs.promises.stat(filePath));
+
       if (stats.size > this.options.maxFileSize) {
         throw new Error(`File too large: ${stats.size} bytes (max: ${this.options.maxFileSize})`);
       }
@@ -75,11 +75,11 @@ export class OptimizedLogParser {
       if (this.options.enableCaching) {
         const contentHash = await this.calculateFileHash(filePath);
         const cacheKey = `parsed:${contentHash}:${this.hashMetadata(metadata)}`;
-        
+
         const cached = await this.cachingService.get<ParsedCrashData>(cacheKey);
         if (cached) {
           const duration = this.performanceMonitor.stopTimer(timerId) || 0;
-          
+
           return {
             data: cached,
             stats: {
@@ -95,15 +95,11 @@ export class OptimizedLogParser {
       // Parse the file
       const stream = createReadStream(filePath, { encoding: 'utf8' });
       const result = await this.parseStream(stream, metadata);
-      
+
       // Cache the result
       if (this.options.enableCaching) {
         const contentHash = await this.calculateFileHash(filePath);
-        await this.cachingService.cacheParsedData(
-          contentHash,
-          metadata || {},
-          result.data
-        );
+        await this.cachingService.cacheParsedData(contentHash, metadata || {}, result.data);
       }
 
       const duration = this.performanceMonitor.stopTimer(timerId) || 0;
@@ -131,11 +127,11 @@ export class OptimizedLogParser {
       if (this.options.enableCaching) {
         const contentHash = this.hashContent(content);
         const cacheKey = `parsed:${contentHash}:${this.hashMetadata(metadata)}`;
-        
+
         const cached = await this.cachingService.get<ParsedCrashData>(cacheKey);
         if (cached) {
           const duration = this.performanceMonitor.stopTimer(timerId) || 0;
-          
+
           return {
             data: cached,
             stats: {
@@ -150,7 +146,7 @@ export class OptimizedLogParser {
 
       const stream = Readable.from([content]);
       const result = await this.parseStream(stream, metadata);
-      
+
       // Cache the result
       if (this.options.enableCaching) {
         await this.cachingService.cacheParsedData(content, metadata || {}, result.data);
@@ -173,14 +169,14 @@ export class OptimizedLogParser {
   private async parseStream(stream: Readable, metadata?: any): Promise<ParseResult> {
     const lines: string[] = [];
     let totalLines = 0;
-    
+
     // Create line reader transform
     const lineReader = new Transform({
       objectMode: true,
       transform(chunk: Buffer, encoding, callback) {
         const text = chunk.toString();
         const newLines = text.split('\n');
-        
+
         for (const line of newLines) {
           if (line.trim()) {
             this.push(line);
@@ -198,31 +194,27 @@ export class OptimizedLogParser {
           callback();
           return;
         }
-        
+
         lines.push(line);
         totalLines++;
-        
+
         // Report progress
         if (this.options.progressCallback && totalLines % 1000 === 0) {
           this.options.progressCallback(totalLines / this.options.maxLines);
         }
-        
+
         callback();
       }
     });
 
     // Process stream
     await new Promise<void>((resolve, reject) => {
-      stream
-        .pipe(lineReader)
-        .pipe(lineCollector)
-        .on('finish', resolve)
-        .on('error', reject);
+      stream.pipe(lineReader).pipe(lineCollector).on('finish', resolve).on('error', reject);
     });
 
     // Parse collected lines
     let parsedData: ParsedCrashData;
-    
+
     if (this.options.enableParallelProcessing && lines.length > this.options.chunkSize * 2) {
       parsedData = await this.parseParallel(lines);
     } else {
@@ -280,15 +272,13 @@ export class OptimizedLogParser {
       // Process chunks in parallel
       const workerCount = Math.min(this.options.workerCount, chunks.length);
       const chunkResults = await Promise.all(
-        chunks.map((chunk, index) => 
-          this.processChunkInWorker(chunk, index % workerCount)
-        )
+        chunks.map((chunk, index) => this.processChunkInWorker(chunk, index % workerCount))
       );
 
       // Merge results
       const result = this.mergeParseResults(chunkResults);
       this.performanceMonitor.stopTimer(timerId);
-      
+
       return result;
     } catch (error) {
       this.performanceMonitor.stopTimer(timerId);
@@ -316,7 +306,8 @@ export class OptimizedLogParser {
       timestamp: /^\d{4}-\d{2}-\d{2}[\sT]\d{2}:\d{2}:\d{2}/,
       javaException: /^(\w+(?:\.\w+)*(?:Exception|Error)):\s*(.*)$/,
       stackFrame: /^\s*at\s+(.+?)(?:\((.+?):(\d+)\)|\((.+?)\)|\(Unknown Source\))$/,
-      logLevel: /^\s*(\d{4}-\d{2}-\d{2}[\sT]\d{2}:\d{2}:\d{2}[^\s]*\s+)?(TRACE|DEBUG|INFO|WARN|ERROR|FATAL)\s*/,
+      logLevel:
+        /^\s*(\d{4}-\d{2}-\d{2}[\sT]\d{2}:\d{2}:\d{2}[^\s]*\s+)?(TRACE|DEBUG|INFO|WARN|ERROR|FATAL)\s*/,
       androidCrash: /^FATAL EXCEPTION:\s*(.+)$/,
       nativeCrash: /^#\d+\s+pc\s+([0-9a-fA-F]+)\s+(.+)$/
     };
@@ -371,7 +362,7 @@ export class OptimizedLogParser {
       const stackFrameMatch = line.match(patterns.stackFrame);
       if (stackFrameMatch && inStackTrace) {
         const [, method, file, lineNum, simpleFile] = stackFrameMatch;
-        
+
         currentStackTrace.push({
           functionName: method,
           fileName: file || simpleFile || 'Unknown',
@@ -438,13 +429,13 @@ export class OptimizedLogParser {
 
     // Detect log type
     let detectedLogType = 'generic';
-    if (systemInfo.platform === 'Android' || lines.some(l => l.includes('android'))) {
+    if (systemInfo.platform === 'Android' || lines.some((l) => l.includes('android'))) {
       detectedLogType = 'android';
-    } else if (lines.some(l => l.includes('Exception') || l.includes('at java'))) {
+    } else if (lines.some((l) => l.includes('Exception') || l.includes('at java'))) {
       detectedLogType = 'java';
-    } else if (lines.some(l => l.includes('Error:') && l.includes('.js'))) {
+    } else if (lines.some((l) => l.includes('Error:') && l.includes('.js'))) {
       detectedLogType = 'javascript';
-    } else if (lines.some(l => l.includes('Traceback'))) {
+    } else if (lines.some((l) => l.includes('Traceback'))) {
       detectedLogType = 'python';
     }
 
@@ -490,24 +481,24 @@ export class OptimizedLogParser {
       merged.errorMessages.push(...result.errorMessages);
       merged.stackTraces.push(...result.stackTraces);
       merged.timestamps.push(...result.timestamps);
-      
+
       // Merge log levels
       for (const [level, count] of Object.entries(result.logLevel)) {
         merged.logLevel[level] = (merged.logLevel[level] || 0) + count;
       }
-      
+
       // Merge system info
       Object.assign(merged.systemInfo, result.systemInfo);
-      
+
       // Merge additional context
       Object.assign(merged.additionalContext, result.additionalContext);
     }
 
     // Sort by timestamp
     merged.timestamps.sort((a, b) => a.getTime() - b.getTime());
-    
+
     // Determine best log type
-    const logTypes = results.map(r => r.metadata.detectedLogType).filter(t => t !== 'generic');
+    const logTypes = results.map((r) => r.metadata.detectedLogType).filter((t) => t !== 'generic');
     if (logTypes.length > 0) {
       merged.metadata.detectedLogType = logTypes[0];
     }

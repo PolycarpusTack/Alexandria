@@ -46,26 +46,28 @@ export const RootCauseChart: React.FC<RootCauseChartProps> = ({
         '#8b5cf6', // violet
         '#ec4899', // pink
         '#06b6d4', // cyan
-        '#84cc16', // lime
+        '#84cc16' // lime
       ];
 
-      const backgroundColors = colors.map(color => color + '20');
+      const backgroundColors = colors.map((color) => color + '20');
       const borderColors = colors;
 
       // Prepare data
       const sortedCategories = [...data.categories].sort((a, b) => b.count - a.count);
-      const labels = sortedCategories.map(cat => cat.category);
-      const values = sortedCategories.map(cat => cat.count);
+      const labels = sortedCategories.map((cat) => cat.category);
+      const values = sortedCategories.map((cat) => cat.count);
 
       const chartData = {
         labels,
-        datasets: [{
-          data: values,
-          backgroundColor: backgroundColors.slice(0, labels.length),
-          borderColor: borderColors.slice(0, labels.length),
-          borderWidth: 2,
-          hoverOffset: 4
-        }]
+        datasets: [
+          {
+            data: values,
+            backgroundColor: backgroundColors.slice(0, labels.length),
+            borderColor: borderColors.slice(0, labels.length),
+            borderWidth: 2,
+            hoverOffset: 4
+          }
+        ]
       };
 
       const options = {
@@ -91,7 +93,10 @@ export const RootCauseChart: React.FC<RootCauseChartProps> = ({
                 const data = chart.data;
                 return data.labels.map((label: string, i: number) => {
                   const value = data.datasets[0].data[i];
-                  const percentage = ((value / data.datasets[0].data.reduce((a: number, b: number) => a + b, 0)) * 100).toFixed(1);
+                  const percentage = (
+                    (value / data.datasets[0].data.reduce((a: number, b: number) => a + b, 0)) *
+                    100
+                  ).toFixed(1);
                   return {
                     text: `${label} (${percentage}%)`,
                     fillStyle: data.datasets[0].backgroundColor[i],
@@ -113,19 +118,19 @@ export const RootCauseChart: React.FC<RootCauseChartProps> = ({
             padding: 12,
             cornerRadius: 8,
             callbacks: {
-              label: function(context: any) {
+              label: function (context: any) {
                 const label = context.label || '';
                 const value = context.parsed;
                 const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
                 const percentage = ((value / total) * 100).toFixed(1);
-                
-                const category = data.categories.find(cat => cat.category === label);
+
+                const category = data.categories.find((cat) => cat.category === label);
                 let result = `${label}: ${value.toLocaleString()} (${percentage}%)`;
-                
+
                 if (category && category.trend) {
                   result += `\nTrend: ${category.trend > 0 ? '+' : ''}${category.trend.toFixed(1)}%`;
                 }
-                
+
                 return result.split('\n');
               }
             }
@@ -193,11 +198,11 @@ export const RootCauseChart: React.FC<RootCauseChartProps> = ({
       <canvas ref={chartRef} />
       {chartType === 'doughnut' && data.totalCount && (
         <div
-          className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none"
+          className='absolute inset-0 flex flex-col items-center justify-center pointer-events-none'
           style={{ top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}
         >
-          <div className="text-2xl font-bold">{data.totalCount.toLocaleString()}</div>
-          <div className="text-sm text-muted-foreground">Total Issues</div>
+          <div className='text-2xl font-bold'>{data.totalCount.toLocaleString()}</div>
+          <div className='text-sm text-muted-foreground'>Total Issues</div>
         </div>
       )}
     </div>

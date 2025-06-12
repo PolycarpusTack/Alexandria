@@ -1,12 +1,12 @@
 /**
  * Project Templates Service
- * 
+ *
  * Ported from original Alfred's template system
  * Contains built-in project templates for scaffolding
  */
 
 import { ProjectTemplate, TemplateFile } from '../../ui/components/TemplateWizard';
-import {    Code, Globe, Server, Database, Layers, FileCode, GitBranch, BookOpen, Cpu, Package    } from 'lucide-react';
+import { Globe, Database, Cpu } from 'lucide-react';
 
 export class ProjectTemplatesService {
   private templates: Map<string, ProjectTemplate> = new Map();
@@ -35,7 +35,8 @@ export class ProjectTemplatesService {
           required: true,
           validation: (value) => {
             if (!value) return 'Project name is required';
-            if (!/^[a-zA-Z0-9_-]+$/.test(value)) return 'Use letters, numbers, hyphens, and underscores only';
+            if (!/^[a-zA-Z0-9_-]+$/.test(value))
+              return 'Use letters, numbers, hyphens, and underscores only';
             return null;
           }
         },
@@ -670,7 +671,7 @@ mlflow ui
    * Get templates by category
    */
   getTemplatesByCategory(category: string): ProjectTemplate[] {
-    return Array.from(this.templates.values()).filter(t => t.category === category);
+    return Array.from(this.templates.values()).filter((t) => t.category === category);
   }
 
   /**
@@ -678,8 +679,8 @@ mlflow ui
    */
   processTemplateFiles(template: ProjectTemplate, variables: Record<string, any>): TemplateFile[] {
     return template.files
-      .filter(file => !file.condition || file.condition(variables))
-      .map(file => ({
+      .filter((file) => !file.condition || file.condition(variables))
+      .map((file) => ({
         ...file,
         content: this.substituteVariables(file.content, variables)
       }));
@@ -696,19 +697,24 @@ mlflow ui
     });
 
     // Conditional blocks
-    result = result.replace(/\{\{#if\s+(\w+)\}\}([\s\S]*?)\{\{\/if\}\}/g, (match, varName, block) => {
-      return variables[varName] ? block : '';
-    });
+    result = result.replace(
+      /\{\{#if\s+(\w+)\}\}([\s\S]*?)\{\{\/if\}\}/g,
+      (match, varName, block) => {
+        return variables[varName] ? block : '';
+      }
+    );
 
     // Conditional with comparison
-    result = result.replace(/\{\{#if\s+\(eq\s+(\w+)\s+"([^"]+)"\)\}\}([\s\S]*?)\{\{\/if\}\}/g, 
+    result = result.replace(
+      /\{\{#if\s+\(eq\s+(\w+)\s+"([^"]+)"\)\}\}([\s\S]*?)\{\{\/if\}\}/g,
       (match, varName, value, block) => {
         return variables[varName] === value ? block : '';
       }
     );
 
     // Else blocks
-    result = result.replace(/\{\{#if\s+(\w+)\}\}([\s\S]*?)\{\{else\}\}([\s\S]*?)\{\{\/if\}\}/g,
+    result = result.replace(
+      /\{\{#if\s+(\w+)\}\}([\s\S]*?)\{\{else\}\}([\s\S]*?)\{\{\/if\}\}/g,
       (match, varName, ifBlock, elseBlock) => {
         return variables[varName] ? ifBlock : elseBlock;
       }
@@ -721,7 +727,7 @@ mlflow ui
    * Create project structure from template
    */
   async createProject(
-    template: ProjectTemplate, 
+    template: ProjectTemplate,
     variables: Record<string, any>,
     targetPath: string
   ): Promise<Map<string, string>> {

@@ -3,20 +3,21 @@
   "compilerOptions": {
     "outDir": "./dist",
     "rootDir": ".",
-    "baseUrl": ".",
+    "baseUrl": "../../../",
     "paths": {
-      "@alexandria/*": ["../../*"]
+      "@alfred/*": ["src/plugins/alfred/src/*"],
+      "@alfred/ui/*": ["src/plugins/alfred/ui/*"],
+      "@core/*": ["src/core/*"],
+      "@utils/*": ["src/utils/*"],
+      "@client/*": ["src/client/*"],
+      "@components/*": ["src/client/components/*"],
+      "@types/*": ["src/types/*"],
+      "@alexandria/shared": ["alexandria-platform/packages/shared/src/index.ts"],
+      "@alexandria/shared/*": ["alexandria-platform/packages/shared/src/*"],
+      "@alexandria/ui-components": ["alexandria-platform/packages/ui-components/src/index.ts"],
+      "@alexandria/ui-components/*": ["alexandria-platform/packages/ui-components/src/*"]
     }
   },
-  "include": [
-    "src/**/*",
-    "ui/**/*"
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "original-python",
-    "**/*.test.ts",
-    "**/*.spec.ts"
-  ]
+  "include": ["src/**/*", "ui/**/*"],
+  "exclude": ["node_modules", "dist", "original-python", "**/*.test.ts", "**/*.spec.ts"]
 }

@@ -1,7 +1,12 @@
 import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 import { format } from 'date-fns';
-import { TimeSeriesData, RootCauseDistribution, ModelPerformanceData, SeverityTrendData } from '../interfaces/analytics';
+import {
+  TimeSeriesData,
+  RootCauseDistribution,
+  ModelPerformanceData,
+  SeverityTrendData
+} from '../interfaces/analytics';
 
 // Extend jsPDF type for autoTable
 declare module 'jspdf' {
@@ -28,11 +33,7 @@ export async function exportAnalyticsToPDF(
   },
   options: ExportPDFOptions = {}
 ) {
-  const {
-    title = 'Analytics Report',
-    timeRange,
-    includeCharts = true
-  } = options;
+  const { title = 'Analytics Report', timeRange, includeCharts = true } = options;
 
   // Create new PDF document
   const doc = new jsPDF();
@@ -51,7 +52,9 @@ export async function exportAnalyticsToPDF(
   doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(100);
-  doc.text(`Generated: ${format(new Date(), 'PPpp')}`, pageWidth / 2, yPosition, { align: 'center' });
+  doc.text(`Generated: ${format(new Date(), 'PPpp')}`, pageWidth / 2, yPosition, {
+    align: 'center'
+  });
   yPosition += 5;
 
   if (timeRange) {
@@ -69,7 +72,7 @@ export async function exportAnalyticsToPDF(
   // Executive Summary
   if (data.timeSeriesData || data.rootCauseData) {
     yPosition = addSection(doc, 'Executive Summary', yPosition);
-    
+
     const summaryData = [];
     if (data.timeSeriesData) {
       summaryData.push(['Total Crashes', data.timeSeriesData.totalCount.toLocaleString()]);
@@ -79,7 +82,10 @@ export async function exportAnalyticsToPDF(
     if (data.rootCauseData) {
       const topCause = data.rootCauseData.categories[0];
       if (topCause) {
-        summaryData.push(['Top Root Cause', `${topCause.category} (${topCause.percentage.toFixed(1)}%)`]);
+        summaryData.push([
+          'Top Root Cause',
+          `${topCause.category} (${topCause.percentage.toFixed(1)}%)`
+        ]);
       }
     }
 
@@ -102,7 +108,7 @@ export async function exportAnalyticsToPDF(
     yPosition = checkPageBreak(doc, yPosition, 50);
     yPosition = addSection(doc, 'Crash Frequency Over Time', yPosition);
 
-    const tableData = data.timeSeriesData.series.map(point => [
+    const tableData = data.timeSeriesData.series.map((point) => [
       format(new Date(point.timestamp), 'PPp'),
       point.count.toString(),
       point.metadata?.platform || '-',
@@ -137,7 +143,7 @@ export async function exportAnalyticsToPDF(
     yPosition = checkPageBreak(doc, yPosition, 50);
     yPosition = addSection(doc, 'Root Cause Analysis', yPosition);
 
-    const tableData = data.rootCauseData.categories.map(cat => [
+    const tableData = data.rootCauseData.categories.map((cat) => [
       cat.category,
       cat.count.toString(),
       `${cat.percentage.toFixed(1)}%`,
@@ -157,17 +163,17 @@ export async function exportAnalyticsToPDF(
     // Add insights
     if (data.rootCauseData.insights.length > 0) {
       yPosition = addSubSection(doc, 'Key Insights', yPosition);
-      data.rootCauseData.insights.forEach(insight => {
+      data.rootCauseData.insights.forEach((insight) => {
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
         doc.text(`• ${insight.title}`, margin, yPosition);
         yPosition += 5;
-        
+
         doc.setFont('helvetica', 'normal');
         const lines = doc.splitTextToSize(insight.description, pageWidth - 2 * margin - 10);
         doc.text(lines, margin + 5, yPosition);
         yPosition += lines.length * 4;
-        
+
         if (insight.recommendation) {
           doc.setTextColor(0, 0, 255);
           const recLines = doc.splitTextToSize(
@@ -187,7 +193,7 @@ export async function exportAnalyticsToPDF(
     yPosition = checkPageBreak(doc, yPosition, 50);
     yPosition = addSection(doc, 'LLM Model Performance', yPosition);
 
-    const tableData = data.modelPerformance.map(model => [
+    const tableData = data.modelPerformance.map((model) => [
       model.modelName,
       model.requestCount.toString(),
       `${(model.successRate * 100).toFixed(1)}%`,
@@ -230,7 +236,7 @@ function addSubSection(doc: jsPDF, title: string, yPosition: number): number {
 function checkPageBreak(doc: jsPDF, yPosition: number, requiredSpace: number): number {
   const pageHeight = doc.internal.pageSize.getHeight();
   const margin = 20;
-  
+
   if (yPosition + requiredSpace > pageHeight - margin) {
     doc.addPage();
     return margin;

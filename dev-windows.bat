@@ -25,25 +25,25 @@ if not exist "node_modules" (
 REM Try to use concurrently from node_modules
 if exist "node_modules\.bin\concurrently.cmd" (
     echo Using concurrently from node_modules...
-    call node_modules\.bin\concurrently "pnpm run dev:server" "pnpm run dev:client"
+    call node_modules\.bin\concurrently.cmd --prefix-colors "yellow,cyan" --names "SERVER,CLIENT" --kill-others-on-fail "pnpm run dev:server" "pnpm run dev:client"
 ) else (
-    echo concurrently not found in node_modules, installing globally...
-    call npm install -g concurrently
+    echo concurrently not found in node_modules, trying pnpm exec...
+    call pnpm exec concurrently --prefix-colors "yellow,cyan" --names "SERVER,CLIENT" --kill-others-on-fail "pnpm run dev:server" "pnpm run dev:client"
     if %errorlevel% neq 0 (
-        echo ERROR: Failed to install concurrently
         echo.
-        echo Running server and client separately...
-        echo Starting server in new window...
-        start "Alexandria Server" cmd /k "pnpm run dev:server"
+        echo Starting servers in separate windows...
+        start "Alexandria Server" cmd /c "color 0E && title Alexandria Server && echo ALEXANDRIA SERVER && echo. && pnpm run dev:server && pause"
         timeout /t 3 /nobreak >nul
-        echo Starting client in new window...
-        start "Alexandria Client" cmd /k "pnpm run dev:client"
+        start "Alexandria Client" cmd /c "color 0B && title Alexandria Client && echo ALEXANDRIA CLIENT && echo. && pnpm run dev:client && pause"
         echo.
         echo Development environment started in separate windows.
-        echo Close this window to keep the servers running.
-    ) else (
-        echo Running with globally installed concurrently...
-        call concurrently "pnpm run dev:server" "pnpm run dev:client"
+        echo.
+        echo Press any key to stop all servers...
+        pause >nul
+        
+        REM Kill the server processes
+        taskkill /FI "WINDOWTITLE eq Alexandria Server*" /F 2>nul
+        taskkill /FI "WINDOWTITLE eq Alexandria Client*" /F 2>nul
     )
 )
 

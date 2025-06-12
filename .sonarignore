@@ -1,0 +1,87 @@
+# SonarQube Analysis Exclusions
+# Files and directories to exclude from SonarQube analysis
+
+# Dependencies
+node_modules/
+**/node_modules/**
+
+# Build outputs
+dist/
+build/
+**/dist/**
+**/build/**
+
+# Generated files
+**/*.d.ts
+coverage/
+**/coverage/**
+
+# Temporary and cache files
+.pnpm-store/
+**/.pnpm-store/**
+.cache/
+**/.cache/**
+
+# Development artifacts
+garbage/
+logs/
+**/logs/**
+**/*.log
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Test artifacts
+**/__mocks__/**
+test-results/
+**/test-results/**
+
+# Scripts and configuration
+scripts/
+*.config.js
+*.config.ts
+webpack.config.js
+vite.config.ts
+jest.config.js
+tailwind.config.js
+postcss.config.js
+
+# Documentation that doesn't need analysis
+docs/
+*.md
+LICENSE
+
+# Package files
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Environment files
+.env
+.env.*
+
+# Git files
+.git/
+.gitignore
+.gitmodules
+
+# Large data files
+**/*.json
+**/*.csv
+**/*.xml
+**/assets/**
+**/static/**
+**/public/**
+
+# Generated API docs
+api-docs/
+**swagger**
+
+# Backup files
+*.bak
+*.backup
+*~

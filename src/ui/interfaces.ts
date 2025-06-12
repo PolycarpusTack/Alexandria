@@ -1,6 +1,6 @@
 /**
  * UI Framework interfaces for the Alexandria Platform
- * 
+ *
  * These interfaces define the UI framework and component library that provides
  * a consistent user interface across the platform and plugins.
  */
@@ -58,47 +58,47 @@ export interface UIComponentDefinition {
    * Unique identifier for the component
    */
   id: string;
-  
+
   /**
    * Component type
    */
   type: UIComponentType;
-  
+
   /**
    * Component position
    */
   position?: UIComponentPosition;
-  
+
   /**
    * React component to render
    */
   component: ComponentType<any>;
-  
+
   /**
    * Props to pass to the component
    */
   props?: Record<string, any>;
-  
+
   /**
    * Required permissions to view this component
    */
   permissions?: string[];
-  
+
   /**
    * Component priority (higher number = higher priority)
    */
   priority?: number;
-  
+
   /**
    * Component size
    */
   size?: UIComponentSize;
-  
+
   /**
    * Plugin ID that registered this component
    */
   pluginId?: string;
-  
+
   /**
    * Feature flag key that controls this component
    */
@@ -113,27 +113,27 @@ export interface UIRoute {
    * Route path
    */
   path: string;
-  
+
   /**
    * Component to render for this route
    */
   component: ComponentType<any>;
-  
+
   /**
    * Required permissions to access this route
    */
   permissions?: string[];
-  
+
   /**
    * Plugin ID that registered this route
    */
   pluginId?: string;
-  
+
   /**
    * Feature flag key that controls this route
    */
   featureFlag?: string;
-  
+
   /**
    * Whether this route is exact match only
    */
@@ -148,12 +148,12 @@ export interface UITheme {
    * Theme ID
    */
   id: string;
-  
+
   /**
    * Display name
    */
   name: string;
-  
+
   /**
    * Color palette
    */
@@ -170,7 +170,7 @@ export interface UITheme {
     };
     [key: string]: any;
   };
-  
+
   /**
    * Spacing scale
    */
@@ -182,7 +182,7 @@ export interface UITheme {
     xl: string;
     xxl: string;
   };
-  
+
   /**
    * Typography settings
    */
@@ -203,7 +203,7 @@ export interface UITheme {
       bold: number;
     };
   };
-  
+
   /**
    * Border radius
    */
@@ -213,7 +213,7 @@ export interface UITheme {
     lg: string;
     pill: string;
   };
-  
+
   /**
    * Shadows
    */
@@ -222,7 +222,7 @@ export interface UITheme {
     md: string;
     lg: string;
   };
-  
+
   /**
    * Transitions
    */
@@ -231,7 +231,7 @@ export interface UITheme {
     medium: string;
     slow: string;
   };
-  
+
   /**
    * Z-index scale
    */
@@ -254,57 +254,57 @@ export interface UIRegistry {
    * Register a UI component
    */
   registerComponent(component: UIComponentDefinition): void;
-  
+
   /**
    * Unregister a UI component
    */
   unregisterComponent(id: string): void;
-  
+
   /**
    * Get all registered components
    */
   getAllComponents(): UIComponentDefinition[];
-  
+
   /**
    * Get components by type
    */
   getComponentsByType(type: UIComponentType): UIComponentDefinition[];
-  
+
   /**
    * Get components by position
    */
   getComponentsByPosition(position: UIComponentPosition): UIComponentDefinition[];
-  
+
   /**
    * Register a UI route
    */
   registerRoute(route: UIRoute): void;
-  
+
   /**
    * Unregister a UI route
    */
   unregisterRoute(path: string): void;
-  
+
   /**
    * Get all registered routes
    */
   getAllRoutes(): UIRoute[];
-  
+
   /**
    * Register a UI theme
    */
   registerTheme(theme: UITheme): void;
-  
+
   /**
    * Get a UI theme by ID
    */
   getTheme(id: string): UITheme | undefined;
-  
+
   /**
    * Set the active theme
    */
   setActiveTheme(id: string): void;
-  
+
   /**
    * Get the active theme
    */
@@ -319,7 +319,7 @@ export interface UIShellProps {
    * UI Registry instance
    */
   uiRegistry: UIRegistry;
-  
+
   /**
    * Children components
    */
@@ -334,42 +334,42 @@ export interface UIContext {
    * UI Registry instance
    */
   uiRegistry: UIRegistry;
-  
+
   /**
    * Active theme
    */
   theme: UITheme;
-  
+
   /**
    * Set the active theme
    */
   setTheme: (id: string) => void;
-  
+
   /**
    * Whether to use dark mode
    */
   darkMode: boolean;
-  
+
   /**
    * Toggle dark mode
    */
   toggleDarkMode: () => void;
-  
+
   /**
    * Open a modal
    */
   openModal: (id: string, props?: Record<string, any>) => void;
-  
+
   /**
    * Close a modal
    */
   closeModal: (id: string) => void;
-  
+
   /**
    * Show a modal (alias for openModal)
    */
   showModal: (id: string, props?: Record<string, any>) => void;
-  
+
   /**
    * Show a notification
    */

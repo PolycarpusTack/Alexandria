@@ -4,7 +4,7 @@
  */
 
 import { Logger } from '@utils/logger';
-import { 
+import {
   HeimdallLogEntry,
   HeimdallQuery,
   HeimdallQueryResult,
@@ -67,13 +67,13 @@ export class ElasticsearchAdapter {
         });
         this.client = this.createMockElasticsearchClient();
       }
-      
+
       // Test connection
       await this.client.ping();
-      
+
       // Create index template
       await this.createIndexTemplate();
-      
+
       this.isConnected = true;
       this.logger.info('Elasticsearch adapter initialized successfully');
     } catch (error) {
@@ -92,23 +92,21 @@ export class ElasticsearchAdapter {
     let connection: Connection | null = null;
     try {
       // Get connection from pool
-      connection = await this.resourceManager.getConnection(
-        this.poolName, 
-        Priority.NORMAL, 
-        30000
-      );
+      connection = await this.resourceManager.getConnection(this.poolName, Priority.NORMAL, 30000);
 
       const index = this.getIndexName(log.timestamp);
       const document = this.convertToElasticsearchDocument(log);
-      
+
       // Execute using pooled connection
-      await connection.execute(JSON.stringify({
-        index,
-        id: log.id,
-        body: document,
-        refresh: 'false'
-      }));
-      
+      await connection.execute(
+        JSON.stringify({
+          index,
+          id: log.id,
+          body: document,
+          refresh: 'false'
+        })
+      );
+
       this.logger.debug('Log stored in Elasticsearch', {
         logId: log.id,
         index
@@ -139,33 +137,27 @@ export class ElasticsearchAdapter {
     let connection: Connection | null = null;
     try {
       // Get high priority connection for batch operations
-      connection = await this.resourceManager.getConnection(
-        this.poolName, 
-        Priority.HIGH, 
-        45000
-      );
+      connection = await this.resourceManager.getConnection(this.poolName, Priority.HIGH, 45000);
 
       // Group logs by index
       const indexGroups = this.groupLogsByIndex(logs);
-      
+
       for (const [index, groupLogs] of indexGroups.entries()) {
-        const operations = groupLogs.flatMap(log => [
+        const operations = groupLogs.flatMap((log) => [
           { index: { _index: index, _id: log.id } },
           this.convertToElasticsearchDocument(log)
         ]);
-        
+
         const bulkQuery = JSON.stringify({
           body: operations,
           refresh: false
         });
-        
+
         const response = await connection.execute(bulkQuery);
-        
+
         if (response?.body?.errors) {
-          const failedCount = response.body.items.filter((item: any) => 
-            item.index?.error
-          ).length;
-          
+          const failedCount = response.body.items.filter((item: any) => item.index?.error).length;
+
           this.logger.error('Some logs failed to store in Elasticsearch', {
             failedCount,
             totalCount: groupLogs.length,
@@ -173,7 +165,7 @@ export class ElasticsearchAdapter {
           });
         }
       }
-      
+
       this.logger.info('Batch stored in Elasticsearch', {
         count: logs.length,
         indices: Array.from(indexGroups.keys())
@@ -200,19 +192,18 @@ export class ElasticsearchAdapter {
     let connection: Connection | null = null;
     try {
       // Get connection with priority based on query urgency
-      const priority = query.hints?.timeout && query.hints.timeout < 5000 
-        ? Priority.HIGH 
-        : Priority.NORMAL;
-        
+      const priority =
+        query.hints?.timeout && query.hints.timeout < 5000 ? Priority.HIGH : Priority.NORMAL;
+
       connection = await this.resourceManager.getConnection(
-        this.poolName, 
-        priority, 
+        this.poolName,
+        priority,
         query.hints?.timeout || 30000
       );
 
       const esQuery = this.buildElasticsearchQuery(query);
       const indices = this.getIndicesForTimeRange(query.timeRange);
-      
+
       const searchQuery = JSON.stringify({
         index: indices,
         body: esQuery,
@@ -222,9 +213,9 @@ export class ElasticsearchAdapter {
       });
 
       const response = await connection.execute(searchQuery);
-      
+
       const result: HeimdallQueryResult = {
-        logs: response.body.hits.hits.map((hit: any) => 
+        logs: response.body.hits.hits.map((hit: any) =>
           this.convertFromElasticsearchDocument(hit._source, hit._id)
         ),
         total: response.body.hits.total.value,
@@ -242,7 +233,7 @@ export class ElasticsearchAdapter {
           }
         }
       };
-      
+
       return result;
     } catch (error) {
       this.logger.error('Failed to query Elasticsearch', {
@@ -264,29 +255,25 @@ export class ElasticsearchAdapter {
 
     let connection: Connection | null = null;
     try {
-      connection = await this.resourceManager.getConnection(
-        this.poolName, 
-        Priority.LOW, 
-        30000
-      );
+      connection = await this.resourceManager.getConnection(this.poolName, Priority.LOW, 30000);
 
       const statsQuery = JSON.stringify({
         index: `${this.indexPrefix}*`
       });
 
       const response = await connection.execute(statsQuery);
-      
+
       const stats = response.body.indices;
       let totalDocs = 0;
       let totalSize = 0;
       let oldestTimestamp = Date.now();
       let newestTimestamp = 0;
-      
+
       for (const [indexName, indexStats] of Object.entries(stats)) {
         const s = indexStats as any;
         totalDocs += s.primaries.docs.count;
         totalSize += s.primaries.store.size_in_bytes;
-        
+
         // Extract timestamp from index name
         const match = indexName.match(/(\d{4}-\d{2}-\d{2})$/);
         if (match) {
@@ -295,7 +282,7 @@ export class ElasticsearchAdapter {
           newestTimestamp = Math.max(newestTimestamp, timestamp);
         }
       }
-      
+
       return {
         tier: 'hot',
         used: totalSize,
@@ -326,7 +313,7 @@ export class ElasticsearchAdapter {
   /**
    * Private helper methods
    */
-  
+
   private async createIndexTemplate(): Promise<void> {
     const templateName = `${this.indexPrefix}template`;
     const template = {
@@ -408,7 +395,7 @@ export class ElasticsearchAdapter {
         }
       }
     };
-    
+
     // TODO: Create index template
     this.logger.info('Index template created', { templateName });
   }
@@ -425,29 +412,29 @@ export class ElasticsearchAdapter {
     const indices: string[] = [];
     const current = new Date(timeRange.from);
     const end = new Date(timeRange.to);
-    
+
     while (current <= end) {
       const year = current.getFullYear();
       const month = String(current.getMonth() + 1).padStart(2, '0');
       const day = String(current.getDate()).padStart(2, '0');
       indices.push(`${this.indexPrefix}${year}-${month}-${day}`);
-      
+
       current.setDate(current.getDate() + 1);
     }
-    
+
     return indices.join(',');
   }
 
   private groupLogsByIndex(logs: HeimdallLogEntry[]): Map<string, HeimdallLogEntry[]> {
     const groups = new Map<string, HeimdallLogEntry[]>();
-    
+
     for (const log of logs) {
       const index = this.getIndexName(log.timestamp);
       const group = groups.get(index) || [];
       group.push(log);
       groups.set(index, group);
     }
-    
+
     return groups;
   }
 
@@ -476,7 +463,7 @@ export class ElasticsearchAdapter {
         }
       }
     };
-    
+
     // Time range filter
     esQuery.query.bool.filter.push({
       range: {
@@ -486,7 +473,7 @@ export class ElasticsearchAdapter {
         }
       }
     });
-    
+
     // Natural language query
     if (query.naturalLanguage) {
       esQuery.query.bool.must.push({
@@ -495,7 +482,7 @@ export class ElasticsearchAdapter {
         }
       });
     }
-    
+
     // Structured filters
     if (query.structured?.filters) {
       for (const filter of query.structured.filters) {
@@ -505,7 +492,7 @@ export class ElasticsearchAdapter {
         }
       }
     }
-    
+
     // Aggregations
     if (query.structured?.aggregations) {
       esQuery.aggs = {};
@@ -513,17 +500,17 @@ export class ElasticsearchAdapter {
         esQuery.aggs[agg.name] = this.convertAggregation(agg);
       }
     }
-    
+
     // Sorting
     if (query.structured?.sort) {
-      esQuery.sort = query.structured.sort.map(s => ({
+      esQuery.sort = query.structured.sort.map((s) => ({
         [s.field]: {
           order: s.order,
           missing: s.missing
         }
       }));
     }
-    
+
     return esQuery;
   }
 
@@ -580,19 +567,19 @@ export class ElasticsearchAdapter {
 
   private parseAggregations(aggs: any): Record<string, any> {
     if (!aggs) return {};
-    
+
     const parsed: Record<string, any> = {};
-    
+
     for (const [name, agg] of Object.entries(aggs)) {
       const a = agg as any;
-      
+
       if (a.buckets) {
         parsed[name] = a.buckets;
       } else if (a.value !== undefined) {
         parsed[name] = a.value;
       }
     }
-    
+
     return parsed;
   }
 
@@ -601,7 +588,7 @@ export class ElasticsearchAdapter {
    */
   private createMockElasticsearchClient(): MockElasticsearchClient {
     const mockData: any[] = [];
-    
+
     return {
       indices: {
         exists: async (params: any) => ({ body: true }),
@@ -626,12 +613,12 @@ export class ElasticsearchAdapter {
           }
         })
       },
-      
+
       index: async (params: any) => {
         mockData.push({ ...params.body, _id: params.id });
         return { _id: params.id, result: 'created' };
       },
-      
+
       bulk: async (params: any) => {
         const items = [];
         for (let i = 0; i < params.body.length; i += 2) {
@@ -644,13 +631,13 @@ export class ElasticsearchAdapter {
         }
         return { body: { errors: false, items } };
       },
-      
+
       search: async (params: any) => {
-        const hits = mockData.slice(0, params.size || 10).map(doc => ({
+        const hits = mockData.slice(0, params.size || 10).map((doc) => ({
           _id: doc._id,
           _source: doc
         }));
-        
+
         return {
           body: {
             took: 10,
@@ -669,13 +656,13 @@ export class ElasticsearchAdapter {
           }
         };
       },
-      
+
       count: async (params: any) => ({
         body: { count: mockData.length }
       }),
-      
+
       ping: async () => ({ statusCode: 200 }),
-      
+
       close: async () => {
         this.logger.info('Mock Elasticsearch client closed');
       }

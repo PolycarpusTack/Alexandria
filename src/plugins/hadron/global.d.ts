@@ -37,7 +37,7 @@ interface Window {
     removeEventListener: (type: string, listener: () => void) => void;
     dispatchEvent: (event: Event) => boolean;
   };
-  IntersectionObserver: any;
+  IntersectionObserver: typeof IntersectionObserver;
   localStorage: {
     getItem: jest.Mock;
     setItem: jest.Mock;
@@ -183,7 +183,7 @@ declare module '*.jpg' {
 }
 
 declare module '*.json' {
-  const content: any;
+  const content: Record<string, unknown>;
   export default content;
 }
 

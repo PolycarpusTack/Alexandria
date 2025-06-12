@@ -1,6 +1,6 @@
 /**
  * Comprehensive test suite for SecurityService
- * 
+ *
  * Tests cover security service initialization, plugin action validation,
  * and integration with sub-services.
  */
@@ -8,12 +8,12 @@
 import { SecurityServiceImpl } from '../security-service';
 import { Logger } from '../../../utils/logger';
 import { DataService } from '../../data/interfaces';
-import { 
-  AuthenticationService, 
-  AuthorizationService, 
-  EncryptionService, 
-  AuditService, 
-  ValidationService 
+import {
+  AuthenticationService,
+  AuthorizationService,
+  EncryptionService,
+  AuditService,
+  ValidationService
 } from '../interfaces';
 
 // Mock the sub-services
@@ -38,7 +38,7 @@ describe('SecurityService', () => {
   beforeEach(() => {
     // Reset all mocks
     jest.clearAllMocks();
-    
+
     // Mock logger
     mockLogger = {
       debug: jest.fn(),
@@ -58,11 +58,7 @@ describe('SecurityService', () => {
     mockAuditLogAction = jest.fn().mockResolvedValue(undefined);
 
     // Create security service instance
-    securityService = new SecurityServiceImpl(
-      mockLogger,
-      mockDataService,
-      defaultOptions
-    );
+    securityService = new SecurityServiceImpl(mockLogger, mockDataService, defaultOptions);
 
     // Override audit service's logAction method
     securityService.audit.logAction = mockAuditLogAction;
@@ -97,7 +93,7 @@ describe('SecurityService', () => {
 
     it('should initialize all sub-services successfully', async () => {
       const mockInitialize = jest.fn().mockResolvedValue(undefined);
-      
+
       securityService.encryption.initialize = mockInitialize;
       securityService.authentication.initialize = mockInitialize;
       securityService.authorization.initialize = mockInitialize;
@@ -107,19 +103,17 @@ describe('SecurityService', () => {
       await securityService.initialize();
 
       expect(mockInitialize).toHaveBeenCalledTimes(5);
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        'Initializing security service',
-        { component: 'SecurityService' }
-      );
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        'Security service initialized successfully',
-        { component: 'SecurityService' }
-      );
+      expect(mockLogger.info).toHaveBeenCalledWith('Initializing security service', {
+        component: 'SecurityService'
+      });
+      expect(mockLogger.info).toHaveBeenCalledWith('Security service initialized successfully', {
+        component: 'SecurityService'
+      });
     });
 
     it('should throw error if already initialized', async () => {
       const mockInitialize = jest.fn().mockResolvedValue(undefined);
-      
+
       securityService.encryption.initialize = mockInitialize;
       securityService.authentication.initialize = mockInitialize;
       securityService.authorization.initialize = mockInitialize;
@@ -144,7 +138,9 @@ describe('SecurityService', () => {
   describe('Plugin Action Validation', () => {
     describe('readFile action', () => {
       it('should validate valid file path', async () => {
-        await securityService.validatePluginAction('plugin-1', 'readFile', ['/valid/path/file.txt']);
+        await securityService.validatePluginAction('plugin-1', 'readFile', [
+          '/valid/path/file.txt'
+        ]);
 
         expect(mockAuditLogAction).toHaveBeenCalledWith({
           userId: 'plugin:plugin-1',
@@ -185,7 +181,10 @@ describe('SecurityService', () => {
 
     describe('writeFile action', () => {
       it('should validate valid file path', async () => {
-        await securityService.validatePluginAction('plugin-1', 'writeFile', ['/valid/path/file.txt', 'content']);
+        await securityService.validatePluginAction('plugin-1', 'writeFile', [
+          '/valid/path/file.txt',
+          'content'
+        ]);
 
         expect(mockAuditLogAction).toHaveBeenCalledWith({
           userId: 'plugin:plugin-1',
@@ -204,7 +203,10 @@ describe('SecurityService', () => {
 
       it('should reject path traversal attempts', async () => {
         await expect(
-          securityService.validatePluginAction('plugin-1', 'writeFile', ['../../sensitive', 'content'])
+          securityService.validatePluginAction('plugin-1', 'writeFile', [
+            '../../sensitive',
+            'content'
+          ])
         ).rejects.toThrow('Path traversal detected');
       });
 
@@ -229,7 +231,9 @@ describe('SecurityService', () => {
 
     describe('makeHttpRequest action', () => {
       it('should validate valid HTTPS URL', async () => {
-        await securityService.validatePluginAction('plugin-1', 'makeHttpRequest', ['https://api.example.com']);
+        await securityService.validatePluginAction('plugin-1', 'makeHttpRequest', [
+          'https://api.example.com'
+        ]);
 
         expect(mockAuditLogAction).toHaveBeenCalledWith({
           userId: 'plugin:plugin-1',
@@ -241,7 +245,9 @@ describe('SecurityService', () => {
       });
 
       it('should validate valid HTTP URL', async () => {
-        await securityService.validatePluginAction('plugin-1', 'makeHttpRequest', ['http://api.example.com']);
+        await securityService.validatePluginAction('plugin-1', 'makeHttpRequest', [
+          'http://api.example.com'
+        ]);
 
         expect(mockAuditLogAction).toHaveBeenCalledWith({
           userId: 'plugin:plugin-1',
@@ -291,11 +297,9 @@ describe('SecurityService', () => {
 
     describe('accessDatabase action', () => {
       it('should validate safe SQL query', async () => {
-        await securityService.validatePluginAction(
-          'plugin-1', 
-          'accessDatabase', 
-          ['SELECT * FROM users WHERE id = ?']
-        );
+        await securityService.validatePluginAction('plugin-1', 'accessDatabase', [
+          'SELECT * FROM users WHERE id = ?'
+        ]);
 
         expect(mockAuditLogAction).toHaveBeenCalledWith({
           userId: 'plugin:plugin-1',
@@ -308,13 +312,13 @@ describe('SecurityService', () => {
 
       it('should reject SQL injection attempts', async () => {
         const dangerousQueries = [
-          "SELECT * FROM users; DROP TABLE users;--",
+          'SELECT * FROM users; DROP TABLE users;--',
           "SELECT * FROM users WHERE id = '1' OR '1'='1'/*",
-          "SELECT * FROM users*/; DROP TABLE users",
+          'SELECT * FROM users*/; DROP TABLE users',
           "EXEC xp_cmdshell 'dir'",
           "EXEC sp_executesql 'DROP TABLE users'",
-          "DELETE FROM users WHERE 1=1",
-          "TRUNCATE TABLE users"
+          'DELETE FROM users WHERE 1=1',
+          'TRUNCATE TABLE users'
         ];
 
         for (const query of dangerousQueries) {
@@ -326,11 +330,9 @@ describe('SecurityService', () => {
 
       it('should handle non-string query parameters', async () => {
         // Should not throw for non-string parameters
-        await securityService.validatePluginAction(
-          'plugin-1', 
-          'accessDatabase', 
-          [{ query: 'SELECT * FROM users' }]
-        );
+        await securityService.validatePluginAction('plugin-1', 'accessDatabase', [
+          { query: 'SELECT * FROM users' }
+        ]);
 
         expect(mockAuditLogAction).toHaveBeenCalledWith({
           userId: 'plugin:plugin-1',
@@ -344,11 +346,7 @@ describe('SecurityService', () => {
 
     describe('Unknown actions', () => {
       it('should allow unknown actions by default', async () => {
-        await securityService.validatePluginAction(
-          'plugin-1', 
-          'unknownAction', 
-          ['arg1', 'arg2']
-        );
+        await securityService.validatePluginAction('plugin-1', 'unknownAction', ['arg1', 'arg2']);
 
         expect(mockAuditLogAction).toHaveBeenCalledWith({
           userId: 'plugin:plugin-1',
@@ -362,11 +360,7 @@ describe('SecurityService', () => {
 
     describe('Audit logging', () => {
       it('should log pending action before validation', async () => {
-        await securityService.validatePluginAction(
-          'plugin-1', 
-          'readFile', 
-          ['/path/to/file']
-        );
+        await securityService.validatePluginAction('plugin-1', 'readFile', ['/path/to/file']);
 
         expect(mockAuditLogAction).toHaveBeenCalledWith({
           userId: 'plugin:plugin-1',
@@ -381,11 +375,7 @@ describe('SecurityService', () => {
       });
 
       it('should log no args when empty', async () => {
-        await securityService.validatePluginAction(
-          'plugin-1', 
-          'unknownAction', 
-          []
-        );
+        await securityService.validatePluginAction('plugin-1', 'unknownAction', []);
 
         expect(mockAuditLogAction).toHaveBeenCalledWith({
           userId: 'plugin:plugin-1',
@@ -418,11 +408,7 @@ describe('SecurityService', () => {
     });
 
     it('should handle null/undefined plugin IDs', async () => {
-      await securityService.validatePluginAction(
-        null as any, 
-        'readFile', 
-        ['/path']
-      );
+      await securityService.validatePluginAction(null as any, 'readFile', ['/path']);
 
       expect(mockAuditLogAction).toHaveBeenCalledWith(
         expect.objectContaining({

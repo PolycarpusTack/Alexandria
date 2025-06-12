@@ -30,9 +30,7 @@ describe('EnhancedPermissionValidator', () => {
 
       expect(result.isValid).toBe(false);
       expect(result.errors).toContain('Unknown permission: databse:access');
-      expect(result.suggestions.some(s => 
-        s.includes('database:access')
-      )).toBe(true);
+      expect(result.suggestions.some((s) => s.includes('database:access'))).toBe(true);
     });
 
     it('should warn about dangerous permissions', () => {
@@ -42,9 +40,9 @@ describe('EnhancedPermissionValidator', () => {
       ]);
 
       expect(result.isValid).toBe(true);
-      expect(result.warnings.some(w => 
-        w.includes('potentially dangerous permissions')
-      )).toBe(true);
+      expect(result.warnings.some((w) => w.includes('potentially dangerous permissions'))).toBe(
+        true
+      );
     });
 
     it('should detect redundant permissions', () => {
@@ -54,9 +52,7 @@ describe('EnhancedPermissionValidator', () => {
       ]);
 
       expect(result.isValid).toBe(true);
-      expect(result.warnings.some(w => 
-        w.includes('Redundant permissions')
-      )).toBe(true);
+      expect(result.warnings.some((w) => w.includes('Redundant permissions'))).toBe(true);
     });
 
     it('should warn about dangerous permission combinations', () => {
@@ -66,49 +62,35 @@ describe('EnhancedPermissionValidator', () => {
       ]);
 
       expect(result.isValid).toBe(true);
-      expect(result.warnings.some(w => 
-        w.includes('data exfiltration')
-      )).toBe(true);
+      expect(result.warnings.some((w) => w.includes('data exfiltration'))).toBe(true);
     });
 
     it('should handle wildcard permissions', () => {
-      const result = validator.validatePluginPermissions('test-plugin', [
-        '*'
-      ]);
+      const result = validator.validatePluginPermissions('test-plugin', ['*']);
 
       expect(result.isValid).toBe(true);
-      expect(result.warnings.some(w => 
-        w.includes('wildcard permission')
-      )).toBe(true);
+      expect(result.warnings.some((w) => w.includes('wildcard permission'))).toBe(true);
     });
 
     it('should handle category wildcards', () => {
-      const result = validator.validatePluginPermissions('test-plugin', [
-        'database:*'
-      ]);
+      const result = validator.validatePluginPermissions('test-plugin', ['database:*']);
 
       expect(result.isValid).toBe(true);
-      expect(result.warnings.some(w => 
-        w.includes('broad category permissions')
-      )).toBe(true);
+      expect(result.warnings.some((w) => w.includes('broad category permissions'))).toBe(true);
     });
 
     it('should suggest valid categories for unknown ones', () => {
-      const result = validator.validatePluginPermissions('test-plugin', [
-        'unknown:permission'
-      ]);
+      const result = validator.validatePluginPermissions('test-plugin', ['unknown:permission']);
 
       expect(result.isValid).toBe(false);
-      expect(result.suggestions.some(s => 
-        s.includes('Unknown category "unknown"')
-      )).toBe(true);
+      expect(result.suggestions.some((s) => s.includes('Unknown category "unknown"'))).toBe(true);
     });
   });
 
   describe('getPermissionsByCategory', () => {
     it('should return permissions for a valid category', () => {
       const permissions = validator.getPermissionsByCategory('database');
-      
+
       expect(permissions).toContain('database:read');
       expect(permissions).toContain('database:write');
       expect(permissions).toContain('database:delete');
@@ -116,7 +98,7 @@ describe('EnhancedPermissionValidator', () => {
 
     it('should return empty array for invalid category', () => {
       const permissions = validator.getPermissionsByCategory('invalid');
-      
+
       expect(permissions).toHaveLength(0);
     });
   });
@@ -144,9 +126,7 @@ describe('EnhancedPermissionValidator', () => {
         'fil:read' // missing 'e'
       ]);
 
-      expect(result.suggestions.some(s => 
-        s.includes('file:read')
-      )).toBe(true);
+      expect(result.suggestions.some((s) => s.includes('file:read'))).toBe(true);
     });
 
     it('should limit suggestions to top 3', () => {
@@ -156,7 +136,7 @@ describe('EnhancedPermissionValidator', () => {
 
       // Count suggestion items (each "Did you mean" line contains up to 3 suggestions)
       const suggestionCount = result.suggestions
-        .filter(s => s.includes('Did you mean'))
+        .filter((s) => s.includes('Did you mean'))
         .reduce((count, s) => {
           const matches = s.match(/[a-z]+:[a-z]+/g);
           return count + (matches ? matches.length : 0);

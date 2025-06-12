@@ -1,11 +1,9 @@
 /**
  * Feedback Service for AI Analysis
- * 
+ *
  * Manages user feedback collection, storage, and analysis for improving AI crash analysis
  */
 
-import { v4 as uuidv4 } from 'uuid';
-import { CrashAnalysisResult } from '../../interfaces';
 import { IDataService } from '@core/data/interfaces';
 import { Logger } from '@utils/logger';
 
@@ -63,11 +61,14 @@ export interface FeedbackStats {
     count: number;
     percentage: number;
   }>;
-  modelPerformance: Record<string, {
-    count: number;
-    avgRating: number;
-    avgAccuracy: number;
-  }>;
+  modelPerformance: Record<
+    string,
+    {
+      count: number;
+      avgRating: number;
+      avgAccuracy: number;
+    }
+  >;
   improvementTrends: Array<{
     date: Date;
     rating: number;
@@ -88,7 +89,7 @@ export interface FeedbackAnalysis {
 export class FeedbackService {
   private readonly FEEDBACK_COLLECTION = 'analysis_feedback';
   private readonly FEEDBACK_STATS_COLLECTION = 'feedback_stats';
-  
+
   constructor(
     private dataService: IDataService,
     private logger: Logger
@@ -97,7 +98,9 @@ export class FeedbackService {
   /**
    * Submit feedback for an analysis
    */
-  async submitFeedback(feedback: Omit<AnalysisFeedback, 'id' | 'timestamp'>): Promise<AnalysisFeedback> {
+  async submitFeedback(
+    feedback: Omit<AnalysisFeedback, 'id' | 'timestamp'>
+  ): Promise<AnalysisFeedback> {
     try {
       const fullFeedback: AnalysisFeedback = {
         ...feedback,
@@ -109,12 +112,12 @@ export class FeedbackService {
       await this.dataService.create(this.FEEDBACK_COLLECTION, fullFeedback);
 
       // Update statistics asynchronously
-      this.updateStatistics(fullFeedback).catch(err => 
+      this.updateStatistics(fullFeedback).catch((err) =>
         this.logger.error('Failed to update feedback statistics:', err)
       );
 
       // Trigger analysis quality update
-      this.updateAnalysisQuality(feedback.analysisId, fullFeedback).catch(err =>
+      this.updateAnalysisQuality(feedback.analysisId, fullFeedback).catch((err) =>
         this.logger.error('Failed to update analysis quality:', err)
       );
 
@@ -230,7 +233,7 @@ export class FeedbackService {
     try {
       // Find feedback for similar crash types
       const similarFeedback = await this.findSimilarCrashFeedback(crashType);
-      
+
       if (similarFeedback.length < 5) {
         return {
           recommendedApproach: 'Standard analysis approach',
@@ -241,8 +244,8 @@ export class FeedbackService {
       }
 
       // Analyze successful vs unsuccessful analyses
-      const successful = similarFeedback.filter(f => f.rating >= 4);
-      const unsuccessful = similarFeedback.filter(f => f.rating <= 2);
+      const successful = similarFeedback.filter((f) => f.rating >= 4);
+      const unsuccessful = similarFeedback.filter((f) => f.rating <= 2);
 
       // Extract patterns
       const commonPitfalls = this.extractCommonIssues(unsuccessful);
@@ -304,7 +307,10 @@ export class FeedbackService {
   /**
    * Update analysis quality metrics
    */
-  private async updateAnalysisQuality(analysisId: string, feedback: AnalysisFeedback): Promise<void> {
+  private async updateAnalysisQuality(
+    analysisId: string,
+    feedback: AnalysisFeedback
+  ): Promise<void> {
     try {
       // Update the analysis record with quality metrics
       const existingAnalysis = await this.dataService.findById('crash_analyses', analysisId);
@@ -352,23 +358,24 @@ export class FeedbackService {
     const averageRating = totalRating / feedback.length;
 
     // Calculate accuracy score
-    const accuracyScores = feedback.map(f => this.calculateAccuracyScore(f.accuracy));
+    const accuracyScores = feedback.map((f) => this.calculateAccuracyScore(f.accuracy));
     const accuracyScore = accuracyScores.reduce((sum, s) => sum + s, 0) / accuracyScores.length;
 
     // Calculate usefulness score
-    const usefulnessScores = feedback.map(f => this.calculateUsefulnessScore(f.usefulness));
-    const usefulnessScore = usefulnessScores.reduce((sum, s) => sum + s, 0) / usefulnessScores.length;
+    const usefulnessScores = feedback.map((f) => this.calculateUsefulnessScore(f.usefulness));
+    const usefulnessScore =
+      usefulnessScores.reduce((sum, s) => sum + s, 0) / usefulnessScores.length;
 
     // Extract common issues
     const issueMap = new Map<string, number>();
-    feedback.forEach(f => {
+    feedback.forEach((f) => {
       if (f.missedIssues) {
-        f.missedIssues.forEach(issue => {
+        f.missedIssues.forEach((issue) => {
           issueMap.set(issue, (issueMap.get(issue) || 0) + 1);
         });
       }
       if (f.incorrectSuggestions) {
-        f.incorrectSuggestions.forEach(suggestion => {
+        f.incorrectSuggestions.forEach((suggestion) => {
           const issue = `Incorrect: ${suggestion}`;
           issueMap.set(issue, (issueMap.get(issue) || 0) + 1);
         });
@@ -386,13 +393,15 @@ export class FeedbackService {
 
     // Calculate model performance
     const modelPerformance: Record<string, any> = {};
-    const modelGroups = this.groupBy(feedback, f => f.metadata?.llmModel || 'unknown');
-    
+    const modelGroups = this.groupBy(feedback, (f) => f.metadata?.llmModel || 'unknown');
+
     for (const [model, modelFeedback] of Object.entries(modelGroups)) {
-      const modelRating = modelFeedback.reduce((sum, f) => sum + f.rating, 0) / modelFeedback.length;
-      const modelAccuracy = modelFeedback
-        .map(f => this.calculateAccuracyScore(f.accuracy))
-        .reduce((sum, s) => sum + s, 0) / modelFeedback.length;
+      const modelRating =
+        modelFeedback.reduce((sum, f) => sum + f.rating, 0) / modelFeedback.length;
+      const modelAccuracy =
+        modelFeedback
+          .map((f) => this.calculateAccuracyScore(f.accuracy))
+          .reduce((sum, s) => sum + s, 0) / modelFeedback.length;
 
       modelPerformance[model] = {
         count: modelFeedback.length,
@@ -445,37 +454,41 @@ export class FeedbackService {
    * Calculate new average rating
    */
   private calculateNewAverage(oldAvg: number, oldCount: number, newValue: number): number {
-    return ((oldAvg * oldCount) + newValue) / (oldCount + 1);
+    return (oldAvg * oldCount + newValue) / (oldCount + 1);
   }
 
   /**
    * Group feedback by a key function
    */
   private groupBy<T>(array: T[], keyFn: (item: T) => string): Record<string, T[]> {
-    return array.reduce((groups, item) => {
-      const key = keyFn(item);
-      if (!groups[key]) groups[key] = [];
-      groups[key].push(item);
-      return groups;
-    }, {} as Record<string, T[]>);
+    return array.reduce(
+      (groups, item) => {
+        const key = keyFn(item);
+        if (!groups[key]) groups[key] = [];
+        groups[key].push(item);
+        return groups;
+      },
+      {} as Record<string, T[]>
+    );
   }
 
   /**
    * Calculate improvement trends
    */
-  private calculateTrends(feedback: AnalysisFeedback[]): Array<{date: Date; rating: number; accuracy: number}> {
+  private calculateTrends(
+    feedback: AnalysisFeedback[]
+  ): Array<{ date: Date; rating: number; accuracy: number }> {
     // Group by day
-    const dailyGroups = this.groupBy(feedback, f => 
-      f.timestamp.toISOString().split('T')[0]
-    );
+    const dailyGroups = this.groupBy(feedback, (f) => f.timestamp.toISOString().split('T')[0]);
 
     return Object.entries(dailyGroups)
       .map(([date, dayFeedback]) => ({
         date: new Date(date),
         rating: dayFeedback.reduce((sum, f) => sum + f.rating, 0) / dayFeedback.length,
-        accuracy: dayFeedback
-          .map(f => this.calculateAccuracyScore(f.accuracy))
-          .reduce((sum, s) => sum + s, 0) / dayFeedback.length
+        accuracy:
+          dayFeedback
+            .map((f) => this.calculateAccuracyScore(f.accuracy))
+            .reduce((sum, s) => sum + s, 0) / dayFeedback.length
       }))
       .sort((a, b) => a.date.getTime() - b.date.getTime())
       .slice(-30); // Last 30 days
@@ -500,23 +513,23 @@ export class FeedbackService {
    * Perform pattern analysis on feedback
    */
   private performPatternAnalysis(
-    feedback: AnalysisFeedback[], 
+    feedback: AnalysisFeedback[],
     focusArea?: 'accuracy' | 'usefulness' | 'performance'
   ): FeedbackAnalysis {
     const strengths: string[] = [];
     const weaknesses: string[] = [];
     const recommendations: string[] = [];
-    const trainingDataSuggestions: Array<{crashType: string; examples: string[]}> = [];
+    const trainingDataSuggestions: Array<{ crashType: string; examples: string[] }> = [];
 
     // Analyze high-rated feedback for strengths
-    const highRated = feedback.filter(f => f.rating >= 4);
+    const highRated = feedback.filter((f) => f.rating >= 4);
     if (highRated.length > 0) {
       const commonStrengths = this.extractCommonStrengths(highRated);
       strengths.push(...commonStrengths);
     }
 
     // Analyze low-rated feedback for weaknesses
-    const lowRated = feedback.filter(f => f.rating <= 2);
+    const lowRated = feedback.filter((f) => f.rating <= 2);
     if (lowRated.length > 0) {
       const commonWeaknesses = this.extractCommonWeaknesses(lowRated);
       weaknesses.push(...commonWeaknesses);
@@ -524,7 +537,7 @@ export class FeedbackService {
 
     // Generate recommendations based on patterns
     if (focusArea === 'accuracy') {
-      const accuracyIssues = feedback.filter(f => !f.accuracy.rootCauseAccurate);
+      const accuracyIssues = feedback.filter((f) => !f.accuracy.rootCauseAccurate);
       if (accuracyIssues.length > feedback.length * 0.3) {
         recommendations.push('Improve root cause identification accuracy');
         recommendations.push('Add more training examples for edge cases');
@@ -532,7 +545,7 @@ export class FeedbackService {
     }
 
     if (focusArea === 'usefulness') {
-      const notUseful = feedback.filter(f => !f.usefulness.betterThanManual);
+      const notUseful = feedback.filter((f) => !f.usefulness.betterThanManual);
       if (notUseful.length > feedback.length * 0.2) {
         recommendations.push('Provide more actionable suggestions');
         recommendations.push('Include code examples in fixes');
@@ -540,12 +553,12 @@ export class FeedbackService {
     }
 
     // Identify crash types needing more training data
-    const crashTypeGroups = this.groupBy(lowRated, f => f.correctRootCause || 'unknown');
+    const crashTypeGroups = this.groupBy(lowRated, (f) => f.correctRootCause || 'unknown');
     for (const [crashType, crashes] of Object.entries(crashTypeGroups)) {
       if (crashes.length >= 3) {
         trainingDataSuggestions.push({
           crashType,
-          examples: crashes.map(c => c.correctRootCause || '').filter(Boolean)
+          examples: crashes.map((c) => c.correctRootCause || '').filter(Boolean)
         });
       }
     }
@@ -563,18 +576,18 @@ export class FeedbackService {
    */
   private extractCommonStrengths(feedback: AnalysisFeedback[]): string[] {
     const strengths: string[] = [];
-    
-    const accurateRootCause = feedback.filter(f => f.accuracy.rootCauseAccurate).length;
+
+    const accurateRootCause = feedback.filter((f) => f.accuracy.rootCauseAccurate).length;
     if (accurateRootCause > feedback.length * 0.8) {
       strengths.push('Excellent root cause identification');
     }
 
-    const helpfulSuggestions = feedback.filter(f => f.accuracy.suggestionsHelpful).length;
+    const helpfulSuggestions = feedback.filter((f) => f.accuracy.suggestionsHelpful).length;
     if (helpfulSuggestions > feedback.length * 0.8) {
       strengths.push('Provides helpful troubleshooting suggestions');
     }
 
-    const savedTime = feedback.filter(f => f.usefulness.savedTime).length;
+    const savedTime = feedback.filter((f) => f.usefulness.savedTime).length;
     if (savedTime > feedback.length * 0.7) {
       strengths.push('Significantly reduces debugging time');
     }
@@ -587,18 +600,18 @@ export class FeedbackService {
    */
   private extractCommonWeaknesses(feedback: AnalysisFeedback[]): string[] {
     const weaknesses: string[] = [];
-    
-    const missedIssues = feedback.filter(f => f.missedIssues && f.missedIssues.length > 0);
+
+    const missedIssues = feedback.filter((f) => f.missedIssues && f.missedIssues.length > 0);
     if (missedIssues.length > feedback.length * 0.5) {
       weaknesses.push('Frequently misses important issues');
     }
 
-    const incorrectRoot = feedback.filter(f => !f.accuracy.rootCauseAccurate).length;
+    const incorrectRoot = feedback.filter((f) => !f.accuracy.rootCauseAccurate).length;
     if (incorrectRoot > feedback.length * 0.5) {
       weaknesses.push('Root cause identification needs improvement');
     }
 
-    const notBetterThanManual = feedback.filter(f => !f.usefulness.betterThanManual).length;
+    const notBetterThanManual = feedback.filter((f) => !f.usefulness.betterThanManual).length;
     if (notBetterThanManual > feedback.length * 0.6) {
       weaknesses.push('Not providing sufficient value over manual analysis');
     }
@@ -618,9 +631,10 @@ export class FeedbackService {
       { limit: 1000 }
     );
 
-    return allFeedback.filter(f => 
-      f.correctRootCause?.toLowerCase().includes(crashType.toLowerCase()) ||
-      f.comments?.toLowerCase().includes(crashType.toLowerCase())
+    return allFeedback.filter(
+      (f) =>
+        f.correctRootCause?.toLowerCase().includes(crashType.toLowerCase()) ||
+        f.comments?.toLowerCase().includes(crashType.toLowerCase())
     );
   }
 
@@ -629,10 +643,10 @@ export class FeedbackService {
    */
   private extractCommonIssues(feedback: AnalysisFeedback[]): string[] {
     const issues: Map<string, number> = new Map();
-    
-    feedback.forEach(f => {
+
+    feedback.forEach((f) => {
       if (f.missedIssues) {
-        f.missedIssues.forEach(issue => {
+        f.missedIssues.forEach((issue) => {
           issues.set(issue, (issues.get(issue) || 0) + 1);
         });
       }
@@ -649,12 +663,12 @@ export class FeedbackService {
    */
   private extractSuccessPatterns(feedback: AnalysisFeedback[]): string[] {
     const patterns: string[] = [];
-    
+
     // Look for common helpful suggestions
-    const allHelpful = feedback.flatMap(f => f.helpfulSuggestions || []);
+    const allHelpful = feedback.flatMap((f) => f.helpfulSuggestions || []);
     const suggestionCounts = new Map<string, number>();
-    
-    allHelpful.forEach(suggestion => {
+
+    allHelpful.forEach((suggestion) => {
       suggestionCounts.set(suggestion, (suggestionCounts.get(suggestion) || 0) + 1);
     });
 
@@ -684,7 +698,7 @@ export class FeedbackService {
    */
   private async formatForTraining(feedback: AnalysisFeedback[]): Promise<any[]> {
     // Format would depend on the training system requirements
-    return feedback.map(f => ({
+    return feedback.map((f) => ({
       input: {
         analysisId: f.analysisId,
         crashLogId: f.crashLogId,
@@ -719,9 +733,9 @@ export class FeedbackService {
     const csv = [headers.join(',')];
 
     // Add rows
-    data.forEach(item => {
+    data.forEach((item) => {
       const flat = this.flattenObject(item);
-      const row = headers.map(h => `"${flat[h] || ''}"`).join(',');
+      const row = headers.map((h) => `"${flat[h] || ''}"`).join(',');
       csv.push(row);
     });
 
@@ -733,10 +747,10 @@ export class FeedbackService {
    */
   private flattenObject(obj: any, prefix = ''): Record<string, any> {
     const flattened: Record<string, any> = {};
-    
+
     for (const [key, value] of Object.entries(obj)) {
       const newKey = prefix ? `${prefix}_${key}` : key;
-      
+
       if (value === null || value === undefined) {
         flattened[newKey] = '';
       } else if (typeof value === 'object' && !Array.isArray(value) && !(value instanceof Date)) {
@@ -749,7 +763,7 @@ export class FeedbackService {
         flattened[newKey] = value;
       }
     }
-    
+
     return flattened;
   }
 }

@@ -38,16 +38,7 @@
     },
     "typeRoots": ["../../../node_modules/@types", "../../../src/types"]
   },
-  "include": [
-    "**/*.ts",
-    "**/*.tsx",
-    "../../../types/**/*.d.ts",
-    "../../../tools/**/*.d.ts"
-  ],
+  "include": ["**/*.ts", "**/*.tsx", "../../../types/**/*.d.ts", "../../../tools/**/*.d.ts"],
   "files": ["global.d.ts", "../../../src/types/index.d.ts"],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "coverage"
-  ]
+  "exclude": ["node_modules", "dist", "coverage"]
 }

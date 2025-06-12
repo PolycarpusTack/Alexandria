@@ -38,10 +38,7 @@ interface AnalyticsFilters {
   model?: string;
 }
 
-export function useAnalytics(
-  initialTimeRange: TimeRange,
-  options: UseAnalyticsOptions = {}
-) {
+export function useAnalytics(initialTimeRange: TimeRange, options: UseAnalyticsOptions = {}) {
   const {
     autoRefresh = false,
     refreshInterval = 5 * 60 * 1000, // 5 minutes
@@ -62,7 +59,7 @@ export function useAnalytics(
   const [filters, setFilters] = useState<AnalyticsFilters>({});
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
-  
+
   const refreshTimerRef = useRef<NodeJS.Timeout | null>(null);
   const mountedRef = useRef(true);
 
@@ -71,7 +68,7 @@ export function useAnalytics(
     enabled: enableRealtime,
     onEvent: (event) => {
       logger.info('Real-time event received', { event });
-      
+
       // Handle real-time events
       switch (event.type) {
         case 'crash_logged':
@@ -90,87 +87,90 @@ export function useAnalytics(
   /**
    * Fetch all analytics data
    */
-  const fetchData = useCallback(async (showLoading = true) => {
-    if (showLoading && !isRefreshing) {
-      setState(prev => ({ ...prev, loading: true, error: null }));
-    }
-
-    try {
-      logger.info('Fetching analytics data', { timeRange, filters });
-
-      // Fetch all data in parallel
-      const [timeSeries, rootCauses, modelPerf, severity] = await Promise.all([
-        analyticsAPIClient.getTimeSeriesData(timeRange),
-        analyticsAPIClient.getRootCauseDistribution(timeRange),
-        analyticsAPIClient.getModelPerformance(filters.model, timeRange),
-        analyticsAPIClient.getSeverityTrends(timeRange)
-      ]);
-
-      // Apply client-side filters if needed
-      let filteredTimeSeries = timeSeries;
-      let filteredRootCauses = rootCauses;
-      let filteredSeverity = severity;
-
-      if (filters.platform && filters.platform !== 'all') {
-        // Filter time series data by platform
-        filteredTimeSeries = {
-          ...timeSeries,
-          series: timeSeries.series.filter(
-            point => !point.metadata?.platform || point.metadata.platform === filters.platform
-          )
-        };
+  const fetchData = useCallback(
+    async (showLoading = true) => {
+      if (showLoading && !isRefreshing) {
+        setState((prev) => ({ ...prev, loading: true, error: null }));
       }
 
-      if (filters.severity && filters.severity !== 'all') {
-        // Filter by severity
-        filteredSeverity = {
-          ...severity,
-          trends: severity.trends.map(trend => ({
-            ...trend,
-            distribution: {
-              ...trend.distribution,
-              // Zero out non-matching severities for visualization
-              critical: filters.severity === 'critical' ? trend.distribution.critical : 0,
-              high: filters.severity === 'high' ? trend.distribution.high : 0,
-              medium: filters.severity === 'medium' ? trend.distribution.medium : 0,
-              low: filters.severity === 'low' ? trend.distribution.low : 0
-            }
-          }))
-        };
-      }
+      try {
+        logger.info('Fetching analytics data', { timeRange, filters });
 
-      if (mountedRef.current) {
-        setState({
-          loading: false,
-          error: null,
-          timeSeriesData: filteredTimeSeries,
-          rootCauseData: filteredRootCauses,
-          modelPerformance: modelPerf,
-          severityTrends: filteredSeverity
-        });
-        setLastUpdated(new Date());
-      }
-    } catch (error) {
-      logger.error('Failed to fetch analytics data', { error });
-      
-      if (mountedRef.current) {
-        const err = error instanceof Error ? error : new Error('Failed to fetch analytics data');
-        setState(prev => ({
-          ...prev,
-          loading: false,
-          error: err
-        }));
-        
-        if (onError) {
-          onError(err);
+        // Fetch all data in parallel
+        const [timeSeries, rootCauses, modelPerf, severity] = await Promise.all([
+          analyticsAPIClient.getTimeSeriesData(timeRange),
+          analyticsAPIClient.getRootCauseDistribution(timeRange),
+          analyticsAPIClient.getModelPerformance(filters.model, timeRange),
+          analyticsAPIClient.getSeverityTrends(timeRange)
+        ]);
+
+        // Apply client-side filters if needed
+        let filteredTimeSeries = timeSeries;
+        let filteredRootCauses = rootCauses;
+        let filteredSeverity = severity;
+
+        if (filters.platform && filters.platform !== 'all') {
+          // Filter time series data by platform
+          filteredTimeSeries = {
+            ...timeSeries,
+            series: timeSeries.series.filter(
+              (point) => !point.metadata?.platform || point.metadata.platform === filters.platform
+            )
+          };
+        }
+
+        if (filters.severity && filters.severity !== 'all') {
+          // Filter by severity
+          filteredSeverity = {
+            ...severity,
+            trends: severity.trends.map((trend) => ({
+              ...trend,
+              distribution: {
+                ...trend.distribution,
+                // Zero out non-matching severities for visualization
+                critical: filters.severity === 'critical' ? trend.distribution.critical : 0,
+                high: filters.severity === 'high' ? trend.distribution.high : 0,
+                medium: filters.severity === 'medium' ? trend.distribution.medium : 0,
+                low: filters.severity === 'low' ? trend.distribution.low : 0
+              }
+            }))
+          };
+        }
+
+        if (mountedRef.current) {
+          setState({
+            loading: false,
+            error: null,
+            timeSeriesData: filteredTimeSeries,
+            rootCauseData: filteredRootCauses,
+            modelPerformance: modelPerf,
+            severityTrends: filteredSeverity
+          });
+          setLastUpdated(new Date());
+        }
+      } catch (error) {
+        logger.error('Failed to fetch analytics data', { error });
+
+        if (mountedRef.current) {
+          const err = error instanceof Error ? error : new Error('Failed to fetch analytics data');
+          setState((prev) => ({
+            ...prev,
+            loading: false,
+            error: err
+          }));
+
+          if (onError) {
+            onError(err);
+          }
+        }
+      } finally {
+        if (mountedRef.current) {
+          setIsRefreshing(false);
         }
       }
-    } finally {
-      if (mountedRef.current) {
-        setIsRefreshing(false);
-      }
-    }
-  }, [timeRange, filters, onError]);
+    },
+    [timeRange, filters, onError]
+  );
 
   /**
    * Refresh data without showing loading state
@@ -195,7 +195,7 @@ export function useAnalytics(
    */
   const updateFilters = useCallback((newFilters: Partial<AnalyticsFilters>) => {
     logger.info('Updating filters', { newFilters });
-    setFilters(prev => ({ ...prev, ...newFilters }));
+    setFilters((prev) => ({ ...prev, ...newFilters }));
   }, []);
 
   /**
@@ -215,7 +215,7 @@ export function useAnalytics(
   useEffect(() => {
     if (autoRefresh && refreshInterval > 0) {
       logger.info('Setting up auto-refresh', { interval: refreshInterval });
-      
+
       refreshTimerRef.current = setInterval(() => {
         refresh();
       }, refreshInterval);
@@ -247,14 +247,14 @@ export function useAnalytics(
     filters,
     lastUpdated,
     isRealtimeConnected: isConnected,
-    
+
     // Actions
     refresh,
     updateTimeRange,
     updateFilters,
     clearFilters,
-    
+
     // Computed values
-    hasActiveFilters: Object.values(filters).some(f => f && f !== 'all')
+    hasActiveFilters: Object.values(filters).some((f) => f && f !== 'all')
   };
 }

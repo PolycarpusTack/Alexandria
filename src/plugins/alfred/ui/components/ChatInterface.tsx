@@ -3,19 +3,14 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { 
-  Card,
-  CardContent 
-} from '../../../../client/components/ui/card';
+import { Card, CardContent } from '../../../../client/components/ui/card';
 import { Button } from '../../../../client/components/ui/button';
-import { Textarea } from '../../../../client/components/ui/textarea';
-import { ScrollArea } from '../../../../client/components/ui/scroll-area';
 import { Badge } from '../../../../client/components/ui/badge';
 import { useToast } from '../../../../client/components/ui/use-toast';
-import {      
-  Send, 
-  Copy, 
-  Download, 
+import {
+  Send,
+  Copy,
+  Download,
   RotateCcw,
   Code,
   User,
@@ -28,7 +23,7 @@ import {
   Zap,
   BookOpen,
   Settings
-     } from 'lucide-react';
+} from 'lucide-react';
 import { ChatMessage, ChatSession, ProjectContext } from '../../src/interfaces';
 import { useAlfredContext } from '../hooks/useAlfredContext';
 import { CodeBlock } from './CodeBlock';
@@ -38,11 +33,21 @@ import { format } from 'date-fns';
 interface ChatInterfaceProps {
   sessionId: string;
   projectContext?: ProjectContext;
+  onMessageSent?: (message: string) => void;
+  messages?: ChatMessage[];
+  isLoading?: boolean;
+  streamingEnabled?: boolean;
+  readonly?: boolean;
 }
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({ 
   sessionId, 
-  projectContext 
+  projectContext, 
+  onMessageSent,
+  messages: externalMessages,
+  isLoading: externalLoading,
+  streamingEnabled = false,
+  readonly = false
 }) => {
   const { alfredService } = useAlfredContext();
   const { toast } = useToast();
@@ -107,7 +112,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           content: userMessage,
           timestamp: new Date()
         };
-        
+
         setSession({
           ...session,
           messages: [...session.messages, optimisticMessage]
@@ -116,10 +121,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
       // Send to backend
       const response = await alfredService.sendMessage(sessionId, userMessage);
-      
+
       // Reload session to get updated messages
       await loadSession();
-      
     } catch (error) {
       toast({
         title: 'Error',
@@ -152,18 +156,22 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   // Smart suggestions based on project context and chat history
   const generateSmartSuggestions = useCallback(() => {
     const suggestions: string[] = [];
-    
+
     if (projectContext) {
       suggestions.push(`Analyze the ${projectContext.projectType} project structure`);
-      suggestions.push(`What are the best practices for ${projectContext.projectType} development?`);
-      suggestions.push(`How can I improve the performance of this ${projectContext.projectType} project?`);
+      suggestions.push(
+        `What are the best practices for ${projectContext.projectType} development?`
+      );
+      suggestions.push(
+        `How can I improve the performance of this ${projectContext.projectType} project?`
+      );
     }
 
     // Recent messages context
     if (session?.messages.length) {
       const lastMessages = session.messages.slice(-3);
-      const hasCodeInRecent = lastMessages.some(m => m.content.includes('```'));
-      
+      const hasCodeInRecent = lastMessages.some((m) => m.content.includes('```'));
+
       if (hasCodeInRecent) {
         suggestions.push('Explain the code you just provided');
         suggestions.push('Add error handling to this code');
@@ -208,7 +216,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     if (!session) return;
 
     const content = session.messages
-      .map(msg => `[${msg.role.toUpperCase()}] ${format(new Date(msg.timestamp), 'yyyy-MM-dd HH:mm:ss')}\n${msg.content}`)
+      .map(
+        (msg) =>
+          `[${msg.role.toUpperCase()}] ${format(new Date(msg.timestamp), 'yyyy-MM-dd HH:mm:ss')}\n${msg.content}`
+      )
       .join('\n\n---\n\n');
 
     const blob = new Blob([content], { type: 'text/plain' });
@@ -226,107 +237,103 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   if (isLoading) {
     return (
-      <div className="alfred-loading">
-        <Loader2 className="h-8 w-8 alfred-loading-spinner" />
+      <div className='alfred-loading'>
+        <Loader2 className='h-8 w-8 alfred-loading-spinner' />
       </div>
     );
   }
 
   if (!session) {
     return (
-      <div className="alfred-empty-state">
-        <Bot className="alfred-empty-state-icon" />
-        <h3 className="alfred-empty-state-title">Session not found</h3>
-        <p className="alfred-empty-state-description">The requested session could not be loaded.</p>
+      <div className='alfred-empty-state'>
+        <Bot className='alfred-empty-state-icon' />
+        <h3 className='alfred-empty-state-title'>Session not found</h3>
+        <p className='alfred-empty-state-description'>The requested session could not be loaded.</p>
       </div>
     );
   }
 
   return (
-    <div className="alfred-chat-interface">
+    <div className='alfred-chat-interface'>
       {/* Header */}
-      <div className="chat-header">
+      <div className='chat-header'>
         <div>
-          <h3 className="font-medium">{session.name}</h3>
+          <h3 className='font-medium'>{session.name}</h3>
           {projectContext && (
-            <p className="text-sm text-muted-foreground">
+            <p className='text-sm text-muted-foreground'>
               {projectContext.projectName} • {projectContext.projectType}
             </p>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className='flex items-center gap-2'>
           <Button
-            variant="ghost"
-            size="sm"
+            variant='ghost'
+            size='sm'
             onClick={downloadSession}
-            title="Download chat"
-            className="btn btn-ghost"
+            title='Download chat'
+            className='btn btn-ghost'
           >
-            <Download className="h-4 w-4" />
+            <Download className='h-4 w-4' />
           </Button>
           <Button
-            variant="ghost"
-            size="sm"
+            variant='ghost'
+            size='sm'
             onClick={loadSession}
-            title="Refresh"
-            className="btn btn-ghost"
+            title='Refresh'
+            className='btn btn-ghost'
           >
-            <RotateCcw className="h-4 w-4" />
+            <RotateCcw className='h-4 w-4' />
           </Button>
         </div>
       </div>
 
       {/* Messages */}
-      <div className="alfred-chat-messages">
-        <div className="space-y-4">
+      <div className='alfred-chat-messages'>
+        <div className='space-y-4'>
           {session.messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`alfred-chat-message ${msg.role}`}
-            >
+            <div key={msg.id} className={`alfred-chat-message ${msg.role}`}>
               <div className={`alfred-chat-avatar ${msg.role}`}>
                 {msg.role === 'user' ? (
-                  <User className="h-5 w-5 text-white" />
+                  <User className='h-5 w-5 text-white' />
                 ) : (
-                  <Bot className="h-5 w-5 text-white" />
+                  <Bot className='h-5 w-5 text-white' />
                 )}
               </div>
-              
-              <div className="alfred-chat-content">
-                <div className="alfred-chat-bubble">
-                  <div className="flex items-start justify-between gap-2 mb-2">
+
+              <div className='alfred-chat-content'>
+                <div className='alfred-chat-bubble'>
+                  <div className='flex items-start justify-between gap-2 mb-2'>
                     <Badge variant={msg.role === 'user' ? 'default' : 'secondary'}>
                       {msg.role === 'user' ? 'You' : 'Alfred'}
                     </Badge>
-                    <div className="flex items-center gap-1">
-                      <span className="text-xs text-muted-foreground">
+                    <div className='flex items-center gap-1'>
+                      <span className='text-xs text-muted-foreground'>
                         {format(new Date(msg.timestamp), 'HH:mm')}
                       </span>
                       <Button
-                        variant="ghost"
-                        size="sm"
-                        className="h-6 w-6 p-0"
+                        variant='ghost'
+                        size='sm'
+                        className='h-6 w-6 p-0'
                         onClick={() => copyMessage(msg.content)}
                       >
-                        <Copy className="h-3 w-3" />
+                        <Copy className='h-3 w-3' />
                       </Button>
                     </div>
                   </div>
-                  
+
                   {msg.role === 'assistant' ? (
-                    <div className="prose prose-sm dark:prose-invert max-w-none">
+                    <div className='prose prose-sm dark:prose-invert max-w-none'>
                       <CodeBlock content={msg.content} />
                     </div>
                   ) : (
-                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                    <p className='text-sm whitespace-pre-wrap'>{msg.content}</p>
                   )}
 
                   {msg.metadata && (
-                    <div className="mt-2 pt-2 border-t">
-                      <p className="text-xs text-muted-foreground">
-                        Model: {msg.metadata.model} • 
-                        Tokens: {msg.metadata.tokensUsed} • 
-                        Time: {msg.metadata.processingTime}ms
+                    <div className='mt-2 pt-2 border-t'>
+                      <p className='text-xs text-muted-foreground'>
+                        Model: {msg.metadata.model} • Tokens: {msg.metadata.tokensUsed} • Time:{' '}
+                        {msg.metadata.processingTime}ms
                       </p>
                     </div>
                   )}
@@ -340,14 +347,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
       {/* Quick Actions */}
       {message.length === 0 && (
-        <div className="alfred-quick-actions">
+        <div className='alfred-quick-actions'>
           {quickActions.map((action) => (
             <button
               key={action.label}
               onClick={() => handleQuickAction(action.prompt)}
-              className="alfred-quick-action"
+              className='alfred-quick-action'
             >
-              <action.icon className="h-4 w-4" />
+              <action.icon className='h-4 w-4' />
               <span>{action.label}</span>
             </button>
           ))}
@@ -355,36 +362,36 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       )}
 
       {/* Input */}
-      <div className="alfred-chat-input">
-        <div className="alfred-chat-input-wrapper">
+      <div className='alfred-chat-input'>
+        <div className='alfred-chat-input-wrapper'>
           <textarea
             ref={textareaRef}
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             onKeyDown={handleKeyPress}
-            placeholder="Type your message... (Shift+Enter for new line)"
-            className="alfred-chat-textarea"
+            placeholder='Type your message... (Shift+Enter for new line)'
+            className='alfred-chat-textarea'
             disabled={isSending}
           />
           <Button
             onClick={sendMessage}
             disabled={!message.trim() || isSending}
-            className="btn btn-primary"
+            className='btn btn-primary'
           >
             {isSending ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+              <Loader2 className='h-4 w-4 animate-spin' />
             ) : (
-              <Send className="h-4 w-4" />
+              <Send className='h-4 w-4' />
             )}
           </Button>
         </div>
-        
+
         {projectContext && (
-          <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-            <Code className="h-3 w-3" />
+          <div className='mt-2 flex items-center gap-2 text-xs text-muted-foreground'>
+            <Code className='h-3 w-3' />
             <span>
-              Context: {projectContext.structure.statistics.totalFiles} files, 
-              {' '}{Object.keys(projectContext.structure.statistics.languageBreakdown).join(', ')}
+              Context: {projectContext.structure.statistics.totalFiles} files,{' '}
+              {Object.keys(projectContext.structure.statistics.languageBreakdown).join(', ')}
             </span>
           </div>
         )}

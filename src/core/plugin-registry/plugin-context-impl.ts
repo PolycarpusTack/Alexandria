@@ -12,11 +12,11 @@ import { UIShell } from '../system/interfaces';
 export class PluginContextImpl implements PluginContext {
   public readonly pluginId: string;
   public readonly pluginVersion: string;
-  
+
   private pluginRoutes: Map<string, any> = new Map();
   private pluginConfig: Map<string, any> = new Map();
   private storagePrefix: string;
-  
+
   constructor(
     pluginId: string,
     pluginVersion: string,
@@ -39,7 +39,7 @@ export class PluginContextImpl implements PluginContext {
     this.pluginVersion = pluginVersion;
     this.storagePrefix = `plugin:${pluginId}:`;
   }
-  
+
   /**
    * Services exposed to plugins
    */
@@ -52,20 +52,20 @@ export class PluginContextImpl implements PluginContext {
     ui: this.createPluginUIShell(),
     api: this.createPluginAPIService()
   };
-  
+
   /**
    * Plugin configuration
    */
   public config = {
     get: <T>(key: string, defaultValue?: T): T => {
       const value = this.pluginConfig.get(key);
-      return value !== undefined ? value : defaultValue as T;
+      return value !== undefined ? value : (defaultValue as T);
     },
-    
+
     set: (key: string, value: any): void => {
       this.pluginConfig.set(key, value);
     },
-    
+
     getAll: (): Record<string, any> => {
       const config: Record<string, any> = {};
       this.pluginConfig.forEach((value, key) => {
@@ -74,7 +74,7 @@ export class PluginContextImpl implements PluginContext {
       return config;
     }
   };
-  
+
   /**
    * Plugin storage
    */
@@ -86,17 +86,17 @@ export class PluginContextImpl implements PluginContext {
       const value = this.pluginConfig.get(fullKey);
       return value !== undefined ? value : null;
     },
-    
+
     set: async (key: string, value: any): Promise<void> => {
       const fullKey = this.storagePrefix + key;
       this.pluginConfig.set(fullKey, value);
     },
-    
+
     delete: async (key: string): Promise<void> => {
       const fullKey = this.storagePrefix + key;
       this.pluginConfig.delete(fullKey);
     },
-    
+
     clear: async (): Promise<void> => {
       const keysToDelete: string[] = [];
       this.pluginConfig.forEach((_, key) => {
@@ -104,21 +104,21 @@ export class PluginContextImpl implements PluginContext {
           keysToDelete.push(key);
         }
       });
-      keysToDelete.forEach(key => this.pluginConfig.delete(key));
+      keysToDelete.forEach((key) => this.pluginConfig.delete(key));
     }
   };
-  
+
   /**
    * Platform information
    */
   public platform = this.platformInfo;
-  
+
   /**
    * Create a logger that prefixes all messages with plugin ID
    */
   private createPluginLogger(): Logger {
     const originalLogger = this.coreServices.logger;
-    
+
     return {
       debug: (message: string, context?: any) => {
         originalLogger.debug(message, { ...context, pluginId: this.pluginId });
@@ -132,20 +132,22 @@ export class PluginContextImpl implements PluginContext {
       error: (message: string, context?: any) => {
         originalLogger.error(message, { ...context, pluginId: this.pluginId });
       },
-      fatal: originalLogger.fatal ? (message: string, context?: any) => {
-        originalLogger.fatal!(message, { ...context, pluginId: this.pluginId });
-      } : (message: string, context?: any) => {
-        originalLogger.error(message, { ...context, pluginId: this.pluginId, level: 'fatal' });
-      }
+      fatal: originalLogger.fatal
+        ? (message: string, context?: any) => {
+            originalLogger.fatal!(message, { ...context, pluginId: this.pluginId });
+          }
+        : (message: string, context?: any) => {
+            originalLogger.error(message, { ...context, pluginId: this.pluginId, level: 'fatal' });
+          }
     };
   }
-  
+
   /**
    * Create an event bus that adds plugin context to events
    */
   private createPluginEventBus(): EventBus {
     const originalEventBus = this.coreServices.eventBus;
-    
+
     return {
       subscribe: (topic: string, handler: any, options?: any) => {
         return originalEventBus.subscribe(topic, handler, {
@@ -156,7 +158,7 @@ export class PluginContextImpl implements PluginContext {
           }
         });
       },
-      
+
       subscribePattern: (pattern: string, handler: any, options?: any) => {
         return originalEventBus.subscribePattern(pattern, handler, {
           ...options,
@@ -166,14 +168,14 @@ export class PluginContextImpl implements PluginContext {
           }
         });
       },
-      
+
       publish: async (topic: string, data: any, options?: any) => {
         return originalEventBus.publish(topic, data, {
           ...options,
           source: options?.source || `plugin:${this.pluginId}`
         });
       },
-      
+
       unsubscribe: originalEventBus.unsubscribe.bind(originalEventBus),
       getSubscriberCount: originalEventBus.getSubscriberCount.bind(originalEventBus),
       getActiveTopics: originalEventBus.getActiveTopics.bind(originalEventBus),
@@ -187,7 +189,7 @@ export class PluginContextImpl implements PluginContext {
       }
     };
   }
-  
+
   /**
    * Create a data service scoped to the plugin
    */
@@ -196,13 +198,13 @@ export class PluginContextImpl implements PluginContext {
     // with the plugin ID to ensure data isolation
     return this.coreServices.dataService; // Simplified for now
   }
-  
+
   /**
    * Create a UI shell scoped to the plugin
    */
   private createPluginUIShell(): UIShell {
     const originalUIShell = this.coreServices.uiShell;
-    
+
     return {
       registerComponent: (component: any) => {
         // Add plugin ID to component
@@ -211,13 +213,13 @@ export class PluginContextImpl implements PluginContext {
           pluginId: this.pluginId
         });
       },
-      
+
       unregisterComponent: originalUIShell.unregisterComponent.bind(originalUIShell),
       getComponentsByType: originalUIShell.getComponentsByType.bind(originalUIShell),
       getComponentsByPosition: originalUIShell.getComponentsByPosition.bind(originalUIShell)
     };
   }
-  
+
   /**
    * Create API service for the plugin
    */
@@ -227,36 +229,29 @@ export class PluginContextImpl implements PluginContext {
         if (this.pluginRoutes.has(basePath)) {
           throw new Error(`Routes already registered for path: ${basePath}`);
         }
-        
+
         this.pluginRoutes.set(basePath, router);
-        
+
         // Register with the core API registry
-        this.coreServices.apiRegistry.registerPluginRoutes(
-          this.pluginId,
-          basePath,
-          router
-        );
+        this.coreServices.apiRegistry.registerPluginRoutes(this.pluginId, basePath, router);
       },
-      
+
       unregisterRoutes: () => {
         this.pluginRoutes.forEach((_, basePath) => {
-          this.coreServices.apiRegistry.unregisterPluginRoutes(
-            this.pluginId,
-            basePath
-          );
+          this.coreServices.apiRegistry.unregisterPluginRoutes(this.pluginId, basePath);
         });
         this.pluginRoutes.clear();
       }
     };
   }
-  
+
   /**
    * Clean up plugin context
    */
   public cleanup(): void {
     // Unregister all routes
     this.services.api.unregisterRoutes();
-    
+
     // Clear plugin config and storage
     this.pluginConfig.clear();
   }

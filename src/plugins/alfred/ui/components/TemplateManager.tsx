@@ -3,32 +3,20 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { 
+import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
-  CardTitle 
+  CardTitle
 } from '../../../../client/components/ui/card';
 import { Button } from '../../../../client/components/ui/button';
 import { Input } from '../../../../client/components/ui/input';
 import { Badge } from '../../../../client/components/ui/badge';
-import { ScrollArea } from '../../../../client/components/ui/scroll-area';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../../../client/components/ui/tabs';
 import { useToast } from '../../../../client/components/ui/use-toast';
-import {   
-  Plus,
-  Search,
-  Code,
-  Edit,
-  Trash2,
-  Download,
-  Upload,
-  FileCode,
-  Star
-  } from 'lucide-react';
+import { Plus, Search, Code, Edit, Trash2, Download, Upload, FileCode, Star } from 'lucide-react';
 import { CodeTemplate } from '../../src/interfaces';
-import { useAlfredContext } from '../hooks/useAlfredContext';
 // CSS imported at app level
 
 export const TemplateManager: React.FC = () => {
@@ -83,14 +71,15 @@ export const TemplateManager: React.FC = () => {
     }
   };
 
-  const filteredTemplates = templates.filter(template => {
-    const matchesSearch = template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         template.description.toLowerCase().includes(searchQuery.toLowerCase());
+  const filteredTemplates = templates.filter((template) => {
+    const matchesSearch =
+      template.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      template.description.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === 'all' || template.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
 
-  const categories = ['all', ...Array.from(new Set(templates.map(t => t.category)))];
+  const categories = ['all', ...Array.from(new Set(templates.map((t) => t.category)))];
 
   const handleCreateTemplate = () => {
     // This would open a dialog to create a new template
@@ -151,43 +140,34 @@ export const TemplateManager: React.FC = () => {
   };
 
   return (
-    <div className="space-y-4">
+    <div className='space-y-4'>
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className='flex items-center justify-between'>
         <div>
-          <h3 className="text-lg font-medium">Code Templates</h3>
-          <p className="text-sm text-muted-foreground">
-            Manage your code generation templates
-          </p>
+          <h3 className='text-lg font-medium'>Code Templates</h3>
+          <p className='text-sm text-muted-foreground'>Manage your code generation templates</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleImportTemplate}
-          >
-            <Upload className="h-4 w-4 mr-2" />
+        <div className='flex items-center gap-2'>
+          <Button variant='outline' size='sm' onClick={handleImportTemplate}>
+            <Upload className='h-4 w-4 mr-2' />
             Import
           </Button>
-          <Button
-            size="sm"
-            onClick={handleCreateTemplate}
-          >
-            <Plus className="h-4 w-4 mr-2" />
+          <Button size='sm' onClick={handleCreateTemplate}>
+            <Plus className='h-4 w-4 mr-2' />
             New Template
           </Button>
         </div>
       </div>
 
       {/* Search and Filters */}
-      <div className="flex items-center gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+      <div className='flex items-center gap-4'>
+        <div className='relative flex-1'>
+          <Search className='absolute left-2 top-2.5 h-4 w-4 text-muted-foreground' />
           <Input
-            placeholder="Search templates..."
+            placeholder='Search templates...'
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-8"
+            className='pl-8'
           />
         </div>
       </div>
@@ -195,94 +175,94 @@ export const TemplateManager: React.FC = () => {
       {/* Category Tabs */}
       <Tabs value={selectedCategory} onValueChange={setSelectedCategory}>
         <TabsList>
-          {categories.map(category => (
+          {categories.map((category) => (
             <TabsTrigger key={category} value={category}>
               {category === 'all' ? 'All Templates' : category}
             </TabsTrigger>
           ))}
         </TabsList>
 
-        <TabsContent value={selectedCategory} className="mt-4">
+        <TabsContent value={selectedCategory} className='mt-4'>
           {isLoading ? (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">Loading templates...</p>
+            <div className='text-center py-8'>
+              <p className='text-muted-foreground'>Loading templates...</p>
             </div>
           ) : filteredTemplates.length === 0 ? (
             <Card>
-              <CardContent className="text-center py-8">
-                <FileCode className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                <p className="text-muted-foreground">
+              <CardContent className='text-center py-8'>
+                <FileCode className='h-12 w-12 mx-auto mb-4 text-muted-foreground' />
+                <p className='text-muted-foreground'>
                   {searchQuery ? 'No templates found' : 'No templates in this category'}
                 </p>
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className='grid gap-4 md:grid-cols-2'>
               {filteredTemplates.map((template) => (
-                <Card key={template.id} className="relative">
+                <Card key={template.id} className='relative'>
                   {template.id.startsWith('builtin-') && (
-                    <div className="absolute top-2 right-2">
-                      <Badge variant="secondary" className="text-xs">
-                        <Star className="h-3 w-3 mr-1" />
+                    <div className='absolute top-2 right-2'>
+                      <Badge variant='secondary' className='text-xs'>
+                        <Star className='h-3 w-3 mr-1' />
                         Built-in
                       </Badge>
                     </div>
                   )}
-                  
+
                   <CardHeader>
-                    <div className="flex items-start gap-3">
-                      <div className={`w-10 h-10 rounded-md ${getLanguageColor(template.language)} flex items-center justify-center`}>
-                        <Code className="h-5 w-5 text-white" />
+                    <div className='flex items-start gap-3'>
+                      <div
+                        className={`w-10 h-10 rounded-md ${getLanguageColor(template.language)} flex items-center justify-center`}
+                      >
+                        <Code className='h-5 w-5 text-white' />
                       </div>
-                      <div className="flex-1">
-                        <CardTitle className="text-base">{template.name}</CardTitle>
-                        <CardDescription className="mt-1">
-                          {template.description}
-                        </CardDescription>
+                      <div className='flex-1'>
+                        <CardTitle className='text-base'>{template.name}</CardTitle>
+                        <CardDescription className='mt-1'>{template.description}</CardDescription>
                       </div>
                     </div>
                   </CardHeader>
-                  
+
                   <CardContent>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Badge variant="outline">{template.language}</Badge>
-                        <Badge variant="outline">{template.category}</Badge>
+                    <div className='flex items-center justify-between'>
+                      <div className='flex items-center gap-2'>
+                        <Badge variant='outline'>{template.language}</Badge>
+                        <Badge variant='outline'>{template.category}</Badge>
                       </div>
-                      
-                      <div className="flex items-center gap-1">
+
+                      <div className='flex items-center gap-1'>
                         {!template.id.startsWith('builtin-') && (
                           <>
                             <Button
-                              variant="ghost"
-                              size="sm"
+                              variant='ghost'
+                              size='sm'
                               onClick={() => handleEditTemplate(template)}
                             >
-                              <Edit className="h-4 w-4" />
+                              <Edit className='h-4 w-4' />
                             </Button>
                             <Button
-                              variant="ghost"
-                              size="sm"
+                              variant='ghost'
+                              size='sm'
                               onClick={() => handleDeleteTemplate(template.id)}
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Trash2 className='h-4 w-4' />
                             </Button>
                           </>
                         )}
                         <Button
-                          variant="ghost"
-                          size="sm"
+                          variant='ghost'
+                          size='sm'
                           onClick={() => handleExportTemplate(template)}
                         >
-                          <Download className="h-4 w-4" />
+                          <Download className='h-4 w-4' />
                         </Button>
                       </div>
                     </div>
-                    
+
                     {template.variables && template.variables.length > 0 && (
-                      <div className="mt-3 pt-3 border-t">
-                        <p className="text-xs text-muted-foreground">
-                          Variables: {template.variables.map(v => v.name).join(', ')}
+                      <div className='mt-3 pt-3 border-t'>
+                        <p className='text-xs text-muted-foreground'>
+                          Variables: {template.variables.map((v) => v.name).join(', ')}
                         </p>
                       </div>
                     )}

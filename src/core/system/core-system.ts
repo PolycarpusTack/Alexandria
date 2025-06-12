@@ -1,31 +1,30 @@
 /**
  * Core System Implementation for the Alexandria Platform
- * 
+ *
  * This file provides the core functionality for the platform,
  * including system initialization, shutdown, and basic routing.
- * 
+ *
  * NOTE: This implementation has been refactored to avoid the god class
  * anti-pattern. See CoreSystemRefactored for the improved version.
  */
 
-import { 
-  CoreSystem as ICoreSystem, 
-  User, 
-  Case, 
-  LogEntry, 
-  Route, 
-  Request, 
-  Response 
+import {
+  CoreSystem as ICoreSystem,
+  User,
+  Case,
+  LogEntry,
+  Route,
+  Request,
+  Response
 } from './interfaces';
-import { v4 as uuidv4 } from 'uuid';
 import { EventBus } from '../event-bus/interfaces';
 import * as bcrypt from 'bcryptjs';
-import { 
-  NotFoundError, 
-  AuthenticationError, 
-  ValidationError, 
+import {
+  NotFoundError,
+  AuthenticationError,
+  ValidationError,
   ConflictError,
-  ConfigurationError 
+  ConfigurationError
 } from '../errors';
 
 // Import Logger from utils instead of redefining
@@ -34,18 +33,18 @@ import { DataService } from '../data/interfaces';
 
 /**
  * Implementation of the CoreSystem interface
- * 
+ *
  * This class provides the foundational functionality for the Alexandria platform,
  * serving as the minimal core that manages essential services.
  */
 /**
  * @deprecated Use CoreSystemRefactored instead. This class will be removed in v0.2.0
- * 
- * MIGRATION STATUS: 
+ *
+ * MIGRATION STATUS:
  * - ✅ CoreSystemRefactored is now the default export as 'CoreSystem' in core/index.ts
  * - ✅ initializeCore() uses CoreSystemRefactored by default
  * - ⚠️  Legacy tests and some plugins may still reference this class
- * 
+ *
  * This class violates the Single Responsibility Principle and has grown to 505+ lines.
  * Use CoreSystemRefactored which delegates to specialized services instead.
  */
@@ -60,7 +59,12 @@ export class CoreSystem implements ICoreSystem {
   private pluginRegistry?: any; // Will be set during initialization
   private securityService?: any; // Will be set during initialization
 
-  constructor(options: { logger: Logger; configPath: string; eventBus?: EventBus; dataService?: DataService }) {
+  constructor(options: {
+    logger: Logger;
+    configPath: string;
+    eventBus?: EventBus;
+    dataService?: DataService;
+  }) {
     this.logger = options.logger;
     this.eventBus = options.eventBus;
     this.dataService = options.dataService;
@@ -75,18 +79,18 @@ export class CoreSystem implements ICoreSystem {
     }
 
     this.logger.info('Initializing core system', { component: 'CoreSystem' });
-    
+
     try {
       // Initialize components
       this.registerCoreRoutes();
-      
+
       // Create admin user if doesn't exist
       await this.ensureAdminUserExists();
-      
+
       this.isInitialized = true;
       this.logger.info('Core system initialized successfully', { component: 'CoreSystem' });
     } catch (error) {
-      this.logger.error('Failed to initialize core system', { 
+      this.logger.error('Failed to initialize core system', {
         component: 'CoreSystem',
         error: error instanceof Error ? error.message : String(error)
       });
@@ -103,15 +107,15 @@ export class CoreSystem implements ICoreSystem {
     }
 
     this.logger.info('Shutting down core system', { component: 'CoreSystem' });
-    
+
     try {
       // Clean up resources
       // Close database connections, etc.
-      
+
       this.isInitialized = false;
       this.logger.info('Core system shut down successfully', { component: 'CoreSystem' });
     } catch (error) {
-      this.logger.error('Failed to shut down core system', { 
+      this.logger.error('Failed to shut down core system', {
         component: 'CoreSystem',
         error: error instanceof Error ? error.message : String(error)
       });
@@ -127,7 +131,7 @@ export class CoreSystem implements ICoreSystem {
     if (this.routes.has(routeKey)) {
       throw new ConflictError('Route', `Route already registered: ${routeKey}`);
     }
-    
+
     this.routes.set(routeKey, route);
     this.logger.debug(`Registered route: ${routeKey}`, { component: 'CoreSystem' });
   }
@@ -140,7 +144,7 @@ export class CoreSystem implements ICoreSystem {
     if (!this.routes.has(routeKey)) {
       throw new NotFoundError('Route', routeKey);
     }
-    
+
     this.routes.delete(routeKey);
     this.logger.debug(`Removed route: ${routeKey}`, { component: 'CoreSystem' });
   }
@@ -152,11 +156,11 @@ export class CoreSystem implements ICoreSystem {
     if (!id || typeof id !== 'string') {
       throw new ValidationError([{ field: 'id', message: 'User ID must be a non-empty string' }]);
     }
-    
+
     if (!this.dataService) {
       throw new ConfigurationError('CoreSystem', 'DataService not configured');
     }
-    
+
     return await this.dataService.users.findById(id);
   }
 
@@ -165,13 +169,15 @@ export class CoreSystem implements ICoreSystem {
    */
   async getUserByUsername(username: string): Promise<User | null> {
     if (!username || typeof username !== 'string') {
-      throw new ValidationError([{ field: 'username', message: 'Username must be a non-empty string' }]);
+      throw new ValidationError([
+        { field: 'username', message: 'Username must be a non-empty string' }
+      ]);
     }
-    
+
     if (!this.dataService) {
       throw new ConfigurationError('CoreSystem', 'DataService not configured');
     }
-    
+
     return await this.dataService.users.findByUsername(username);
   }
 
@@ -182,17 +188,17 @@ export class CoreSystem implements ICoreSystem {
     if (!user || !user.id) {
       throw new ValidationError([{ field: 'user', message: 'User object with ID is required' }]);
     }
-    
+
     if (!this.dataService) {
       throw new ConfigurationError('CoreSystem', 'DataService not configured');
     }
-    
+
     // Update timestamps
     if (!user.createdAt) {
       user.createdAt = new Date();
     }
     user.updatedAt = new Date();
-    
+
     return await this.dataService.users.update(user.id, user);
   }
 
@@ -203,11 +209,11 @@ export class CoreSystem implements ICoreSystem {
     if (!id || typeof id !== 'string') {
       throw new ValidationError([{ field: 'id', message: 'Case ID must be a non-empty string' }]);
     }
-    
+
     if (!this.dataService) {
       throw new ConfigurationError('CoreSystem', 'DataService not configured');
     }
-    
+
     return await this.dataService.cases.findById(id);
   }
 
@@ -225,11 +231,11 @@ export class CoreSystem implements ICoreSystem {
     }
 
     const { username, password } = credentials;
-    
+
     try {
       // Find user by username
       const user = await this.getUserByUsername(username);
-      
+
       if (!user) {
         // Log failed attempt but don't reveal user existence
         this.logger.warn('Authentication failed - user not found', {
@@ -240,7 +246,7 @@ export class CoreSystem implements ICoreSystem {
         await this.artificialDelay();
         return null;
       }
-      
+
       // Check if account is locked
       if (user.lockedUntil && user.lockedUntil > new Date()) {
         this.logger.warn('Authentication attempted on locked account', {
@@ -251,7 +257,7 @@ export class CoreSystem implements ICoreSystem {
         });
         return null;
       }
-      
+
       // Check if user is active
       if (!user.isActive) {
         this.logger.warn('Authentication attempted on inactive account', {
@@ -261,7 +267,7 @@ export class CoreSystem implements ICoreSystem {
         });
         return null;
       }
-      
+
       // Verify password
       if (!user.hashedPassword) {
         this.logger.error('User has no password hash', {
@@ -271,31 +277,30 @@ export class CoreSystem implements ICoreSystem {
         });
         return null;
       }
-      
+
       const isPasswordValid = await bcrypt.compare(password, user.hashedPassword);
-      
+
       if (!isPasswordValid) {
         // Handle failed login
         await this.handleFailedLogin(user);
         return null;
       }
-      
+
       // Successful login - reset failed attempts and update last login
       user.failedLoginAttempts = 0;
       user.lockedUntil = undefined;
       user.lastLoginAt = new Date();
       await this.saveUser(user);
-      
+
       this.logger.info('User authenticated successfully', {
         component: 'CoreSystem',
         userId: user.id,
         username: user.username
       });
-      
+
       // Return user without password hash
       const { hashedPassword, ...userWithoutPassword } = user;
       return userWithoutPassword;
-      
     } catch (error) {
       this.logger.error('Error during authentication', {
         component: 'CoreSystem',
@@ -312,11 +317,11 @@ export class CoreSystem implements ICoreSystem {
    */
   private async handleFailedLogin(user: User): Promise<void> {
     user.failedLoginAttempts = (user.failedLoginAttempts || 0) + 1;
-    
+
     if (user.failedLoginAttempts >= this.MAX_LOGIN_ATTEMPTS) {
       // Lock the account
       user.lockedUntil = new Date(Date.now() + this.LOCKOUT_DURATION_MS);
-      
+
       this.logger.warn('Account locked due to multiple failed login attempts', {
         component: 'CoreSystem',
         userId: user.id,
@@ -324,7 +329,7 @@ export class CoreSystem implements ICoreSystem {
         failedAttempts: user.failedLoginAttempts,
         lockedUntil: user.lockedUntil
       });
-      
+
       // Emit security event if event bus is available
       if (this.eventBus) {
         await this.eventBus.publish('security.account.locked', {
@@ -344,7 +349,7 @@ export class CoreSystem implements ICoreSystem {
         remainingAttempts: this.MAX_LOGIN_ATTEMPTS - user.failedLoginAttempts
       });
     }
-    
+
     await this.saveUser(user);
   }
 
@@ -354,7 +359,7 @@ export class CoreSystem implements ICoreSystem {
   private async artificialDelay(): Promise<void> {
     // Random delay between 100-300ms
     const delay = Math.floor(Math.random() * 200) + 100;
-    await new Promise(resolve => setTimeout(resolve, delay));
+    await new Promise((resolve) => setTimeout(resolve, delay));
   }
 
   /**
@@ -373,7 +378,7 @@ export class CoreSystem implements ICoreSystem {
       id: uuidv4(),
       timestamp: new Date()
     };
-    
+
     // Log to the configured logger
     switch (fullEntry.level) {
       case 'debug':
@@ -421,17 +426,17 @@ export class CoreSystem implements ICoreSystem {
     if (!this.dataService) {
       throw new ConfigurationError('CoreSystem', 'DataService not configured');
     }
-    
+
     // Check if admin user exists
     const adminUsers = await this.dataService.users.findByRole('admin');
     const adminExists = adminUsers.length > 0;
-    
+
     // Create admin user if doesn't exist
     if (!adminExists) {
       // Generate a secure random password for initial setup
       const initialPassword = this.generateSecurePassword();
       const hashedPassword = await bcrypt.hash(initialPassword, 12);
-      
+
       const adminUser = await this.dataService.users.create({
         username: 'admin',
         email: 'admin@alexandria.example',
@@ -441,15 +446,15 @@ export class CoreSystem implements ICoreSystem {
         hashedPassword,
         failedLoginAttempts: 0
       });
-      
+
       // Log the initial password securely (should be changed on first login)
-      this.logger.warn('Created default admin user with temporary password', { 
+      this.logger.warn('Created default admin user with temporary password', {
         component: 'CoreSystem',
         userId: adminUser.id,
         message: 'IMPORTANT: Change this password immediately!',
         temporaryPassword: initialPassword
       });
-      
+
       // In production, this should be:
       // 1. Sent via secure email to admin
       // 2. Stored in a secure vault
@@ -464,15 +469,15 @@ export class CoreSystem implements ICoreSystem {
     const charset = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=';
     const length = 16;
     let password = '';
-    
+
     // Use crypto.randomBytes for cryptographically secure randomness
     const crypto = require('crypto');
     const randomBytes = crypto.randomBytes(length);
-    
+
     for (let i = 0; i < length; i++) {
       password += charset[randomBytes[i] % charset.length];
     }
-    
+
     return password;
   }
 

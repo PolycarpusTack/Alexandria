@@ -1,6 +1,6 @@
 /**
  * Plugin API Test Suite
- * 
+ *
  * Comprehensive tests for plugin-specific API endpoints including:
  * - Plugin lifecycle management endpoints
  * - Plugin configuration and settings
@@ -41,7 +41,7 @@ describe('Plugin API', () => {
     id: 'user-123',
     username: 'testuser',
     roles: ['admin'],
-    permissions: ['plugins:manage', 'plugins:read', 'plugins:write'],
+    permissions: ['plugins:manage', 'plugins:read', 'plugins:write']
   };
 
   const mockPlugin = {
@@ -52,15 +52,15 @@ describe('Plugin API', () => {
       description: 'A test plugin',
       author: { name: 'Test Author' },
       permissions: ['data:read', 'events:publish'],
-      capabilities: ['data-processor'],
+      capabilities: ['data-processor']
     },
     state: 'ACTIVE',
     path: '/plugins/test-plugin',
     activatedAt: new Date(),
     settings: {
       theme: 'dark',
-      autoStart: true,
-    },
+      autoStart: true
+    }
   };
 
   beforeEach(() => {
@@ -76,7 +76,7 @@ describe('Plugin API', () => {
       warn: jest.fn(),
       error: jest.fn(),
       debug: jest.fn(),
-      child: jest.fn().mockReturnThis(),
+      child: jest.fn().mockReturnThis()
     } as any;
 
     mockPluginRegistry = {
@@ -91,17 +91,17 @@ describe('Plugin API', () => {
       getPluginSettings: jest.fn(),
       updatePluginSettings: jest.fn(),
       getPluginLogs: jest.fn(),
-      getPluginMetrics: jest.fn(),
+      getPluginMetrics: jest.fn()
     } as any;
 
     mockAuthService = {
       validateToken: jest.fn(),
-      getUserFromToken: jest.fn(),
+      getUserFromToken: jest.fn()
     } as any;
 
     mockAuthzService = {
       hasPermission: jest.fn(),
-      hasAnyPermission: jest.fn(),
+      hasAnyPermission: jest.fn()
     } as any;
 
     mockDataService = {
@@ -110,8 +110,8 @@ describe('Plugin API', () => {
         findById: jest.fn(),
         create: jest.fn(),
         update: jest.fn(),
-        delete: jest.fn(),
-      },
+        delete: jest.fn()
+      }
     } as any;
 
     // Setup API routes
@@ -120,7 +120,7 @@ describe('Plugin API', () => {
       authService: mockAuthService,
       authzService: mockAuthzService,
       dataService: mockDataService,
-      logger: mockLogger,
+      logger: mockLogger
     });
 
     app.use('/api/plugins', pluginAPI);
@@ -134,7 +134,7 @@ describe('Plugin API', () => {
     // Default auth setup
     mockAuthService.validateToken.mockResolvedValue({
       userId: mockUser.id,
-      username: mockUser.username,
+      username: mockUser.username
     });
     mockAuthService.getUserFromToken.mockResolvedValue(mockUser);
     mockAuthzService.hasPermission.mockReturnValue({ granted: true });
@@ -142,15 +142,16 @@ describe('Plugin API', () => {
 
   describe('GET /api/plugins', () => {
     it('should list all plugins', async () => {
-      const plugins = [mockPlugin, { ...mockPlugin, manifest: { ...mockPlugin.manifest, id: 'plugin-2' } }];
+      const plugins = [
+        mockPlugin,
+        { ...mockPlugin, manifest: { ...mockPlugin.manifest, id: 'plugin-2' } }
+      ];
       mockPluginRegistry.getAllPlugins.mockReturnValue(plugins);
 
-      const response = await request(app)
-        .get('/api/plugins')
-        .expect(200);
+      const response = await request(app).get('/api/plugins').expect(200);
 
       expect(response.body).toEqual({
-        plugins: plugins.map(p => ({
+        plugins: plugins.map((p) => ({
           id: p.manifest.id,
           name: p.manifest.name,
           version: p.manifest.version,
@@ -158,9 +159,9 @@ describe('Plugin API', () => {
           author: p.manifest.author,
           state: p.state,
           activatedAt: p.activatedAt?.toISOString(),
-          capabilities: p.manifest.capabilities,
+          capabilities: p.manifest.capabilities
         })),
-        total: 2,
+        total: 2
       });
     });
 
@@ -168,9 +169,7 @@ describe('Plugin API', () => {
       const activePlugins = [mockPlugin];
       mockPluginRegistry.getActivePlugins.mockReturnValue(activePlugins);
 
-      const response = await request(app)
-        .get('/api/plugins?state=ACTIVE')
-        .expect(200);
+      const response = await request(app).get('/api/plugins?state=ACTIVE').expect(200);
 
       expect(response.body.plugins).toHaveLength(1);
       expect(response.body.plugins[0].state).toBe('ACTIVE');
@@ -179,20 +178,18 @@ describe('Plugin API', () => {
     it('should filter plugins by capability', async () => {
       const allPlugins = [
         mockPlugin,
-        { 
-          ...mockPlugin, 
-          manifest: { 
-            ...mockPlugin.manifest, 
+        {
+          ...mockPlugin,
+          manifest: {
+            ...mockPlugin.manifest,
             id: 'plugin-2',
-            capabilities: ['ui-component'] 
-          } 
-        },
+            capabilities: ['ui-component']
+          }
+        }
       ];
       mockPluginRegistry.getAllPlugins.mockReturnValue(allPlugins);
 
-      const response = await request(app)
-        .get('/api/plugins?capability=data-processor')
-        .expect(200);
+      const response = await request(app).get('/api/plugins?capability=data-processor').expect(200);
 
       expect(response.body.plugins).toHaveLength(1);
       expect(response.body.plugins[0].capabilities).toContain('data-processor');
@@ -201,9 +198,7 @@ describe('Plugin API', () => {
     it('should require plugins:read permission', async () => {
       mockAuthzService.hasPermission.mockReturnValue({ granted: false });
 
-      await request(app)
-        .get('/api/plugins')
-        .expect(403);
+      await request(app).get('/api/plugins').expect(403);
     });
   });
 
@@ -211,9 +206,7 @@ describe('Plugin API', () => {
     it('should get plugin details', async () => {
       mockPluginRegistry.getPlugin.mockReturnValue(mockPlugin);
 
-      const response = await request(app)
-        .get('/api/plugins/test-plugin')
-        .expect(200);
+      const response = await request(app).get('/api/plugins/test-plugin').expect(200);
 
       expect(response.body).toEqual({
         id: 'test-plugin',
@@ -227,22 +220,19 @@ describe('Plugin API', () => {
         capabilities: ['data-processor'],
         settings: {
           theme: 'dark',
-          autoStart: true,
+          autoStart: true
         },
-        path: '/plugins/test-plugin',
+        path: '/plugins/test-plugin'
       });
     });
 
     it('should return 404 for non-existent plugin', async () => {
       mockPluginRegistry.getPlugin.mockReturnValue(undefined);
 
-      await request(app)
-        .get('/api/plugins/non-existent')
-        .expect(404)
-        .expect({
-          error: 'Plugin not found',
-          message: 'Plugin with ID "non-existent" not found',
-        });
+      await request(app).get('/api/plugins/non-existent').expect(404).expect({
+        error: 'Plugin not found',
+        message: 'Plugin with ID "non-existent" not found'
+      });
     });
   });
 
@@ -252,17 +242,15 @@ describe('Plugin API', () => {
       mockPluginRegistry.getPlugin.mockReturnValue(inactivePlugin);
       mockPluginRegistry.activatePlugin.mockResolvedValue(undefined);
 
-      const response = await request(app)
-        .post('/api/plugins/test-plugin/activate')
-        .expect(200);
+      const response = await request(app).post('/api/plugins/test-plugin/activate').expect(200);
 
       expect(response.body).toEqual({
         success: true,
         message: 'Plugin activated successfully',
         plugin: {
           id: 'test-plugin',
-          state: 'ACTIVATING',
-        },
+          state: 'ACTIVATING'
+        }
       });
 
       expect(mockPluginRegistry.activatePlugin).toHaveBeenCalledWith('test-plugin');
@@ -272,23 +260,18 @@ describe('Plugin API', () => {
       mockPluginRegistry.getPlugin.mockReturnValue(mockPlugin);
       mockPluginRegistry.activatePlugin.mockRejectedValue(new Error('Activation failed'));
 
-      await request(app)
-        .post('/api/plugins/test-plugin/activate')
-        .expect(500)
-        .expect({
-          error: 'Plugin activation failed',
-          message: 'Failed to activate plugin: Activation failed',
-        });
+      await request(app).post('/api/plugins/test-plugin/activate').expect(500).expect({
+        error: 'Plugin activation failed',
+        message: 'Failed to activate plugin: Activation failed'
+      });
     });
 
     it('should require plugins:manage permission', async () => {
       mockAuthzService.hasPermission.mockImplementation((user, permission) => ({
-        granted: permission !== 'plugins:manage',
+        granted: permission !== 'plugins:manage'
       }));
 
-      await request(app)
-        .post('/api/plugins/test-plugin/activate')
-        .expect(403);
+      await request(app).post('/api/plugins/test-plugin/activate').expect(403);
     });
   });
 
@@ -297,17 +280,15 @@ describe('Plugin API', () => {
       mockPluginRegistry.getPlugin.mockReturnValue(mockPlugin);
       mockPluginRegistry.deactivatePlugin.mockResolvedValue(undefined);
 
-      const response = await request(app)
-        .post('/api/plugins/test-plugin/deactivate')
-        .expect(200);
+      const response = await request(app).post('/api/plugins/test-plugin/deactivate').expect(200);
 
       expect(response.body).toEqual({
         success: true,
         message: 'Plugin deactivated successfully',
         plugin: {
           id: 'test-plugin',
-          state: 'DEACTIVATING',
-        },
+          state: 'DEACTIVATING'
+        }
       });
 
       expect(mockPluginRegistry.deactivatePlugin).toHaveBeenCalledWith('test-plugin');
@@ -318,13 +299,10 @@ describe('Plugin API', () => {
         new Error('Cannot deactivate: required by active plugins')
       );
 
-      await request(app)
-        .post('/api/plugins/test-plugin/deactivate')
-        .expect(409)
-        .expect({
-          error: 'Dependency conflict',
-          message: 'Cannot deactivate: required by active plugins',
-        });
+      await request(app).post('/api/plugins/test-plugin/deactivate').expect(409).expect({
+        error: 'Dependency conflict',
+        message: 'Cannot deactivate: required by active plugins'
+      });
     });
   });
 
@@ -333,16 +311,14 @@ describe('Plugin API', () => {
       mockPluginRegistry.getPlugin.mockReturnValue(mockPlugin);
       mockPluginRegistry.getPluginSettings.mockReturnValue(mockPlugin.settings);
 
-      const response = await request(app)
-        .get('/api/plugins/test-plugin/settings')
-        .expect(200);
+      const response = await request(app).get('/api/plugins/test-plugin/settings').expect(200);
 
       expect(response.body).toEqual({
         settings: {
           theme: 'dark',
-          autoStart: true,
+          autoStart: true
         },
-        schema: expect.any(Object), // Settings schema
+        schema: expect.any(Object) // Settings schema
       });
     });
   });
@@ -352,7 +328,7 @@ describe('Plugin API', () => {
       const newSettings = {
         theme: 'light',
         autoStart: false,
-        newOption: 'value',
+        newOption: 'value'
       };
 
       mockPluginRegistry.getPlugin.mockReturnValue(mockPlugin);
@@ -366,7 +342,7 @@ describe('Plugin API', () => {
       expect(response.body).toEqual({
         success: true,
         message: 'Settings updated successfully',
-        settings: newSettings,
+        settings: newSettings
       });
 
       expect(mockPluginRegistry.updatePluginSettings).toHaveBeenCalledWith(
@@ -378,7 +354,7 @@ describe('Plugin API', () => {
     it('should validate settings schema', async () => {
       const invalidSettings = {
         theme: 'invalid-theme', // Should only allow 'light' or 'dark'
-        autoStart: 'not-boolean',
+        autoStart: 'not-boolean'
       };
 
       await request(app)
@@ -390,8 +366,8 @@ describe('Plugin API', () => {
           message: 'Settings validation failed',
           details: expect.arrayContaining([
             expect.stringContaining('theme'),
-            expect.stringContaining('autoStart'),
-          ]),
+            expect.stringContaining('autoStart')
+          ])
         });
     });
   });
@@ -403,27 +379,25 @@ describe('Plugin API', () => {
           timestamp: new Date().toISOString(),
           level: 'info',
           message: 'Plugin started',
-          metadata: { pluginId: 'test-plugin' },
+          metadata: { pluginId: 'test-plugin' }
         },
         {
           timestamp: new Date().toISOString(),
           level: 'error',
           message: 'Processing failed',
-          metadata: { pluginId: 'test-plugin', error: 'Connection timeout' },
-        },
+          metadata: { pluginId: 'test-plugin', error: 'Connection timeout' }
+        }
       ];
 
       mockPluginRegistry.getPluginLogs.mockResolvedValue(mockLogs);
 
-      const response = await request(app)
-        .get('/api/plugins/test-plugin/logs')
-        .expect(200);
+      const response = await request(app).get('/api/plugins/test-plugin/logs').expect(200);
 
       expect(response.body).toEqual({
         logs: mockLogs,
         total: 2,
         page: 1,
-        limit: 100,
+        limit: 100
       });
 
       expect(mockPluginRegistry.getPluginLogs).toHaveBeenCalledWith('test-plugin', {
@@ -431,7 +405,7 @@ describe('Plugin API', () => {
         offset: 0,
         level: undefined,
         startDate: undefined,
-        endDate: undefined,
+        endDate: undefined
       });
     });
 
@@ -445,7 +419,7 @@ describe('Plugin API', () => {
         offset: 50,
         level: 'error',
         startDate: undefined,
-        endDate: undefined,
+        endDate: undefined
       });
     });
 
@@ -462,7 +436,7 @@ describe('Plugin API', () => {
         offset: 0,
         level: undefined,
         startDate: new Date(startDate),
-        endDate: new Date(endDate),
+        endDate: new Date(endDate)
       });
     });
   });
@@ -475,29 +449,27 @@ describe('Plugin API', () => {
           memoryUsage: 45.8,
           requestCount: 1250,
           averageResponseTime: 120,
-          errorRate: 0.02,
+          errorRate: 0.02
         },
         events: {
           published: 45,
           received: 38,
-          processed: 36,
+          processed: 36
         },
         custom: {
           documentsProcessed: 125,
-          apiCallsMade: 67,
-        },
+          apiCallsMade: 67
+        }
       };
 
       mockPluginRegistry.getPluginMetrics.mockResolvedValue(mockMetrics);
 
-      const response = await request(app)
-        .get('/api/plugins/test-plugin/metrics')
-        .expect(200);
+      const response = await request(app).get('/api/plugins/test-plugin/metrics').expect(200);
 
       expect(response.body).toEqual({
         metrics: mockMetrics,
         timestamp: expect.any(String),
-        pluginId: 'test-plugin',
+        pluginId: 'test-plugin'
       });
     });
 
@@ -508,7 +480,7 @@ describe('Plugin API', () => {
 
       expect(mockPluginRegistry.getPluginMetrics).toHaveBeenCalledWith('test-plugin', {
         timeRange: '24h',
-        interval: '1h',
+        interval: '1h'
       });
     });
   });
@@ -521,8 +493,8 @@ describe('Plugin API', () => {
         type: 'data.updated',
         payload: {
           documentId: 'doc-123',
-          changes: { title: 'New Title' },
-        },
+          changes: { title: 'New Title' }
+        }
       };
 
       const response = await request(app)
@@ -533,14 +505,14 @@ describe('Plugin API', () => {
       expect(response.body).toEqual({
         success: true,
         message: 'Event sent to plugin',
-        eventId: expect.any(String),
+        eventId: expect.any(String)
       });
     });
 
     it('should validate event data', async () => {
       const invalidEvent = {
         // Missing required 'type' field
-        payload: { data: 'test' },
+        payload: { data: 'test' }
       };
 
       await request(app)
@@ -550,9 +522,7 @@ describe('Plugin API', () => {
         .expect({
           error: 'Validation failed',
           message: 'Event data validation failed',
-          details: expect.arrayContaining([
-            expect.stringContaining('type'),
-          ]),
+          details: expect.arrayContaining([expect.stringContaining('type')])
         });
     });
   });
@@ -565,20 +535,18 @@ describe('Plugin API', () => {
         uptime: 3600000,
         lastActivity: new Date().toISOString(),
         dependencies: {
-          'dep-plugin': 'ACTIVE',
+          'dep-plugin': 'ACTIVE'
         },
         resources: {
           memoryUsage: 45.8,
-          cpuUsage: 12.3,
-        },
+          cpuUsage: 12.3
+        }
       };
 
       mockPluginRegistry.getPlugin.mockReturnValue(mockPlugin);
       mockPluginRegistry.getPluginStatus = jest.fn().mockResolvedValue(mockStatus);
 
-      const response = await request(app)
-        .get('/api/plugins/test-plugin/status')
-        .expect(200);
+      const response = await request(app).get('/api/plugins/test-plugin/status').expect(200);
 
       expect(response.body).toEqual(mockStatus);
     });
@@ -590,17 +558,15 @@ describe('Plugin API', () => {
       mockPluginRegistry.deactivatePlugin.mockResolvedValue(undefined);
       mockPluginRegistry.activatePlugin.mockResolvedValue(undefined);
 
-      const response = await request(app)
-        .post('/api/plugins/test-plugin/restart')
-        .expect(200);
+      const response = await request(app).post('/api/plugins/test-plugin/restart').expect(200);
 
       expect(response.body).toEqual({
         success: true,
         message: 'Plugin restarted successfully',
         plugin: {
           id: 'test-plugin',
-          state: 'RESTARTING',
-        },
+          state: 'RESTARTING'
+        }
       });
 
       expect(mockPluginRegistry.deactivatePlugin).toHaveBeenCalledWith('test-plugin');
@@ -613,13 +579,11 @@ describe('Plugin API', () => {
       mockPluginRegistry.getPlugin.mockReturnValue({ ...mockPlugin, state: 'INSTALLED' });
       mockPluginRegistry.uninstallPlugin.mockResolvedValue(undefined);
 
-      const response = await request(app)
-        .delete('/api/plugins/test-plugin')
-        .expect(200);
+      const response = await request(app).delete('/api/plugins/test-plugin').expect(200);
 
       expect(response.body).toEqual({
         success: true,
-        message: 'Plugin uninstalled successfully',
+        message: 'Plugin uninstalled successfully'
       });
 
       expect(mockPluginRegistry.uninstallPlugin).toHaveBeenCalledWith('test-plugin');
@@ -628,13 +592,10 @@ describe('Plugin API', () => {
     it('should not allow uninstalling active plugins', async () => {
       mockPluginRegistry.getPlugin.mockReturnValue(mockPlugin); // Active plugin
 
-      await request(app)
-        .delete('/api/plugins/test-plugin')
-        .expect(409)
-        .expect({
-          error: 'Plugin is active',
-          message: 'Cannot uninstall active plugin. Deactivate first.',
-        });
+      await request(app).delete('/api/plugins/test-plugin').expect(409).expect({
+        error: 'Plugin is active',
+        message: 'Cannot uninstall active plugin. Deactivate first.'
+      });
     });
   });
 
@@ -645,8 +606,8 @@ describe('Plugin API', () => {
           id: 'new-plugin',
           name: 'New Plugin',
           version: '1.0.0',
-          state: 'INSTALLED',
-        },
+          state: 'INSTALLED'
+        }
       };
 
       mockPluginRegistry.installPlugin.mockResolvedValue(mockInstallResult);
@@ -659,7 +620,7 @@ describe('Plugin API', () => {
       expect(response.body).toEqual({
         success: true,
         message: 'Plugin installed successfully',
-        plugin: mockInstallResult.plugin,
+        plugin: mockInstallResult.plugin
       });
     });
 
@@ -670,7 +631,7 @@ describe('Plugin API', () => {
         .expect(400)
         .expect({
           error: 'Invalid plugin package',
-          message: 'Plugin package must be uploaded as a file',
+          message: 'Plugin package must be uploaded as a file'
         });
     });
   });
@@ -679,7 +640,7 @@ describe('Plugin API', () => {
     it('should allow plugins to communicate via API', async () => {
       const sourcePlugin = 'plugin-a';
       const targetPlugin = 'plugin-b';
-      
+
       mockPluginRegistry.getPlugin.mockImplementation((id) => {
         if (id === sourcePlugin || id === targetPlugin) {
           return { ...mockPlugin, manifest: { ...mockPlugin.manifest, id } };
@@ -691,8 +652,8 @@ describe('Plugin API', () => {
         targetPlugin: 'plugin-b',
         message: {
           type: 'data.request',
-          payload: { query: 'get-user-data' },
-        },
+          payload: { query: 'get-user-data' }
+        }
       };
 
       const response = await request(app)
@@ -703,7 +664,7 @@ describe('Plugin API', () => {
       expect(response.body).toEqual({
         success: true,
         message: 'Message sent to target plugin',
-        messageId: expect.any(String),
+        messageId: expect.any(String)
       });
     });
 
@@ -714,7 +675,7 @@ describe('Plugin API', () => {
 
       const communicationData = {
         targetPlugin: 'plugin-b',
-        message: { type: 'test' },
+        message: { type: 'test' }
       };
 
       await request(app)
@@ -730,19 +691,16 @@ describe('Plugin API', () => {
         throw new Error('Registry service unavailable');
       });
 
-      await request(app)
-        .get('/api/plugins')
-        .expect(500)
-        .expect({
-          error: 'Internal server error',
-          message: 'Plugin registry service unavailable',
-        });
+      await request(app).get('/api/plugins').expect(500).expect({
+        error: 'Internal server error',
+        message: 'Plugin registry service unavailable'
+      });
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         'Plugin API error',
         expect.objectContaining({
           error: expect.any(Error),
-          endpoint: '/api/plugins',
+          endpoint: '/api/plugins'
         })
       );
     });
@@ -754,9 +712,7 @@ describe('Plugin API', () => {
         throw new Error('Authentication failed');
       });
 
-      await request(app)
-        .get('/api/plugins')
-        .expect(401);
+      await request(app).get('/api/plugins').expect(401);
     });
 
     it('should sanitize error responses in production', async () => {
@@ -766,9 +722,7 @@ describe('Plugin API', () => {
         throw new Error('Internal database connection failed with sensitive info');
       });
 
-      const response = await request(app)
-        .get('/api/plugins')
-        .expect(500);
+      const response = await request(app).get('/api/plugins').expect(500);
 
       expect(response.body.message).not.toContain('database');
       expect(response.body.message).not.toContain('sensitive');

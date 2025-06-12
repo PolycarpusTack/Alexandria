@@ -48,7 +48,7 @@ class TestAnalyzerPlugin implements IPlugin {
 
   async activate(): Promise<void> {
     if (!this.context) throw new Error('Context not set');
-    
+
     // Test event bus functionality
     this.context.eventBus.on('test:event', (data) => {
       this.eventsFired.push(`received:${data.message}`);
@@ -59,7 +59,7 @@ class TestAnalyzerPlugin implements IPlugin {
       id: 'test-1',
       value: 'test data'
     });
-    
+
     // Emit activation event
     this.context.eventBus.emit('analyzer:ready', {
       pluginId: this.metadata.id,
@@ -69,7 +69,7 @@ class TestAnalyzerPlugin implements IPlugin {
 
   async deactivate(): Promise<void> {
     if (!this.context) throw new Error('Context not set');
-    
+
     this.context.eventBus.off('test:event');
     this.context.logger.info('Test plugin deactivated');
   }
@@ -82,7 +82,7 @@ class TestAnalyzerPlugin implements IPlugin {
   // Plugin-specific method
   async analyzeData(data: any): Promise<any> {
     if (!this.context) throw new Error('Plugin not activated');
-    
+
     const result = {
       analyzed: true,
       input: data,
@@ -91,7 +91,7 @@ class TestAnalyzerPlugin implements IPlugin {
 
     // Store analysis result
     await this.context.dataService.create('analysis-results', result);
-    
+
     // Emit analysis complete event
     this.context.eventBus.emit('analysis:complete', {
       pluginId: this.metadata.id,
@@ -111,9 +111,7 @@ class DependentPlugin implements IPlugin {
     description: 'Plugin that depends on test-analyzer',
     author: 'Test Suite',
     capabilities: [PluginCapability.Processor],
-    dependencies: [
-      { pluginId: 'test-analyzer', version: '1.0.0' }
-    ],
+    dependencies: [{ pluginId: 'test-analyzer', version: '1.0.0' }],
     config: {}
   };
 
@@ -137,7 +135,7 @@ describe('Plugin System Integration', () => {
 
   beforeEach(async () => {
     logger = new MockLogger();
-    
+
     // Create core system with all services
     const dataService = new InMemoryDataService();
     const eventBus = new EventBus(logger);
@@ -146,7 +144,7 @@ describe('Plugin System Integration', () => {
     const encryptionService = new EncryptionService(logger);
     const validationService = new ValidationService();
     const auditService = new AuditService(dataService, logger);
-    
+
     const securityService = new SecurityService(
       authService,
       authzService,
@@ -165,7 +163,7 @@ describe('Plugin System Integration', () => {
     );
 
     await coreSystem.initialize();
-    
+
     testPlugin = new TestAnalyzerPlugin();
     dependentPlugin = new DependentPlugin();
   });
@@ -180,24 +178,24 @@ describe('Plugin System Integration', () => {
       // Register
       const registered = await coreSystem.pluginRegistry.register(testPlugin);
       expect(registered).toBe(true);
-      
+
       // Install
       const installed = await coreSystem.pluginRegistry.install('test-analyzer');
       expect(installed).toBe(true);
-      
+
       // Activate
       const activated = await coreSystem.pluginRegistry.activate('test-analyzer');
       expect(activated).toBe(true);
-      
+
       // Verify plugin can use context
       const result = await testPlugin.analyzeData({ test: 'data' });
       expect(result.analyzed).toBe(true);
       expect(result.input).toEqual({ test: 'data' });
-      
+
       // Deactivate
       const deactivated = await coreSystem.pluginRegistry.deactivate('test-analyzer');
       expect(deactivated).toBe(true);
-      
+
       // Uninstall
       const uninstalled = await coreSystem.pluginRegistry.uninstall('test-analyzer');
       expect(uninstalled).toBe(true);
@@ -207,15 +205,15 @@ describe('Plugin System Integration', () => {
       // Register both plugins
       await coreSystem.pluginRegistry.register(testPlugin);
       await coreSystem.pluginRegistry.register(dependentPlugin);
-      
+
       // Try to install dependent plugin without dependency
       const installed = await coreSystem.pluginRegistry.install('dependent-plugin');
       expect(installed).toBe(false);
-      
+
       // Install and activate dependency
       await coreSystem.pluginRegistry.install('test-analyzer');
       await coreSystem.pluginRegistry.activate('test-analyzer');
-      
+
       // Now dependent plugin should install
       const dependentInstalled = await coreSystem.pluginRegistry.install('dependent-plugin');
       expect(dependentInstalled).toBe(true);
@@ -232,28 +230,28 @@ describe('Plugin System Integration', () => {
     it('should allow plugins to communicate via events', async () => {
       // Plugin should have registered event handler
       coreSystem.eventBus.emit('test:event', { message: 'hello' });
-      
+
       // Wait for event processing
-      await new Promise(resolve => setTimeout(resolve, 10));
-      
+      await new Promise((resolve) => setTimeout(resolve, 10));
+
       expect(testPlugin.eventsFired).toContain('received:hello');
     });
 
     it('should emit plugin lifecycle events', async () => {
       const events: string[] = [];
-      
+
       coreSystem.eventBus.on('plugin:*', (data) => {
         events.push(data.pluginId);
       });
-      
+
       // Create and register a new plugin
       const newPlugin = new TestAnalyzerPlugin();
       newPlugin.metadata.id = 'new-test-plugin';
-      
+
       await coreSystem.pluginRegistry.register(newPlugin);
       await coreSystem.pluginRegistry.install('new-test-plugin');
       await coreSystem.pluginRegistry.activate('new-test-plugin');
-      
+
       expect(events).toContain('new-test-plugin');
     });
   });
@@ -272,10 +270,10 @@ describe('Plugin System Integration', () => {
         id: 'test-1',
         value: 'test data'
       });
-      
+
       // Plugin can store analysis results
       await testPlugin.analyzeData({ input: 'test' });
-      
+
       const results = await coreSystem.dataService.find('analysis-results', {});
       expect(results.length).toBeGreaterThan(0);
       expect(results[0].analyzed).toBe(true);
@@ -285,11 +283,11 @@ describe('Plugin System Integration', () => {
       // Create another plugin
       const anotherPlugin = new TestAnalyzerPlugin();
       anotherPlugin.metadata.id = 'another-analyzer';
-      
+
       await coreSystem.pluginRegistry.register(anotherPlugin);
       await coreSystem.pluginRegistry.install('another-analyzer');
       await coreSystem.pluginRegistry.activate('another-analyzer');
-      
+
       // Each plugin should have its own data
       const testData = await coreSystem.dataService.find('test-collection', {});
       expect(testData.length).toBe(2); // Both plugins created test data
@@ -326,11 +324,11 @@ describe('Plugin System Integration', () => {
       }
 
       const maliciousPlugin = new MaliciousPlugin();
-      
+
       // Plugin should register but security checks should prevent unauthorized access
       const registered = await coreSystem.pluginRegistry.register(maliciousPlugin);
       expect(registered).toBe(true);
-      
+
       // Installation should complete but with security restrictions
       const installed = await coreSystem.pluginRegistry.install('malicious-plugin');
       expect(installed).toBe(true);
@@ -365,14 +363,11 @@ describe('Plugin System Integration', () => {
 
       const errorPlugin = new ErrorPlugin();
       await coreSystem.pluginRegistry.register(errorPlugin);
-      
+
       // Should handle install error
       const installed = await coreSystem.pluginRegistry.install('error-plugin');
       expect(installed).toBe(false);
-      expect(logger.error).toHaveBeenCalledWith(
-        'Plugin installation failed',
-        expect.any(Object)
-      );
+      expect(logger.error).toHaveBeenCalledWith('Plugin installation failed', expect.any(Object));
     });
   });
 
@@ -380,26 +375,27 @@ describe('Plugin System Integration', () => {
     it('should handle multiple plugins efficiently', async () => {
       const startTime = Date.now();
       const pluginCount = 10;
-      
+
       // Register multiple plugins
       for (let i = 0; i < pluginCount; i++) {
         const plugin = new TestAnalyzerPlugin();
         plugin.metadata.id = `test-plugin-${i}`;
-        
+
         await coreSystem.pluginRegistry.register(plugin);
         await coreSystem.pluginRegistry.install(plugin.metadata.id);
         await coreSystem.pluginRegistry.activate(plugin.metadata.id);
       }
-      
+
       const duration = Date.now() - startTime;
-      
+
       // Should complete in reasonable time
       expect(duration).toBeLessThan(1000); // Less than 1 second for 10 plugins
-      
+
       // Verify all plugins are active
-      const activePlugins = coreSystem.pluginRegistry.listPlugins()
-        .filter(p => coreSystem.pluginRegistry.getPluginStatus(p.id) === 'active');
-      
+      const activePlugins = coreSystem.pluginRegistry
+        .listPlugins()
+        .filter((p) => coreSystem.pluginRegistry.getPluginStatus(p.id) === 'active');
+
       expect(activePlugins.length).toBe(pluginCount + 1); // +1 for original test plugin
     });
   });

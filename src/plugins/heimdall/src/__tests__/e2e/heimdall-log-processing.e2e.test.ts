@@ -71,16 +71,12 @@ describe('Heimdall E2E - Log Processing', () => {
         }
       };
 
-      const response = await axios.post(
-        `${API_BASE_URL}/logs`,
-        log,
-        {
-          headers: {
-            Authorization: `Bearer ${authToken}`,
-            'Content-Type': 'application/json'
-          }
+      const response = await axios.post(`${API_BASE_URL}/logs`, log, {
+        headers: {
+          Authorization: `Bearer ${authToken}`,
+          'Content-Type': 'application/json'
         }
-      );
+      });
 
       expect(response.status).toBe(201);
       expect(response.data).toHaveProperty('id', log.id);
@@ -165,7 +161,7 @@ describe('Heimdall E2E - Log Processing', () => {
       );
 
       // Wait for indexing
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
     });
 
     it('should query logs by time range', async () => {
@@ -218,7 +214,7 @@ describe('Heimdall E2E - Log Processing', () => {
 
       expect(response.status).toBe(200);
       expect(response.data.logs).toBeInstanceOf(Array);
-      
+
       // All returned logs should be ERROR level
       response.data.logs.forEach((log: any) => {
         expect(log.level).toBe(LogLevel.ERROR);
@@ -241,7 +237,7 @@ describe('Heimdall E2E - Log Processing', () => {
 
       expect(response.status).toBe(200);
       expect(response.data).toHaveProperty('logs');
-      
+
       // Verify results match natural language query
       response.data.logs.forEach((log: any) => {
         expect(log.level).toBe(LogLevel.ERROR);
@@ -279,7 +275,7 @@ describe('Heimdall E2E - Log Processing', () => {
       expect(response.data).toHaveProperty('aggregations');
       expect(response.data.aggregations).toHaveProperty('services');
       expect(response.data.aggregations.services).toBeInstanceOf(Array);
-      
+
       // Should have both test services
       const serviceNames = response.data.aggregations.services.map((s: any) => s.key);
       expect(serviceNames).toContain('auth-service');
@@ -299,27 +295,29 @@ describe('Heimdall E2E - Log Processing', () => {
 
       ws.on('open', () => {
         // Subscribe to log stream
-        ws.send(JSON.stringify({
-          type: 'subscribe',
-          query: {
-            timeRange: {
-              from: new Date().toISOString(),
-              to: new Date(Date.now() + 60000).toISOString()
+        ws.send(
+          JSON.stringify({
+            type: 'subscribe',
+            query: {
+              timeRange: {
+                from: new Date().toISOString(),
+                to: new Date(Date.now() + 60000).toISOString()
+              },
+              structured: {
+                levels: [LogLevel.INFO, LogLevel.ERROR]
+              }
             },
-            structured: {
-              levels: [LogLevel.INFO, LogLevel.ERROR]
+            options: {
+              batchSize: 5,
+              batchInterval: 1000
             }
-          },
-          options: {
-            batchSize: 5,
-            batchInterval: 1000
-          }
-        }));
+          })
+        );
       });
 
       ws.on('message', (data) => {
         const message = JSON.parse(data.toString());
-        
+
         if (message.type === 'subscribed') {
           // Start sending test logs
           setTimeout(async () => {
@@ -353,12 +351,12 @@ describe('Heimdall E2E - Log Processing', () => {
                   }
                 }
               );
-              await new Promise(resolve => setTimeout(resolve, 200));
+              await new Promise((resolve) => setTimeout(resolve, 200));
             }
           }, 100);
         } else if (message.type === 'logs') {
           receivedLogs.push(...message.logs);
-          
+
           if (receivedLogs.length >= 10) {
             ws.close();
             expect(receivedLogs.length).toBeGreaterThanOrEqual(10);
@@ -417,7 +415,7 @@ describe('Heimdall E2E - Log Processing', () => {
       );
 
       // Wait for ML processing
-      await new Promise(resolve => setTimeout(resolve, 3000));
+      await new Promise((resolve) => setTimeout(resolve, 3000));
 
       // Query for anomalies
       const response = await axios.post(
@@ -440,11 +438,9 @@ describe('Heimdall E2E - Log Processing', () => {
       expect(response.status).toBe(200);
       expect(response.data).toHaveProperty('anomalies');
       expect(response.data.anomalies).toBeInstanceOf(Array);
-      
+
       // Should detect high anomaly scores
-      const highAnomalies = response.data.anomalies.filter(
-        (a: any) => a.anomalyScore > 0.7
-      );
+      const highAnomalies = response.data.anomalies.filter((a: any) => a.anomalyScore > 0.7);
       expect(highAnomalies.length).toBeGreaterThan(0);
     });
 
@@ -478,7 +474,7 @@ describe('Heimdall E2E - Log Processing', () => {
       expect(response.status).toBe(200);
       expect(response.data).toHaveProperty('insights');
       expect(response.data.insights).toBeInstanceOf(Array);
-      
+
       // Should have various insight types
       const insightTypes = response.data.insights.map((i: any) => i.type);
       expect(insightTypes).toEqual(
@@ -492,9 +488,9 @@ describe('Heimdall E2E - Log Processing', () => {
       const batchSize = 1000;
       const numBatches = 10;
       const startTime = Date.now();
-      
+
       const promises = [];
-      
+
       for (let batch = 0; batch < numBatches; batch++) {
         const logs = Array.from({ length: batchSize }, (_, i) => ({
           id: `perf-test-${batch}-${i}`,
@@ -540,15 +536,17 @@ describe('Heimdall E2E - Log Processing', () => {
       const totalLogs = batchSize * numBatches;
       const logsPerSecond = totalLogs / (duration / 1000);
 
-      expect(results.every(r => r.status === 201)).toBe(true);
+      expect(results.every((r) => r.status === 201)).toBe(true);
       expect(logsPerSecond).toBeGreaterThan(1000); // Should handle > 1000 logs/sec
-      
-      console.log(`Ingested ${totalLogs} logs in ${duration}ms (${logsPerSecond.toFixed(0)} logs/sec)`);
+
+      console.log(
+        `Ingested ${totalLogs} logs in ${duration}ms (${logsPerSecond.toFixed(0)} logs/sec)`
+      );
     }, 60000);
 
     it('should query large datasets efficiently', async () => {
       const startTime = Date.now();
-      
+
       const response = await axios.post(
         `${API_BASE_URL}/query`,
         {
@@ -592,7 +590,7 @@ describe('Heimdall E2E - Log Processing', () => {
       expect(response.status).toBe(200);
       expect(response.data).toHaveProperty('aggregations');
       expect(queryTime).toBeLessThan(5000); // Should complete within 5 seconds
-      
+
       console.log(`Complex aggregation query completed in ${queryTime}ms`);
     });
   });

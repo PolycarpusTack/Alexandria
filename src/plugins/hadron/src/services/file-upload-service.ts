@@ -18,7 +18,7 @@ export class FileUploadService {
 
   /**
    * Process and store a file upload
-   * 
+   *
    * @param buffer File buffer
    * @param fileName Original filename
    * @param mimeType MIME type
@@ -38,37 +38,33 @@ export class FileUploadService {
       if (!buffer || buffer.length === 0) {
         throw new Error('File buffer is empty');
       }
-      
+
       if (!fileName || !fileName.trim()) {
         throw new Error('File name is required');
       }
-      
+
       if (!userId || !sessionId) {
         throw new Error('User ID and session ID are required');
       }
-      
+
       // Validate file
-      const validationResult = await this.fileValidator.validateFile(
-        buffer,
-        fileName,
-        mimeType
-      );
-      
+      const validationResult = await this.fileValidator.validateFile(buffer, fileName, mimeType);
+
       if (!validationResult.isValid) {
         throw new Error(`File validation failed: ${validationResult.errors.join(', ')}`);
       }
-      
+
       // Validate session exists
       const session = await this.hadronRepository.getSessionById(sessionId);
       if (!session) {
         throw new Error(`Session not found: ${sessionId}`);
       }
-      
+
       // Check session belongs to user
       if (session.userId !== userId) {
         throw new Error('Session does not belong to the user');
       }
-      
+
       // Store the file
       const uploadedFile = await this.fileStorage.storeFile(
         buffer,
@@ -77,23 +73,20 @@ export class FileUploadService {
         userId,
         sessionId
       );
-      
+
       // Save to repository
       await this.hadronRepository.saveFile(uploadedFile);
-      
+
       // Update session status
-      await this.hadronRepository.updateSessionStatus(
-        sessionId,
-        AnalysisSessionStatus.IN_PROGRESS
-      );
-      
+      await this.hadronRepository.updateSessionStatus(sessionId, AnalysisSessionStatus.IN_PROGRESS);
+
       this.logger.info(`File uploaded successfully: ${uploadedFile.id}`, {
         fileName,
         userId,
         sessionId,
         fileSize: buffer.length
       });
-      
+
       return uploadedFile;
     } catch (error) {
       this.logger.error('Error processing file upload:', {
@@ -126,22 +119,22 @@ export class FileUploadService {
   async deleteFile(fileId: string, userId: string): Promise<boolean> {
     try {
       const file = await this.hadronRepository.getFileById(fileId);
-      
+
       if (!file) {
         throw new Error(`File not found: ${fileId}`);
       }
-      
+
       // Check ownership
       if (file.userId !== userId) {
         throw new Error('User does not own this file');
       }
-      
+
       // Delete from storage
       await this.fileStorage.deleteFile(fileId);
-      
+
       // Delete from repository
       await this.hadronRepository.deleteFile(fileId);
-      
+
       this.logger.info(`File deleted: ${fileId}`, { userId });
       return true;
     } catch (error) {

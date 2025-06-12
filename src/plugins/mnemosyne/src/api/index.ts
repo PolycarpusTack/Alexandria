@@ -1,6 +1,6 @@
 /**
  * Mnemosyne API Module
- * 
+ *
  * Main entry point for the comprehensive REST API layer
  * Integrates all controllers, middleware, and route configurations
  */
@@ -58,7 +58,7 @@ export interface APIMetrics {
 
 /**
  * Mnemosyne API Manager
- * 
+ *
  * Central management class for the entire API layer
  * Handles initialization, configuration, and lifecycle management
  */
@@ -66,7 +66,7 @@ export class MnemosyneAPI {
   private readonly core: MnemosyneCore;
   private readonly logger: Logger;
   private readonly config: APIConfiguration;
-  
+
   private router: Router;
   private routes: MnemosyneAPIRoutes;
   private controller: MnemosyneAPIController;
@@ -74,7 +74,7 @@ export class MnemosyneAPI {
   private authMiddleware: AuthenticationMiddleware;
   private validationMiddleware: ValidationMiddleware;
   private rateLimitMiddleware: RateLimitMiddleware;
-  
+
   private metrics: APIMetrics = {
     totalRequests: 0,
     successfulRequests: 0,
@@ -122,7 +122,7 @@ export class MnemosyneAPI {
     // Initialize controller and routes
     this.controller = new MnemosyneAPIController(this.core, this.logger);
     this.routes = new MnemosyneAPIRoutes(this.core, this.logger);
-    
+
     // Get configured router
     this.router = this.routes.getRouter();
 
@@ -153,7 +153,10 @@ export class MnemosyneAPI {
 
       // Apply request size limiting
       if (this.config.maxRequestSize) {
-        app.use(this.config.basePath!, this.middleware.requestSizeLimiter(this.config.maxRequestSize));
+        app.use(
+          this.config.basePath!,
+          this.middleware.requestSizeLimiter(this.config.maxRequestSize)
+        );
       }
 
       // Mount the router
@@ -163,7 +166,6 @@ export class MnemosyneAPI {
       app.use(this.config.basePath!, this.middleware.errorHandler);
 
       this.logger.info('Mnemosyne API mounted successfully');
-
     } catch (error) {
       this.logger.error('Failed to mount Mnemosyne API', { error: error.message });
       throw error;
@@ -238,7 +240,7 @@ export class MnemosyneAPI {
     try {
       // Check core services
       const coreHealth = await this.core.getHealth();
-      
+
       // Check middleware components
       const middlewareHealth = {
         authentication: true, // Would check auth service connectivity
@@ -246,8 +248,9 @@ export class MnemosyneAPI {
         validation: true // Always healthy for validation middleware
       };
 
-      const allHealthy = Object.values(coreHealth).every(healthy => healthy) &&
-                        Object.values(middlewareHealth).every(healthy => healthy);
+      const allHealthy =
+        Object.values(coreHealth).every((healthy) => healthy) &&
+        Object.values(middlewareHealth).every((healthy) => healthy);
 
       return {
         status: allHealthy ? 'healthy' : 'unhealthy',
@@ -258,7 +261,6 @@ export class MnemosyneAPI {
         metrics: this.getMetrics(),
         uptime: process.uptime()
       };
-
     } catch (error) {
       this.logger.error('API health check failed', { error: error.message });
       return {
@@ -312,10 +314,7 @@ export class MnemosyneAPI {
         schemas: this.generateSchemas(),
         responses: this.generateCommonResponses()
       },
-      security: [
-        { BearerAuth: [] },
-        { ApiKeyAuth: [] }
-      ],
+      security: [{ BearerAuth: [] }, { ApiKeyAuth: [] }],
       tags: [
         { name: 'documents', description: 'Document management operations' },
         { name: 'knowledge-graph', description: 'Knowledge graph operations' },
@@ -341,7 +340,6 @@ export class MnemosyneAPI {
       this.logger.info('Final API metrics', { metrics: this.getMetrics() });
 
       this.logger.info('Mnemosyne API shutdown complete');
-
     } catch (error) {
       this.logger.error('Error during API shutdown', { error: error.message });
       throw error;
@@ -353,12 +351,12 @@ export class MnemosyneAPI {
   private generateOpenAPIPaths(): any {
     const paths: any = {};
     const routeDefinitions = this.getRouteDefinitions();
-    
+
     for (const route of routeDefinitions) {
       if (!paths[route.path]) {
         paths[route.path] = {};
       }
-      
+
       paths[route.path][route.method.toLowerCase()] = {
         summary: route.description,
         tags: route.tags,
@@ -374,7 +372,7 @@ export class MnemosyneAPI {
         }
       };
     }
-    
+
     return paths;
   }
 

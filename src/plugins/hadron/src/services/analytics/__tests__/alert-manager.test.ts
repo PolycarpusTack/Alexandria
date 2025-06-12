@@ -24,16 +24,13 @@ describe('AlertManager', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Register mocks
     container.register<IDataService>('DataService', { useValue: mockDataService as IDataService });
     container.register<EventBus>('EventBus', { useValue: mockEventBus as EventBus });
-    
-    alertManager = new AlertManager(
-      mockDataService as IDataService,
-      mockEventBus as EventBus
-    );
-    
+
+    alertManager = new AlertManager(mockDataService as IDataService, mockEventBus as EventBus);
+
     // Stop automatic monitoring for tests
     alertManager.stopMonitoring();
   });
@@ -52,11 +49,8 @@ describe('AlertManager', () => {
       };
 
       alertManager.registerRule(rule);
-      
-      expect(mockEventBus.emit).toHaveBeenCalledWith(
-        'alert:rule_registered',
-        { rule }
-      );
+
+      expect(mockEventBus.emit).toHaveBeenCalledWith('alert:rule_registered', { rule });
     });
 
     it('should reject invalid alert rule', () => {
@@ -66,8 +60,7 @@ describe('AlertManager', () => {
         // Missing required fields
       } as any;
 
-      expect(() => alertManager.registerRule(invalidRule))
-        .toThrow('Invalid alert rule');
+      expect(() => alertManager.registerRule(invalidRule)).toThrow('Invalid alert rule');
     });
 
     it('should update existing rule', () => {
@@ -84,7 +77,7 @@ describe('AlertManager', () => {
 
       alertManager.registerRule(rule);
       alertManager.updateRule('test_rule', { enabled: false });
-      
+
       const rules = alertManager['rules'];
       expect(rules.get('test_rule')?.enabled).toBe(false);
     });
@@ -103,7 +96,7 @@ describe('AlertManager', () => {
 
       alertManager.registerRule(rule);
       alertManager.deleteRule('test_rule');
-      
+
       const rules = alertManager['rules'];
       expect(rules.has('test_rule')).toBe(false);
     });
@@ -123,7 +116,7 @@ describe('AlertManager', () => {
       };
 
       alertManager.registerRule(rule);
-      
+
       // Mock high crash rate
       (mockDataService.query as jest.Mock).mockResolvedValue([
         { value: 75 } // Above threshold
@@ -157,7 +150,7 @@ describe('AlertManager', () => {
       };
 
       alertManager.registerRule(rule);
-      
+
       // Mock normal crash rate
       (mockDataService.query as jest.Mock).mockResolvedValue([
         { value: 25 } // Below threshold
@@ -182,10 +175,8 @@ describe('AlertManager', () => {
       };
 
       alertManager.registerRule(rule);
-      
-      (mockDataService.query as jest.Mock).mockResolvedValue([
-        { value: 50 }
-      ]);
+
+      (mockDataService.query as jest.Mock).mockResolvedValue([{ value: 50 }]);
 
       await alertManager.checkAlerts();
 
@@ -208,10 +199,8 @@ describe('AlertManager', () => {
       };
 
       alertManager.registerRule(rule);
-      
-      (mockDataService.query as jest.Mock).mockResolvedValue([
-        { value: 75 }
-      ]);
+
+      (mockDataService.query as jest.Mock).mockResolvedValue([{ value: 75 }]);
 
       await alertManager.checkAlerts();
     });
@@ -219,10 +208,10 @@ describe('AlertManager', () => {
     it('should acknowledge alert', () => {
       const activeAlerts = alertManager.getActiveAlerts();
       expect(activeAlerts).toHaveLength(1);
-      
+
       const alertId = activeAlerts[0].id;
       alertManager.acknowledgeAlert(alertId, 'test_user');
-      
+
       const updatedAlert = alertManager.getActiveAlerts()[0];
       expect(updatedAlert.acknowledged).toBe(true);
       expect(updatedAlert.acknowledgedBy).toBe('test_user');
@@ -232,11 +221,11 @@ describe('AlertManager', () => {
     it('should resolve alert', () => {
       const activeAlerts = alertManager.getActiveAlerts();
       const alertId = activeAlerts[0].id;
-      
+
       alertManager.resolveAlert(alertId, 'test_user', 'Fixed the issue');
-      
+
       expect(alertManager.getActiveAlerts()).toHaveLength(0);
-      
+
       const history = alertManager.getAlertHistory();
       expect(history).toHaveLength(1);
       expect(history[0].resolved).toBe(true);
@@ -248,18 +237,18 @@ describe('AlertManager', () => {
       // First check - alert is active
       let activeAlerts = alertManager.getActiveAlerts();
       expect(activeAlerts).toHaveLength(1);
-      
+
       // Mock normal crash rate for second check
       (mockDataService.query as jest.Mock).mockResolvedValue([
         { value: 25 } // Below threshold
       ]);
 
       await alertManager.checkAlerts();
-      
+
       // Alert should be auto-resolved
       activeAlerts = alertManager.getActiveAlerts();
       expect(activeAlerts).toHaveLength(0);
-      
+
       const history = alertManager.getAlertHistory();
       expect(history[0].resolution).toBe('Condition no longer met');
     });
@@ -291,21 +280,19 @@ describe('AlertManager', () => {
         }
       ];
 
-      rules.forEach(rule => alertManager.registerRule(rule));
-      
-      (mockDataService.query as jest.Mock).mockResolvedValue([
-        { value: 100 }
-      ]);
+      rules.forEach((rule) => alertManager.registerRule(rule));
+
+      (mockDataService.query as jest.Mock).mockResolvedValue([{ value: 100 }]);
 
       await alertManager.checkAlerts();
-      
+
       // Resolve all alerts to move to history
-      alertManager.getActiveAlerts().forEach(alert => {
+      alertManager.getActiveAlerts().forEach((alert) => {
         alertManager.resolveAlert(alert.id, 'test_user');
       });
 
-      const criticalHistory = alertManager.getAlertHistory({ 
-        severity: 'critical' 
+      const criticalHistory = alertManager.getAlertHistory({
+        severity: 'critical'
       });
       expect(criticalHistory).toHaveLength(1);
       expect(criticalHistory[0].severity).toBe('critical');

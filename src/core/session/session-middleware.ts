@@ -1,7 +1,7 @@
 /// <reference path="../../types/express-custom.d.ts" />
 /**
  * Session Middleware for Alexandria Platform
- * 
+ *
  * Handles session management for Express applications.
  */
 
@@ -41,7 +41,7 @@ export function createSessionMiddleware(options: SessionMiddlewareOptions) {
 
   // Periodically touch active sessions
   const activeSessions = new Set<string>();
-  
+
   setInterval(async () => {
     if (activeSessions.size === 0) {
       return;
@@ -65,9 +65,9 @@ export function createSessionMiddleware(options: SessionMiddlewareOptions) {
     );
 
     // Log summary of touch operations
-    const successful = results.filter(r => r.status === 'fulfilled').length;
-    const failed = results.filter(r => r.status === 'rejected').length;
-    
+    const successful = results.filter((r) => r.status === 'fulfilled').length;
+    const failed = results.filter((r) => r.status === 'rejected').length;
+
     if (failed > 0) {
       logger.warn('Session touch operation completed with failures', {
         total: sessionIds.length,
@@ -110,10 +110,10 @@ export function createSessionMiddleware(options: SessionMiddlewareOptions) {
       // Update session activity on response finish
       res.on('finish', () => {
         if (req.sessionId && res.statusCode < 400) {
-          sessionStore.touch(req.sessionId).catch(err => {
-            logger.error('Failed to update session activity', { 
-              sessionId: req.sessionId, 
-              error: err 
+          sessionStore.touch(req.sessionId).catch((err) => {
+            logger.error('Failed to update session activity', {
+              sessionId: req.sessionId,
+              error: err
             });
           });
         }
@@ -159,9 +159,9 @@ export const sessionUtils = {
     req.session = session;
     req.sessionId = session.id;
 
-    logger.debug('Session created', { 
-      sessionId: session.id, 
-      userId: data.userId 
+    logger.debug('Session created', {
+      sessionId: session.id,
+      userId: data.userId
     });
 
     return session;
@@ -207,7 +207,7 @@ export const sessionUtils = {
     }
 
     const oldSessionId = req.sessionId!;
-    
+
     // Create new session with same data
     const newSession = await sessionStore.create({
       userId: req.session.userId,
@@ -227,9 +227,9 @@ export const sessionUtils = {
     req.session = newSession;
     req.sessionId = newSession.id;
 
-    logger.debug('Session regenerated', { 
-      oldSessionId, 
-      newSessionId: newSession.id 
+    logger.debug('Session regenerated', {
+      oldSessionId,
+      newSessionId: newSession.id
     });
 
     return newSession;
@@ -238,10 +238,7 @@ export const sessionUtils = {
   /**
    * Get all sessions for current user
    */
-  async getUserSessions(
-    req: Request,
-    sessionStore: SessionStore
-  ): Promise<SessionData[]> {
+  async getUserSessions(req: Request, sessionStore: SessionStore): Promise<SessionData[]> {
     if (!req.session) {
       return [];
     }
@@ -263,7 +260,7 @@ export const sessionUtils = {
     }
 
     const userId = req.session.userId;
-    
+
     // Destroy all sessions
     const count = await sessionStore.destroyAll(userId);
 

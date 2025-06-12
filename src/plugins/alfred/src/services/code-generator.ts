@@ -2,10 +2,10 @@
  * Code Generator Service - AI-powered code generation with templates
  */
 
-import { Logger } from '@utils/logger';
-import { EventBus } from '@core/event-bus/event-bus';
-import { AIService } from '@core/services/ai-service';
-import { 
+import { Logger } from '../../../../utils/logger';
+import { EventBus } from '../../../../core/event-bus/interfaces';
+import { AIService } from '../../../../core/services/ai-service/interfaces';
+import {
   CodeGenerationRequest,
   CodeGenerationResponse,
   CodeTemplate,
@@ -25,9 +25,9 @@ export class CodeGeneratorService implements ICodeGeneratorService {
   ) {}
 
   async generateCode(request: CodeGenerationRequest): Promise<CodeGenerationResponse> {
-    this.logger.info('Generating code', { 
+    this.logger.info('Generating code', {
       templateId: request.templateId,
-      language: request.context.language 
+      language: request.context.language
     });
 
     try {
@@ -58,9 +58,12 @@ export class CodeGeneratorService implements ICodeGeneratorService {
 
       // Parse AI response
       const response = this.parseAIResponse(aiResponse.content, request.context.language);
-      
+
       // Add metadata
-      response.dependencies = await this.extractDependencies(response.code, request.context.language);
+      response.dependencies = await this.extractDependencies(
+        response.code,
+        request.context.language
+      );
       response.warnings = this.checkForWarnings(response.code, request.context);
 
       // Cache the generation
@@ -68,7 +71,7 @@ export class CodeGeneratorService implements ICodeGeneratorService {
       this.generationHistory.set(cacheKey, response);
 
       // Emit event
-      this.eventBus.emit('alfred:code-generated', {
+      this.eventBus.publish('alfred:code-generated', {
         language: request.context.language,
         linesOfCode: response.code.split('\n').length,
         templateUsed: request.templateId,
@@ -76,7 +79,6 @@ export class CodeGeneratorService implements ICodeGeneratorService {
       });
 
       return response;
-
     } catch (error) {
       this.logger.error('Code generation failed', { error, request });
       throw error;
@@ -85,7 +87,7 @@ export class CodeGeneratorService implements ICodeGeneratorService {
 
   async showGenerateDialog(): Promise<void> {
     // This would be handled by the UI layer
-    this.eventBus.emit('alfred:show-generate-dialog');
+    this.eventBus.publish('alfred:show-generate-dialog', {});
   }
 
   async validateTemplate(template: CodeTemplate): Promise<boolean> {
@@ -119,7 +121,6 @@ export class CodeGeneratorService implements ICodeGeneratorService {
 
       this.renderTemplate(template.template, dummyVars);
       return true;
-
     } catch (error) {
       this.logger.warn('Template validation failed', { error, templateName: template.name });
       return false;
@@ -134,7 +135,10 @@ export class CodeGeneratorService implements ICodeGeneratorService {
 
   // Private helper methods
 
-  private preparePromptWithTemplate(template: CodeTemplate, request: CodeGenerationRequest): string {
+  private preparePromptWithTemplate(
+    template: CodeTemplate,
+    request: CodeGenerationRequest
+  ): string {
     // Render template with provided variables
     const renderedTemplate = this.renderTemplate(template.template, request.variables || {});
 
@@ -177,8 +181,8 @@ export class CodeGeneratorService implements ICodeGeneratorService {
 
     if (matches.length > 0) {
       // Extract code from code blocks
-      code = matches.map(match => match[1].trim()).join('\n\n');
-      
+      code = matches.map((match) => match[1].trim()).join('\n\n');
+
       // Remove code blocks from explanation
       explanation = content.replace(codeBlockRegex, '').trim();
     } else {
@@ -202,12 +206,14 @@ export class CodeGeneratorService implements ICodeGeneratorService {
         // Extract imports
         const pythonImports = code.match(/^(?:from\s+(\S+)|import\s+(\S+))/gm);
         if (pythonImports) {
-          pythonImports.forEach(imp => {
+          pythonImports.forEach((imp) => {
             const match = imp.match(/(?:from\s+(\S+)|import\s+(\S+))/);
             if (match) {
               const module = (match[1] || match[2]).split('.')[0];
               // Filter out standard library modules (basic heuristic)
-              if (!['os', 'sys', 'json', 'datetime', 'math', 'random', 'collections'].includes(module)) {
+              if (
+                !['os', 'sys', 'json', 'datetime', 'math', 'random', 'collections'].includes(module)
+              ) {
                 dependencies.add(module);
               }
             }
@@ -218,9 +224,11 @@ export class CodeGeneratorService implements ICodeGeneratorService {
       case 'javascript':
       case 'typescript':
         // Extract imports and requires
-        const jsImports = code.match(/(?:import.*from\s+['"]([^'"]+)['"]|require\(['"]([^'"]+)['"]\))/g);
+        const jsImports = code.match(
+          /(?:import.*from\s+['"]([^'"]+)['"]|require\(['"]([^'"]+)['"]\))/g
+        );
         if (jsImports) {
-          jsImports.forEach(imp => {
+          jsImports.forEach((imp) => {
             const match = imp.match(/['"]([^'"]+)['"]/);
             if (match && !match[1].startsWith('.')) {
               dependencies.add(match[1]);

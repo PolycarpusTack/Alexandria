@@ -1,19 +1,18 @@
 /**
  * Base Log Adapter Implementation
- * 
+ *
  * Provides a base implementation for log adapters with common functionality
  */
 
 import { Logger } from '@utils/logger';
-import { 
-  ILogAdapter, 
-  LogQuery, 
-  LogQueryResult, 
-  LogEntry, 
+import {
+  ILogAdapter,
+  LogQuery,
+  LogQueryResult,
+  LogEntry,
   LogAdapterCapabilities,
   LogLevel
 } from '../interfaces';
-import { v4 as uuidv4 } from 'uuid';
 
 export class BaseLogAdapter implements ILogAdapter {
   protected isConnected = false;
@@ -37,15 +36,17 @@ export class BaseLogAdapter implements ILogAdapter {
     }
 
     const startTime = Date.now();
-    
+
     try {
       // Generate mock log entries for demonstration
       const logs = this.generateMockLogs(query);
-      
+
       return {
         logs,
         total: logs.length,
-        aggregations: query.aggregations ? this.generateMockAggregations(logs, query.aggregations) : undefined,
+        aggregations: query.aggregations
+          ? this.generateMockAggregations(logs, query.aggregations)
+          : undefined,
         executionTime: Date.now() - startTime
       };
     } catch (error) {
@@ -105,19 +106,25 @@ export class BaseLogAdapter implements ILogAdapter {
   protected generateMockLogs(query: LogQuery): LogEntry[] {
     const logs: LogEntry[] = [];
     const count = Math.min(query.limit || 100, 100);
-    
+
     for (let i = 0; i < count; i++) {
       const log = this.generateMockLog();
       if (this.matchesQuery(log, query)) {
         logs.push(log);
       }
     }
-    
+
     return logs.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
   }
 
   protected generateMockLog(): LogEntry {
-    const levels: LogLevel[] = [LogLevel.DEBUG, LogLevel.INFO, LogLevel.WARN, LogLevel.ERROR, LogLevel.FATAL];
+    const levels: LogLevel[] = [
+      LogLevel.DEBUG,
+      LogLevel.INFO,
+      LogLevel.WARN,
+      LogLevel.ERROR,
+      LogLevel.FATAL
+    ];
     const services = ['api-gateway', 'user-service', 'order-service', 'payment-service'];
     const hosts = ['server-01', 'server-02', 'server-03'];
     const messages = [
@@ -162,7 +169,7 @@ export class BaseLogAdapter implements ILogAdapter {
       const logTime = log.timestamp.getTime();
       const from = new Date(query.timeRange.from).getTime();
       const to = new Date(query.timeRange.to).getTime();
-      
+
       if (logTime < from || logTime > to) {
         return false;
       }
@@ -197,7 +204,7 @@ export class BaseLogAdapter implements ILogAdapter {
 
   protected applyFilter(log: LogEntry, filter: any): boolean {
     const value = this.getLogFieldValue(log, filter.field);
-    
+
     switch (filter.operator) {
       case 'equals':
         return value === filter.value;
@@ -226,7 +233,7 @@ export class BaseLogAdapter implements ILogAdapter {
     // Handle nested field access
     const parts = field.split('.');
     let value: any = log;
-    
+
     for (const part of parts) {
       if (value && typeof value === 'object') {
         value = value[part];
@@ -234,13 +241,13 @@ export class BaseLogAdapter implements ILogAdapter {
         return undefined;
       }
     }
-    
+
     return value;
   }
 
   protected generateMockAggregations(logs: LogEntry[], aggregations: any[]): Record<string, any> {
     const results: Record<string, any> = {};
-    
+
     for (const agg of aggregations) {
       switch (agg.type) {
         case 'count':
@@ -263,55 +270,55 @@ export class BaseLogAdapter implements ILogAdapter {
           break;
       }
     }
-    
+
     return results;
   }
 
   private calculateTermsAggregation(logs: LogEntry[], field: string): Record<string, number> {
     const counts: Record<string, number> = {};
-    
+
     for (const log of logs) {
       const value = String(this.getLogFieldValue(log, field) || 'unknown');
       counts[value] = (counts[value] || 0) + 1;
     }
-    
+
     return Object.fromEntries(
       Object.entries(counts)
-        .sort(([,a], [,b]) => b - a)
+        .sort(([, a], [, b]) => b - a)
         .slice(0, 10)
     );
   }
 
   private calculateAvgAggregation(logs: LogEntry[], field: string): number {
     const values = logs
-      .map(log => Number(this.getLogFieldValue(log, field)))
-      .filter(val => !isNaN(val));
-    
+      .map((log) => Number(this.getLogFieldValue(log, field)))
+      .filter((val) => !isNaN(val));
+
     if (values.length === 0) return 0;
-    
+
     return values.reduce((sum, val) => sum + val, 0) / values.length;
   }
 
   private calculateSumAggregation(logs: LogEntry[], field: string): number {
     return logs
-      .map(log => Number(this.getLogFieldValue(log, field)))
-      .filter(val => !isNaN(val))
+      .map((log) => Number(this.getLogFieldValue(log, field)))
+      .filter((val) => !isNaN(val))
       .reduce((sum, val) => sum + val, 0);
   }
 
   private calculateMinAggregation(logs: LogEntry[], field: string): number {
     const values = logs
-      .map(log => Number(this.getLogFieldValue(log, field)))
-      .filter(val => !isNaN(val));
-    
+      .map((log) => Number(this.getLogFieldValue(log, field)))
+      .filter((val) => !isNaN(val));
+
     return values.length > 0 ? Math.min(...values) : 0;
   }
 
   private calculateMaxAggregation(logs: LogEntry[], field: string): number {
     const values = logs
-      .map(log => Number(this.getLogFieldValue(log, field)))
-      .filter(val => !isNaN(val));
-    
+      .map((log) => Number(this.getLogFieldValue(log, field)))
+      .filter((val) => !isNaN(val));
+
     return values.length > 0 ? Math.max(...values) : 0;
   }
 }

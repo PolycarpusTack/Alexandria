@@ -9,7 +9,6 @@ import {
   TemplateImportOptions,
   TemplateExportOptions
 } from './interfaces';
-import { v4 as uuidv4 } from 'uuid';
 
 export class TemplateRepository {
   constructor(private context: PluginContext) {}
@@ -17,7 +16,9 @@ export class TemplateRepository {
   /**
    * Create a new template
    */
-  async create(templateData: Omit<MnemosyneTemplate, 'id' | 'createdAt' | 'updatedAt' | 'analytics'>): Promise<MnemosyneTemplate> {
+  async create(
+    templateData: Omit<MnemosyneTemplate, 'id' | 'createdAt' | 'updatedAt' | 'analytics'>
+  ): Promise<MnemosyneTemplate> {
     const template: MnemosyneTemplate = {
       ...templateData,
       id: uuidv4(),
@@ -51,13 +52,13 @@ export class TemplateRepository {
     ];
 
     const result = await this.context.db.query(query, values);
-    
+
     // Create template tags
     await this.updateTemplateTags(template.id, template.metadata.tags);
-    
+
     // Emit creation event
     this.context.events.emit('mnemosyne:template:created', template);
-    
+
     return this.mapToTemplate(result.rows[0]);
   }
 
@@ -116,7 +117,7 @@ export class TemplateRepository {
     ];
 
     const result = await this.context.db.query(query, values);
-    
+
     // Update tags if they changed
     if (updates.metadata?.tags) {
       await this.updateTemplateTags(id, updates.metadata.tags);
@@ -124,7 +125,7 @@ export class TemplateRepository {
 
     // Emit update event
     this.context.events.emit('mnemosyne:template:updated', updated);
-    
+
     return this.mapToTemplate(result.rows[0]);
   }
 
@@ -134,10 +135,10 @@ export class TemplateRepository {
   async delete(id: string): Promise<void> {
     const query = `DELETE FROM mnemosyne_templates WHERE id = $1`;
     await this.context.db.query(query, [id]);
-    
+
     // Clean up tags
     await this.context.db.query(`DELETE FROM mnemosyne_template_tags WHERE template_id = $1`, [id]);
-    
+
     // Emit deletion event
     this.context.events.emit('mnemosyne:template:deleted', { id });
   }
@@ -211,7 +212,7 @@ export class TemplateRepository {
     query += ` LIMIT 50`;
 
     const result = await this.context.db.query(query, params);
-    return result.rows.map(row => this.mapToTemplate(row));
+    return result.rows.map((row) => this.mapToTemplate(row));
   }
 
   /**
@@ -236,7 +237,7 @@ export class TemplateRepository {
     `;
 
     const result = await this.context.db.query(query, [limit]);
-    return result.rows.map(row => this.mapToTemplate(row));
+    return result.rows.map((row) => this.mapToTemplate(row));
   }
 
   /**
@@ -255,7 +256,7 @@ export class TemplateRepository {
     `;
 
     const result = await this.context.db.query(query, [userId, limit]);
-    return result.rows.map(row => this.mapToTemplate(row));
+    return result.rows.map((row) => this.mapToTemplate(row));
   }
 
   /**
@@ -275,11 +276,7 @@ export class TemplateRepository {
       ) VALUES (gen_random_uuid(), $1, $2, $3, CURRENT_TIMESTAMP)
     `;
 
-    await this.context.db.query(usageQuery, [
-      templateId,
-      userId,
-      JSON.stringify(context)
-    ]);
+    await this.context.db.query(usageQuery, [templateId, userId, JSON.stringify(context)]);
 
     // Update template analytics
     await this.updateUsageAnalytics(templateId);
@@ -314,7 +311,7 @@ export class TemplateRepository {
     // This would use AI/ML to suggest relevant templates
     // For now, return popular templates in related categories
     const relatedCategories = this.extractCategoriesFromContext(context);
-    
+
     if (relatedCategories.length === 0) {
       return this.getPopular(5);
     }
@@ -331,7 +328,7 @@ export class TemplateRepository {
     `;
 
     const result = await this.context.db.query(query, [relatedCategories]);
-    return result.rows.map(row => this.mapToTemplate(row));
+    return result.rows.map((row) => this.mapToTemplate(row));
   }
 
   /**
@@ -375,10 +372,10 @@ export class TemplateRepository {
           metadata: options.includeMetadata ? template.metadata : undefined,
           analytics: options.includeAnalytics ? template.analytics : undefined
         };
-      
+
       case 'markdown':
         return this.exportAsMarkdown(template, options);
-      
+
       default:
         throw new Error(`Export format ${options.format} not supported`);
     }
@@ -387,7 +384,11 @@ export class TemplateRepository {
   /**
    * Import template
    */
-  async import(data: any, options: TemplateImportOptions, userId: string): Promise<MnemosyneTemplate> {
+  async import(
+    data: any,
+    options: TemplateImportOptions,
+    userId: string
+  ): Promise<MnemosyneTemplate> {
     let templateData: any;
 
     switch (options.source) {
@@ -486,10 +487,9 @@ export class TemplateRepository {
 
   private async updateTemplateTags(templateId: string, tags: string[]): Promise<void> {
     // Delete existing tags
-    await this.context.db.query(
-      `DELETE FROM mnemosyne_template_tags WHERE template_id = $1`,
-      [templateId]
-    );
+    await this.context.db.query(`DELETE FROM mnemosyne_template_tags WHERE template_id = $1`, [
+      templateId
+    ]);
 
     // Insert new tags
     for (const tag of tags) {
@@ -541,29 +541,29 @@ export class TemplateRepository {
   private extractCategoriesFromContext(context: any): string[] {
     // Extract categories from context (simplified implementation)
     const categories = [];
-    
+
     if (context.documentType) {
       categories.push(context.documentType);
     }
-    
+
     if (context.project?.type) {
       categories.push(context.project.type);
     }
-    
+
     return categories;
   }
 
   private exportAsMarkdown(template: MnemosyneTemplate, options: TemplateExportOptions): string {
     let content = `# ${template.name}\n\n`;
-    
+
     if (options.includeMetadata) {
       content += `**Category:** ${template.metadata.category}\n`;
       content += `**Tags:** ${template.metadata.tags.join(', ')}\n`;
       content += `**Author:** ${template.metadata.author}\n\n`;
     }
-    
+
     content += template.content;
-    
+
     return content;
   }
 
@@ -571,7 +571,7 @@ export class TemplateRepository {
     // Basic markdown parsing (would be more sophisticated in practice)
     const lines = content.split('\n');
     const name = lines[0]?.replace(/^#+\s*/, '') || 'Imported Template';
-    
+
     return {
       name,
       content,
@@ -605,7 +605,7 @@ export class TemplateRepository {
       variables.add(variable);
     }
 
-    return Array.from(variables).map(name => ({
+    return Array.from(variables).map((name) => ({
       name,
       type: 'string' as const,
       description: `Variable extracted from template: ${name}`,

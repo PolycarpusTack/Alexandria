@@ -1,6 +1,6 @@
 /**
  * AI Service Test Suite
- * 
+ *
  * Comprehensive tests for the AI Service including:
  * - Service initialization and configuration
  * - Model management and switching
@@ -19,10 +19,10 @@ import { OpenAIService } from '../ai-service/openai-service';
 import { AnthropicService } from '../ai-service/anthropic-service';
 import { OllamaService } from '../ai-service/ollama-service';
 import { Logger } from '../../../utils/logger';
-import { 
-  AIProvider, 
-  AIRequest, 
-  AIResponse, 
+import {
+  AIProvider,
+  AIRequest,
+  AIResponse,
   ModelInfo,
   StreamingResponse,
   AIServiceConfig
@@ -46,7 +46,7 @@ describe('AI Service', () => {
         models: ['gpt-4', 'gpt-3.5-turbo'],
         defaultModel: 'gpt-4',
         maxTokens: 2048,
-        temperature: 0.7,
+        temperature: 0.7
       },
       anthropic: {
         apiKey: 'test-anthropic-key',
@@ -54,25 +54,25 @@ describe('AI Service', () => {
         models: ['claude-3-opus', 'claude-3-sonnet'],
         defaultModel: 'claude-3-opus',
         maxTokens: 4096,
-        temperature: 0.7,
+        temperature: 0.7
       },
       ollama: {
         baseURL: 'http://localhost:11434',
         models: ['llama2', 'mistral'],
         defaultModel: 'llama2',
         maxTokens: 2048,
-        temperature: 0.7,
-      },
+        temperature: 0.7
+      }
     },
     caching: {
       enabled: true,
       ttl: 3600,
-      maxSize: 1000,
+      maxSize: 1000
     },
     rateLimit: {
       requestsPerMinute: 60,
-      tokensPerMinute: 100000,
-    },
+      tokensPerMinute: 100000
+    }
   };
 
   beforeEach(() => {
@@ -84,7 +84,7 @@ describe('AI Service', () => {
       warn: jest.fn(),
       error: jest.fn(),
       debug: jest.fn(),
-      child: jest.fn().mockReturnThis(),
+      child: jest.fn().mockReturnThis()
     } as any;
 
     // Create AI service factory
@@ -100,7 +100,7 @@ describe('AI Service', () => {
           'AI Service Factory initialized',
           expect.objectContaining({
             providers: ['openai', 'anthropic', 'ollama'],
-            defaultProvider: 'openai',
+            defaultProvider: 'openai'
           })
         );
       });
@@ -111,9 +111,9 @@ describe('AI Service', () => {
           providers: {
             openai: {
               // Missing required fields
-              models: [],
-            },
-          },
+              models: []
+            }
+          }
         };
 
         expect(() => {
@@ -124,7 +124,7 @@ describe('AI Service', () => {
       it('should throw error if default provider not available', () => {
         const invalidConfig = {
           ...mockConfig,
-          defaultProvider: 'nonexistent' as AIProvider,
+          defaultProvider: 'nonexistent' as AIProvider
         };
 
         expect(() => {
@@ -140,7 +140,7 @@ describe('AI Service', () => {
 
       it('should create OpenAI service', () => {
         const service = aiServiceFactory.createService('openai');
-        
+
         expect(service).toBeInstanceOf(CachedAIService);
         expect(mockLogger.info).toHaveBeenCalledWith(
           'Created AI service',
@@ -150,19 +150,19 @@ describe('AI Service', () => {
 
       it('should create Anthropic service', () => {
         const service = aiServiceFactory.createService('anthropic');
-        
+
         expect(service).toBeInstanceOf(CachedAIService);
       });
 
       it('should create Ollama service', () => {
         const service = aiServiceFactory.createService('ollama');
-        
+
         expect(service).toBeInstanceOf(CachedAIService);
       });
 
       it('should return default service when no provider specified', () => {
         const service = aiServiceFactory.getDefaultService();
-        
+
         expect(service).toBeInstanceOf(CachedAIService);
       });
 
@@ -180,17 +180,17 @@ describe('AI Service', () => {
 
       it('should list available models', () => {
         const models = aiServiceFactory.getAvailableModels();
-        
+
         expect(models).toEqual({
           openai: ['gpt-4', 'gpt-3.5-turbo'],
           anthropic: ['claude-3-opus', 'claude-3-sonnet'],
-          ollama: ['llama2', 'mistral'],
+          ollama: ['llama2', 'mistral']
         });
       });
 
       it('should get models for specific provider', () => {
         const models = aiServiceFactory.getModelsForProvider('openai');
-        
+
         expect(models).toEqual(['gpt-4', 'gpt-3.5-turbo']);
       });
 
@@ -210,12 +210,12 @@ describe('AI Service', () => {
       mockOpenAI = {
         chat: {
           completions: {
-            create: jest.fn(),
-          },
+            create: jest.fn()
+          }
         },
         models: {
-          list: jest.fn(),
-        },
+          list: jest.fn()
+        }
       };
 
       // Mock the OpenAI constructor
@@ -232,28 +232,26 @@ describe('AI Service', () => {
             {
               message: {
                 content: 'This is a test response from OpenAI.',
-                role: 'assistant',
+                role: 'assistant'
               },
-              finish_reason: 'stop',
-            },
+              finish_reason: 'stop'
+            }
           ],
           usage: {
             prompt_tokens: 10,
             completion_tokens: 15,
-            total_tokens: 25,
+            total_tokens: 25
           },
-          model: 'gpt-4',
+          model: 'gpt-4'
         };
 
         mockOpenAI.chat.completions.create.mockResolvedValue(mockResponse);
 
         const request: AIRequest = {
-          messages: [
-            { role: 'user', content: 'Hello, how are you?' },
-          ],
+          messages: [{ role: 'user', content: 'Hello, how are you?' }],
           model: 'gpt-4',
           maxTokens: 100,
-          temperature: 0.7,
+          temperature: 0.7
         };
 
         const response = await openaiService.complete(request);
@@ -264,17 +262,17 @@ describe('AI Service', () => {
           usage: {
             promptTokens: 10,
             completionTokens: 15,
-            totalTokens: 25,
+            totalTokens: 25
           },
           model: 'gpt-4',
-          provider: 'openai',
+          provider: 'openai'
         });
 
         expect(mockOpenAI.chat.completions.create).toHaveBeenCalledWith({
           model: 'gpt-4',
           messages: request.messages,
           max_tokens: 100,
-          temperature: 0.7,
+          temperature: 0.7
         });
       });
 
@@ -284,16 +282,16 @@ describe('AI Service', () => {
 
         const request: AIRequest = {
           messages: [{ role: 'user', content: 'Test' }],
-          model: 'gpt-4',
+          model: 'gpt-4'
         };
 
         await expect(openaiService.complete(request)).rejects.toThrow('API rate limit exceeded');
-        
+
         expect(mockLogger.error).toHaveBeenCalledWith(
           'OpenAI completion failed',
           expect.objectContaining({
             error: apiError,
-            model: 'gpt-4',
+            model: 'gpt-4'
           })
         );
       });
@@ -301,18 +299,18 @@ describe('AI Service', () => {
       it('should use default model when not specified', async () => {
         mockOpenAI.chat.completions.create.mockResolvedValue({
           choices: [{ message: { content: 'Response', role: 'assistant' } }],
-          usage: { prompt_tokens: 5, completion_tokens: 5, total_tokens: 10 },
+          usage: { prompt_tokens: 5, completion_tokens: 5, total_tokens: 10 }
         });
 
         const request: AIRequest = {
-          messages: [{ role: 'user', content: 'Test' }],
+          messages: [{ role: 'user', content: 'Test' }]
         };
 
         await openaiService.complete(request);
 
         expect(mockOpenAI.chat.completions.create).toHaveBeenCalledWith(
           expect.objectContaining({
-            model: 'gpt-4', // Default model from config
+            model: 'gpt-4' // Default model from config
           })
         );
       });
@@ -326,19 +324,19 @@ describe('AI Service', () => {
               choices: [
                 {
                   delta: { content: 'Hello' },
-                  finish_reason: null,
-                },
-              ],
+                  finish_reason: null
+                }
+              ]
             };
             yield {
               choices: [
                 {
                   delta: { content: ' world!' },
-                  finish_reason: 'stop',
-                },
-              ],
+                  finish_reason: 'stop'
+                }
+              ]
             };
-          },
+          }
         };
 
         mockOpenAI.chat.completions.create.mockResolvedValue(mockStream);
@@ -346,7 +344,7 @@ describe('AI Service', () => {
         const request: AIRequest = {
           messages: [{ role: 'user', content: 'Say hello' }],
           model: 'gpt-4',
-          stream: true,
+          stream: true
         };
 
         const stream = await openaiService.stream(request);
@@ -365,7 +363,7 @@ describe('AI Service', () => {
 
         const request: AIRequest = {
           messages: [{ role: 'user', content: 'Test' }],
-          stream: true,
+          stream: true
         };
 
         await expect(openaiService.stream(request)).rejects.toThrow('Stream interrupted');
@@ -380,15 +378,15 @@ describe('AI Service', () => {
               id: 'gpt-4',
               object: 'model',
               created: 1677610602,
-              owned_by: 'openai',
+              owned_by: 'openai'
             },
             {
               id: 'gpt-3.5-turbo',
               object: 'model',
               created: 1677610602,
-              owned_by: 'openai',
-            },
-          ],
+              owned_by: 'openai'
+            }
+          ]
         };
 
         mockOpenAI.models.list.mockResolvedValue(mockModels);
@@ -402,7 +400,7 @@ describe('AI Service', () => {
             provider: 'openai',
             maxTokens: 8192,
             supportsStreaming: true,
-            capabilities: ['text-generation', 'chat'],
+            capabilities: ['text-generation', 'chat']
           },
           {
             id: 'gpt-3.5-turbo',
@@ -410,8 +408,8 @@ describe('AI Service', () => {
             provider: 'openai',
             maxTokens: 4096,
             supportsStreaming: true,
-            capabilities: ['text-generation', 'chat'],
-          },
+            capabilities: ['text-generation', 'chat']
+          }
         ]);
       });
     });
@@ -425,8 +423,8 @@ describe('AI Service', () => {
       mockAnthropic = {
         messages: {
           create: jest.fn(),
-          stream: jest.fn(),
-        },
+          stream: jest.fn()
+        }
       };
 
       const Anthropic = require('@anthropic-ai/sdk');
@@ -441,25 +439,23 @@ describe('AI Service', () => {
           content: [
             {
               type: 'text',
-              text: 'This is a response from Claude.',
-            },
+              text: 'This is a response from Claude.'
+            }
           ],
           stop_reason: 'end_turn',
           usage: {
             input_tokens: 12,
-            output_tokens: 18,
+            output_tokens: 18
           },
-          model: 'claude-3-opus',
+          model: 'claude-3-opus'
         };
 
         mockAnthropic.messages.create.mockResolvedValue(mockResponse);
 
         const request: AIRequest = {
-          messages: [
-            { role: 'user', content: 'Explain quantum computing' },
-          ],
+          messages: [{ role: 'user', content: 'Explain quantum computing' }],
           model: 'claude-3-opus',
-          maxTokens: 200,
+          maxTokens: 200
         };
 
         const response = await anthropicService.complete(request);
@@ -470,25 +466,25 @@ describe('AI Service', () => {
           usage: {
             promptTokens: 12,
             completionTokens: 18,
-            totalTokens: 30,
+            totalTokens: 30
           },
           model: 'claude-3-opus',
-          provider: 'anthropic',
+          provider: 'anthropic'
         });
       });
 
       it('should handle system messages correctly', async () => {
         mockAnthropic.messages.create.mockResolvedValue({
           content: [{ type: 'text', text: 'Response' }],
-          usage: { input_tokens: 5, output_tokens: 5 },
+          usage: { input_tokens: 5, output_tokens: 5 }
         });
 
         const request: AIRequest = {
           messages: [
             { role: 'system', content: 'You are a helpful assistant.' },
-            { role: 'user', content: 'Hello' },
+            { role: 'user', content: 'Hello' }
           ],
-          model: 'claude-3-opus',
+          model: 'claude-3-opus'
         };
 
         await anthropicService.complete(request);
@@ -497,9 +493,7 @@ describe('AI Service', () => {
           model: 'claude-3-opus',
           max_tokens: 4096,
           system: 'You are a helpful assistant.',
-          messages: [
-            { role: 'user', content: 'Hello' },
-          ],
+          messages: [{ role: 'user', content: 'Hello' }]
         });
       });
     });
@@ -510,23 +504,23 @@ describe('AI Service', () => {
           [Symbol.asyncIterator]: async function* () {
             yield {
               type: 'content_block_delta',
-              delta: { text: 'Streaming' },
+              delta: { text: 'Streaming' }
             };
             yield {
               type: 'content_block_delta',
-              delta: { text: ' response' },
+              delta: { text: ' response' }
             };
             yield {
-              type: 'message_stop',
+              type: 'message_stop'
             };
-          },
+          }
         };
 
         mockAnthropic.messages.stream.mockResolvedValue(mockStream);
 
         const request: AIRequest = {
           messages: [{ role: 'user', content: 'Stream a response' }],
-          stream: true,
+          stream: true
         };
 
         const stream = await anthropicService.stream(request);
@@ -548,7 +542,7 @@ describe('AI Service', () => {
     beforeEach(() => {
       mockAxios = {
         post: jest.fn(),
-        get: jest.fn(),
+        get: jest.fn()
       };
 
       const axios = require('axios');
@@ -568,17 +562,15 @@ describe('AI Service', () => {
             total_duration: 1000000000,
             load_duration: 100000000,
             prompt_eval_count: 10,
-            eval_count: 15,
-          },
+            eval_count: 15
+          }
         };
 
         mockAxios.post.mockResolvedValue(mockResponse);
 
         const request: AIRequest = {
-          messages: [
-            { role: 'user', content: 'Tell me about llamas' },
-          ],
-          model: 'llama2',
+          messages: [{ role: 'user', content: 'Tell me about llamas' }],
+          model: 'llama2'
         };
 
         const response = await ollamaService.complete(request);
@@ -589,16 +581,16 @@ describe('AI Service', () => {
           usage: {
             promptTokens: 10,
             completionTokens: 15,
-            totalTokens: 25,
+            totalTokens: 25
           },
           model: 'llama2',
-          provider: 'ollama',
+          provider: 'ollama'
         });
 
         expect(mockAxios.post).toHaveBeenCalledWith('/api/chat', {
           model: 'llama2',
           messages: request.messages,
-          stream: false,
+          stream: false
         });
       });
 
@@ -607,15 +599,15 @@ describe('AI Service', () => {
         mockAxios.post.mockRejectedValue(connectionError);
 
         const request: AIRequest = {
-          messages: [{ role: 'user', content: 'Test' }],
+          messages: [{ role: 'user', content: 'Test' }]
         };
 
         await expect(ollamaService.complete(request)).rejects.toThrow('ECONNREFUSED');
-        
+
         expect(mockLogger.error).toHaveBeenCalledWith(
           'Ollama completion failed',
           expect.objectContaining({
-            error: connectionError,
+            error: connectionError
           })
         );
       });
@@ -629,15 +621,15 @@ describe('AI Service', () => {
               {
                 name: 'llama2:latest',
                 modified_at: '2024-01-01T00:00:00Z',
-                size: 3826793677,
+                size: 3826793677
               },
               {
                 name: 'mistral:latest',
                 modified_at: '2024-01-01T00:00:00Z',
-                size: 4109856768,
-              },
-            ],
-          },
+                size: 4109856768
+              }
+            ]
+          }
         };
 
         mockAxios.get.mockResolvedValue(mockModelsResponse);
@@ -652,7 +644,7 @@ describe('AI Service', () => {
             maxTokens: 2048,
             supportsStreaming: true,
             capabilities: ['text-generation', 'chat'],
-            size: 3826793677,
+            size: 3826793677
           },
           {
             id: 'mistral:latest',
@@ -661,8 +653,8 @@ describe('AI Service', () => {
             maxTokens: 2048,
             supportsStreaming: true,
             capabilities: ['text-generation', 'chat'],
-            size: 4109856768,
-          },
+            size: 4109856768
+          }
         ]);
       });
     });
@@ -677,7 +669,7 @@ describe('AI Service', () => {
       mockBaseService = {
         complete: jest.fn(),
         stream: jest.fn(),
-        getModels: jest.fn(),
+        getModels: jest.fn()
       } as any;
 
       mockCache = {
@@ -686,7 +678,7 @@ describe('AI Service', () => {
         has: jest.fn(),
         delete: jest.fn(),
         clear: jest.fn(),
-        getStats: jest.fn(),
+        getStats: jest.fn()
       };
 
       cachedService = new CachedAIService(mockBaseService, mockCache, mockLogger);
@@ -696,7 +688,7 @@ describe('AI Service', () => {
       it('should cache successful completions', async () => {
         const request: AIRequest = {
           messages: [{ role: 'user', content: 'Hello' }],
-          model: 'gpt-4',
+          model: 'gpt-4'
         };
 
         const response: AIResponse = {
@@ -704,7 +696,7 @@ describe('AI Service', () => {
           finishReason: 'stop',
           usage: { promptTokens: 5, completionTokens: 10, totalTokens: 15 },
           model: 'gpt-4',
-          provider: 'openai',
+          provider: 'openai'
         };
 
         mockCache.has.mockReturnValue(false);
@@ -724,7 +716,7 @@ describe('AI Service', () => {
       it('should return cached responses', async () => {
         const request: AIRequest = {
           messages: [{ role: 'user', content: 'Hello' }],
-          model: 'gpt-4',
+          model: 'gpt-4'
         };
 
         const cachedResponse: AIResponse = {
@@ -732,7 +724,7 @@ describe('AI Service', () => {
           finishReason: 'stop',
           usage: { promptTokens: 5, completionTokens: 8, totalTokens: 13 },
           model: 'gpt-4',
-          provider: 'openai',
+          provider: 'openai'
         };
 
         mockCache.has.mockReturnValue(true);
@@ -751,13 +743,13 @@ describe('AI Service', () => {
       it('should not cache streaming requests', async () => {
         const request: AIRequest = {
           messages: [{ role: 'user', content: 'Stream this' }],
-          stream: true,
+          stream: true
         };
 
         const mockStream = {
           [Symbol.asyncIterator]: async function* () {
             yield { content: 'chunk', finishReason: null };
-          },
+          }
         };
 
         mockBaseService.stream.mockResolvedValue(mockStream as any);
@@ -772,13 +764,13 @@ describe('AI Service', () => {
         const request1: AIRequest = {
           messages: [{ role: 'user', content: 'Hello' }],
           model: 'gpt-4',
-          temperature: 0.7,
+          temperature: 0.7
         };
 
         const request2: AIRequest = {
           model: 'gpt-4',
           temperature: 0.7,
-          messages: [{ role: 'user', content: 'Hello' }],
+          messages: [{ role: 'user', content: 'Hello' }]
         };
 
         mockCache.has.mockReturnValue(false);
@@ -791,7 +783,7 @@ describe('AI Service', () => {
         // Both should generate the same cache key
         const call1Key = mockCache.set.mock.calls[0]?.[0];
         const call2Key = mockCache.set.mock.calls[1]?.[0];
-        
+
         expect(call1Key).toBeDefined();
         expect(call1Key).toBe(call2Key);
       });
@@ -803,7 +795,7 @@ describe('AI Service', () => {
           size: 100,
           hits: 50,
           misses: 25,
-          hitRate: 0.67,
+          hitRate: 0.67
         };
 
         mockCache.getStats.mockReturnValue(mockStats);
@@ -822,7 +814,7 @@ describe('AI Service', () => {
 
       it('should invalidate specific cache entries', () => {
         const pattern = 'gpt-4:*';
-        
+
         cachedService.invalidateCache(pattern);
 
         expect(mockCache.delete).toHaveBeenCalledWith(pattern);
@@ -838,19 +830,22 @@ describe('AI Service', () => {
       mockOpenAI = {
         chat: {
           completions: {
-            create: jest.fn(),
-          },
-        },
+            create: jest.fn()
+          }
+        }
       };
 
       const OpenAI = require('openai');
       OpenAI.mockImplementation(() => mockOpenAI);
 
-      service = new OpenAIService({
-        ...mockConfig.providers.openai,
-        retryAttempts: 3,
-        retryDelay: 100,
-      }, mockLogger);
+      service = new OpenAIService(
+        {
+          ...mockConfig.providers.openai,
+          retryAttempts: 3,
+          retryDelay: 100
+        },
+        mockLogger
+      );
     });
 
     it('should retry on rate limit errors', async () => {
@@ -862,11 +857,11 @@ describe('AI Service', () => {
         .mockRejectedValueOnce(rateLimitError)
         .mockResolvedValueOnce({
           choices: [{ message: { content: 'Success', role: 'assistant' } }],
-          usage: { prompt_tokens: 5, completion_tokens: 5, total_tokens: 10 },
+          usage: { prompt_tokens: 5, completion_tokens: 5, total_tokens: 10 }
         });
 
       const request: AIRequest = {
-        messages: [{ role: 'user', content: 'Test' }],
+        messages: [{ role: 'user', content: 'Test' }]
       };
 
       const response = await service.complete(request);
@@ -877,7 +872,7 @@ describe('AI Service', () => {
         'Retrying AI request',
         expect.objectContaining({
           attempt: expect.any(Number),
-          error: rateLimitError,
+          error: rateLimitError
         })
       );
     });
@@ -889,7 +884,7 @@ describe('AI Service', () => {
       mockOpenAI.chat.completions.create.mockRejectedValue(authError);
 
       const request: AIRequest = {
-        messages: [{ role: 'user', content: 'Test' }],
+        messages: [{ role: 'user', content: 'Test' }]
       };
 
       await expect(service.complete(request)).rejects.toThrow('Invalid API key');
@@ -903,7 +898,7 @@ describe('AI Service', () => {
       mockOpenAI.chat.completions.create.mockRejectedValue(serverError);
 
       const request: AIRequest = {
-        messages: [{ role: 'user', content: 'Test' }],
+        messages: [{ role: 'user', content: 'Test' }]
       };
 
       await expect(service.complete(request)).rejects.toThrow('Internal server error');
@@ -919,11 +914,11 @@ describe('AI Service', () => {
       mockRateLimiter = {
         checkLimit: jest.fn(),
         recordRequest: jest.fn(),
-        getRemainingQuota: jest.fn(),
+        getRemainingQuota: jest.fn()
       };
 
       const mockBaseService = {
-        complete: jest.fn(),
+        complete: jest.fn()
       } as any;
 
       service = new CachedAIService(mockBaseService, {}, mockLogger);
@@ -934,39 +929,36 @@ describe('AI Service', () => {
       mockRateLimiter.checkLimit.mockReturnValue(false);
 
       const request: AIRequest = {
-        messages: [{ role: 'user', content: 'Test' }],
+        messages: [{ role: 'user', content: 'Test' }]
       };
 
       await expect(service.complete(request)).rejects.toThrow('Rate limit exceeded');
-      
-      expect(mockLogger.warn).toHaveBeenCalledWith(
-        'Rate limit exceeded',
-        expect.any(Object)
-      );
+
+      expect(mockLogger.warn).toHaveBeenCalledWith('Rate limit exceeded', expect.any(Object));
     });
 
     it('should track token usage', async () => {
       mockRateLimiter.checkLimit.mockReturnValue(true);
-      
+
       const mockResponse: AIResponse = {
         content: 'Response',
         finishReason: 'stop',
         usage: { promptTokens: 10, completionTokens: 15, totalTokens: 25 },
         model: 'gpt-4',
-        provider: 'openai',
+        provider: 'openai'
       };
 
       (service as any).baseService.complete.mockResolvedValue(mockResponse);
 
       const request: AIRequest = {
-        messages: [{ role: 'user', content: 'Test' }],
+        messages: [{ role: 'user', content: 'Test' }]
       };
 
       await service.complete(request);
 
       expect(mockRateLimiter.recordRequest).toHaveBeenCalledWith({
         tokens: 25,
-        timestamp: expect.any(Date),
+        timestamp: expect.any(Date)
       });
     });
   });
@@ -990,7 +982,7 @@ describe('AI Service', () => {
       const anthropicService = aiServiceFactory.createService('anthropic');
 
       openaiService.clearCache();
-      
+
       // Should not affect Anthropic cache
       expect(mockLogger.info).toHaveBeenCalledWith('AI service cache cleared');
     });
@@ -1004,12 +996,12 @@ describe('AI Service', () => {
         caching: {
           enabled: true,
           ttl: 3600,
-          maxSize: 1000,
+          maxSize: 1000
         },
         rateLimit: {
           requestsPerMinute: 60,
-          tokensPerMinute: 100000,
-        },
+          tokensPerMinute: 100000
+        }
       });
     });
   });

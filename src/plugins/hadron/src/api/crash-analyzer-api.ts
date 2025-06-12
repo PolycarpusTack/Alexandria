@@ -22,7 +22,7 @@ export function createCrashAnalyzerRouter(
     try {
       const userId = (req as IAuthenticatedRequest).user?.id || 'demo-user';
       const logs = await crashRepository.findByUserId(userId);
-      
+
       res.json(logs);
     } catch (error) {
       logger.error('Failed to fetch crash logs', { error });
@@ -38,11 +38,11 @@ export function createCrashAnalyzerRouter(
     try {
       const { id } = req.params;
       const log = await crashRepository.findById(id);
-      
+
       if (!log) {
         return res.status(404).json({ error: 'Crash log not found' });
       }
-      
+
       res.json(log);
     } catch (error) {
       logger.error('Failed to fetch crash log', { error, id: req.params.id });
@@ -58,18 +58,18 @@ export function createCrashAnalyzerRouter(
     try {
       const { logId, content, metadata } = req.body;
       const userId = (req as IAuthenticatedRequest).user?.id || 'demo-user';
-      
+
       if (!content) {
         return res.status(400).json({ error: 'Content is required' });
       }
-      
+
       // Analyze the log using the crash analyzer service
       const analysis = await crashAnalyzerService.analyzeLog(logId, content, {
         ...metadata,
         userId,
         uploadedAt: new Date()
       });
-      
+
       res.json(analysis);
     } catch (error) {
       logger.error('Failed to analyze crash log', { error });
@@ -84,17 +84,17 @@ export function createCrashAnalyzerRouter(
   router.post('/upload', async (req: Request, res: Response) => {
     try {
       const userId = (req as IAuthenticatedRequest).user?.id || 'demo-user';
-      
+
       // This endpoint would handle file uploads via multer
       // For now, we'll handle text content directly
       const { content, fileName, metadata } = req.body;
-      
+
       if (!content) {
         return res.status(400).json({ error: 'Content is required' });
       }
-      
+
       const logId = `log_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-      
+
       // Store the log
       const crashLog = await crashRepository.create({
         id: logId,
@@ -107,10 +107,10 @@ export function createCrashAnalyzerRouter(
           uploadedAt: new Date()
         }
       });
-      
+
       // Analyze it
       const analysis = await crashAnalyzerService.analyzeLog(logId, content, metadata);
-      
+
       res.json({
         ...crashLog,
         analysis
@@ -129,17 +129,17 @@ export function createCrashAnalyzerRouter(
     try {
       const { id } = req.params;
       const userId = (req as IAuthenticatedRequest).user?.id || 'demo-user';
-      
+
       // Verify ownership
       const log = await crashRepository.findById(id);
       if (!log) {
         return res.status(404).json({ error: 'Crash log not found' });
       }
-      
+
       if (log.userId !== userId) {
         return res.status(403).json({ error: 'Unauthorized' });
       }
-      
+
       await crashRepository.delete(id);
       res.json({ success: true });
     } catch (error) {

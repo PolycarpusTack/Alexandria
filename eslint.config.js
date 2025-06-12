@@ -1,11 +1,7 @@
-const js = require('@eslint/js');
-const typescript = require('@typescript-eslint/eslint-plugin');
-const typescriptParser = require('@typescript-eslint/parser');
-const react = require('eslint-plugin-react');
-const reactHooks = require('eslint-plugin-react-hooks');
+const typescriptEslint = require('@typescript-eslint/eslint-plugin/dist/index.js');
+const typescriptParser = require('@typescript-eslint/parser/dist/index.js');
 
 module.exports = [
-  js.configs.recommended,
   {
     files: ['**/*.{ts,tsx}'],
     languageOptions: {
@@ -32,38 +28,56 @@ module.exports = [
         clearInterval: 'readonly',
         Promise: 'readonly',
         JSON: 'readonly',
-        Uint8Array: 'readonly'
+        Uint8Array: 'readonly',
+        window: 'readonly',
+        document: 'readonly',
+        localStorage: 'readonly',
+        sessionStorage: 'readonly',
+        fetch: 'readonly',
+        URL: 'readonly',
+        URLSearchParams: 'readonly',
+        FormData: 'readonly',
+        Event: 'readonly',
+        EventTarget: 'readonly',
+        Element: 'readonly',
+        HTMLElement: 'readonly',
+        Node: 'readonly',
+        React: 'readonly'
       }
     },
     plugins: {
-      '@typescript-eslint': typescript,
-      'react': react,
-      'react-hooks': reactHooks
+      '@typescript-eslint': typescriptEslint
     },
     rules: {
       // TypeScript rules
-      '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }],
-      '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/explicit-module-boundary-types': 'off',
-      '@typescript-eslint/no-non-null-assertion': 'warn',
-      
-      // React rules
-      'react/react-in-jsx-scope': 'off',
-      'react/prop-types': 'off',
-      'react-hooks/rules-of-hooks': 'error',
-      'react-hooks/exhaustive-deps': 'warn',
+      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
+      '@typescript-eslint/no-explicit-any': 'error',
+      '@typescript-eslint/explicit-function-return-type': ['error', { allowExpressions: true }],
+      '@typescript-eslint/explicit-module-boundary-types': 'error',
+      '@typescript-eslint/no-non-null-assertion': 'error',
+      '@typescript-eslint/prefer-const': 'error',
+      '@typescript-eslint/no-inferrable-types': 'error',
+      '@typescript-eslint/consistent-type-definitions': ['error', 'interface'],
       
       // General rules
-      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      'no-console': ['error', { allow: ['warn', 'error'] }],
       'no-unused-vars': 'off', // Use TypeScript's version
       'no-undef': 'off', // TypeScript handles this
       'no-redeclare': 'off',
-      'no-dupe-class-members': 'off'
-    },
-    settings: {
-      react: {
-        version: 'detect'
-      }
+      'no-dupe-class-members': 'off',
+      'no-var': 'error',
+      'prefer-const': 'error',
+      'eqeqeq': ['error', 'always'],
+      'curly': ['error', 'all'],
+      'no-eval': 'error',
+      'no-implied-eval': 'error',
+      'no-new-func': 'error',
+      'no-trailing-spaces': 'error',
+      'no-multiple-empty-lines': ['error', { max: 1 }],
+      'eol-last': 'error',
+      'comma-dangle': ['error', 'never'],
+      'semi': ['error', 'always'],
+      'quotes': ['error', 'single', { avoidEscape: true }]
     }
   },
   {

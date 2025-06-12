@@ -4,12 +4,12 @@
 
 export type AlertSeverity = 'critical' | 'warning' | 'info';
 export type AlertChannel = 'email' | 'slack' | 'webhook' | 'pagerduty' | 'in_app';
-export type ComparisonOperator = 
-  | 'greater_than' 
+export type ComparisonOperator =
+  | 'greater_than'
   | 'greater_than_or_equal'
-  | 'less_than' 
+  | 'less_than'
   | 'less_than_or_equal'
-  | 'equal' 
+  | 'equal'
   | 'not_equal';
 
 export interface AlertCondition {
@@ -97,7 +97,7 @@ export interface IAlertService {
   deleteRule(ruleId: string): void;
   getRules(): AlertRule[];
   getRule(ruleId: string): AlertRule | undefined;
-  
+
   // Alert management
   getActiveAlerts(): AlertEvent[];
   getAlertHistory(options?: {
@@ -108,11 +108,11 @@ export interface IAlertService {
   }): AlertEvent[];
   acknowledgeAlert(alertId: string, acknowledgedBy: string): void;
   resolveAlert(alertId: string, resolvedBy: string, resolution?: string): void;
-  
+
   // Monitoring
   checkAlerts(): Promise<void>;
   getMetrics(): AlertMetrics;
-  
+
   // Configuration
   updateConfiguration(config: Partial<AlertConfiguration>): void;
   getConfiguration(): AlertConfiguration;

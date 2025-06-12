@@ -1,6 +1,6 @@
 /**
  * useLayoutState Hook Test Suite
- * 
+ *
  * Comprehensive tests for the useLayoutState custom hook including:
  * - State management and persistence
  * - Responsive layout handling
@@ -19,7 +19,7 @@ import { useLayoutState } from '../useLayoutState';
 // Mock localStorage
 const mockLocalStorage = (() => {
   let store: Record<string, string> = {};
-  
+
   return {
     getItem: jest.fn((key: string) => store[key] || null),
     setItem: jest.fn((key: string, value: string) => {
@@ -30,16 +30,16 @@ const mockLocalStorage = (() => {
     }),
     clear: jest.fn(() => {
       store = {};
-    }),
+    })
   };
 })();
 
 Object.defineProperty(window, 'localStorage', {
-  value: mockLocalStorage,
+  value: mockLocalStorage
 });
 
 // Mock window.matchMedia for responsive tests
-const mockMatchMedia = jest.fn().mockImplementation(query => ({
+const mockMatchMedia = jest.fn().mockImplementation((query) => ({
   matches: false,
   media: query,
   onchange: null,
@@ -47,12 +47,12 @@ const mockMatchMedia = jest.fn().mockImplementation(query => ({
   removeListener: jest.fn(),
   addEventListener: jest.fn(),
   removeEventListener: jest.fn(),
-  dispatchEvent: jest.fn(),
+  dispatchEvent: jest.fn()
 }));
 
 Object.defineProperty(window, 'matchMedia', {
   writable: true,
-  value: mockMatchMedia,
+  value: mockMatchMedia
 });
 
 // Mock ResizeObserver
@@ -60,7 +60,7 @@ const mockResizeObserver = jest.fn();
 mockResizeObserver.mockReturnValue({
   observe: jest.fn(),
   unobserve: jest.fn(),
-  disconnect: jest.fn(),
+  disconnect: jest.fn()
 });
 global.ResizeObserver = mockResizeObserver;
 
@@ -89,7 +89,7 @@ describe('useLayoutState', () => {
         sidebarOpen: true,
         sidebarWidth: 320,
         theme: 'dark',
-        isCollapsed: true,
+        isCollapsed: true
       };
 
       mockLocalStorage.getItem.mockReturnValue(JSON.stringify(savedState));
@@ -113,7 +113,7 @@ describe('useLayoutState', () => {
     });
 
     it('should detect mobile breakpoint on initialization', () => {
-      mockMatchMedia.mockImplementation(query => ({
+      mockMatchMedia.mockImplementation((query) => ({
         matches: query === '(max-width: 768px)',
         media: query,
         onchange: null,
@@ -121,7 +121,7 @@ describe('useLayoutState', () => {
         removeListener: jest.fn(),
         addEventListener: jest.fn(),
         removeEventListener: jest.fn(),
-        dispatchEvent: jest.fn(),
+        dispatchEvent: jest.fn()
       }));
 
       const { result } = renderHook(() => useLayoutState());
@@ -184,7 +184,7 @@ describe('useLayoutState', () => {
     });
 
     it('should auto-close sidebar on mobile when opened', () => {
-      mockMatchMedia.mockImplementation(query => ({
+      mockMatchMedia.mockImplementation((query) => ({
         matches: query === '(max-width: 768px)',
         media: query,
         onchange: null,
@@ -192,7 +192,7 @@ describe('useLayoutState', () => {
         removeListener: jest.fn(),
         addEventListener: jest.fn(),
         removeEventListener: jest.fn(),
-        dispatchEvent: jest.fn(),
+        dispatchEvent: jest.fn()
       }));
 
       const { result } = renderHook(() => useLayoutState());
@@ -252,7 +252,7 @@ describe('useLayoutState', () => {
     });
 
     it('should detect system theme preference', () => {
-      mockMatchMedia.mockImplementation(query => ({
+      mockMatchMedia.mockImplementation((query) => ({
         matches: query === '(prefers-color-scheme: dark)',
         media: query,
         onchange: null,
@@ -260,7 +260,7 @@ describe('useLayoutState', () => {
         removeListener: jest.fn(),
         addEventListener: jest.fn(),
         removeEventListener: jest.fn(),
-        dispatchEvent: jest.fn(),
+        dispatchEvent: jest.fn()
       }));
 
       const { result } = renderHook(() => useLayoutState({ useSystemTheme: true }));
@@ -272,8 +272,8 @@ describe('useLayoutState', () => {
   describe('Responsive Behavior', () => {
     it('should detect breakpoint changes', () => {
       let mediaListener: ((e: any) => void) | null = null;
-      
-      mockMatchMedia.mockImplementation(query => ({
+
+      mockMatchMedia.mockImplementation((query) => ({
         matches: query === '(max-width: 768px)',
         media: query,
         onchange: null,
@@ -285,7 +285,7 @@ describe('useLayoutState', () => {
           }
         }),
         removeEventListener: jest.fn(),
-        dispatchEvent: jest.fn(),
+        dispatchEvent: jest.fn()
       }));
 
       const { result } = renderHook(() => useLayoutState());
@@ -304,10 +304,27 @@ describe('useLayoutState', () => {
     });
 
     it('should handle tablet breakpoint', () => {
-      mockMatchMedia.mockImplementation(query => {
-        if (query === '(max-width: 1024px)') return { matches: true, media: query, addEventListener: jest.fn(), removeEventListener: jest.fn() };
-        if (query === '(max-width: 768px)') return { matches: false, media: query, addEventListener: jest.fn(), removeEventListener: jest.fn() };
-        return { matches: false, media: query, addEventListener: jest.fn(), removeEventListener: jest.fn() };
+      mockMatchMedia.mockImplementation((query) => {
+        if (query === '(max-width: 1024px)')
+          return {
+            matches: true,
+            media: query,
+            addEventListener: jest.fn(),
+            removeEventListener: jest.fn()
+          };
+        if (query === '(max-width: 768px)')
+          return {
+            matches: false,
+            media: query,
+            addEventListener: jest.fn(),
+            removeEventListener: jest.fn()
+          };
+        return {
+          matches: false,
+          media: query,
+          addEventListener: jest.fn(),
+          removeEventListener: jest.fn()
+        };
       });
 
       const { result } = renderHook(() => useLayoutState());
@@ -318,11 +335,11 @@ describe('useLayoutState', () => {
     });
 
     it('should adjust layout for mobile automatically', () => {
-      mockMatchMedia.mockImplementation(query => ({
+      mockMatchMedia.mockImplementation((query) => ({
         matches: query === '(max-width: 768px)',
         media: query,
         addEventListener: jest.fn(),
-        removeEventListener: jest.fn(),
+        removeEventListener: jest.fn()
       }));
 
       const { result } = renderHook(() => useLayoutState());
@@ -367,8 +384,8 @@ describe('useLayoutState', () => {
       });
 
       // Should debounce and only write once
-      await new Promise(resolve => setTimeout(resolve, 300));
-      
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
       expect(mockLocalStorage.setItem).toHaveBeenCalledTimes(1);
     });
 
@@ -392,12 +409,12 @@ describe('useLayoutState', () => {
       const { result, rerender } = renderHook(() => useLayoutState());
 
       const firstEffectiveWidth = result.current.effectiveSidebarWidth;
-      
+
       // Rerender without state changes
       rerender();
-      
+
       const secondEffectiveWidth = result.current.effectiveSidebarWidth;
-      
+
       // Should be the same object reference (memoized)
       expect(firstEffectiveWidth).toBe(secondEffectiveWidth);
     });
@@ -417,12 +434,12 @@ describe('useLayoutState', () => {
 
     it('should cleanup event listeners on unmount', () => {
       const removeEventListener = jest.fn();
-      
-      mockMatchMedia.mockImplementation(query => ({
+
+      mockMatchMedia.mockImplementation((query) => ({
         matches: false,
         media: query,
         addEventListener: jest.fn(),
-        removeEventListener,
+        removeEventListener
       }));
 
       const { unmount } = renderHook(() => useLayoutState());
@@ -435,9 +452,7 @@ describe('useLayoutState', () => {
 
   describe('Advanced Features', () => {
     it('should support custom sidebar positions', () => {
-      const { result } = renderHook(() => 
-        useLayoutState({ defaultSidebarPosition: 'right' })
-      );
+      const { result } = renderHook(() => useLayoutState({ defaultSidebarPosition: 'right' }));
 
       expect(result.current.sidebarPosition).toBe('right');
     });
@@ -509,7 +524,7 @@ describe('useLayoutState', () => {
 
     it('should handle missing localStorage gracefully', () => {
       Object.defineProperty(window, 'localStorage', {
-        value: undefined,
+        value: undefined
       });
 
       const { result } = renderHook(() => useLayoutState());

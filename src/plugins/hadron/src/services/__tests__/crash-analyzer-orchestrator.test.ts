@@ -1,13 +1,19 @@
 /**
  * Comprehensive test suite for CrashAnalyzerOrchestrator
- * 
+ *
  * Tests cover orchestration of crash analysis operations,
  * delegation to services, and error handling
  */
 
 import { CrashAnalyzerOrchestrator } from '../crash-analyzer-orchestrator';
 import { Logger } from '../../../../../utils/logger';
-import { ILogParser, ICrashRepository, ParsedCrashData, CrashLog, CrashAnalysisResult } from '../../interfaces';
+import {
+  ILogParser,
+  ICrashRepository,
+  ParsedCrashData,
+  CrashLog,
+  CrashAnalysisResult
+} from '../../interfaces';
 import { FileUploadService } from '../file-upload-service';
 import { LLMAnalysisService } from '../llm-analysis-service';
 import { SessionManagementService } from '../session-management-service';
@@ -125,7 +131,7 @@ describe('CrashAnalyzerOrchestrator', () => {
     } as any;
 
     mockFileSecurityService = {
-      scanFile: jest.fn().mockResolvedValue({ 
+      scanFile: jest.fn().mockResolvedValue({
         fileId: 'file-123',
         riskLevel: 'low',
         detectedThreats: []
@@ -193,13 +199,7 @@ describe('CrashAnalyzerOrchestrator', () => {
         detectedThreats: ['malware', 'suspicious-pattern']
       } as FileScanResult);
 
-      await orchestrator.processFileUpload(
-        buffer,
-        fileName,
-        mimeType,
-        userId,
-        sessionId
-      );
+      await orchestrator.processFileUpload(buffer, fileName, mimeType, userId, sessionId);
 
       expect(mockLogger.warn).toHaveBeenCalledWith(
         'Security scan detected high risk file:',
@@ -291,31 +291,31 @@ describe('CrashAnalyzerOrchestrator', () => {
     });
 
     it('should throw error for missing inputs', async () => {
-      await expect(
-        orchestrator.analyzeLog('', content, metadata)
-      ).rejects.toThrow('Log ID, content, and metadata are required');
+      await expect(orchestrator.analyzeLog('', content, metadata)).rejects.toThrow(
+        'Log ID, content, and metadata are required'
+      );
 
-      await expect(
-        orchestrator.analyzeLog(logId, '', metadata)
-      ).rejects.toThrow('Log ID, content, and metadata are required');
+      await expect(orchestrator.analyzeLog(logId, '', metadata)).rejects.toThrow(
+        'Log ID, content, and metadata are required'
+      );
 
-      await expect(
-        orchestrator.analyzeLog(logId, content, null)
-      ).rejects.toThrow('Log ID, content, and metadata are required');
+      await expect(orchestrator.analyzeLog(logId, content, null)).rejects.toThrow(
+        'Log ID, content, and metadata are required'
+      );
     });
 
     it('should throw error for missing sessionId', async () => {
-      await expect(
-        orchestrator.analyzeLog(logId, content, { userId: 'user-123' })
-      ).rejects.toThrow('Session ID is required in metadata');
+      await expect(orchestrator.analyzeLog(logId, content, { userId: 'user-123' })).rejects.toThrow(
+        'Session ID is required in metadata'
+      );
     });
 
     it('should throw error when session not found', async () => {
       mockSessionManager.getSession.mockResolvedValueOnce(null);
 
-      await expect(
-        orchestrator.analyzeLog(logId, content, metadata)
-      ).rejects.toThrow('Session not found: session-123');
+      await expect(orchestrator.analyzeLog(logId, content, metadata)).rejects.toThrow(
+        'Session not found: session-123'
+      );
     });
 
     it('should handle parsing errors gracefully', async () => {
@@ -348,14 +348,11 @@ describe('CrashAnalyzerOrchestrator', () => {
       const analysisError = new Error('Analysis failed');
       mockLLMAnalysisService.analyzeCrashLog.mockRejectedValueOnce(analysisError);
 
-      await expect(
-        orchestrator.analyzeLog(logId, content, metadata)
-      ).rejects.toThrow(analysisError);
-
-      expect(mockSessionManager.failSession).toHaveBeenCalledWith(
-        'session-123',
-        'Analysis failed'
+      await expect(orchestrator.analyzeLog(logId, content, metadata)).rejects.toThrow(
+        analysisError
       );
+
+      expect(mockSessionManager.failSession).toHaveBeenCalledWith('session-123', 'Analysis failed');
       expect(mockLogger.error).toHaveBeenCalledWith(
         `Error analyzing log: ${logId}`,
         expect.objectContaining({
@@ -369,9 +366,9 @@ describe('CrashAnalyzerOrchestrator', () => {
       const analysisError = new Error('Analysis failed');
       mockLLMAnalysisService.analyzeCrashLog.mockRejectedValueOnce(analysisError);
 
-      await expect(
-        orchestrator.analyzeLog(logId, content, metadata)
-      ).rejects.toThrow(analysisError);
+      await expect(orchestrator.analyzeLog(logId, content, metadata)).rejects.toThrow(
+        analysisError
+      );
 
       // Should save crash log with error metadata
       const savedCrashLog = mockCrashRepository.saveCrashLog.mock.calls[1][0];
@@ -384,7 +381,7 @@ describe('CrashAnalyzerOrchestrator', () => {
 
     it('should generate title from error pattern', async () => {
       const errorContent = 'FATAL Error in module.function: Out of memory exception';
-      
+
       await orchestrator.analyzeLog(logId, errorContent, metadata);
 
       const savedCrashLog = mockCrashRepository.saveCrashLog.mock.calls[0][0];
@@ -393,7 +390,7 @@ describe('CrashAnalyzerOrchestrator', () => {
 
     it('should generate fallback title when no error pattern', async () => {
       const simpleContent = 'Just some log content without errors';
-      
+
       await orchestrator.analyzeLog(logId, simpleContent, metadata);
 
       const savedCrashLog = mockCrashRepository.saveCrashLog.mock.calls[0][0];
@@ -402,7 +399,7 @@ describe('CrashAnalyzerOrchestrator', () => {
 
     it('should use provided title from metadata', async () => {
       const metadataWithTitle = { ...metadata, title: 'Custom Title' };
-      
+
       await orchestrator.analyzeLog(logId, content, metadataWithTitle);
 
       const savedCrashLog = mockCrashRepository.saveCrashLog.mock.calls[0][0];
@@ -462,9 +459,9 @@ describe('CrashAnalyzerOrchestrator', () => {
         mockLogger
       );
 
-      await expect(
-        orchestratorNoSecurity.scanFileForSecurityIssues('file-123')
-      ).rejects.toThrow('File security service not initialized');
+      await expect(orchestratorNoSecurity.scanFileForSecurityIssues('file-123')).rejects.toThrow(
+        'File security service not initialized'
+      );
     });
   });
 

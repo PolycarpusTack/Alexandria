@@ -2,7 +2,11 @@
  * Alfred Plugin - AI-powered coding assistant
  */
 
-import { PluginLifecycle, PluginContext, PluginAPI } from '../../../core/plugin-registry/interfaces';
+import {
+  PluginLifecycle,
+  PluginContext,
+  PluginAPI
+} from '../../../core/plugin-registry/interfaces';
 import { AlfredService } from './services/alfred-service';
 import { StreamingService } from './services/streaming-service';
 import { AlfredAIAdapter } from './services/alfred-ai-adapter';
@@ -29,26 +33,26 @@ export class AlfredPlugin implements PluginLifecycle {
 
   async onActivate(context: PluginContext): Promise<void> {
     const { logger, eventBus, data, ui } = context.services;
-    
+
     // Get AI and Storage services from core
     const aiService = (context.services as any).aiService;
     const storageService = (context.services as any).storageService;
-    
+
     logger.info('Activating Alfred plugin');
-    
+
     // Get collection-based data service adapter
     const collectionService = await AlfredDataServiceAdapter.getInstance(data, logger);
-    
+
     // Initialize repositories with collection service
     this.sessionRepository = new SessionRepository(collectionService, logger);
     this.templateRepository = new TemplateRepository(collectionService, logger);
-    
+
     // Initialize AI adapter
     this.aiAdapter = new AlfredAIAdapter({
       aiService,
       logger
     });
-    
+
     // Initialize services
     this.alfredService = new AlfredService({
       logger,
@@ -58,33 +62,30 @@ export class AlfredPlugin implements PluginLifecycle {
       storageService,
       sessionRepository: this.sessionRepository
     });
-    
+
     this.streamingService = new StreamingService(logger, this.aiAdapter);
-    
+
     this.projectAnalyzer = new ProjectAnalyzerService(logger, eventBus, storageService);
-    
+
     this.codeGenerator = new CodeGeneratorService(logger, eventBus);
-    
+
     this.templateManager = new TemplateManagerService(logger, this.templateRepository, eventBus);
-    
+
     // Register API routes
-    const api = context.api as PluginAPI & { registerRouter?: (path: string, router: Router) => void };
+    const api = context.api as PluginAPI & {
+      registerRouter?: (path: string, router: Router) => void;
+    };
     if (api?.registerRouter) {
-      const alfredRouter = createAlfredRouter(
-        this.alfredService,
-        this.streamingService,
-        logger
-      );
+      const alfredRouter = createAlfredRouter(this.alfredService, this.streamingService, logger);
       api.registerRouter('/alfred', alfredRouter);
     } else {
       // Fallback: register routes directly
-      context.api.registerRoute('/alfred/*', createAlfredRouter(
-        this.alfredService,
-        this.streamingService,
-        logger
-      ));
+      context.api.registerRoute(
+        '/alfred/*',
+        createAlfredRouter(this.alfredService, this.streamingService, logger)
+      );
     }
-    
+
     // Make services available globally for UI components
     if (typeof window !== 'undefined') {
       (window as any).alfred = {
@@ -97,18 +98,24 @@ export class AlfredPlugin implements PluginLifecycle {
         }
       };
     }
-    
+
     // Subscribe to events
-    eventBus.on('alfred:request:code', async (data: any) => {
-      const response = await this.alfredService?.generateCode(data);
-      eventBus.emit('alfred:response:code', response);
-    });
-    
-    eventBus.on('alfred:request:analyze', async (data: any) => {
-      const response = await this.alfredService?.analyzeProject(data.projectPath);
-      eventBus.emit('alfred:response:analyze', response);
-    });
-    
+    eventBus.subscribe(
+      'alfred:request:code',
+      async (event: { topic: string; data: { template: string; context: Record<string, unknown> }; timestamp: Date; source?: string }) => {
+        const response = await this.alfredService?.generateCode(event.data);
+        eventBus.publish('alfred:response:code', { response });
+      }
+    );
+
+    eventBus.subscribe(
+      'alfred:request:analyze',
+      async (event: { topic: string; data: { projectPath: string; options?: Record<string, unknown> }; timestamp: Date; source?: string }) => {
+        const response = await this.alfredService?.analyzeProject(event.data.projectPath);
+        eventBus.publish('alfred:response:analyze', { response });
+      }
+    );
+
     logger.info('Alfred plugin activated successfully');
   }
 
@@ -117,12 +124,12 @@ export class AlfredPlugin implements PluginLifecycle {
     if (this.streamingService) {
       this.streamingService.cancelAllStreams();
     }
-    
+
     // Shutdown services
     if (this.alfredService) {
       await (this.alfredService as any).shutdown();
     }
-    
+
     // Clean up event listeners
     this.streamingService?.removeAllListeners();
     this.alfredService?.removeAllListeners();
@@ -130,17 +137,13 @@ export class AlfredPlugin implements PluginLifecycle {
 
   async onInstall(): Promise<void> {
     // Setup required directories, configs, etc.
-
   }
 
   async onUninstall(): Promise<void> {
     // Cleanup plugin data
-
   }
 
-  async onUpdate(fromVersion: string, toVersion: string): Promise<void> {
-
-  }
+  async onUpdate(fromVersion: string, toVersion: string): Promise<void> {}
 }
 
 // Export the plugin instance

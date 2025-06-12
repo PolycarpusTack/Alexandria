@@ -1,4 +1,4 @@
-import axios from 'axios';
+import axios, { AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
 
 /**
  * Create an Axios instance with common configuration
@@ -7,53 +7,52 @@ const apiClient = axios.create({
   baseURL: '/api',
   timeout: 30000, // 30 seconds
   headers: {
-    'Content-Type': 'application/json',
-  },
+    'Content-Type': 'application/json'
+  }
 });
 
 // Request interceptor for API calls
 apiClient.interceptors.request.use(
-  async (config: any) => {
+  async (config: AxiosRequestConfig) => {
     // Add auth token if available
     const token = localStorage.getItem('auth_token');
-    if (token) {
-      config.headers = config.headers || {};
+    if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error: any) => {
+  (error: AxiosError) => {
     return Promise.reject(error);
   }
 );
 
 // Response interceptor for API calls
 apiClient.interceptors.response.use(
-  (response: any) => {
+  (response: AxiosResponse) => {
     return response;
   },
-  async (error: any) => {
+  async (error: AxiosError) => {
     const originalRequest = error.config;
-    
+
     // Handle token refresh or other error handling logic here
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
-      
+
       // Example: Attempt to refresh token
       try {
         const refreshToken = localStorage.getItem('refresh_token');
         if (refreshToken) {
           const response = await apiClient.post('/api/auth/refresh', {
-            refresh_token: refreshToken,
+            refresh_token: refreshToken
           });
-          
+
           if (response.data.token) {
             localStorage.setItem('auth_token', response.data.token);
             apiClient.defaults.headers.common['Authorization'] = `Bearer ${response.data.token}`;
             return apiClient(originalRequest);
           }
         }
-        
+
         // If we reach here, we couldn't refresh the token, so we should logout
         // This would typically be handled by a central auth service
         localStorage.removeItem('auth_token');
@@ -63,7 +62,7 @@ apiClient.interceptors.response.use(
         return Promise.reject(error);
       }
     }
-    
+
     return Promise.reject(error);
   }
 );

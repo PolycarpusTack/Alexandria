@@ -145,11 +145,13 @@ export class ErrorHandler {
       if (error.message.includes('timeout')) {
         return new TimeoutError(error.message);
       }
-      
+
       return new HeimdallError(error.message);
     }
 
-    return new HeimdallError(defaultMessage, ERROR_CODES.UNKNOWN_ERROR, 500, { originalError: error });
+    return new HeimdallError(defaultMessage, ERROR_CODES.UNKNOWN_ERROR, 500, {
+      originalError: error
+    });
   }
 
   /**

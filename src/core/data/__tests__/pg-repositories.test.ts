@@ -1,18 +1,18 @@
 /**
  * Comprehensive Test Suite for PostgreSQL Repository Implementations
- * 
+ *
  * This test suite provides complete coverage for all PostgreSQL repository classes:
  * - BaseRepository
  * - PgUserRepository
- * - PgCaseRepository  
+ * - PgCaseRepository
  * - PgLogEntryRepository
  * - PgPluginStorageRepository
- * 
+ *
  * Tests include CRUD operations, data mapping, query handling, error scenarios,
  * and performance characteristics.
  */
 
-import { 
+import {
   BaseRepository,
   PgUserRepository,
   PgCaseRepository,
@@ -34,7 +34,7 @@ describe('PostgreSQL Repository Implementations', () => {
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     // Setup logger mock
     mockLogger = {
       info: jest.fn(),
@@ -43,7 +43,7 @@ describe('PostgreSQL Repository Implementations', () => {
       error: jest.fn(),
       child: jest.fn(() => mockLogger)
     } as any;
-    
+
     // Setup data service mock
     mockDataService = {
       initialize: jest.fn(),
@@ -184,7 +184,8 @@ describe('PostgreSQL Repository Implementations', () => {
 
         const result = await baseRepo.create(inputData);
 
-        expect(mockDataService.create).toHaveBeenCalledWith('test_table', 
+        expect(mockDataService.create).toHaveBeenCalledWith(
+          'test_table',
           expect.objectContaining({
             name: 'New Entity',
             id: expect.any(String)
@@ -420,12 +421,16 @@ describe('PostgreSQL Repository Implementations', () => {
           orderDirection: 'asc'
         });
 
-        expect(mockDataService.find).toHaveBeenCalledWith('users', {}, {
-          limit: 10,
-          offset: 0,
-          orderBy: 'username',
-          orderDirection: 'ASC'
-        });
+        expect(mockDataService.find).toHaveBeenCalledWith(
+          'users',
+          {},
+          {
+            limit: 10,
+            offset: 0,
+            orderBy: 'username',
+            orderDirection: 'ASC'
+          }
+        );
         expect(result).toHaveLength(1);
       });
     });
@@ -466,15 +471,18 @@ describe('PostgreSQL Repository Implementations', () => {
 
         const result = await userRepo.create(userData);
 
-        expect(mockDataService.create).toHaveBeenCalledWith('users', expect.objectContaining({
-          username: 'newuser',
-          email: 'new@test.com',
-          hashed_password: 'hashedpwd',
-          roles: ['user'],
-          permissions: ['read'],
-          is_active: true,
-          failed_login_attempts: 0
-        }));
+        expect(mockDataService.create).toHaveBeenCalledWith(
+          'users',
+          expect.objectContaining({
+            username: 'newuser',
+            email: 'new@test.com',
+            hashed_password: 'hashedpwd',
+            roles: ['user'],
+            permissions: ['read'],
+            is_active: true,
+            failed_login_attempts: 0
+          })
+        );
         expect(result.username).toBe('newuser');
       });
 
@@ -504,13 +512,16 @@ describe('PostgreSQL Repository Implementations', () => {
 
         await userRepo.create(userData);
 
-        expect(mockDataService.create).toHaveBeenCalledWith('users', expect.objectContaining({
-          hashed_password: '',
-          roles: [],
-          permissions: [],
-          is_active: true,
-          failed_login_attempts: 0
-        }));
+        expect(mockDataService.create).toHaveBeenCalledWith(
+          'users',
+          expect.objectContaining({
+            hashed_password: '',
+            roles: [],
+            permissions: [],
+            is_active: true,
+            failed_login_attempts: 0
+          })
+        );
       });
     });
 
@@ -541,12 +552,16 @@ describe('PostgreSQL Repository Implementations', () => {
 
         const result = await userRepo.update('123', updateData);
 
-        expect(mockDataService.update).toHaveBeenCalledWith('users', '123', expect.objectContaining({
-          email: 'updated@test.com',
-          is_active: false,
-          failed_login_attempts: 3,
-          updated_at: expect.any(Date)
-        }));
+        expect(mockDataService.update).toHaveBeenCalledWith(
+          'users',
+          '123',
+          expect.objectContaining({
+            email: 'updated@test.com',
+            is_active: false,
+            failed_login_attempts: 3,
+            updated_at: expect.any(Date)
+          })
+        );
         expect(result.email).toBe('updated@test.com');
         expect(result.isActive).toBe(false);
       });
@@ -742,16 +757,19 @@ describe('PostgreSQL Repository Implementations', () => {
 
         const result = await caseRepo.create(caseData);
 
-        expect(mockDataService.create).toHaveBeenCalledWith('cases', expect.objectContaining({
-          title: 'New Case',
-          description: 'New Description',
-          status: 'open',
-          priority: 'high',
-          assigned_to: 'user123',
-          created_by: 'creator123',
-          tags: ['feature'],
-          metadata: { channel: 'email' }
-        }));
+        expect(mockDataService.create).toHaveBeenCalledWith(
+          'cases',
+          expect.objectContaining({
+            title: 'New Case',
+            description: 'New Description',
+            status: 'open',
+            priority: 'high',
+            assigned_to: 'user123',
+            created_by: 'creator123',
+            tags: ['feature'],
+            metadata: { channel: 'email' }
+          })
+        );
         expect(result.title).toBe('New Case');
       });
 
@@ -782,11 +800,14 @@ describe('PostgreSQL Repository Implementations', () => {
 
         await caseRepo.create(caseData);
 
-        expect(mockDataService.create).toHaveBeenCalledWith('cases', expect.objectContaining({
-          assigned_to: null,
-          tags: [],
-          metadata: {}
-        }));
+        expect(mockDataService.create).toHaveBeenCalledWith(
+          'cases',
+          expect.objectContaining({
+            assigned_to: null,
+            tags: [],
+            metadata: {}
+          })
+        );
       });
     });
 
@@ -816,12 +837,16 @@ describe('PostgreSQL Repository Implementations', () => {
 
         const result = await caseRepo.update('123', updateData);
 
-        expect(mockDataService.update).toHaveBeenCalledWith('cases', '123', expect.objectContaining({
-          status: 'closed',
-          assigned_to: 'newuser123',
-          tags: ['resolved', 'feature'],
-          updated_at: expect.any(Date)
-        }));
+        expect(mockDataService.update).toHaveBeenCalledWith(
+          'cases',
+          '123',
+          expect.objectContaining({
+            status: 'closed',
+            assigned_to: 'newuser123',
+            tags: ['resolved', 'feature'],
+            updated_at: expect.any(Date)
+          })
+        );
         expect(result.status).toBe('closed');
       });
     });
@@ -844,15 +869,19 @@ describe('PostgreSQL Repository Implementations', () => {
 
         await caseRepo.findAll(options);
 
-        expect(mockDataService.find).toHaveBeenCalledWith('cases', {
-          status: 'open',
-          priority: 'high'
-        }, {
-          limit: 10,
-          offset: 0,
-          orderBy: 'created_at',
-          orderDirection: 'DESC'
-        });
+        expect(mockDataService.find).toHaveBeenCalledWith(
+          'cases',
+          {
+            status: 'open',
+            priority: 'high'
+          },
+          {
+            limit: 10,
+            offset: 0,
+            orderBy: 'created_at',
+            orderDirection: 'DESC'
+          }
+        );
       });
     });
   });
@@ -958,13 +987,16 @@ describe('PostgreSQL Repository Implementations', () => {
 
         const result = await logRepo.create(logData);
 
-        expect(mockDataService.create).toHaveBeenCalledWith('logs', expect.objectContaining({
-          timestamp: new Date('2024-01-01'),
-          level: 'warn',
-          message: 'Warning message',
-          context: { userId: '123' },
-          source: 'auth'
-        }));
+        expect(mockDataService.create).toHaveBeenCalledWith(
+          'logs',
+          expect.objectContaining({
+            timestamp: new Date('2024-01-01'),
+            level: 'warn',
+            message: 'Warning message',
+            context: { userId: '123' },
+            source: 'auth'
+          })
+        );
         expect(result.level).toBe('warn');
       });
 
@@ -988,10 +1020,13 @@ describe('PostgreSQL Repository Implementations', () => {
 
         await logRepo.create(logData);
 
-        expect(mockDataService.create).toHaveBeenCalledWith('logs', expect.objectContaining({
-          timestamp: expect.any(Date),
-          context: {}
-        }));
+        expect(mockDataService.create).toHaveBeenCalledWith(
+          'logs',
+          expect.objectContaining({
+            timestamp: expect.any(Date),
+            context: {}
+          })
+        );
       });
     });
 
@@ -1026,15 +1061,19 @@ describe('PostgreSQL Repository Implementations', () => {
 
         await logRepo.findAll(options);
 
-        expect(mockDataService.find).toHaveBeenCalledWith('logs', {
-          level: 'error',
-          source: 'api'
-        }, {
-          limit: 50,
-          offset: 0,
-          orderBy: 'timestamp',
-          orderDirection: 'DESC'
-        });
+        expect(mockDataService.find).toHaveBeenCalledWith(
+          'logs',
+          {
+            level: 'error',
+            source: 'api'
+          },
+          {
+            limit: 50,
+            offset: 0,
+            orderBy: 'timestamp',
+            orderDirection: 'DESC'
+          }
+        );
       });
     });
   });
@@ -1123,11 +1162,7 @@ describe('PostgreSQL Repository Implementations', () => {
     describe('keys', () => {
       it('should get all keys for a plugin', async () => {
         mockDataService.query.mockResolvedValue({
-          rows: [
-            { key: 'config' },
-            { key: 'settings' },
-            { key: 'cache' }
-          ],
+          rows: [{ key: 'config' }, { key: 'settings' }, { key: 'cache' }],
           rowCount: 3
         });
 
@@ -1248,7 +1283,9 @@ describe('PostgreSQL Repository Implementations', () => {
 
       mockDataService.findById.mockResolvedValue(userSchema);
 
-      const operations = Array(10).fill(null).map(() => userRepo.findById('123'));
+      const operations = Array(10)
+        .fill(null)
+        .map(() => userRepo.findById('123'));
       const results = await Promise.all(operations);
 
       expect(results).toHaveLength(10);
@@ -1256,20 +1293,22 @@ describe('PostgreSQL Repository Implementations', () => {
     });
 
     it('should handle batch operations efficiently', async () => {
-      const userSchemas: UserSchema[] = Array(100).fill(null).map((_, i) => ({
-        id: `user-${i}`,
-        username: `user${i}`,
-        email: `user${i}@test.com`,
-        hashed_password: 'pwd',
-        roles: ['user'],
-        permissions: ['read'],
-        is_active: true,
-        created_at: new Date(),
-        updated_at: new Date(),
-        failed_login_attempts: 0,
-        locked_until: null,
-        last_login_at: null
-      }));
+      const userSchemas: UserSchema[] = Array(100)
+        .fill(null)
+        .map((_, i) => ({
+          id: `user-${i}`,
+          username: `user${i}`,
+          email: `user${i}@test.com`,
+          hashed_password: 'pwd',
+          roles: ['user'],
+          permissions: ['read'],
+          is_active: true,
+          created_at: new Date(),
+          updated_at: new Date(),
+          failed_login_attempts: 0,
+          locked_until: null,
+          last_login_at: null
+        }));
 
       mockDataService.find.mockResolvedValue(userSchemas);
 
@@ -1280,20 +1319,22 @@ describe('PostgreSQL Repository Implementations', () => {
     });
 
     it('should handle large dataset pagination', async () => {
-      const userSchemas: UserSchema[] = Array(50).fill(null).map((_, i) => ({
-        id: `user-${i + 50}`,
-        username: `user${i + 50}`,
-        email: `user${i + 50}@test.com`,
-        hashed_password: 'pwd',
-        roles: ['user'],
-        permissions: ['read'],
-        is_active: true,
-        created_at: new Date(),
-        updated_at: new Date(),
-        failed_login_attempts: 0,
-        locked_until: null,
-        last_login_at: null
-      }));
+      const userSchemas: UserSchema[] = Array(50)
+        .fill(null)
+        .map((_, i) => ({
+          id: `user-${i + 50}`,
+          username: `user${i + 50}`,
+          email: `user${i + 50}@test.com`,
+          hashed_password: 'pwd',
+          roles: ['user'],
+          permissions: ['read'],
+          is_active: true,
+          created_at: new Date(),
+          updated_at: new Date(),
+          failed_login_attempts: 0,
+          locked_until: null,
+          last_login_at: null
+        }));
 
       mockDataService.find.mockResolvedValue(userSchemas);
 
@@ -1304,12 +1345,16 @@ describe('PostgreSQL Repository Implementations', () => {
         orderDirection: 'desc'
       });
 
-      expect(mockDataService.find).toHaveBeenCalledWith('users', {}, {
-        limit: 50,
-        offset: 50,
-        orderBy: 'created_at',
-        orderDirection: 'DESC'
-      });
+      expect(mockDataService.find).toHaveBeenCalledWith(
+        'users',
+        {},
+        {
+          limit: 50,
+          offset: 50,
+          orderBy: 'created_at',
+          orderDirection: 'DESC'
+        }
+      );
       expect(result).toHaveLength(50);
     });
   });

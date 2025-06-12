@@ -44,7 +44,7 @@ describe('CacheService', () => {
     it('should delete values', () => {
       cache.set('key1', 'value1');
       expect(cache.has('key1')).toBe(true);
-      
+
       const deleted = cache.delete('key1');
       expect(deleted).toBe(true);
       expect(cache.has('key1')).toBe(false);
@@ -71,7 +71,7 @@ describe('CacheService', () => {
 
       expect(cache.get('key1')).toBe('value1');
 
-      await new Promise(resolve => setTimeout(resolve, 150));
+      await new Promise((resolve) => setTimeout(resolve, 150));
 
       expect(cache.get('key1')).toBeNull();
       expect(cache.has('key1')).toBe(false);
@@ -80,10 +80,10 @@ describe('CacheService', () => {
     it('should use default TTL when not specified', () => {
       const customCache = new CacheService({ maxSize: 5 });
       customCache.set('key1', 'value1');
-      
+
       // Should still exist (default TTL is 5 minutes)
       expect(customCache.get('key1')).toBe('value1');
-      
+
       customCache.shutdown();
     });
   });

@@ -2,7 +2,7 @@ import React, { useMemo, useCallback } from 'react';
 
 // UI context removed - using component-specific styling
 import { useAnalytics } from '../hooks/useAnalytics';
-import {    
+import {
   BarChart3,
   TrendingUp,
   TrendingDown,
@@ -18,7 +18,7 @@ import {
   Cpu,
   ChevronRight,
   AlertTriangle
-    } from 'lucide-react';
+} from 'lucide-react';
 import { TimeRange } from '../../src/interfaces/analytics';
 import { TimeSeriesChart } from './charts/TimeSeriesChart';
 import { RootCauseChart } from './charts/RootCauseChart';
@@ -31,11 +31,11 @@ import { exportToCSV, exportToJSON } from '../../src/utils/export';
 import { exportAnalyticsToPDF } from '../../src/utils/export-pdf';
 import { DateRangePicker } from './DateRangePicker';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../../client/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '../../../../client/components/ui/card';
 import { Button } from '../../../../client/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { Badge } from '../../../../client/components/ui/badge';
-import { useToast } from '../../../../client/components/ui/use-toast'
+import { useToast } from '../../../../client/components/ui/use-toast';
 interface AnalyticsDashboardProps {
   analyticsService?: any; // Optional for backwards compatibility
   crashAnalyzerService?: any;
@@ -92,7 +92,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
 
     const totalCrashes = timeSeriesData.series.reduce((sum, point) => sum + point.count, 0);
     const avgCrashesPerDay = totalCrashes / timeSeriesData.series.length;
-    
+
     // Calculate trend
     const recentAvg = timeSeriesData.series.slice(-3).reduce((sum, p) => sum + p.count, 0) / 3;
     const olderAvg = timeSeriesData.series.slice(0, 3).reduce((sum, p) => sum + p.count, 0) / 3;
@@ -120,59 +120,65 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
   }, [refresh]);
 
   // Handle time range change
-  const handleTimeRangeChange = useCallback((preset: string) => {
-    const now = new Date();
-    let start: Date;
-    let granularity: 'hour' | 'day' | 'week' | 'month' = 'day';
+  const handleTimeRangeChange = useCallback(
+    (preset: string) => {
+      const now = new Date();
+      let start: Date;
+      let granularity: 'hour' | 'day' | 'week' | 'month' = 'day';
 
-    switch (preset) {
-      case '24h':
-        start = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-        granularity = 'hour';
-        break;
-      case '7d':
-        start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        granularity = 'day';
-        break;
-      case '30d':
-        start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        granularity = 'day';
-        break;
-      case '90d':
-        start = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-        granularity = 'week';
-        break;
-      default:
-        start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-    }
+      switch (preset) {
+        case '24h':
+          start = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+          granularity = 'hour';
+          break;
+        case '7d':
+          start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          granularity = 'day';
+          break;
+        case '30d':
+          start = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+          granularity = 'day';
+          break;
+        case '90d':
+          start = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+          granularity = 'week';
+          break;
+        default:
+          start = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      }
 
-    updateTimeRange({ start, end: now, granularity });
-  }, [updateTimeRange]);
+      updateTimeRange({ start, end: now, granularity });
+    },
+    [updateTimeRange]
+  );
 
   // Handle custom date range
-  const handleCustomDateRange = useCallback((start: Date, end: Date) => {
-    // Determine appropriate granularity based on date range
-    const daysDiff = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
-    let granularity: 'hour' | 'day' | 'week' | 'month' = 'day';
-    
-    if (daysDiff <= 1) {
-      granularity = 'hour';
-    } else if (daysDiff <= 31) {
-      granularity = 'day';
-    } else if (daysDiff <= 180) {
-      granularity = 'week';
-    } else {
-      granularity = 'month';
-    }
+  const handleCustomDateRange = useCallback(
+    (start: Date, end: Date) => {
+      // Determine appropriate granularity based on date range
+      const daysDiff = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24));
+      let granularity: 'hour' | 'day' | 'week' | 'month' = 'day';
 
-    updateTimeRange({ start, end, granularity });
-  }, [updateTimeRange]);
+      if (daysDiff <= 1) {
+        granularity = 'hour';
+      } else if (daysDiff <= 31) {
+        granularity = 'day';
+      } else if (daysDiff <= 180) {
+        granularity = 'week';
+      } else {
+        granularity = 'month';
+      }
+
+      updateTimeRange({ start, end, granularity });
+    },
+    [updateTimeRange]
+  );
 
   // Export functions
   const handleExportCSV = () => {
     if (!timeSeriesData) return;
 
-    const data = timeSeriesData.series.map(point => ({
+    const data = timeSeriesData.series.map((point) => ({
       timestamp: point.timestamp,
       count: point.count,
       platform: point.metadata?.platform || 'all',
@@ -217,7 +223,7 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
           includeCharts: true
         }
       );
-      
+
       toast({
         title: 'Export Successful',
         description: `Report exported to ${filename}`
@@ -233,32 +239,25 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
 
   if (loading && !isRefreshing) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="animate-spin" size="large" />
+      <div className='flex items-center justify-center h-full'>
+        <Loader2 className='animate-spin' size='large' />
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="p-6">
-        <Card className="border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-3">
-              <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" />
+      <div className='p-6'>
+        <Card className='border-red-200 bg-red-50 dark:border-red-800 dark:bg-red-900/20'>
+          <CardContent className='p-6'>
+            <div className='flex items-center gap-3'>
+              <AlertTriangle className='h-5 w-5 text-red-600 dark:text-red-400' />
               <div>
-                <h3 className="font-semibold text-red-800 dark:text-red-200">
+                <h3 className='font-semibold text-red-800 dark:text-red-200'>
                   Failed to load analytics data
                 </h3>
-                <p className="text-sm text-red-600 dark:text-red-400 mt-1">
-                  {error.message}
-                </p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleRefresh}
-                  className="mt-3"
-                >
+                <p className='text-sm text-red-600 dark:text-red-400 mt-1'>{error.message}</p>
+                <Button variant='outline' size='sm' onClick={handleRefresh} className='mt-3'>
                   Try Again
                 </Button>
               </div>
@@ -270,70 +269,53 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
   }
 
   return (
-    <div className="p-6 space-y-6">
+    <div className='p-6 space-y-6'>
       {/* Header */}
-      <div className="flex justify-between items-start">
+      <div className='flex justify-between items-start'>
         <div>
-          <h1 className="text-2xl font-bold">Analytics Dashboard</h1>
-          <p className="text-muted-foreground">
+          <h1 className='text-2xl font-bold'>Analytics Dashboard</h1>
+          <p className='text-muted-foreground'>
             Comprehensive insights into crash patterns and system performance
           </p>
-          <div className="flex items-center gap-4 mt-2">
+          <div className='flex items-center gap-4 mt-2'>
             <LastUpdated timestamp={lastUpdated} isRefreshing={isRefreshing} />
             {isRealtimeConnected && (
-              <Badge variant="outline" className="text-xs">
-                <div className="w-2 h-2 bg-green-500 rounded-full mr-1 animate-pulse" />
+              <Badge variant='outline' className='text-xs'>
+                <div className='w-2 h-2 bg-green-500 rounded-full mr-1 animate-pulse' />
                 Real-time
               </Badge>
             )}
           </div>
         </div>
-        <div className="flex gap-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-          >
+        <div className='flex gap-2'>
+          <Button variant='outline' size='sm' onClick={handleRefresh} disabled={isRefreshing}>
             <RefreshCw className={`h-4 w-4 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleExportCSV}
-          >
-            <Download className="h-4 w-4 mr-1" />
+          <Button variant='outline' size='sm' onClick={handleExportCSV}>
+            <Download className='h-4 w-4 mr-1' />
             Export CSV
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleExportJSON}
-          >
-            <Download className="h-4 w-4 mr-1" />
+          <Button variant='outline' size='sm' onClick={handleExportJSON}>
+            <Download className='h-4 w-4 mr-1' />
             Export JSON
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleExportPDF}
-          >
-            <Download className="h-4 w-4 mr-1" />
+          <Button variant='outline' size='sm' onClick={handleExportPDF}>
+            <Download className='h-4 w-4 mr-1' />
             Export PDF
           </Button>
         </div>
       </div>
 
       {/* Time Range Selector */}
-      <Card className="p-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-            <span className="text-sm font-medium">Time Range:</span>
+      <Card className='p-4'>
+        <div className='flex items-center justify-between'>
+          <div className='flex items-center gap-2'>
+            <Calendar className='h-4 w-4 text-muted-foreground' />
+            <span className='text-sm font-medium'>Time Range:</span>
           </div>
-          <div className="flex gap-2 items-center">
-            {['24h', '7d', '30d', '90d'].map(preset => (
+          <div className='flex gap-2 items-center'>
+            {['24h', '7d', '30d', '90d'].map((preset) => (
               <Button
                 key={preset}
                 variant={
@@ -341,13 +323,13 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
                     ? 'default'
                     : 'outline'
                 }
-                size="sm"
+                size='sm'
                 onClick={() => handleTimeRangeChange(preset)}
               >
                 {preset}
               </Button>
             ))}
-            <div className="ml-2 pl-2 border-l">
+            <div className='ml-2 pl-2 border-l'>
               <DateRangePicker
                 start={timeRange.start}
                 end={timeRange.end}
@@ -370,53 +352,53 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
 
       {/* Key Metrics */}
       {keyMetrics && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
           <MetricCard
-            title="Total Crashes"
+            title='Total Crashes'
             value={keyMetrics.totalCrashes.toLocaleString()}
-            icon={<AlertTriangle className="h-5 w-5" />}
+            icon={<AlertTriangle className='h-5 w-5' />}
             trend={{
               value: parseFloat(keyMetrics.trend),
               direction: keyMetrics.trendDirection as 'up' | 'down'
             }}
-            color="red"
+            color='red'
           />
           <MetricCard
-            title="Avg Crashes/Day"
+            title='Avg Crashes/Day'
             value={keyMetrics.avgCrashesPerDay}
-            icon={<Activity className="h-5 w-5" />}
-            subtitle="Last 7 days"
-            color="blue"
+            icon={<Activity className='h-5 w-5' />}
+            subtitle='Last 7 days'
+            color='blue'
           />
           <MetricCard
-            title="Top Root Cause"
+            title='Top Root Cause'
             value={keyMetrics.topRootCause}
-            icon={<PieChart className="h-5 w-5" />}
+            icon={<PieChart className='h-5 w-5' />}
             subtitle={`${rootCauseData?.categories[0]?.percentage.toFixed(1)}% of total`}
-            color="purple"
+            color='purple'
           />
           <MetricCard
-            title="Avg Resolution Time"
+            title='Avg Resolution Time'
             value={`${keyMetrics.avgResolutionTime}h`}
-            icon={<Clock className="h-5 w-5" />}
+            icon={<Clock className='h-5 w-5' />}
             trend={{
               value: -12.5,
               direction: 'down',
               label: 'vs last period'
             }}
-            color="green"
+            color='green'
           />
         </div>
       )}
 
       {/* Charts Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className='grid grid-cols-1 lg:grid-cols-2 gap-6'>
         {/* Time Series Chart */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
+            <CardTitle className='flex items-center justify-between'>
               <span>Crash Frequency Over Time</span>
-              <BarChart3 className="h-5 w-5 text-muted-foreground" />
+              <BarChart3 className='h-5 w-5 text-muted-foreground' />
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -438,37 +420,27 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
         {/* Root Cause Distribution */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
+            <CardTitle className='flex items-center justify-between'>
               <span>Root Cause Distribution</span>
-              <PieChart className="h-5 w-5 text-muted-foreground" />
+              <PieChart className='h-5 w-5 text-muted-foreground' />
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {rootCauseData && (
-              <RootCauseChart
-                data={rootCauseData}
-                height={300}
-                isDark={false}
-              />
-            )}
+            {rootCauseData && <RootCauseChart data={rootCauseData} height={300} isDark={false} />}
           </CardContent>
         </Card>
 
         {/* Model Performance */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
+            <CardTitle className='flex items-center justify-between'>
               <span>LLM Model Performance</span>
-              <Cpu className="h-5 w-5 text-muted-foreground" />
+              <Cpu className='h-5 w-5 text-muted-foreground' />
             </CardTitle>
           </CardHeader>
           <CardContent>
             {modelPerformance.length > 0 && (
-              <ModelPerformanceChart
-                data={modelPerformance}
-                height={300}
-                isDark={false}
-              />
+              <ModelPerformanceChart data={modelPerformance} height={300} isDark={false} />
             )}
           </CardContent>
         </Card>
@@ -476,18 +448,14 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
         {/* Severity Trends */}
         <Card>
           <CardHeader>
-            <CardTitle className="flex items-center justify-between">
+            <CardTitle className='flex items-center justify-between'>
               <span>Severity Trends</span>
-              <TrendingUp className="h-5 w-5 text-muted-foreground" />
+              <TrendingUp className='h-5 w-5 text-muted-foreground' />
             </CardTitle>
           </CardHeader>
           <CardContent>
             {severityTrends && (
-              <SeverityTrendChart
-                data={severityTrends}
-                height={300}
-                isDark={false}
-              />
+              <SeverityTrendChart data={severityTrends} height={300} isDark={false} />
             )}
           </CardContent>
         </Card>
@@ -499,15 +467,15 @@ export const AnalyticsDashboard: React.FC<AnalyticsDashboardProps> = ({
           <CardTitle>Key Insights</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
+          <div className='space-y-3'>
             {rootCauseData?.insights.map((insight, idx) => (
-              <div key={idx} className="flex items-start gap-3 p-3 bg-muted/50 rounded-lg">
-                <CheckCircle className="h-5 w-5 text-green-500 mt-0.5" />
+              <div key={idx} className='flex items-start gap-3 p-3 bg-muted/50 rounded-lg'>
+                <CheckCircle className='h-5 w-5 text-green-500 mt-0.5' />
                 <div>
-                  <p className="text-sm font-medium">{insight.title}</p>
-                  <p className="text-sm text-muted-foreground">{insight.description}</p>
+                  <p className='text-sm font-medium'>{insight.title}</p>
+                  <p className='text-sm text-muted-foreground'>{insight.description}</p>
                   {insight.recommendation && (
-                    <p className="text-sm text-blue-600 mt-1">
+                    <p className='text-sm text-blue-600 mt-1'>
                       Recommendation: {insight.recommendation}
                     </p>
                   )}

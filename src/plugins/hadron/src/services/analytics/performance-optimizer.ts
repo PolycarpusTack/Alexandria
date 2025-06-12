@@ -29,10 +29,10 @@ export class PerformanceOptimizer {
     if (!this.metrics.has(operation)) {
       this.metrics.set(operation, []);
     }
-    
+
     const metrics = this.metrics.get(operation)!;
     metrics.push(duration);
-    
+
     // Keep only last 1000 measurements
     if (metrics.length > 1000) {
       metrics.shift();
@@ -92,13 +92,13 @@ export class PerformanceOptimizer {
     batchSize: number = 100
   ): Promise<R[]> {
     const results: R[] = [];
-    
+
     for (let i = 0; i < items.length; i += batchSize) {
       const batch = items.slice(i, i + batchSize);
       const batchResults = await operation(batch);
       results.push(...batchResults);
     }
-    
+
     return results;
   }
 
@@ -110,23 +110,23 @@ export class PerformanceOptimizer {
     keyGenerator?: (...args: Parameters<T>) => string
   ): T {
     const cache = new Map<string, ReturnType<T>>();
-    
+
     return ((...args: Parameters<T>) => {
       const key = keyGenerator ? keyGenerator(...args) : JSON.stringify(args);
-      
+
       if (cache.has(key)) {
         return cache.get(key)!;
       }
-      
+
       const result = fn(...args);
       cache.set(key, result);
-      
+
       // Limit cache size
       if (cache.size > 1000) {
         const firstKey = cache.keys().next().value;
         cache.delete(firstKey);
       }
-      
+
       return result;
     }) as T;
   }
@@ -139,7 +139,7 @@ export class PerformanceOptimizer {
     delay: number
   ): (...args: Parameters<T>) => void {
     let timeoutId: NodeJS.Timeout;
-    
+
     return (...args: Parameters<T>) => {
       clearTimeout(timeoutId);
       timeoutId = setTimeout(() => fn(...args), delay);
@@ -151,10 +151,8 @@ export class PerformanceOptimizer {
    */
   private initializeWorkerPool(): void {
     for (let i = 0; i < this.workerCount; i++) {
-      const worker = new Worker(
-        path.join(__dirname, 'analytics-worker.js')
-      );
-      
+      const worker = new Worker(path.join(__dirname, 'analytics-worker.js'));
+
       worker.on('message', (result) => {
         const task = this.workerQueue.shift();
         if (task) {
@@ -166,11 +164,11 @@ export class PerformanceOptimizer {
           this.processWorkerQueue();
         }
       });
-      
+
       worker.on('error', (error) => {
         logger.error('Worker error', { error });
       });
-      
+
       this.workerPool.push(worker);
     }
   }
@@ -180,11 +178,9 @@ export class PerformanceOptimizer {
    */
   private processWorkerQueue(): void {
     if (this.workerQueue.length === 0) return;
-    
-    const availableWorker = this.workerPool.find(w => 
-      !this.isWorkerBusy(w)
-    );
-    
+
+    const availableWorker = this.workerPool.find((w) => !this.isWorkerBusy(w));
+
     if (availableWorker && this.workerQueue.length > 0) {
       const task = this.workerQueue[0];
       availableWorker.postMessage({
@@ -206,7 +202,7 @@ export class PerformanceOptimizer {
    * Cleanup resources
    */
   destroy(): void {
-    this.workerPool.forEach(worker => worker.terminate());
+    this.workerPool.forEach((worker) => worker.terminate());
     this.workerPool = [];
     this.workerQueue = [];
   }

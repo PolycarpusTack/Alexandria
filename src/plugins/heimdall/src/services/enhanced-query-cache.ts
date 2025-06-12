@@ -1,6 +1,6 @@
 /**
  * Enhanced Query Cache Service
- * 
+ *
  * Implements intelligent multi-level caching with predictive pre-caching and compression
  */
 
@@ -56,7 +56,7 @@ export class EnhancedQueryCache {
   private l2Cache = new Map<string, CacheEntry>(); // Compressed cache
   private queryPatterns = new Map<string, number>(); // Query frequency tracking
   private predictiveQueue = new Set<string>(); // Queries to pre-cache
-  
+
   private stats: CacheStats = {
     hits: 0,
     misses: 0,
@@ -103,7 +103,7 @@ export class EnhancedQueryCache {
    */
   async get(query: HeimdallQuery): Promise<HeimdallQueryResult | null> {
     const key = this.generateCacheKey(query);
-    
+
     // Check L1 cache first (fastest)
     let entry = this.l1Cache.get(key);
     if (entry) {
@@ -112,7 +112,7 @@ export class EnhancedQueryCache {
         this.stats.hits++;
         this.stats.l1Hits++;
         this.trackQueryPattern(key);
-        
+
         this.logger.debug('Cache L1 hit', { key, accessCount: entry.accessCount });
         return entry.result;
       } else {
@@ -125,16 +125,14 @@ export class EnhancedQueryCache {
     if (entry) {
       if (this.isEntryValid(entry)) {
         // Decompress if necessary and promote to L1
-        const result = entry.compressed ? 
-          await this.decompressResult(entry.result) : 
-          entry.result;
-        
+        const result = entry.compressed ? await this.decompressResult(entry.result) : entry.result;
+
         this.updateAccessStats(entry);
         this.promoteToL1(entry, result);
         this.stats.hits++;
         this.stats.l2Hits++;
         this.trackQueryPattern(key);
-        
+
         this.logger.debug('Cache L2 hit', { key, compressed: entry.compressed });
         return result;
       } else {
@@ -145,7 +143,7 @@ export class EnhancedQueryCache {
     // Cache miss
     this.stats.misses++;
     this.trackQueryPattern(key);
-    
+
     // Schedule predictive caching if enabled
     if (this.config.enablePredictiveCache) {
       await this.schedulePredictiveCache(query);
@@ -157,15 +155,19 @@ export class EnhancedQueryCache {
   /**
    * Cache query result with intelligent storage strategy
    */
-  async set(query: HeimdallQuery, result: HeimdallQueryResult, options: {
-    priority?: CachePriority;
-    tags?: string[];
-    ttl?: number;
-  } = {}): Promise<void> {
+  async set(
+    query: HeimdallQuery,
+    result: HeimdallQueryResult,
+    options: {
+      priority?: CachePriority;
+      tags?: string[];
+      ttl?: number;
+    } = {}
+  ): Promise<void> {
     const key = this.generateCacheKey(query);
     const size = this.estimateResultSize(result);
     const priority = options.priority || this.calculatePriority(query, result);
-    
+
     // Check resource limits
     const usage = this.resourceManager.getResourceUsage();
     if (usage.total.cacheSize + size > this.config.maxSizeBytes) {
@@ -197,7 +199,7 @@ export class EnhancedQueryCache {
         entry.size = this.estimateResultSize(entry.result);
         this.stats.compressionSavings += size - entry.size;
       }
-      
+
       this.l2Cache.set(key, entry);
       this.logger.debug('Cached in L2', { key, size: entry.size, compressed: entry.compressed });
     }
@@ -210,18 +212,18 @@ export class EnhancedQueryCache {
    */
   async invalidateByTags(tags: string[]): Promise<number> {
     let invalidated = 0;
-    
+
     // Clear from L1 cache
     for (const [key, entry] of this.l1Cache.entries()) {
-      if (entry.tags.some(tag => tags.includes(tag))) {
+      if (entry.tags.some((tag) => tags.includes(tag))) {
         this.l1Cache.delete(key);
         invalidated++;
       }
     }
-    
+
     // Clear from L2 cache
     for (const [key, entry] of this.l2Cache.entries()) {
-      if (entry.tags.some(tag => tags.includes(tag))) {
+      if (entry.tags.some((tag) => tags.includes(tag))) {
         this.l2Cache.delete(key);
         invalidated++;
       }
@@ -282,7 +284,7 @@ export class EnhancedQueryCache {
       JSON.stringify(query.aggregations || []),
       JSON.stringify(query.hints || {})
     ];
-    
+
     // Use a simple hash for now (in production would use crypto.createHash)
     return Buffer.from(keyParts.join('|')).toString('base64');
   }
@@ -301,7 +303,7 @@ export class EnhancedQueryCache {
     if (this.shouldStoreInL1(entry)) {
       // Remove from L2
       this.l2Cache.delete(entry.key);
-      
+
       // Add to L1 with decompressed result
       const l1Entry: CacheEntry = {
         ...entry,
@@ -310,16 +312,15 @@ export class EnhancedQueryCache {
         size: this.estimateResultSize(result)
       };
       this.l1Cache.set(entry.key, l1Entry);
-      
+
       this.logger.debug('Promoted to L1', { key: entry.key });
     }
   }
 
   private shouldStoreInL1(entry: CacheEntry): boolean {
     const l1MaxSize = this.config.maxSizeBytes * this.config.l1CacheRatio;
-    const currentL1Size = Array.from(this.l1Cache.values())
-      .reduce((total, e) => total + e.size, 0);
-    
+    const currentL1Size = Array.from(this.l1Cache.values()).reduce((total, e) => total + e.size, 0);
+
     return (
       entry.priority >= CachePriority.HIGH ||
       entry.accessCount > 3 ||
@@ -330,7 +331,7 @@ export class EnhancedQueryCache {
   private calculatePriority(query: HeimdallQuery, result: HeimdallQueryResult): CachePriority {
     // Calculate priority based on query characteristics
     let priority = CachePriority.NORMAL;
-    
+
     if (query.hints?.urgent) {
       priority = CachePriority.CRITICAL;
     } else if (result.total > 10000) {
@@ -338,13 +339,13 @@ export class EnhancedQueryCache {
     } else if (query.aggregations && query.aggregations.length > 0) {
       priority = CachePriority.HIGH; // Aggregation queries
     }
-    
+
     return priority;
   }
 
   private extractTags(query: HeimdallQuery): string[] {
     const tags: string[] = [];
-    
+
     // Add service tags from structured filters
     if (query.structured?.filters) {
       for (const filter of query.structured.filters) {
@@ -353,17 +354,19 @@ export class EnhancedQueryCache {
         }
       }
     }
-    
+
     // Add time range tags
     const timeRangeMs = query.timeRange.to.getTime() - query.timeRange.from.getTime();
-    if (timeRangeMs <= 3600000) { // 1 hour
+    if (timeRangeMs <= 3600000) {
+      // 1 hour
       tags.push('timerange:short');
-    } else if (timeRangeMs <= 86400000) { // 1 day
+    } else if (timeRangeMs <= 86400000) {
+      // 1 day
       tags.push('timerange:medium');
     } else {
       tags.push('timerange:long');
     }
-    
+
     return tags;
   }
 
@@ -391,7 +394,7 @@ export class EnhancedQueryCache {
   private async evictEntries(requiredSpace: number): Promise<void> {
     let freedSpace = 0;
     const evictionCandidates: Array<{ key: string; entry: CacheEntry; cache: 'l1' | 'l2' }> = [];
-    
+
     // Collect eviction candidates (LRU with priority consideration)
     for (const [key, entry] of this.l1Cache.entries()) {
       evictionCandidates.push({ key, entry, cache: 'l1' });
@@ -399,7 +402,7 @@ export class EnhancedQueryCache {
     for (const [key, entry] of this.l2Cache.entries()) {
       evictionCandidates.push({ key, entry, cache: 'l2' });
     }
-    
+
     // Sort by priority (lower first) and last accessed time
     evictionCandidates.sort((a, b) => {
       if (a.entry.priority !== b.entry.priority) {
@@ -407,21 +410,21 @@ export class EnhancedQueryCache {
       }
       return a.entry.lastAccessed.getTime() - b.entry.lastAccessed.getTime();
     });
-    
+
     // Evict entries until we have enough space
     for (const candidate of evictionCandidates) {
       if (freedSpace >= requiredSpace) break;
-      
+
       if (candidate.cache === 'l1') {
         this.l1Cache.delete(candidate.key);
       } else {
         this.l2Cache.delete(candidate.key);
       }
-      
+
       freedSpace += candidate.entry.size;
       this.stats.evictions++;
     }
-    
+
     this.logger.debug('Cache eviction completed', { freedSpace, requiredSpace });
   }
 
@@ -447,7 +450,7 @@ export class EnhancedQueryCache {
     this.stats.totalSize = Array.from(this.l1Cache.values())
       .concat(Array.from(this.l2Cache.values()))
       .reduce((total, entry) => total + entry.size, 0);
-    
+
     this.stats.entryCount = this.l1Cache.size + this.l2Cache.size;
   }
 
@@ -460,7 +463,7 @@ export class EnhancedQueryCache {
   private performCleanup(): void {
     const now = Date.now();
     let cleaned = 0;
-    
+
     // Clean expired entries from L1
     for (const [key, entry] of this.l1Cache.entries()) {
       if (now - entry.timestamp.getTime() > this.config.ttlMs) {
@@ -468,7 +471,7 @@ export class EnhancedQueryCache {
         cleaned++;
       }
     }
-    
+
     // Clean expired entries from L2
     for (const [key, entry] of this.l2Cache.entries()) {
       if (now - entry.timestamp.getTime() > this.config.ttlMs) {
@@ -476,7 +479,7 @@ export class EnhancedQueryCache {
         cleaned++;
       }
     }
-    
+
     if (cleaned > 0) {
       this.updateTotalStats();
       this.logger.debug('Cache cleanup completed', { cleaned });

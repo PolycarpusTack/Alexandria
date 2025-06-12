@@ -1,6 +1,6 @@
 /**
  * Core system interfaces for the Alexandria Platform
- * 
+ *
  * These interfaces define the contracts that the core system and plugins must adhere to.
  * They provide stable APIs that won't change frequently to ensure backward compatibility.
  */
@@ -106,21 +106,21 @@ export interface CoreSystem {
   // Initialization
   initialize: () => Promise<void>;
   shutdown: () => Promise<void>;
-  
+
   // Request handling
   registerRoute: (route: Route) => void;
   removeRoute: (path: string, method: string) => void;
-  
+
   // Core data access
   getUserById: (id: string) => Promise<User | null>;
   getUserByUsername: (username: string) => Promise<User | null>;
   saveUser: (user: User) => Promise<User>;
   getCaseById: (id: string) => Promise<Case | null>;
-  
+
   // Authentication/Authorization
-  authenticate: (credentials: { username: string, password: string }) => Promise<User | null>;
+  authenticate: (credentials: { username: string; password: string }) => Promise<User | null>;
   authorize: (user: User, permission: string) => boolean;
-  
+
   // Logging
   log: (entry: Omit<LogEntry, 'id' | 'timestamp'>) => void;
 }

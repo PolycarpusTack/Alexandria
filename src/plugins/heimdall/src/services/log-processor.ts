@@ -23,16 +23,16 @@ export class LogProcessor {
     try {
       // Validate log
       this.validateLog(log);
-      
+
       // Enrich log
       const enrichedLog = await this.enrichLog(log);
-      
+
       // Determine storage tier
       const tier = this.determineStorageTier(enrichedLog);
-      
+
       // Store log
       await this.storageManager.store(enrichedLog, tier);
-      
+
       // Emit event
       await this.eventBus.publish('heimdall:log:stored', {
         logId: enrichedLog.id,
@@ -50,19 +50,19 @@ export class LogProcessor {
   async processBatch(logs: HeimdallLogEntry[]): Promise<void> {
     try {
       // Validate all logs
-      logs.forEach(log => this.validateLog(log));
-      
+      logs.forEach((log) => this.validateLog(log));
+
       // Enrich logs in parallel
-      const enrichedLogs = await Promise.all(logs.map(log => this.enrichLog(log)));
-      
+      const enrichedLogs = await Promise.all(logs.map((log) => this.enrichLog(log)));
+
       // Group by storage tier
       const tierGroups = this.groupByStorageTier(enrichedLogs);
-      
+
       // Store each group
       for (const [tier, group] of tierGroups.entries()) {
         await this.storageManager.storeBatch(group, tier);
       }
-      
+
       // Emit batch event
       await this.eventBus.publish('heimdall:batch:stored', {
         count: logs.length,
@@ -99,7 +99,7 @@ export class LogProcessor {
     // Recent logs go to hot storage
     const ageMs = Date.now() - Number(log.timestamp) / 1000000;
     const ageHours = ageMs / (60 * 60 * 1000);
-    
+
     if (ageHours < 24) return 'hot';
     if (ageHours < 7 * 24) return 'warm';
     return 'cold';
@@ -107,14 +107,14 @@ export class LogProcessor {
 
   private groupByStorageTier(logs: HeimdallLogEntry[]): Map<string, HeimdallLogEntry[]> {
     const groups = new Map<string, HeimdallLogEntry[]>();
-    
+
     for (const log of logs) {
       const tier = this.determineStorageTier(log);
       const group = groups.get(tier) || [];
       group.push(log);
       groups.set(tier, group);
     }
-    
+
     return groups;
   }
 }

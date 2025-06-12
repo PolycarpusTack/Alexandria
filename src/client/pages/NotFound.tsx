@@ -1,6 +1,6 @@
 /**
  * Not Found page for the Alexandria Platform
- * 
+ *
  * This page is displayed when a user navigates to a non-existent route.
  */
 
@@ -15,29 +15,29 @@ const NotFoundContainer = styled.div`
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: ${props => props.theme.spacing.xl};
+  padding: ${(props) => props.theme.spacing.xl};
   text-align: center;
   min-height: 50vh;
 `;
 
 const Title = styled.h1`
-  font-size: ${props => props.theme.typography.fontSize.xxl};
-  margin-bottom: ${props => props.theme.spacing.md};
-  color: ${props => props.theme.colors.primary};
+  font-size: ${(props) => props.theme.typography.fontSize.xxl};
+  margin-bottom: ${(props) => props.theme.spacing.md};
+  color: ${(props) => props.theme.colors.primary};
 `;
 
 const Message = styled.p`
-  font-size: ${props => props.theme.typography.fontSize.lg};
-  margin-bottom: ${props => props.theme.spacing.xl};
-  color: ${props => props.theme.colors.text.secondary};
+  font-size: ${(props) => props.theme.typography.fontSize.lg};
+  margin-bottom: ${(props) => props.theme.spacing.xl};
+  color: ${(props) => props.theme.colors.text.secondary};
   max-width: 600px;
 `;
 
 const ErrorCode = styled.div`
   font-size: 120px;
-  font-weight: ${props => props.theme.typography.fontWeight.bold};
-  color: ${props => `${props.theme.colors.primary}30`};
-  margin-bottom: ${props => props.theme.spacing.xl};
+  font-weight: ${(props) => props.theme.typography.fontWeight.bold};
+  color: ${(props) => `${props.theme.colors.primary}30`};
+  margin-bottom: ${(props) => props.theme.spacing.xl};
 `;
 
 /**
@@ -48,13 +48,9 @@ const NotFound: React.FC = () => {
     <NotFoundContainer>
       <ErrorCode>404</ErrorCode>
       <Title>Page Not Found</Title>
-      <Message>
-        The page you're looking for doesn't exist or has been moved.
-      </Message>
-      <Link to="/">
-        <Button variant="default">
-          Return to Dashboard
-        </Button>
+      <Message>The page you're looking for doesn't exist or has been moved.</Message>
+      <Link to='/'>
+        <Button variant='default'>Return to Dashboard</Button>
       </Link>
     </NotFoundContainer>
   );

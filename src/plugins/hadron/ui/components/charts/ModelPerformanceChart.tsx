@@ -46,7 +46,7 @@ export const ModelPerformanceChart: React.FC<ModelPerformanceChartProps> = ({
         }
       });
 
-      const labels = sortedData.map(model => model.modelName);
+      const labels = sortedData.map((model) => model.modelName);
 
       // Prepare datasets based on metric
       let datasets: any[] = [];
@@ -55,21 +55,21 @@ export const ModelPerformanceChart: React.FC<ModelPerformanceChartProps> = ({
         datasets = [
           {
             label: 'P50 Latency (ms)',
-            data: sortedData.map(m => m.latencyPercentiles.p50),
+            data: sortedData.map((m) => m.latencyPercentiles.p50),
             backgroundColor: 'rgba(59, 130, 246, 0.8)',
             borderColor: '#3b82f6',
             borderWidth: 1
           },
           {
             label: 'P95 Latency (ms)',
-            data: sortedData.map(m => m.latencyPercentiles.p95),
+            data: sortedData.map((m) => m.latencyPercentiles.p95),
             backgroundColor: 'rgba(239, 68, 68, 0.8)',
             borderColor: '#ef4444',
             borderWidth: 1
           },
           {
             label: 'P99 Latency (ms)',
-            data: sortedData.map(m => m.latencyPercentiles.p99),
+            data: sortedData.map((m) => m.latencyPercentiles.p99),
             backgroundColor: 'rgba(245, 158, 11, 0.8)',
             borderColor: '#f59e0b',
             borderWidth: 1
@@ -79,14 +79,14 @@ export const ModelPerformanceChart: React.FC<ModelPerformanceChartProps> = ({
         datasets = [
           {
             label: 'Accuracy (%)',
-            data: sortedData.map(m => m.accuracy * 100),
+            data: sortedData.map((m) => m.accuracy * 100),
             backgroundColor: 'rgba(16, 185, 129, 0.8)',
             borderColor: '#10b981',
             borderWidth: 1
           },
           {
             label: 'Success Rate (%)',
-            data: sortedData.map(m => m.successRate * 100),
+            data: sortedData.map((m) => m.successRate * 100),
             backgroundColor: 'rgba(139, 92, 246, 0.8)',
             borderColor: '#8b5cf6',
             borderWidth: 1
@@ -96,7 +96,7 @@ export const ModelPerformanceChart: React.FC<ModelPerformanceChartProps> = ({
         datasets = [
           {
             label: 'Request Count',
-            data: sortedData.map(m => m.requestCount),
+            data: sortedData.map((m) => m.requestCount),
             backgroundColor: 'rgba(6, 182, 212, 0.8)',
             borderColor: '#06b6d4',
             borderWidth: 1
@@ -138,12 +138,12 @@ export const ModelPerformanceChart: React.FC<ModelPerformanceChartProps> = ({
             padding: 12,
             cornerRadius: 8,
             callbacks: {
-              label: function(context: any) {
+              label: function (context: any) {
                 let label = context.dataset.label || '';
                 if (label) {
                   label += ': ';
                 }
-                
+
                 const value = context.parsed.x;
                 if (metric === 'latency') {
                   label += value.toFixed(0) + ' ms';
@@ -152,13 +152,13 @@ export const ModelPerformanceChart: React.FC<ModelPerformanceChartProps> = ({
                 } else {
                   label += value.toLocaleString();
                 }
-                
+
                 // Add additional context
-                const model = data.find(m => m.modelName === context.label);
+                const model = data.find((m) => m.modelName === context.label);
                 if (model && metric === 'latency') {
                   label += ` (${model.requestCount.toLocaleString()} requests)`;
                 }
-                
+
                 return label;
               }
             }
@@ -177,7 +177,7 @@ export const ModelPerformanceChart: React.FC<ModelPerformanceChartProps> = ({
               font: {
                 size: 11
               },
-              callback: function(value: any) {
+              callback: function (value: any) {
                 if (metric === 'accuracy') {
                   return value + '%';
                 } else if (metric === 'latency') {
@@ -220,7 +220,7 @@ export const ModelPerformanceChart: React.FC<ModelPerformanceChartProps> = ({
   return (
     <div style={{ height }}>
       <canvas ref={chartRef} />
-      <div className="mt-4 flex justify-center space-x-4 text-xs text-muted-foreground">
+      <div className='mt-4 flex justify-center space-x-4 text-xs text-muted-foreground'>
         <button
           className={`px-2 py-1 rounded ${metric === 'latency' ? 'bg-primary/10 text-primary' : ''}`}
           onClick={() => window.location.reload()} // In real app, this would update the metric prop

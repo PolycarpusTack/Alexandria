@@ -1,18 +1,22 @@
 /**
  * Heimdall - Enterprise Log Intelligence Platform
- * 
+ *
  * Next-generation log management with real-time streaming,
  * ML-powered insights, and predictive analytics
  */
 
-import { Plugin, PluginContext, PluginManifest, PluginState } from '@core/plugin-registry/interfaces';
+import {
+  Plugin,
+  PluginContext,
+  PluginManifest,
+  PluginState
+} from '@core/plugin-registry/interfaces';
 import { Logger } from '@utils/logger';
 import { EventBus, Subscription } from '@core/event-bus/interfaces';
 import { DataService } from '@core/data/interfaces';
-import { EnhancedHeimdallService as HeimdallService } from './services/heimdall-service-enhanced';
 import { HeimdallAPI } from './api';
 import { HeimdallUI } from '../ui';
-import { 
+import {
   HeimdallLogEntry,
   HeimdallQuery,
   HeimdallPluginContext,
@@ -24,7 +28,6 @@ import {
   Alert,
   SecurityPolicy
 } from './interfaces';
-import { v4 as uuidv4 } from 'uuid';
 // TODO: Replace with uuid v7 when available
 const uuidv7 = () => `${Date.now()}-${uuidv4()}`;
 
@@ -32,7 +35,7 @@ export class HeimdallPlugin implements Plugin {
   public readonly manifest: PluginManifest;
   public readonly path: string;
   public state: PluginState = PluginState.INACTIVE;
-  
+
   private context?: PluginContext;
   private logger?: Logger;
   private eventBus?: EventBus;
@@ -43,7 +46,7 @@ export class HeimdallPlugin implements Plugin {
   private heimdallContext?: HeimdallPluginContext;
   private isActive = false;
   private eventSubscriptions: Subscription[] = [];
-  
+
   constructor(manifest: PluginManifest, path: string) {
     this.manifest = manifest;
     this.path = path;
@@ -53,22 +56,22 @@ export class HeimdallPlugin implements Plugin {
     if (!context) {
       throw new Error('Plugin context is required for installation');
     }
-    
+
     this.context = context;
     this.logger = context.getLogger();
     this.eventBus = context.getEventBus();
     this.dataService = context.getDataService();
     this.state = PluginState.INSTALLING;
-    
+
     this.logger.info('Installing Heimdall Log Intelligence Platform');
-    
+
     try {
       // Create database tables
       await this.createDatabaseSchema();
-      
+
       // Set default configuration
       await this.initializeConfiguration();
-      
+
       this.state = PluginState.INSTALLED;
       this.logger.info('Heimdall installed successfully');
     } catch (error) {
@@ -85,53 +88,44 @@ export class HeimdallPlugin implements Plugin {
     if (!this.context || !this.logger || !this.eventBus || !this.dataService) {
       throw new Error('Plugin must be installed before activation');
     }
-    
+
     this.state = PluginState.ACTIVATING;
     this.logger.info('Activating Heimdall');
-    
+
     try {
       // Initialize enhanced context
       await this.initializeHeimdallContext();
-      
+
       // Initialize core service
-      this.service = new HeimdallService(
-        this.heimdallContext!,
-        this.logger
-      );
+      this.service = new HeimdallService(this.heimdallContext!, this.logger);
       await this.service.initialize();
       await this.service.start();
-      
+
       // Initialize API
-      this.api = new HeimdallAPI(
-        this.heimdallContext!,
-        this.service
-      );
+      this.api = new HeimdallAPI(this.heimdallContext!, this.service);
       await this.api.registerRoutes();
-      
+
       // Initialize UI if available
       if (this.context.getUIRegistry) {
-        this.ui = new HeimdallUI(
-          this.context.getUIRegistry(),
-          this.service
-        );
+        this.ui = new HeimdallUI(this.context.getUIRegistry(), this.service);
         await this.ui.initialize();
       }
-      
+
       // Subscribe to events
       this.subscribeToEvents();
-      
+
       // Initialize Kafka if configured
       await this.initializeKafka();
-      
+
       // Initialize ML services
       await this.initializeMLServices();
-      
+
       // Connect to configured log sources
       await this.connectToLogSources();
-      
+
       this.isActive = true;
       this.state = PluginState.ACTIVE;
-      
+
       // Emit activation event
       await this.eventBus.publish('heimdall:activated', {
         timestamp: new Date(),
@@ -141,7 +135,7 @@ export class HeimdallPlugin implements Plugin {
           storageTiers: Object.keys(this.heimdallContext?.storage || {})
         }
       });
-      
+
       this.logger.info('Heimdall activated successfully');
     } catch (error) {
       this.state = PluginState.ERROR;
@@ -157,35 +151,35 @@ export class HeimdallPlugin implements Plugin {
     if (!this.logger) {
       throw new Error('Plugin not properly initialized');
     }
-    
+
     this.state = PluginState.DEACTIVATING;
     this.logger.info('Deactivating Heimdall');
-    
+
     try {
       this.isActive = false;
-      
+
       // Unsubscribe from events
       this.unsubscribeFromEvents();
-      
+
       // Stop the service
       await this.service?.stop();
-      
+
       // Disconnect Kafka
       await this.disconnectKafka();
-      
+
       // Clean up API routes
       await this.api?.unregisterRoutes();
-      
+
       // Clean up UI
       await this.ui?.cleanup();
-      
+
       // Emit deactivation event
       if (this.eventBus) {
         await this.eventBus.publish('heimdall:deactivated', {
           timestamp: new Date()
         });
       }
-      
+
       this.state = PluginState.INACTIVE;
       this.logger.info('Heimdall deactivated successfully');
     } catch (error) {
@@ -204,26 +198,26 @@ export class HeimdallPlugin implements Plugin {
     if (!this.context || !this.logger) {
       throw new Error('Plugin not properly initialized');
     }
-    
+
     this.state = PluginState.UNINSTALLING;
     this.logger.info('Uninstalling Heimdall');
-    
+
     try {
       // Deactivate first if active
       if (this.isActive) {
         await this.deactivate();
       }
-      
+
       // Ask for confirmation to remove data
       const removeData = await this.context.confirm(
         'Remove all log visualization data and configurations?'
       );
-      
+
       if (removeData) {
         await this.removeDatabaseSchema();
         await this.context.clearConfig();
       }
-      
+
       this.state = PluginState.UNINSTALLED;
       this.logger.info('Heimdall uninstalled successfully');
     } catch (error) {
@@ -251,8 +245,8 @@ export class HeimdallPlugin implements Plugin {
    * Initialize enhanced Heimdall context
    */
   private async initializeHeimdallContext(): Promise<void> {
-    const config = await this.context!.getConfig() as any;
-    
+    const config = (await this.context!.getConfig()) as any;
+
     this.heimdallContext = {
       ...this.context!,
       storage: {
@@ -263,13 +257,13 @@ export class HeimdallPlugin implements Plugin {
       cache: undefined,
       metrics: undefined
     };
-    
+
     // Initialize additional storage tiers if configured
     if (config.storage?.warm) {
       // Initialize warm storage (e.g., PostgreSQL)
       this.logger?.info('Initializing warm storage tier');
     }
-    
+
     if (config.storage?.cold) {
       // Initialize cold storage (e.g., S3)
       this.logger?.info('Initializing cold storage tier');
@@ -280,21 +274,21 @@ export class HeimdallPlugin implements Plugin {
    * Initialize Kafka integration
    */
   private async initializeKafka(): Promise<void> {
-    const config = await this.context!.getConfig() as any;
-    
+    const config = (await this.context!.getConfig()) as any;
+
     if (!config.kafka?.enabled) {
       this.logger?.info('Kafka integration disabled');
       return;
     }
-    
+
     try {
       this.logger?.info('Initializing Kafka integration', {
         brokers: config.kafka.brokers
       });
-      
+
       // TODO: Initialize Kafka client
       // this.heimdallContext!.kafka = new KafkaClient(config.kafka);
-      
+
       this.logger?.info('Kafka integration initialized successfully');
     } catch (error) {
       this.logger?.error('Failed to initialize Kafka', {
@@ -324,22 +318,22 @@ export class HeimdallPlugin implements Plugin {
    * Initialize ML services
    */
   private async initializeMLServices(): Promise<void> {
-    const config = await this.context!.getConfig() as any;
-    
+    const config = (await this.context!.getConfig()) as any;
+
     if (!config.ml?.anomalyDetection && !config.ml?.naturalLanguageSearch) {
       this.logger?.info('ML services disabled');
       return;
     }
-    
+
     try {
       this.logger?.info('Initializing ML services', {
         anomalyDetection: config.ml.anomalyDetection,
         naturalLanguageSearch: config.ml.naturalLanguageSearch
       });
-      
+
       // TODO: Initialize ML client
       // this.heimdallContext!.ml = new MLClient(config.ml);
-      
+
       this.logger?.info('ML services initialized successfully');
     } catch (error) {
       this.logger?.error('Failed to initialize ML services', {
@@ -355,7 +349,7 @@ export class HeimdallPlugin implements Plugin {
     if (!this.dataService) {
       throw new Error('DataService not available');
     }
-    
+
     // Use parameterized schema creation to prevent SQL injection
     const schemas = [
       this.getLogSourcesSchema(),
@@ -363,15 +357,15 @@ export class HeimdallPlugin implements Plugin {
       this.getLogPatternsSchema(),
       this.getLogAlertsSchema()
     ];
-    
+
     for (const schema of schemas) {
       await this.executeSchemaCommand(schema);
     }
-    
+
     // Create indexes
     await this.createIndexes();
   }
-  
+
   private getLogSourcesSchema(): string {
     return `
 CREATE TABLE IF NOT EXISTS heimdall_sources (
@@ -386,7 +380,7 @@ CREATE TABLE IF NOT EXISTS heimdall_sources (
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )`;
   }
-  
+
   private getSavedQueriesSchema(): string {
     return `
 
@@ -403,7 +397,7 @@ CREATE TABLE IF NOT EXISTS heimdall_queries (
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )`;
   }
-  
+
   private getLogPatternsSchema(): string {
     return `
 
@@ -419,7 +413,7 @@ CREATE TABLE IF NOT EXISTS heimdall_patterns (
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )`;
   }
-  
+
   private getLogAlertsSchema(): string {
     return `
 
@@ -436,7 +430,7 @@ CREATE TABLE IF NOT EXISTS heimdall_alerts (
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )`;
   }
-  
+
   private async executeSchemaCommand(schema: string): Promise<void> {
     try {
       // Use a safe schema execution method
@@ -449,12 +443,12 @@ CREATE TABLE IF NOT EXISTS heimdall_alerts (
       throw error;
     }
   }
-  
+
   private async executeSafeSQL(sql: string): Promise<void> {
     if (!this.dataService) {
       throw new Error('DataService not available');
     }
-    
+
     // Enhanced SQL injection prevention
     const dangerousPatterns = [
       /;\s*DROP\s+/i,
@@ -469,7 +463,7 @@ CREATE TABLE IF NOT EXISTS heimdall_alerts (
       /xp_/i,
       /sp_/i
     ];
-    
+
     for (const pattern of dangerousPatterns) {
       if (pattern.test(sql)) {
         this.logger?.error('SQL injection attempt detected', {
@@ -479,13 +473,14 @@ CREATE TABLE IF NOT EXISTS heimdall_alerts (
         throw new Error('Potentially unsafe SQL detected');
       }
     }
-    
+
     // Whitelist allowed SQL operations for schema creation
-    const allowedOperations = /^\s*(CREATE\s+TABLE\s+IF\s+NOT\s+EXISTS|CREATE\s+INDEX\s+IF\s+NOT\s+EXISTS|DROP\s+TABLE\s+IF\s+EXISTS)\s+/i;
+    const allowedOperations =
+      /^\s*(CREATE\s+TABLE\s+IF\s+NOT\s+EXISTS|CREATE\s+INDEX\s+IF\s+NOT\s+EXISTS|DROP\s+TABLE\s+IF\s+EXISTS)\s+/i;
     if (!allowedOperations.test(sql)) {
       throw new Error('SQL operation not allowed');
     }
-    
+
     try {
       // Use DataService with proper error handling
       const executeMethod = (this.dataService as any).execute;
@@ -503,7 +498,7 @@ CREATE TABLE IF NOT EXISTS heimdall_alerts (
       throw error;
     }
   }
-  
+
   private async createIndexes(): Promise<void> {
     const indexes = [
       'CREATE INDEX IF NOT EXISTS idx_heimdall_queries_user_id ON heimdall_queries(user_id)',
@@ -513,11 +508,10 @@ CREATE TABLE IF NOT EXISTS heimdall_alerts (
       'CREATE INDEX IF NOT EXISTS idx_heimdall_alerts_enabled ON heimdall_alerts(enabled)',
       'CREATE INDEX IF NOT EXISTS idx_heimdall_alerts_triggered ON heimdall_alerts(last_triggered)'
     ];
-    
+
     for (const index of indexes) {
       await this.executeSafeSQL(index);
     }
-
   }
 
   /**
@@ -527,14 +521,14 @@ CREATE TABLE IF NOT EXISTS heimdall_alerts (
     if (!this.dataService) {
       throw new Error('DataService not available');
     }
-    
+
     const dropCommands = [
       'DROP TABLE IF EXISTS heimdall_alerts CASCADE',
-      'DROP TABLE IF EXISTS heimdall_patterns CASCADE', 
+      'DROP TABLE IF EXISTS heimdall_patterns CASCADE',
       'DROP TABLE IF EXISTS heimdall_queries CASCADE',
       'DROP TABLE IF EXISTS heimdall_sources CASCADE'
     ];
-    
+
     for (const command of dropCommands) {
       await this.executeSafeSQL(command);
     }
@@ -544,8 +538,8 @@ CREATE TABLE IF NOT EXISTS heimdall_alerts (
    * Initialize plugin configuration
    */
   private async initializeConfiguration(): Promise<void> {
-    const config = await this.context!.getConfig() as any;
-    
+    const config = (await this.context!.getConfig()) as any;
+
     const defaultConfig = {
       maxQueryResults: config?.maxQueryResults || 10000,
       defaultTimeRange: config?.defaultTimeRange || '1h',
@@ -573,7 +567,7 @@ CREATE TABLE IF NOT EXISTS heimdall_alerts (
       },
       logSources: config?.logSources || []
     };
-    
+
     await this.context!.setConfig(defaultConfig);
   }
 
@@ -581,13 +575,13 @@ CREATE TABLE IF NOT EXISTS heimdall_alerts (
    * Connect to configured log sources
    */
   private async connectToLogSources(): Promise<void> {
-    const config = await this.context!.getConfig() as any;
-    
+    const config = (await this.context!.getConfig()) as any;
+
     if (!config.logSources || config.logSources.length === 0) {
       this.logger?.info('No log sources configured');
       return;
     }
-    
+
     for (const sourceConfig of config.logSources) {
       try {
         // TODO: Implement source connection through service
@@ -608,7 +602,7 @@ CREATE TABLE IF NOT EXISTS heimdall_alerts (
     if (!this.eventBus) {
       throw new Error('EventBus not available');
     }
-    
+
     try {
       // Subscribe to crash analysis events
       const crashLogSubscription = this.eventBus.subscribe(
@@ -616,21 +610,21 @@ CREATE TABLE IF NOT EXISTS heimdall_alerts (
         this.handleCrashLogAnalyzed.bind(this)
       );
       this.eventSubscriptions.push(crashLogSubscription);
-      
+
       // Subscribe to system events
       const systemErrorSubscription = this.eventBus.subscribe(
         'system:error',
         this.handleSystemError.bind(this)
       );
       this.eventSubscriptions.push(systemErrorSubscription);
-      
+
       // Subscribe to user activity
       const userActivitySubscription = this.eventBus.subscribe(
         'user:activity',
         this.handleUserActivity.bind(this)
       );
       this.eventSubscriptions.push(userActivitySubscription);
-      
+
       // Subscribe to ML events
       const mlAnomalySubscription = this.eventBus.subscribe(
         'ml:anomaly-detected',
@@ -650,7 +644,7 @@ CREATE TABLE IF NOT EXISTS heimdall_alerts (
    */
   private unsubscribeFromEvents(): void {
     try {
-      this.eventSubscriptions.forEach(subscription => {
+      this.eventSubscriptions.forEach((subscription) => {
         if (subscription && typeof subscription.unsubscribe === 'function') {
           subscription.unsubscribe();
         } else if (typeof subscription === 'function') {
@@ -706,10 +700,10 @@ CREATE TABLE IF NOT EXISTS heimdall_alerts (
           confidence: 0.95
         }
       };
-      
+
       // Process through Heimdall service
       // TODO: await this.service?.processLog(logEntry);
-      
+
       // Check for patterns and anomalies
       await this.eventBus?.publish('heimdall:pattern-analysis-requested', {
         logId: logEntry.id,
@@ -761,7 +755,7 @@ CREATE TABLE IF NOT EXISTS heimdall_alerts (
           piiFields: data.userId ? ['entities.userId'] : []
         }
       };
-      
+
       // TODO: await this.service?.processLog(logEntry);
     } catch (error) {
       this.logger?.error('Failed to handle system error event', {
@@ -809,7 +803,7 @@ CREATE TABLE IF NOT EXISTS heimdall_alerts (
           encryptionStatus: 'encrypted'
         }
       };
-      
+
       // TODO: await this.service?.processLog(logEntry);
     } catch (error) {
       this.logger?.error('Failed to handle user activity event', {

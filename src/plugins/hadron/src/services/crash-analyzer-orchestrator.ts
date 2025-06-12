@@ -1,23 +1,17 @@
 import { Logger } from '../../../../utils/logger';
-import { 
-  ICrashAnalyzerService, 
-  ILogParser, 
+import {
+  ICrashAnalyzerService,
+  ILogParser,
   ICrashRepository,
-  CrashLog, 
+  CrashLog,
   CrashAnalysisResult,
   ParsedCrashData
 } from '../interfaces';
-import { 
-  AnalysisResult,
-  CodeSnippet,
-  AnalysisSession,
-  UploadedFile
-} from '../models';
+import { AnalysisResult, CodeSnippet, AnalysisSession, UploadedFile } from '../models';
 import { FileUploadService } from './file-upload-service';
 import { LLMAnalysisService } from './llm-analysis-service';
 import { SessionManagementService } from './session-management-service';
 import { FileSecurityService, FileScanResult } from './file-security-service';
-import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Orchestrator service that coordinates crash analysis operations
@@ -62,12 +56,12 @@ export class CrashAnalyzerOrchestrator implements ICrashAnalyzerService {
       userId,
       sessionId
     );
-    
+
     // Scan for security if service is available
     if (this.fileSecurityService) {
       try {
         const scanResult = await this.fileSecurityService.scanFile(uploadedFile.id, false);
-        
+
         if (scanResult.riskLevel === 'high' || scanResult.riskLevel === 'critical') {
           this.logger.warn('Security scan detected high risk file:', {
             fileId: uploadedFile.id,
@@ -83,7 +77,7 @@ export class CrashAnalyzerOrchestrator implements ICrashAnalyzerService {
         });
       }
     }
-    
+
     return uploadedFile;
   }
 
@@ -99,7 +93,7 @@ export class CrashAnalyzerOrchestrator implements ICrashAnalyzerService {
   ): Promise<CodeSnippet> {
     // Validate session ownership
     await this.sessionManager.validateSessionOwnership(sessionId, userId);
-    
+
     const snippet = new CodeSnippet({
       userId,
       sessionId,
@@ -107,7 +101,7 @@ export class CrashAnalyzerOrchestrator implements ICrashAnalyzerService {
       language,
       description
     });
-    
+
     // This would be delegated to a snippet service in a full implementation
     // For now, we'll use the hadron repository directly
     throw new Error('Code snippet saving should be implemented through a dedicated service');
@@ -116,41 +110,37 @@ export class CrashAnalyzerOrchestrator implements ICrashAnalyzerService {
   /**
    * Analyze a log file
    */
-  async analyzeLog(
-    logId: string,
-    content: string,
-    metadata: any
-  ): Promise<CrashAnalysisResult> {
+  async analyzeLog(logId: string, content: string, metadata: any): Promise<CrashAnalysisResult> {
     // Validate inputs
     if (!logId || !content || !metadata) {
       throw new Error('Log ID, content, and metadata are required');
     }
-    
+
     const sessionId = metadata.sessionId;
     if (!sessionId) {
       throw new Error('Session ID is required in metadata');
     }
-    
-    this.logger.info(`Analyzing log: ${logId}`, { 
+
+    this.logger.info(`Analyzing log: ${logId}`, {
       contentLength: content.length,
       sessionId
     });
-    
+
     let crashLog: CrashLog | null = null;
-    
+
     try {
       // Validate session
       const session = await this.sessionManager.getSession(sessionId);
       if (!session) {
         throw new Error(`Session not found: ${sessionId}`);
       }
-      
+
       // Update session status
       await this.sessionManager.updateSessionStatus(
         sessionId,
         session.status // Will be updated to IN_PROGRESS by the service
       );
-      
+
       // Create crash log
       crashLog = {
         id: logId || uuidv4(),
@@ -164,23 +154,23 @@ export class CrashAnalyzerOrchestrator implements ICrashAnalyzerService {
           ...metadata
         }
       };
-      
+
       await this.crashRepository.saveCrashLog(crashLog);
-      
+
       // Parse the log
       const parsedData = await this.parseLog(content, metadata);
-      
+
       // Update crash log with parsed data
       crashLog.parsedData = parsedData;
       await this.crashRepository.saveCrashLog(crashLog);
-      
+
       // Analyze with LLM
       const analysisResult = await this.llmAnalysisService.analyzeCrashLog(
         parsedData,
         content,
         metadata.llmModel
       );
-      
+
       // Create the analysis result
       const result: CrashAnalysisResult = {
         id: uuidv4(),
@@ -188,20 +178,19 @@ export class CrashAnalyzerOrchestrator implements ICrashAnalyzerService {
         timestamp: new Date(),
         ...analysisResult
       };
-      
+
       // Save the analysis
       await this.crashRepository.saveAnalysisResult(result);
-      
+
       // Update crash log
       crashLog.analysis = result;
       await this.crashRepository.saveCrashLog(crashLog);
-      
+
       // Complete the session
       await this.sessionManager.completeSession(sessionId, result.summary);
-      
+
       this.logger.info(`Analysis completed for log: ${logId}`);
       return result;
-      
     } catch (error) {
       this.logger.error(`Error analyzing log: ${logId}`, {
         error: error instanceof Error ? error.message : String(error),
@@ -209,7 +198,7 @@ export class CrashAnalyzerOrchestrator implements ICrashAnalyzerService {
         sessionId,
         userId: metadata?.userId
       });
-      
+
       // Update session status to failed
       if (sessionId) {
         try {
@@ -223,7 +212,7 @@ export class CrashAnalyzerOrchestrator implements ICrashAnalyzerService {
           });
         }
       }
-      
+
       // Update crash log with error if created
       if (crashLog) {
         try {
@@ -233,7 +222,7 @@ export class CrashAnalyzerOrchestrator implements ICrashAnalyzerService {
             analysisError: true,
             errorTimestamp: new Date().toISOString()
           };
-          
+
           await this.crashRepository.saveCrashLog(crashLog);
         } catch (updateError) {
           this.logger.error('Error updating crash log with error info:', {
@@ -241,7 +230,7 @@ export class CrashAnalyzerOrchestrator implements ICrashAnalyzerService {
           });
         }
       }
-      
+
       throw error;
     }
   }
@@ -318,7 +307,10 @@ export class CrashAnalyzerOrchestrator implements ICrashAnalyzerService {
     return this.fileSecurityService.scanFile(fileId, autoQuarantine);
   }
 
-  async batchScanSessionFiles(sessionId: string, autoQuarantine = false): Promise<FileScanResult[]> {
+  async batchScanSessionFiles(
+    sessionId: string,
+    autoQuarantine = false
+  ): Promise<FileScanResult[]> {
     if (!this.fileSecurityService) {
       throw new Error('File security service not initialized');
     }
@@ -349,7 +341,7 @@ export class CrashAnalyzerOrchestrator implements ICrashAnalyzerService {
       this.logger.error('Error parsing log:', {
         error: parseError instanceof Error ? parseError.message : String(parseError)
       });
-      
+
       // Return minimal parsed data structure
       return {
         timestamps: [],
@@ -373,16 +365,16 @@ export class CrashAnalyzerOrchestrator implements ICrashAnalyzerService {
     if (metadata.title) {
       return metadata.title;
     }
-    
+
     // Try to extract meaningful title from content
     const errorRegex = /(?:Error|Exception|FATAL)(?:\s+in\s+|\s*:\s*|\s+at\s+)(.*?)(?:\n|$)/m;
     const errorMatch = content.match(errorRegex);
-    
+
     if (errorMatch && errorMatch[1]) {
       const errorTitle = errorMatch[1].trim();
       return errorTitle.length > 60 ? `${errorTitle.substring(0, 57)}...` : errorTitle;
     }
-    
+
     // Fallback to generic title
     const date = new Date().toISOString().split('T')[0];
     const source = metadata.source || 'manual';

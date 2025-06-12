@@ -1,6 +1,6 @@
 /**
  * Comprehensive Test Suite for Log Visualization Plugin
- * 
+ *
  * Tests cover all core functionality including service, API, and adapters
  */
 
@@ -9,10 +9,10 @@ import { LogVisualizationService } from '../src/services/log-visualization-servi
 import { BaseLogAdapter } from '../src/services/base-log-adapter';
 import { ElasticsearchAdapter } from '../src/services/elasticsearch-adapter';
 import { LogVisualizationAPI } from '../src/api';
-import { 
-  LogQuery, 
-  LogSourceConfig, 
-  LogEntry, 
+import {
+  LogQuery,
+  LogSourceConfig,
+  LogEntry,
   LogLevel,
   LogPattern,
   LogSourceType
@@ -75,7 +75,7 @@ describe('Log Visualization Plugin', () => {
       author: 'Test',
       permissions: []
     };
-    
+
     plugin = new LogVisualizationPlugin(manifest, '/test/path');
   });
 
@@ -89,7 +89,9 @@ describe('Log Visualization Plugin', () => {
       expect(mockDataService.execute).toHaveBeenCalledWith(
         expect.stringContaining('CREATE TABLE IF NOT EXISTS saved_queries')
       );
-      expect(mockLogger.info).toHaveBeenCalledWith('Log Visualization Plugin installed successfully');
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Log Visualization Plugin installed successfully'
+      );
     });
 
     it('should activate successfully', async () => {
@@ -100,7 +102,9 @@ describe('Log Visualization Plugin', () => {
         'log-visualization:activated',
         expect.objectContaining({ timestamp: expect.any(Date) })
       );
-      expect(mockLogger.info).toHaveBeenCalledWith('Log Visualization Plugin activated successfully');
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Log Visualization Plugin activated successfully'
+      );
     });
 
     it('should deactivate successfully', async () => {
@@ -112,15 +116,21 @@ describe('Log Visualization Plugin', () => {
         'log-visualization:deactivated',
         expect.objectContaining({ timestamp: expect.any(Date) })
       );
-      expect(mockLogger.info).toHaveBeenCalledWith('Log Visualization Plugin deactivated successfully');
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Log Visualization Plugin deactivated successfully'
+      );
     });
 
     it('should uninstall successfully', async () => {
       await plugin.install(mockContext);
       await plugin.uninstall();
 
-      expect(mockDataService.execute).toHaveBeenCalledWith('DROP TABLE IF EXISTS log_alerts CASCADE');
-      expect(mockLogger.info).toHaveBeenCalledWith('Log Visualization Plugin uninstalled successfully');
+      expect(mockDataService.execute).toHaveBeenCalledWith(
+        'DROP TABLE IF EXISTS log_alerts CASCADE'
+      );
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Log Visualization Plugin uninstalled successfully'
+      );
     });
 
     it('should handle installation errors', async () => {
@@ -144,7 +154,9 @@ describe('Log Visualization Plugin', () => {
     it('should initialize successfully', async () => {
       await service.initialize();
 
-      expect(mockLogger.info).toHaveBeenCalledWith('Log Visualization Service initialized successfully');
+      expect(mockLogger.info).toHaveBeenCalledWith(
+        'Log Visualization Service initialized successfully'
+      );
     });
 
     it('should connect to log sources', async () => {
@@ -200,7 +212,9 @@ describe('Log Visualization Plugin', () => {
       const invalidQuery = {} as LogQuery;
 
       await service.initialize();
-      await expect(service.query(invalidQuery)).rejects.toThrow('Time range with start and end is required');
+      await expect(service.query(invalidQuery)).rejects.toThrow(
+        'Time range with start and end is required'
+      );
     });
 
     it('should save and retrieve queries', async () => {
@@ -212,9 +226,14 @@ describe('Log Visualization Plugin', () => {
       };
 
       await service.initialize();
-      
-      const savedQuery = await service.saveQuery('user-123', 'Test Query', 'Test description', query);
-      
+
+      const savedQuery = await service.saveQuery(
+        'user-123',
+        'Test Query',
+        'Test description',
+        query
+      );
+
       expect(savedQuery).toMatchObject({
         id: expect.any(String),
         userId: 'user-123',
@@ -276,10 +295,12 @@ describe('Log Visualization Plugin', () => {
             value: 10
           }
         },
-        actions: [{
-          type: 'notification' as const,
-          config: { message: 'High error rate detected' }
-        }]
+        actions: [
+          {
+            type: 'notification' as const,
+            config: { message: 'High error rate detected' }
+          }
+        ]
       };
 
       await service.initialize();
@@ -349,7 +370,7 @@ describe('Log Visualization Plugin', () => {
       });
 
       // Wait for a few logs
-      await new Promise(resolve => setTimeout(resolve, 2100));
+      await new Promise((resolve) => setTimeout(resolve, 2100));
       stopStream();
 
       expect(receivedLogs.length).toBeGreaterThan(0);
@@ -409,11 +430,13 @@ describe('Log Visualization Plugin', () => {
           end: new Date('2024-01-02')
         },
         search: 'error',
-        aggregations: [{
-          field: 'level',
-          type: 'terms',
-          name: 'log_levels'
-        }]
+        aggregations: [
+          {
+            field: 'level',
+            type: 'terms',
+            name: 'log_levels'
+          }
+        ]
       };
 
       const result = await adapter.query(query);
@@ -435,7 +458,9 @@ describe('Log Visualization Plugin', () => {
 
       // Mock client creation to throw error
       const originalCreateClient = adapter['createElasticsearchClient'];
-      adapter['createElasticsearchClient'] = jest.fn().mockRejectedValue(new Error('Connection failed'));
+      adapter['createElasticsearchClient'] = jest
+        .fn()
+        .mockRejectedValue(new Error('Connection failed'));
 
       await expect(adapter.connect(config)).rejects.toThrow('Connection failed');
     });
@@ -447,8 +472,9 @@ describe('Log Visualization Plugin', () => {
       await plugin.activate();
 
       // Get the crash analyzer event handler
-      const crashHandler = mockEventBus.subscribe.mock.calls
-        .find(call => call[0] === 'crash-analyzer:log-analyzed')[1];
+      const crashHandler = mockEventBus.subscribe.mock.calls.find(
+        (call) => call[0] === 'crash-analyzer:log-analyzed'
+      )[1];
 
       const crashData = {
         crashLogId: 'crash-123',
@@ -476,8 +502,9 @@ describe('Log Visualization Plugin', () => {
       await plugin.install(mockContext);
       await plugin.activate();
 
-      const systemErrorHandler = mockEventBus.subscribe.mock.calls
-        .find(call => call[0] === 'system:error')[1];
+      const systemErrorHandler = mockEventBus.subscribe.mock.calls.find(
+        (call) => call[0] === 'system:error'
+      )[1];
 
       const errorData = {
         message: 'Database connection lost',
@@ -522,8 +549,9 @@ describe('Log Visualization Plugin', () => {
       const service = plugin['service'];
       jest.spyOn(service, 'indexLogEntry').mockRejectedValueOnce(new Error('Index error'));
 
-      const crashHandler = mockEventBus.subscribe.mock.calls
-        .find(call => call[0] === 'crash-analyzer:log-analyzed')[1];
+      const crashHandler = mockEventBus.subscribe.mock.calls.find(
+        (call) => call[0] === 'crash-analyzer:log-analyzed'
+      )[1];
 
       await crashHandler({ summary: 'test crash' });
 
@@ -574,11 +602,14 @@ describe('Integration Tests', () => {
       author: 'Test',
       permissions: []
     };
-    
+
     const plugin = new LogVisualizationPlugin(manifest, '/test/path');
     const mockContext = {
       getLogger: () => ({
-        debug: jest.fn(), info: jest.fn(), warn: jest.fn(), error: jest.fn()
+        debug: jest.fn(),
+        info: jest.fn(),
+        warn: jest.fn(),
+        error: jest.fn()
       }),
       getDataService: () => ({
         execute: jest.fn().mockResolvedValue(true),
@@ -590,7 +621,9 @@ describe('Integration Tests', () => {
       }),
       getRouter: () => ({ use: jest.fn() }),
       getUIRegistry: () => ({
-        registerPage: jest.fn(), addMenuItem: jest.fn(), registerSettings: jest.fn()
+        registerPage: jest.fn(),
+        addMenuItem: jest.fn(),
+        registerSettings: jest.fn()
       }),
       getConfig: () => ({}),
       setConfig: jest.fn(),

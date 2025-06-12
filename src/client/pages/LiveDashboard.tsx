@@ -10,8 +10,8 @@ import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
 import { useToast } from '../components/ui/use-toast';
-import {       
-  Activity, 
+import {
+  Activity,
   AlertTriangle,
   Brain,
   CheckCircle,
@@ -31,9 +31,9 @@ import {
   TrendingUp,
   Users,
   Zap
-      } from 'lucide-react';
+} from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { SimpleChart, SimpleBarChart } from '../components/SimpleChart';
+import { SimpleChart } from '../components/SimpleChart';
 
 interface SystemMetrics {
   cpu: number;
@@ -87,7 +87,7 @@ interface Activity {
 
 const LiveDashboard: React.FC = () => {
   const { toast } = useToast();
-  
+
   // State for all data
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -102,7 +102,7 @@ const LiveDashboard: React.FC = () => {
     avgResponseTime: 0
   });
   const [chartData, setChartData] = useState<any[]>([]);
-  
+
   // Polling interval
   const [pollingInterval, setPollingInterval] = useState<NodeJS.Timeout | null>(null);
 
@@ -210,7 +210,7 @@ const LiveDashboard: React.FC = () => {
   // Load all data
   const loadDashboardData = useCallback(async () => {
     if (!loading) setRefreshing(true);
-    
+
     try {
       await Promise.all([
         fetchSystemMetrics(),
@@ -236,14 +236,14 @@ const LiveDashboard: React.FC = () => {
   // Initial load and setup polling
   useEffect(() => {
     loadDashboardData();
-    
+
     // Set up polling for real-time updates (every 30 seconds)
     const interval = setInterval(() => {
       loadDashboardData();
     }, 30000);
-    
+
     setPollingInterval(interval);
-    
+
     return () => {
       if (interval) clearInterval(interval);
     };
@@ -267,7 +267,7 @@ const LiveDashboard: React.FC = () => {
     const days = Math.floor(seconds / 86400);
     const hours = Math.floor((seconds % 86400) / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
-    
+
     if (days > 0) return `${days}d ${hours}h`;
     if (hours > 0) return `${hours}h ${minutes}m`;
     return `${minutes}m`;
@@ -275,29 +275,25 @@ const LiveDashboard: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="text-center space-y-4">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto" />
-          <h2 className="text-xl font-semibold">Loading Live Dashboard</h2>
-          <p className="text-muted-foreground">Fetching real-time data...</p>
+      <div className='flex items-center justify-center h-full'>
+        <div className='text-center space-y-4'>
+          <Loader2 className='h-8 w-8 animate-spin mx-auto' />
+          <h2 className='text-xl font-semibold'>Loading Live Dashboard</h2>
+          <p className='text-muted-foreground'>Fetching real-time data...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className='space-y-6'>
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className='flex justify-between items-center'>
         <div>
-          <h1 className="text-3xl font-bold">Live Dashboard</h1>
-          <p className="text-muted-foreground">Real-time platform metrics and status</p>
+          <h1 className='text-3xl font-bold'>Live Dashboard</h1>
+          <p className='text-muted-foreground'>Real-time platform metrics and status</p>
         </div>
-        <Button 
-          onClick={handleRefresh} 
-          disabled={refreshing}
-          variant="outline"
-        >
+        <Button onClick={handleRefresh} disabled={refreshing} variant='outline'>
           <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
           Refresh
         </Button>
@@ -306,7 +302,7 @@ const LiveDashboard: React.FC = () => {
       {/* API Status Alert */}
       {!systemMetrics && (
         <Alert>
-          <AlertTriangle className="h-4 w-4" />
+          <AlertTriangle className='h-4 w-4' />
           <AlertDescription>
             Some backend APIs are not available. Showing available data only.
           </AlertDescription>
@@ -315,20 +311,23 @@ const LiveDashboard: React.FC = () => {
 
       {/* System Metrics */}
       {systemMetrics && (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">CPU Usage</CardTitle>
-              <Cpu className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+              <CardTitle className='text-sm font-medium'>CPU Usage</CardTitle>
+              <Cpu className='h-4 w-4 text-muted-foreground' />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{systemMetrics.cpu}%</div>
-              <div className="mt-2">
-                <div className="w-full bg-secondary rounded-full h-2">
-                  <div 
+              <div className='text-2xl font-bold'>{systemMetrics.cpu}%</div>
+              <div className='mt-2'>
+                <div className='w-full bg-secondary rounded-full h-2'>
+                  <div
                     className={`h-2 rounded-full ${
-                      systemMetrics.cpu > 80 ? 'bg-red-500' : 
-                      systemMetrics.cpu > 60 ? 'bg-yellow-500' : 'bg-green-500'
+                      systemMetrics.cpu > 80
+                        ? 'bg-red-500'
+                        : systemMetrics.cpu > 60
+                          ? 'bg-yellow-500'
+                          : 'bg-green-500'
                     }`}
                     style={{ width: `${systemMetrics.cpu}%` }}
                   />
@@ -338,23 +337,24 @@ const LiveDashboard: React.FC = () => {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Memory</CardTitle>
-              <Memory className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+              <CardTitle className='text-sm font-medium'>Memory</CardTitle>
+              <Memory className='h-4 w-4 text-muted-foreground' />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {formatBytes(systemMetrics.memory.used)}
-              </div>
-              <p className="text-xs text-muted-foreground">
+              <div className='text-2xl font-bold'>{formatBytes(systemMetrics.memory.used)}</div>
+              <p className='text-xs text-muted-foreground'>
                 of {formatBytes(systemMetrics.memory.total)}
               </p>
-              <div className="mt-2">
-                <div className="w-full bg-secondary rounded-full h-2">
-                  <div 
+              <div className='mt-2'>
+                <div className='w-full bg-secondary rounded-full h-2'>
+                  <div
                     className={`h-2 rounded-full ${
-                      systemMetrics.memory.percentage > 80 ? 'bg-red-500' : 
-                      systemMetrics.memory.percentage > 60 ? 'bg-yellow-500' : 'bg-green-500'
+                      systemMetrics.memory.percentage > 80
+                        ? 'bg-red-500'
+                        : systemMetrics.memory.percentage > 60
+                          ? 'bg-yellow-500'
+                          : 'bg-green-500'
                     }`}
                     style={{ width: `${systemMetrics.memory.percentage}%` }}
                   />
@@ -364,23 +364,24 @@ const LiveDashboard: React.FC = () => {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Storage</CardTitle>
-              <HardDrive className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+              <CardTitle className='text-sm font-medium'>Storage</CardTitle>
+              <HardDrive className='h-4 w-4 text-muted-foreground' />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {formatBytes(systemMetrics.disk.used)}
-              </div>
-              <p className="text-xs text-muted-foreground">
+              <div className='text-2xl font-bold'>{formatBytes(systemMetrics.disk.used)}</div>
+              <p className='text-xs text-muted-foreground'>
                 of {formatBytes(systemMetrics.disk.total)}
               </p>
-              <div className="mt-2">
-                <div className="w-full bg-secondary rounded-full h-2">
-                  <div 
+              <div className='mt-2'>
+                <div className='w-full bg-secondary rounded-full h-2'>
+                  <div
                     className={`h-2 rounded-full ${
-                      systemMetrics.disk.percentage > 80 ? 'bg-red-500' : 
-                      systemMetrics.disk.percentage > 60 ? 'bg-yellow-500' : 'bg-green-500'
+                      systemMetrics.disk.percentage > 80
+                        ? 'bg-red-500'
+                        : systemMetrics.disk.percentage > 60
+                          ? 'bg-yellow-500'
+                          : 'bg-green-500'
                     }`}
                     style={{ width: `${systemMetrics.disk.percentage}%` }}
                   />
@@ -390,111 +391,96 @@ const LiveDashboard: React.FC = () => {
           </Card>
 
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Uptime</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
+            <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+              <CardTitle className='text-sm font-medium'>Uptime</CardTitle>
+              <Clock className='h-4 w-4 text-muted-foreground' />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
-                {formatUptime(systemMetrics.uptime)}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                System uptime
-              </p>
+              <div className='text-2xl font-bold'>{formatUptime(systemMetrics.uptime)}</div>
+              <p className='text-xs text-muted-foreground'>System uptime</p>
             </CardContent>
           </Card>
         </div>
       )}
 
       {/* Stats Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4'>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Requests</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+            <CardTitle className='text-sm font-medium'>Total Requests</CardTitle>
+            <Activity className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {stats.totalRequests.toLocaleString()}
+            <div className='text-2xl font-bold'>{stats.totalRequests.toLocaleString()}</div>
+            <p className='text-xs text-muted-foreground'>Last 24 hours</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+            <CardTitle className='text-sm font-medium'>Error Rate</CardTitle>
+            <AlertTriangle className='h-4 w-4 text-muted-foreground' />
+          </CardHeader>
+          <CardContent>
+            <div className='text-2xl font-bold'>
+              {stats.totalRequests > 0
+                ? ((stats.totalErrors / stats.totalRequests) * 100).toFixed(2)
+                : 0}
+              %
             </div>
-            <p className="text-xs text-muted-foreground">
-              Last 24 hours
-            </p>
+            <p className='text-xs text-muted-foreground'>{stats.totalErrors} errors</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Error Rate</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+            <CardTitle className='text-sm font-medium'>Active Users</CardTitle>
+            <Users className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">
-              {stats.totalRequests > 0 
-                ? ((stats.totalErrors / stats.totalRequests) * 100).toFixed(2) 
-                : 0}%
-            </div>
-            <p className="text-xs text-muted-foreground">
-              {stats.totalErrors} errors
-            </p>
+            <div className='text-2xl font-bold'>{stats.activeUsers}</div>
+            <p className='text-xs text-muted-foreground'>Currently online</p>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Users</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+          <CardHeader className='flex flex-row items-center justify-between space-y-0 pb-2'>
+            <CardTitle className='text-sm font-medium'>Avg Response</CardTitle>
+            <Zap className='h-4 w-4 text-muted-foreground' />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.activeUsers}</div>
-            <p className="text-xs text-muted-foreground">
-              Currently online
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Response</CardTitle>
-            <Zap className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{stats.avgResponseTime}ms</div>
-            <p className="text-xs text-muted-foreground">
-              Last hour
-            </p>
+            <div className='text-2xl font-bold'>{stats.avgResponseTime}ms</div>
+            <p className='text-xs text-muted-foreground'>Last hour</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Main Content Tabs */}
-      <Tabs defaultValue="overview" className="space-y-4">
+      <Tabs defaultValue='overview' className='space-y-4'>
         <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="plugins">Plugins</TabsTrigger>
-          <TabsTrigger value="ai-models">AI Models</TabsTrigger>
-          <TabsTrigger value="activity">Activity</TabsTrigger>
+          <TabsTrigger value='overview'>Overview</TabsTrigger>
+          <TabsTrigger value='plugins'>Plugins</TabsTrigger>
+          <TabsTrigger value='ai-models'>AI Models</TabsTrigger>
+          <TabsTrigger value='activity'>Activity</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview" className="space-y-4">
+        <TabsContent value='overview' className='space-y-4'>
           {/* Chart */}
           {chartData.length > 0 && (
             <Card>
               <CardHeader>
                 <CardTitle>Request Volume (24h)</CardTitle>
-                <CardDescription>
-                  Hourly request volume over the last 24 hours
-                </CardDescription>
+                <CardDescription>Hourly request volume over the last 24 hours</CardDescription>
               </CardHeader>
               <CardContent>
-                <SimpleChart 
-                  data={chartData.map(d => ({
+                <SimpleChart
+                  data={chartData.map((d) => ({
                     time: d.time,
                     value: d.requests
                   }))}
                   height={300}
-                  color="#8884d8"
-                  label="Requests"
+                  color='#8884d8'
+                  label='Requests'
                 />
               </CardContent>
             </Card>
@@ -502,22 +488,20 @@ const LiveDashboard: React.FC = () => {
 
           {/* Network Stats */}
           {systemMetrics && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
               <Card>
                 <CardHeader>
                   <CardTitle>Network Traffic</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
+                  <div className='space-y-2'>
+                    <div className='flex justify-between'>
                       <span>Incoming</span>
-                      <span className="font-medium">
-                        {formatBytes(systemMetrics.network.in)}/s
-                      </span>
+                      <span className='font-medium'>{formatBytes(systemMetrics.network.in)}/s</span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className='flex justify-between'>
                       <span>Outgoing</span>
-                      <span className="font-medium">
+                      <span className='font-medium'>
                         {formatBytes(systemMetrics.network.out)}/s
                       </span>
                     </div>
@@ -530,17 +514,17 @@ const LiveDashboard: React.FC = () => {
                   <CardTitle>Quick Stats</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
+                  <div className='space-y-2'>
+                    <div className='flex justify-between'>
                       <span>Active Plugins</span>
-                      <span className="font-medium">
-                        {plugins.filter(p => p.status === 'active').length}/{plugins.length}
+                      <span className='font-medium'>
+                        {plugins.filter((p) => p.status === 'active').length}/{plugins.length}
                       </span>
                     </div>
-                    <div className="flex justify-between">
+                    <div className='flex justify-between'>
                       <span>Online AI Models</span>
-                      <span className="font-medium">
-                        {aiModels.filter(m => m.status === 'online').length}/{aiModels.length}
+                      <span className='font-medium'>
+                        {aiModels.filter((m) => m.status === 'online').length}/{aiModels.length}
                       </span>
                     </div>
                   </div>
@@ -550,50 +534,53 @@ const LiveDashboard: React.FC = () => {
           )}
         </TabsContent>
 
-        <TabsContent value="plugins" className="space-y-4">
+        <TabsContent value='plugins' className='space-y-4'>
           {plugins.length === 0 ? (
             <Card>
-              <CardContent className="pt-6">
-                <div className="text-center text-muted-foreground">
-                  No plugin data available
-                </div>
+              <CardContent className='pt-6'>
+                <div className='text-center text-muted-foreground'>No plugin data available</div>
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {plugins.map(plugin => (
+            <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4'>
+              {plugins.map((plugin) => (
                 <Card key={plugin.id}>
                   <CardHeader>
-                    <div className="flex justify-between items-start">
+                    <div className='flex justify-between items-start'>
                       <div>
-                        <CardTitle className="text-lg">{plugin.name}</CardTitle>
+                        <CardTitle className='text-lg'>{plugin.name}</CardTitle>
                         <CardDescription>v{plugin.version}</CardDescription>
                       </div>
-                      <Badge variant={
-                        plugin.status === 'active' ? 'default' : 
-                        plugin.status === 'error' ? 'destructive' : 'secondary'
-                      }>
+                      <Badge
+                        variant={
+                          plugin.status === 'active'
+                            ? 'default'
+                            : plugin.status === 'error'
+                              ? 'destructive'
+                              : 'secondary'
+                        }
+                      >
                         {plugin.status}
                       </Badge>
                     </div>
                   </CardHeader>
                   {plugin.metrics && (
                     <CardContent>
-                      <div className="space-y-2 text-sm">
+                      <div className='space-y-2 text-sm'>
                         {plugin.metrics.requests !== undefined && (
-                          <div className="flex justify-between">
+                          <div className='flex justify-between'>
                             <span>Requests</span>
                             <span>{plugin.metrics.requests.toLocaleString()}</span>
                           </div>
                         )}
                         {plugin.metrics.errors !== undefined && (
-                          <div className="flex justify-between">
+                          <div className='flex justify-between'>
                             <span>Errors</span>
                             <span>{plugin.metrics.errors}</span>
                           </div>
                         )}
                         {plugin.metrics.latency !== undefined && (
-                          <div className="flex justify-between">
+                          <div className='flex justify-between'>
                             <span>Avg Latency</span>
                             <span>{plugin.metrics.latency}ms</span>
                           </div>
@@ -607,47 +594,53 @@ const LiveDashboard: React.FC = () => {
           )}
         </TabsContent>
 
-        <TabsContent value="ai-models" className="space-y-4">
+        <TabsContent value='ai-models' className='space-y-4'>
           {aiModels.length === 0 ? (
             <Card>
-              <CardContent className="pt-6">
-                <div className="text-center text-muted-foreground">
-                  No AI model data available
-                </div>
+              <CardContent className='pt-6'>
+                <div className='text-center text-muted-foreground'>No AI model data available</div>
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {aiModels.map(model => (
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+              {aiModels.map((model) => (
                 <Card key={model.id}>
                   <CardHeader>
-                    <div className="flex justify-between items-start">
+                    <div className='flex justify-between items-start'>
                       <div>
-                        <CardTitle className="text-lg">{model.name}</CardTitle>
+                        <CardTitle className='text-lg'>{model.name}</CardTitle>
                         <CardDescription>{model.provider}</CardDescription>
                       </div>
-                      <Badge variant={
-                        model.status === 'online' ? 'default' : 
-                        model.status === 'maintenance' ? 'secondary' : 'destructive'
-                      }>
+                      <Badge
+                        variant={
+                          model.status === 'online'
+                            ? 'default'
+                            : model.status === 'maintenance'
+                              ? 'secondary'
+                              : 'destructive'
+                        }
+                      >
                         {model.status}
                       </Badge>
                     </div>
                   </CardHeader>
                   {model.status === 'online' && (
                     <CardContent>
-                      <div className="space-y-2">
+                      <div className='space-y-2'>
                         {model.load !== undefined && (
                           <div>
-                            <div className="flex justify-between text-sm mb-1">
+                            <div className='flex justify-between text-sm mb-1'>
                               <span>Load</span>
                               <span>{model.load}%</span>
                             </div>
-                            <div className="w-full bg-secondary rounded-full h-2">
-                              <div 
+                            <div className='w-full bg-secondary rounded-full h-2'>
+                              <div
                                 className={`h-2 rounded-full ${
-                                  model.load > 80 ? 'bg-red-500' : 
-                                  model.load > 60 ? 'bg-yellow-500' : 'bg-green-500'
+                                  model.load > 80
+                                    ? 'bg-red-500'
+                                    : model.load > 60
+                                      ? 'bg-yellow-500'
+                                      : 'bg-green-500'
                                 }`}
                                 style={{ width: `${model.load}%` }}
                               />
@@ -655,7 +648,7 @@ const LiveDashboard: React.FC = () => {
                           </div>
                         )}
                         {model.requestsPerHour !== undefined && (
-                          <div className="flex justify-between text-sm">
+                          <div className='flex justify-between text-sm'>
                             <span>Requests/hr</span>
                             <span>{model.requestsPerHour.toLocaleString()}</span>
                           </div>
@@ -669,38 +662,51 @@ const LiveDashboard: React.FC = () => {
           )}
         </TabsContent>
 
-        <TabsContent value="activity" className="space-y-4">
+        <TabsContent value='activity' className='space-y-4'>
           <Card>
             <CardHeader>
               <CardTitle>Recent Activity</CardTitle>
-              <CardDescription>
-                Latest platform events and actions
-              </CardDescription>
+              <CardDescription>Latest platform events and actions</CardDescription>
             </CardHeader>
             <CardContent>
               {activities.length === 0 ? (
-                <div className="text-center text-muted-foreground py-8">
-                  No recent activity
-                </div>
+                <div className='text-center text-muted-foreground py-8'>No recent activity</div>
               ) : (
-                <div className="space-y-3">
-                  {activities.map(activity => (
-                    <div key={activity.id} className="flex items-start gap-3 pb-3 border-b last:border-0">
-                      <div className={`mt-1 ${
-                        activity.severity === 'error' ? 'text-red-500' :
-                        activity.severity === 'warning' ? 'text-yellow-500' :
-                        'text-blue-500'
-                      }`}>
-                        {activity.severity === 'error' ? <AlertTriangle className="h-4 w-4" /> :
-                         activity.severity === 'warning' ? <Info className="h-4 w-4" /> :
-                         <CheckCircle className="h-4 w-4" />}
+                <div className='space-y-3'>
+                  {activities.map((activity) => (
+                    <div
+                      key={activity.id}
+                      className='flex items-start gap-3 pb-3 border-b last:border-0'
+                    >
+                      <div
+                        className={`mt-1 ${
+                          activity.severity === 'error'
+                            ? 'text-red-500'
+                            : activity.severity === 'warning'
+                              ? 'text-yellow-500'
+                              : 'text-blue-500'
+                        }`}
+                      >
+                        {activity.severity === 'error' ? (
+                          <AlertTriangle className='h-4 w-4' />
+                        ) : activity.severity === 'warning' ? (
+                          <Info className='h-4 w-4' />
+                        ) : (
+                          <CheckCircle className='h-4 w-4' />
+                        )}
                       </div>
-                      <div className="flex-1">
-                        <p className="text-sm">{activity.message}</p>
-                        <div className="flex items-center gap-4 mt-1 text-xs text-muted-foreground">
-                          <span>{formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}</span>
+                      <div className='flex-1'>
+                        <p className='text-sm'>{activity.message}</p>
+                        <div className='flex items-center gap-4 mt-1 text-xs text-muted-foreground'>
+                          <span>
+                            {formatDistanceToNow(new Date(activity.timestamp), { addSuffix: true })}
+                          </span>
                           {activity.user && <span>by {activity.user}</span>}
-                          {activity.plugin && <Badge variant="outline" className="text-xs">{activity.plugin}</Badge>}
+                          {activity.plugin && (
+                            <Badge variant='outline' className='text-xs'>
+                              {activity.plugin}
+                            </Badge>
+                          )}
                         </div>
                       </div>
                     </div>

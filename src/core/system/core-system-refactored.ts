@@ -1,18 +1,18 @@
 /**
  * Refactored Core System Implementation for the Alexandria Platform
- * 
+ *
  * This file provides the core functionality for the platform using
  * a service-oriented architecture to avoid the god class anti-pattern.
  */
 
-import { 
-  CoreSystem as ICoreSystem, 
-  User, 
-  Case, 
-  LogEntry, 
-  Route, 
-  Request, 
-  Response 
+import {
+  CoreSystem as ICoreSystem,
+  User,
+  Case,
+  LogEntry,
+  Route,
+  Request,
+  Response
 } from './interfaces';
 import { EventBus } from '../event-bus/interfaces';
 import { ConfigurationError } from '../errors';
@@ -27,7 +27,7 @@ import { LoggingService } from './services/logging-service';
 
 /**
  * Refactored implementation of the CoreSystem interface
- * 
+ *
  * This class delegates responsibilities to specialized services,
  * following the Single Responsibility Principle.
  */
@@ -37,22 +37,27 @@ export class CoreSystemRefactored implements ICoreSystem {
   private eventBus?: EventBus;
   private dataService?: DataService;
   private isInitialized: boolean = false;
-  
+
   // Specialized services
   private userService?: UserService;
   private caseService?: CaseService;
   private routeService: RouteService;
   private loggingService: LoggingService;
-  
+
   // External services (set during initialization)
   private pluginRegistry?: any;
   private securityService?: any;
 
-  constructor(options: { logger: Logger; configPath: string; eventBus?: EventBus; dataService?: DataService }) {
+  constructor(options: {
+    logger: Logger;
+    configPath: string;
+    eventBus?: EventBus;
+    dataService?: DataService;
+  }) {
     this.logger = options.logger;
     this.eventBus = options.eventBus;
     this.dataService = options.dataService;
-    
+
     // Initialize services that don't require DataService
     this.routeService = new RouteService({ logger: this.logger });
     this.loggingService = new LoggingService({ logger: this.logger });
@@ -67,35 +72,37 @@ export class CoreSystemRefactored implements ICoreSystem {
     }
 
     this.logger.info('Initializing core system', { component: 'CoreSystemRefactored' });
-    
+
     try {
       // Validate dependencies
       if (!this.dataService) {
         throw new ConfigurationError('CoreSystem', 'DataService is required for initialization');
       }
-      
+
       // Initialize services that require DataService
       this.userService = new UserService({
         dataService: this.dataService,
         logger: this.logger,
         eventBus: this.eventBus
       });
-      
+
       this.caseService = new CaseService({
         dataService: this.dataService,
         logger: this.logger
       });
-      
+
       // Register core routes
       this.routeService.registerCoreRoutes();
-      
+
       // Create admin user if doesn't exist
       await this.userService.ensureAdminUserExists();
-      
+
       this.isInitialized = true;
-      this.logger.info('Core system initialized successfully', { component: 'CoreSystemRefactored' });
+      this.logger.info('Core system initialized successfully', {
+        component: 'CoreSystemRefactored'
+      });
     } catch (error) {
-      this.logger.error('Failed to initialize core system', { 
+      this.logger.error('Failed to initialize core system', {
         component: 'CoreSystemRefactored',
         error: error instanceof Error ? error.message : String(error)
       });
@@ -112,19 +119,19 @@ export class CoreSystemRefactored implements ICoreSystem {
     }
 
     this.logger.info('Shutting down core system', { component: 'CoreSystemRefactored' });
-    
+
     try {
       // Clean up resources
       this.routeService.clearRoutes();
-      
+
       // Reset services
       this.userService = undefined;
       this.caseService = undefined;
-      
+
       this.isInitialized = false;
       this.logger.info('Core system shut down successfully', { component: 'CoreSystemRefactored' });
     } catch (error) {
-      this.logger.error('Failed to shut down core system', { 
+      this.logger.error('Failed to shut down core system', {
         component: 'CoreSystemRefactored',
         error: error instanceof Error ? error.message : String(error)
       });
@@ -220,7 +227,7 @@ export class CoreSystemRefactored implements ICoreSystem {
    */
   setDataService(dataService: DataService): void {
     this.dataService = dataService;
-    
+
     // Update services that depend on DataService if already initialized
     if (this.isInitialized && this.userService && this.caseService) {
       // Services already have DataService reference from constructor

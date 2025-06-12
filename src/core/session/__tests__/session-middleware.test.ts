@@ -1,6 +1,6 @@
 /**
  * Session Middleware Tests
- * 
+ *
  * Comprehensive test suite for session management including:
  * - Session lifecycle (create, restore, expire, cleanup)
  * - Concurrent session handling
@@ -47,18 +47,14 @@ describe('SessionMiddleware', () => {
       info: jest.fn(),
       warn: jest.fn(),
       error: jest.fn(),
-      debug: jest.fn(),
+      debug: jest.fn()
     } as any;
 
     // Create session store
     sessionStore = new MemorySessionStore(mockLogger);
 
     // Create session middleware
-    sessionMiddleware = new SessionMiddleware(
-      sessionStore,
-      sessionConfig,
-      mockLogger
-    );
+    sessionMiddleware = new SessionMiddleware(sessionStore, sessionConfig, mockLogger);
 
     // Create mock request
     mockRequest = {
@@ -122,7 +118,7 @@ describe('SessionMiddleware', () => {
         createdAt: new Date(),
         lastAccessedAt: new Date()
       };
-      
+
       await sessionStore.set(existingSessionId, existingSessionData);
       mockRequest.cookies[sessionConfig.cookieName] = existingSessionId;
 
@@ -134,9 +130,11 @@ describe('SessionMiddleware', () => {
       );
 
       // Assert
-      expect(mockRequest.session).toEqual(expect.objectContaining({
-        userId: 'user-123'
-      }));
+      expect(mockRequest.session).toEqual(
+        expect.objectContaining({
+          userId: 'user-123'
+        })
+      );
       expect(mockRequest.sessionID).toBe(existingSessionId);
       expect(mockLogger.debug).toHaveBeenCalledWith('Session restored', {
         sessionId: existingSessionId
@@ -150,7 +148,7 @@ describe('SessionMiddleware', () => {
         createdAt: new Date(Date.now() - sessionConfig.maxAge - 1000), // Expired
         lastAccessedAt: new Date(Date.now() - sessionConfig.maxAge - 1000)
       };
-      
+
       await sessionStore.set(oldSessionId, oldSessionData);
       mockRequest.cookies[sessionConfig.cookieName] = oldSessionId;
 
@@ -178,13 +176,9 @@ describe('SessionMiddleware', () => {
       for (let i = 0; i < 10; i++) {
         const req = { ...mockRequest, cookies: {} };
         requests.push(req);
-        
+
         promises.push(
-          sessionMiddleware.handleSession(
-            req as Request,
-            mockResponse as Response,
-            mockNext
-          )
+          sessionMiddleware.handleSession(req as Request, mockResponse as Response, mockNext)
         );
       }
 
@@ -192,9 +186,9 @@ describe('SessionMiddleware', () => {
       await Promise.all(promises);
 
       // Assert - All should have unique sessions
-      const sessionIds = requests.map(req => req.sessionID);
+      const sessionIds = requests.map((req) => req.sessionID);
       const uniqueSessionIds = new Set(sessionIds);
-      
+
       expect(uniqueSessionIds.size).toBe(10);
       expect(mockNext).toHaveBeenCalledTimes(10);
     });
@@ -210,23 +204,25 @@ describe('SessionMiddleware', () => {
       // Act - Modify session data
       mockRequest.session.userId = 'user-456';
       mockRequest.session.preferences = { theme: 'dark' };
-      
+
       // Save session
       await mockRequest.session.save();
 
       // Assert - Verify data is stored
       const storedSession = await sessionStore.get(mockRequest.sessionID);
-      expect(storedSession).toEqual(expect.objectContaining({
-        userId: 'user-456',
-        preferences: { theme: 'dark' }
-      }));
+      expect(storedSession).toEqual(
+        expect.objectContaining({
+          userId: 'user-456',
+          preferences: { theme: 'dark' }
+        })
+      );
     });
 
     it('should prevent session fixation', async () => {
       // Arrange - Create initial session
       const initialSessionId = 'initial-session-id';
       mockRequest.cookies[sessionConfig.cookieName] = initialSessionId;
-      
+
       await sessionMiddleware.handleSession(
         mockRequest as Request,
         mockResponse as Response,
@@ -239,7 +235,7 @@ describe('SessionMiddleware', () => {
       // Assert - New session ID should be different
       expect(mockRequest.sessionID).not.toBe(initialSessionId);
       expect(mockRequest.sessionID).toBe('mock-session-id');
-      
+
       // Old session should be destroyed
       const oldSession = await sessionStore.get(initialSessionId);
       expect(oldSession).toBeNull();
@@ -252,7 +248,7 @@ describe('SessionMiddleware', () => {
         mockResponse as Response,
         mockNext
       );
-      
+
       const originalSessionId = mockRequest.sessionID;
       mockRequest.session.userId = 'user-789';
 
@@ -265,29 +261,31 @@ describe('SessionMiddleware', () => {
       // Assert
       expect(mockRequest.sessionID).toBe('rotated-session-id');
       expect(mockRequest.session.userId).toBe('user-789'); // Data preserved
-      
+
       // Old session should be gone
       const oldSession = await sessionStore.get(originalSessionId);
       expect(oldSession).toBeNull();
-      
+
       // New session should exist
       const newSession = await sessionStore.get('rotated-session-id');
-      expect(newSession).toEqual(expect.objectContaining({
-        userId: 'user-789'
-      }));
+      expect(newSession).toEqual(
+        expect.objectContaining({
+          userId: 'user-789'
+        })
+      );
     });
 
     it('should clean up expired sessions', async () => {
       // Arrange - Create multiple sessions with different ages
       const now = Date.now();
-      
+
       // Active sessions
       for (let i = 0; i < 3; i++) {
         await sessionStore.set(`active-${i}`, {
           lastAccessedAt: new Date(now - 1000) // 1 second ago
         });
       }
-      
+
       // Expired sessions
       for (let i = 0; i < 5; i++) {
         await sessionStore.set(`expired-${i}`, {
@@ -304,13 +302,13 @@ describe('SessionMiddleware', () => {
         const session = await sessionStore.get(`active-${i}`);
         expect(session).toBeDefined();
       }
-      
+
       // Expired sessions should be removed
       for (let i = 0; i < 5; i++) {
         const session = await sessionStore.get(`expired-${i}`);
         expect(session).toBeNull();
       }
-      
+
       expect(mockLogger.info).toHaveBeenCalledWith('Session cleanup completed', {
         removedCount: 5,
         totalSessions: 3
@@ -359,7 +357,7 @@ describe('SessionMiddleware', () => {
       // Arrange
       const originalEnv = process.env.NODE_ENV;
       process.env.NODE_ENV = 'production';
-      
+
       const secureMiddleware = new SessionMiddleware(
         sessionStore,
         { ...sessionConfig, secure: true },
@@ -432,7 +430,7 @@ describe('SessionMiddleware', () => {
 
       // Assert - Should reject large data
       await expect(mockRequest.session.save()).rejects.toThrow('Session data too large');
-      
+
       expect(mockLogger.error).toHaveBeenCalledWith('Session data exceeds size limit', {
         sessionId: mockRequest.sessionID,
         dataSize: expect.any(Number)
@@ -486,16 +484,17 @@ describe('SessionMiddleware', () => {
     it('should touch sessions to update activity', async () => {
       // Arrange
       const originalAccessTime = mockRequest.session.lastAccessedAt;
-      
+
       // Wait a bit
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       // Act
       await mockRequest.session.touch();
 
       // Assert
-      expect(mockRequest.session.lastAccessedAt.getTime())
-        .toBeGreaterThan(originalAccessTime.getTime());
+      expect(mockRequest.session.lastAccessedAt.getTime()).toBeGreaterThan(
+        originalAccessTime.getTime()
+      );
     });
 
     it('should check if session has specific keys', () => {
@@ -573,12 +572,12 @@ describe('SessionMiddleware', () => {
         mockResponse as Response,
         mockNext
       );
-      
+
       jest.spyOn(sessionStore, 'set').mockRejectedValue(new Error('Save failed'));
 
       // Act & Assert
       await expect(mockRequest.session.save()).rejects.toThrow('Save failed');
-      
+
       expect(mockLogger.error).toHaveBeenCalledWith('Failed to save session', {
         sessionId: mockRequest.sessionID,
         error: expect.any(Error)
@@ -592,7 +591,7 @@ describe('SessionMiddleware', () => {
         mockResponse as Response,
         mockNext
       );
-      
+
       jest.spyOn(sessionStore, 'delete').mockRejectedValue(new Error('Delete failed'));
 
       // Act
@@ -636,11 +635,9 @@ describe('SessionMiddleware', () => {
       // Act - Perform multiple parallel operations
       const operations = [];
       for (let i = 0; i < 100; i++) {
-        operations.push(
-          mockRequest.session.set(`key${i}`, `value${i}`)
-        );
+        operations.push(mockRequest.session.set(`key${i}`, `value${i}`));
       }
-      
+
       const startTime = Date.now();
       await Promise.all(operations);
       await mockRequest.session.save();
@@ -648,10 +645,10 @@ describe('SessionMiddleware', () => {
 
       // Assert - Should complete quickly
       expect(duration).toBeLessThan(100); // Less than 100ms for 100 operations
-      
+
       // Verify all data was saved
       const savedSession = await sessionStore.get(mockRequest.sessionID);
-      expect(Object.keys(savedSession).filter(k => k.startsWith('key')).length).toBe(100);
+      expect(Object.keys(savedSession).filter((k) => k.startsWith('key')).length).toBe(100);
     });
 
     it('should efficiently clean up many expired sessions', async () => {
@@ -713,7 +710,7 @@ describe('SessionMiddleware', () => {
         nullByte: 'data\0moredata',
         html: '<script>alert("xss")</script>'
       };
-      
+
       mockRequest.session.special = specialData;
       await mockRequest.session.save();
 
@@ -736,7 +733,7 @@ describe('SessionMiddleware', () => {
         (uuidv4 as jest.Mock).mockReturnValue(`regen-session-${i}`);
         regenerations.push(mockRequest.session.regenerate());
       }
-      
+
       await Promise.all(regenerations);
 
       // Assert - Should end up with the last regeneration
@@ -750,7 +747,7 @@ describe('SessionMiddleware', () => {
         createdAt: new Date(Date.now() + 3600000), // 1 hour in future
         lastAccessedAt: new Date(Date.now() + 3600000)
       });
-      
+
       mockRequest.cookies[sessionConfig.cookieName] = futureSessionId;
 
       // Act

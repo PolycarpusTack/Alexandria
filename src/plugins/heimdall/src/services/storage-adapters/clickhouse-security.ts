@@ -50,11 +50,11 @@ export const ALLOWED_QUERY_FIELDS = new Set([
  */
 export function validateClickHouseTable(tableName: string): string {
   const normalized = tableName.trim().toLowerCase();
-  
+
   if (!ALLOWED_CLICKHOUSE_TABLES.has(normalized)) {
     throw new Error(`Invalid ClickHouse table: ${tableName}. Table not in whitelist.`);
   }
-  
+
   return normalized;
 }
 
@@ -63,11 +63,11 @@ export function validateClickHouseTable(tableName: string): string {
  */
 export function validateQueryField(fieldName: string): string {
   const normalized = fieldName.trim().toLowerCase();
-  
+
   if (!ALLOWED_QUERY_FIELDS.has(normalized)) {
     throw new Error(`Invalid query field: ${fieldName}. Field not allowed.`);
   }
-  
+
   return normalized;
 }
 
@@ -84,12 +84,12 @@ export function escapeClickHouseIdentifier(identifier: string): string {
  * Build safe ORDER BY clause
  */
 export function buildSafeOrderBy(sorts: Array<{ field: string; order: string }>): string {
-  const orderClauses = sorts.map(sort => {
+  const orderClauses = sorts.map((sort) => {
     const safeField = validateQueryField(sort.field);
     const safeOrder = sort.order.toUpperCase() === 'DESC' ? 'DESC' : 'ASC';
     return `${escapeClickHouseIdentifier(safeField)} ${safeOrder}`;
   });
-  
+
   return orderClauses.join(', ');
 }
 
@@ -98,24 +98,29 @@ export function buildSafeOrderBy(sorts: Array<{ field: string; order: string }>)
  */
 export function parseRetentionInterval(retention: string): string {
   const match = retention.match(/^(\d+)([dwmy])$/);
-  
+
   if (!match) {
     throw new Error(`Invalid retention format: ${retention}. Use format like '30d', '12m'`);
   }
-  
+
   const value = parseInt(match[1]);
   const unit = match[2];
-  
+
   // Validate reasonable limits
   if (value <= 0 || value > 1000) {
     throw new Error(`Invalid retention value: ${value}. Must be between 1 and 1000.`);
   }
-  
+
   switch (unit) {
-    case 'd': return `${value} DAY`;
-    case 'w': return `${value} WEEK`;
-    case 'm': return `${value} MONTH`;
-    case 'y': return `${value} YEAR`;
-    default: throw new Error(`Invalid retention unit: ${unit}`);
+    case 'd':
+      return `${value} DAY`;
+    case 'w':
+      return `${value} WEEK`;
+    case 'm':
+      return `${value} MONTH`;
+    case 'y':
+      return `${value} YEAR`;
+    default:
+      throw new Error(`Invalid retention unit: ${unit}`);
   }
 }

@@ -1,5 +1,4 @@
 import { IUser, UserRole } from './interfaces';
-import { v4 as uuidv4 } from 'uuid';
 
 /**
  * User model implementation
@@ -16,7 +15,7 @@ export class User implements IUser {
 
   /**
    * Create a new User instance
-   * 
+   *
    * @param data User data, partial or complete
    */
   constructor(data: Partial<IUser>) {
@@ -32,7 +31,7 @@ export class User implements IUser {
 
   /**
    * Validate user data
-   * 
+   *
    * @returns true if valid, throws error if invalid
    */
   validate(): boolean {
@@ -55,7 +54,7 @@ export class User implements IUser {
 
   /**
    * Convert to JSON object
-   * 
+   *
    * @returns User data as plain object
    */
   toJSON(): Record<string, any> {
@@ -73,7 +72,7 @@ export class User implements IUser {
 
   /**
    * Create a User instance from database record
-   * 
+   *
    * @param record Database record
    * @returns User instance
    */

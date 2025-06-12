@@ -30,7 +30,7 @@ describe('SandboxManager', () => {
     mockSecurityService = {
       validatePluginAction: jest.fn().mockResolvedValue(undefined)
     } as any;
-    
+
     sandboxManager = new SandboxManager(mockSecurityService);
   });
 
@@ -74,8 +74,9 @@ describe('SandboxManager', () => {
 
       await sandboxManager.createSandbox(plugin, options);
 
-      await expect(sandboxManager.createSandbox(plugin, options))
-        .rejects.toThrow('Sandbox already exists for plugin test-plugin');
+      await expect(sandboxManager.createSandbox(plugin, options)).rejects.toThrow(
+        'Sandbox already exists for plugin test-plugin'
+      );
     });
   });
 
@@ -98,8 +99,7 @@ describe('SandboxManager', () => {
     });
 
     it('should not throw if sandbox does not exist', async () => {
-      await expect(sandboxManager.destroySandbox('non-existent'))
-        .resolves.not.toThrow();
+      await expect(sandboxManager.destroySandbox('non-existent')).resolves.not.toThrow();
     });
   });
 
@@ -220,10 +220,8 @@ describe('PluginSandbox', () => {
       };
 
       // Get the message handler and call it
-      const onMessageHandler = mockWorker.on.mock.calls.find(
-        call => call[0] === 'message'
-      )?.[1];
-      
+      const onMessageHandler = mockWorker.on.mock.calls.find((call) => call[0] === 'message')?.[1];
+
       if (onMessageHandler) {
         onMessageHandler(errorResponse);
       }
@@ -242,7 +240,7 @@ describe('PluginSandbox', () => {
       (sandbox as any).checkResourceLimits();
 
       // Wait for async operations
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise((resolve) => setTimeout(resolve, 100));
 
       expect(eventHandler).toHaveBeenCalledWith({
         pluginId: 'test-plugin',

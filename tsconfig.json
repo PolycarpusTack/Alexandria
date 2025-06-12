@@ -8,6 +8,7 @@
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
+    "noErrorTruncation": true,
     "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
     "declaration": true,
@@ -21,25 +22,30 @@
     "paths": {
       "@/*": ["src/*"],
       "@ui/*": ["src/ui/*"],
+      "@client/*": ["src/client/*"],
       "@core/*": ["src/core/*"],
       "@utils/*": ["src/utils/*"],
       "@plugins/*": ["src/plugins/*"],
       "@tools/*": ["tools/*"],
+      "@types/*": ["src/types/*"],
       "@components/*": ["src/client/components/*"],
+      "@alfred/*": ["src/plugins/alfred/src/*"],
+      "@alfred/ui/*": ["src/plugins/alfred/ui/*"],
+      "@hadron/*": ["src/plugins/hadron/src/*"],
+      "@hadron/ui/*": ["src/plugins/hadron/ui/*"],
+      "@heimdall/*": ["src/plugins/heimdall/src/*"],
+      "@heimdall/ui/*": ["src/plugins/heimdall/ui/*"],
+      "@mnemosyne/*": ["src/plugins/mnemosyne/src/*"],
       "@crash-analyzer/*": ["src/plugins/crash-analyzer/*"],
       "@log-viz/*": ["src/plugins/log-visualization/*"],
-      "../../../../ui/*": ["src/ui/*"],
-      "../../../../utils/*": ["src/utils/*"],
-      "../../../../core/*": ["src/core/*"],
-      "../../../ui/*": ["src/ui/*"],
-      "../../../utils/*": ["src/utils/*"],
-      "../../../core/*": ["src/core/*"],
-      "../../../../tools/*": ["tools/*"]
+      "@alexandria/shared": ["alexandria-platform/packages/shared/src/index.ts"],
+      "@alexandria/shared/*": ["alexandria-platform/packages/shared/src/*"],
+      "@alexandria/ui-components": ["alexandria-platform/packages/ui-components/src/index.ts"],
+      "@alexandria/ui-components/*": ["alexandria-platform/packages/ui-components/src/*"],
+      "@alexandria/express": ["src/types/express-extensions.d.ts"]
     },
-    "typeRoots": ["./node_modules/@types", "./src/types"],
-    "types": ["node", "jest", "testing-library__jest-dom"]
+    "typeRoots": ["./node_modules/@types", "./src/types"]
   },
-  "include": ["src/**/*", "tools/**/*.d.ts", "src/types/**/*.d.ts"],
-  "files": ["src/types/index.d.ts", "src/types/jest-dom-extensions.d.ts"],
-  "exclude": ["node_modules", "dist", "**/*.test.ts"]
+  "include": ["src/**/*", "tools/**/*.d.ts"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "src/jest-dom.d.ts", "src/setupTests.ts"]
 }

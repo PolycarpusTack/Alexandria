@@ -44,10 +44,7 @@ export class RetryService {
   /**
    * Execute function with retry logic
    */
-  async withRetry<T>(
-    fn: () => Promise<T>,
-    options: RetryOptions = {}
-  ): Promise<T> {
+  async withRetry<T>(fn: () => Promise<T>, options: RetryOptions = {}): Promise<T> {
     const {
       maxAttempts = 3,
       initialDelay = 1000,
@@ -82,7 +79,7 @@ export class RetryService {
         if (attempt < maxAttempts) {
           // Wait before next attempt
           await this.sleep(delay);
-          
+
           // Calculate next delay with exponential backoff
           delay = Math.min(delay * factor, maxDelay);
         }
@@ -100,24 +97,20 @@ export class RetryService {
     fn: () => Promise<T>,
     options: CircuitBreakerOptions = {}
   ): Promise<T> {
-    const {
-      threshold = 5,
-      timeout = 60000,
-      resetTimeout = 60000
-    } = options;
+    const { threshold = 5, timeout = 60000, resetTimeout = 60000 } = options;
 
     const circuit = this.getOrCreateCircuit(name);
 
     // Check circuit state
     if (circuit.state === CircuitState.OPEN) {
       const timeSinceLastFailure = Date.now() - (circuit.lastFailure?.getTime() || 0);
-      
+
       if (timeSinceLastFailure > resetTimeout) {
         // Try to reset circuit
         circuit.state = CircuitState.HALF_OPEN;
         circuit.failures = 0;
         circuit.successes = 0;
-        
+
         this.logger.info('Circuit breaker half-open', { name });
       } else {
         throw new Error(`Circuit breaker is open for ${name}`);
@@ -126,33 +119,33 @@ export class RetryService {
 
     try {
       const result = await this.withTimeout(fn(), timeout);
-      
+
       // Success - update circuit
       circuit.successes++;
-      
+
       if (circuit.state === CircuitState.HALF_OPEN && circuit.successes >= 3) {
         circuit.state = CircuitState.CLOSED;
         circuit.failures = 0;
-        
+
         this.logger.info('Circuit breaker closed', { name });
       }
-      
+
       return result;
     } catch (error) {
       // Failure - update circuit
       circuit.failures++;
       circuit.lastFailure = new Date();
-      
+
       if (circuit.failures >= threshold) {
         circuit.state = CircuitState.OPEN;
-        
+
         this.logger.error('Circuit breaker opened', {
           name,
           failures: circuit.failures,
           threshold
         });
       }
-      
+
       throw error;
     }
   }
@@ -166,11 +159,11 @@ export class RetryService {
   ): Promise<Array<{ success: boolean; result?: T; error?: Error }>> {
     const { concurrency = 5, ...retryOptions } = options;
     const results: Array<{ success: boolean; result?: T; error?: Error }> = [];
-    
+
     // Process in batches
     for (let i = 0; i < operations.length; i += concurrency) {
       const batch = operations.slice(i, i + concurrency);
-      
+
       const batchResults = await Promise.all(
         batch.map(async (operation) => {
           try {
@@ -181,10 +174,10 @@ export class RetryService {
           }
         })
       );
-      
+
       results.push(...batchResults);
     }
-    
+
     return results;
   }
 
@@ -205,7 +198,7 @@ export class RetryService {
       circuit.failures = 0;
       circuit.successes = 0;
       circuit.lastFailure = undefined;
-      
+
       this.logger.info('Circuit breaker reset', { name });
     }
   }
@@ -220,10 +213,10 @@ export class RetryService {
   /**
    * Private helper methods
    */
-  
+
   private getOrCreateCircuit(name: string): CircuitStats {
     let circuit = this.circuits.get(name);
-    
+
     if (!circuit) {
       circuit = {
         failures: 0,
@@ -232,20 +225,20 @@ export class RetryService {
       };
       this.circuits.set(name, circuit);
     }
-    
+
     return circuit;
   }
 
   private async withTimeout<T>(promise: Promise<T>, timeout: number): Promise<T> {
     return Promise.race([
       promise,
-      new Promise<T>((_, reject) => 
+      new Promise<T>((_, reject) =>
         setTimeout(() => reject(new Error('Operation timed out')), timeout)
       )
     ]);
   }
 
   private sleep(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }

@@ -1,14 +1,10 @@
 /**
  * Mnemosyne Plugin Types and Interfaces
- * 
+ *
  * Comprehensive type definitions for the Mnemosyne knowledge management plugin
  */
 
-import { 
-  PluginContext,
-  Logger,
-  EventBus
-} from '@alexandria/plugin-interface';
+import { PluginContext, Logger, EventBus } from '@alexandria/plugin-interface';
 
 import { MnemosyneCore } from '../core/MnemosyneCore';
 import { MnemosyneConfiguration } from '../core/config/Configuration';
@@ -19,7 +15,7 @@ export interface MnemosynePlugin {
   readonly name: string;
   readonly version: string;
   readonly description: string;
-  
+
   getContext(): MnemosyneContext;
   getService<T = any>(serviceName: string): T;
   healthCheck(): Promise<{ healthy: boolean; details: any }>;
@@ -73,24 +69,24 @@ export interface MnemosyneEvents {
   'mnemosyne:plugin:activated': PluginActivationResult;
   'mnemosyne:plugin:deactivated': PluginDeactivationResult;
   'mnemosyne:plugin:error': PluginErrorEvent;
-  
+
   // Document events
   'mnemosyne:document:created': DocumentEvent;
   'mnemosyne:document:updated': DocumentEvent;
   'mnemosyne:document:deleted': DocumentEvent;
   'mnemosyne:document:viewed': DocumentEvent;
-  
+
   // Knowledge graph events
   'mnemosyne:relationship:created': RelationshipEvent;
   'mnemosyne:relationship:updated': RelationshipEvent;
   'mnemosyne:relationship:deleted': RelationshipEvent;
   'mnemosyne:graph:rebuilt': GraphEvent;
-  
+
   // Template events
   'mnemosyne:template:created': TemplateEvent;
   'mnemosyne:template:used': TemplateEvent;
   'mnemosyne:template:generated': TemplateEvent;
-  
+
   // Import/Export events
   'mnemosyne:import:started': ImportEvent;
   'mnemosyne:import:progress': ImportEvent;
@@ -99,11 +95,11 @@ export interface MnemosyneEvents {
   'mnemosyne:export:started': ExportEvent;
   'mnemosyne:export:completed': ExportEvent;
   'mnemosyne:export:failed': ExportEvent;
-  
+
   // Search events
   'mnemosyne:search:performed': SearchEvent;
   'mnemosyne:search:indexed': SearchEvent;
-  
+
   // User events
   'mnemosyne:user:joined': UserEvent;
   'mnemosyne:user:left': UserEvent;
@@ -293,7 +289,7 @@ export interface FeatureProvider {
   readonly name: string;
   readonly version: string;
   readonly dependencies: string[];
-  
+
   initialize(): Promise<void>;
   activate(): Promise<void>;
   deactivate(): Promise<void>;
@@ -305,7 +301,7 @@ export interface MnemosyneService {
   readonly name: string;
   readonly version: string;
   readonly status: ServiceStatus;
-  
+
   initialize(): Promise<void>;
   activate(): Promise<void>;
   shutdown(): Promise<void>;
@@ -352,7 +348,7 @@ export interface ExternalServiceDependency {
 }
 
 // Plugin Capabilities
-export type PluginCapability = 
+export type PluginCapability =
   | 'knowledge-graph'
   | 'document-management'
   | 'template-system'

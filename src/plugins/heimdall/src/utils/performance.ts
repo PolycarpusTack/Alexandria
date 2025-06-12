@@ -15,27 +15,27 @@ export function Monitor(target: any, propertyKey: string, descriptor: PropertyDe
   descriptor.value = async function (...args: any[]) {
     const start = process.hrtime.bigint();
     const metricName = `${target.constructor.name}.${propertyKey}`;
-    
+
     try {
       const result = await originalMethod.apply(this, args);
-      
+
       const duration = Number(process.hrtime.bigint() - start) / 1000000; // to ms
-      
+
       // Log if method has metrics service
       if (this.metricsService instanceof MetricsService) {
         this.metricsService.recordHistogram(`${metricName}.duration`, duration);
         this.metricsService.incrementCounter(`${metricName}.success`);
       }
-      
+
       return result;
     } catch (error) {
       const duration = Number(process.hrtime.bigint() - start) / 1000000;
-      
+
       if (this.metricsService instanceof MetricsService) {
         this.metricsService.recordHistogram(`${metricName}.duration`, duration);
         this.metricsService.incrementCounter(`${metricName}.error`);
       }
-      
+
       throw error;
     }
   };
@@ -307,7 +307,7 @@ export class ResourcePool<T> {
    */
   async destroy(): Promise<void> {
     const allResources = [...this.available, ...this.inUse];
-    await Promise.all(allResources.map(r => this.destroyer(r)));
+    await Promise.all(allResources.map((r) => this.destroyer(r)));
     this.available = [];
     this.inUse.clear();
     this.waiting = [];

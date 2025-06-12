@@ -1,0 +1,23 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "lib": ["ES2020", "DOM"],
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true,
+    "jsx": "react",
+    "baseUrl": "./",
+    "paths": {
+      "@alexandria/shared": ["src/types/alexandria-shared.d.ts"],
+      "@alexandria/express": ["src/types/express-extensions.d.ts"]
+    },
+    "typeRoots": ["./node_modules/@types", "./src/types"],
+    "types": [],
+    "noEmit": true
+  },
+  "include": ["test-alfred-components-focused.ts", "src/plugins/alfred/ui/components/TemplateWizard.tsx"],
+  "exclude": ["node_modules", "dist", "**/*.test.ts", "**/*.test.tsx"]
+}

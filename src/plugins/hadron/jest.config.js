@@ -39,11 +39,12 @@ module.exports = {
     }
   },
   transform: {
-    '^.+\\.(ts|tsx)$': ['ts-jest', {
-      tsconfig: '<rootDir>/tsconfig.json',
-    }]
+    '^.+\\.(ts|tsx)$': [
+      'ts-jest',
+      {
+        tsconfig: '<rootDir>/tsconfig.json'
+      }
+    ]
   },
-  transformIgnorePatterns: [
-    '/node_modules/(?!(@testing-library)/)'
-  ]
+  transformIgnorePatterns: ['/node_modules/(?!(@testing-library)/)']
 };

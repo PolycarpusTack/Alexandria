@@ -1,11 +1,9 @@
-import { 
-  CollectionDataService 
-} from '../interfaces';
-import { 
-  User, 
-  AnalysisSession, 
-  UploadedFile, 
-  CodeSnippet, 
+import { CollectionDataService } from '../interfaces';
+import {
+  User,
+  AnalysisSession,
+  UploadedFile,
+  CodeSnippet,
   AnalysisResult,
   AnalysisSessionStatus,
   IUser,
@@ -14,7 +12,6 @@ import {
   ICodeSnippet,
   IAnalysisResult
 } from '../models';
-import { v4 as uuidv4 } from 'uuid';
 import { createLogger } from '../../../../utils/logger';
 
 const logger = createLogger({ serviceName: 'hadron-repository' });
@@ -28,9 +25,9 @@ export class HadronRepository {
   private fileCollection = 'hadron_files';
   private snippetCollection = 'hadron_snippets';
   private analysisCollection = 'hadron_analyses';
-  
+
   constructor(private dataService: CollectionDataService) {}
-  
+
   /**
    * Initialize the repository, creating necessary collections and indexes
    */
@@ -41,53 +38,53 @@ export class HadronRepository {
     await this.dataService.createCollectionIfNotExists(this.fileCollection);
     await this.dataService.createCollectionIfNotExists(this.snippetCollection);
     await this.dataService.createCollectionIfNotExists(this.analysisCollection);
-    
+
     // Create indexes for efficient queries
     await this.dataService.createIndex(this.userCollection, 'email');
     await this.dataService.createIndex(this.userCollection, 'username');
-    
+
     await this.dataService.createIndex(this.sessionCollection, 'userId');
     await this.dataService.createIndex(this.sessionCollection, 'status');
-    
+
     await this.dataService.createIndex(this.fileCollection, 'sessionId');
     await this.dataService.createIndex(this.fileCollection, 'userId');
-    
+
     await this.dataService.createIndex(this.snippetCollection, 'sessionId');
     await this.dataService.createIndex(this.snippetCollection, 'userId');
-    
+
     await this.dataService.createIndex(this.analysisCollection, 'sessionId');
     await this.dataService.createIndex(this.analysisCollection, 'fileId');
     await this.dataService.createIndex(this.analysisCollection, 'snippetId');
     await this.dataService.createIndex(this.analysisCollection, 'userId');
   }
-  
+
   // User methods
-  
+
   /**
    * Save a user to the repository
    */
   async saveUser(user: User): Promise<User> {
     try {
       user.validate();
-      
+
       // Check if user with email or username already exists
       const existingByEmail = await this.getUserByEmail(user.email);
       if (existingByEmail && existingByEmail.id !== user.id) {
         throw new Error(`User with email ${user.email} already exists`);
       }
-      
+
       const existingByUsername = await this.getUserByUsername(user.username);
       if (existingByUsername && existingByUsername.id !== user.id) {
         throw new Error(`User with username ${user.username} already exists`);
       }
-      
+
       await this.dataService.upsert(this.userCollection, user.id, this.toDbRecord(user));
       return user;
     } catch (error) {
       throw error;
     }
   }
-  
+
   /**
    * Get a user by ID
    */
@@ -95,7 +92,7 @@ export class HadronRepository {
     const record = await this.dataService.findById(this.userCollection, id);
     return record ? User.fromRecord(record) : null;
   }
-  
+
   /**
    * Get a user by email
    */
@@ -103,7 +100,7 @@ export class HadronRepository {
     const records = await this.dataService.find(this.userCollection, { email });
     return records.length > 0 ? User.fromRecord(records[0]) : null;
   }
-  
+
   /**
    * Get a user by username
    */
@@ -111,7 +108,7 @@ export class HadronRepository {
     const records = await this.dataService.find(this.userCollection, { username });
     return records.length > 0 ? User.fromRecord(records[0]) : null;
   }
-  
+
   /**
    * Delete a user by ID
    */
@@ -121,9 +118,9 @@ export class HadronRepository {
     await this.dataService.delete(this.userCollection, id);
     return true;
   }
-  
+
   // Analysis Session methods
-  
+
   /**
    * Save an analysis session to the repository
    */
@@ -136,7 +133,7 @@ export class HadronRepository {
       throw error;
     }
   }
-  
+
   /**
    * Get an analysis session by ID
    */
@@ -144,42 +141,42 @@ export class HadronRepository {
     const record = await this.dataService.findById(this.sessionCollection, id);
     return record ? AnalysisSession.fromRecord(record) : null;
   }
-  
+
   /**
    * Get all analysis sessions for a user
    */
   async getSessionsByUser(userId: string): Promise<AnalysisSession[]> {
     const records = await this.dataService.find(this.sessionCollection, { user_id: userId });
-    return records.map(r => AnalysisSession.fromRecord(r));
+    return records.map((r) => AnalysisSession.fromRecord(r));
   }
-  
+
   /**
    * Get analysis sessions by status
    */
   async getSessionsByStatus(status: AnalysisSessionStatus): Promise<AnalysisSession[]> {
     const records = await this.dataService.find(this.sessionCollection, { status });
-    return records.map(r => AnalysisSession.fromRecord(r));
+    return records.map((r) => AnalysisSession.fromRecord(r));
   }
-  
+
   /**
    * Update session status
-   * 
+   *
    * @param id Session ID
    * @param status New session status
    * @param metadata Optional metadata to add to the session
    * @returns Updated session or null if not found
    */
   async updateSessionStatus(
-    id: string, 
+    id: string,
     status: AnalysisSessionStatus,
     metadata?: Record<string, string | number | boolean | null>
   ): Promise<AnalysisSession | null> {
     const session = await this.getSessionById(id);
     if (!session) return null;
-    
+
     // Update status
     session.updateStatus(status);
-    
+
     // Add metadata if provided
     if (metadata) {
       session.metadata = {
@@ -194,10 +191,10 @@ export class HadronRepository {
         ]
       };
     }
-    
+
     return this.saveSession(session);
   }
-  
+
   /**
    * Delete an analysis session and all related data
    */
@@ -207,26 +204,26 @@ export class HadronRepository {
     for (const file of files) {
       await this.deleteFile(file.id);
     }
-    
+
     // Delete all snippets associated with this session
     const snippets = await this.getSnippetsBySession(id);
     for (const snippet of snippets) {
       await this.deleteSnippet(snippet.id);
     }
-    
+
     // Delete all analyses associated with this session
     const analyses = await this.getAnalysesBySession(id);
     for (const analysis of analyses) {
       await this.deleteAnalysisResult(analysis.id);
     }
-    
+
     // Finally, delete the session itself
     await this.dataService.delete(this.sessionCollection, id);
     return true;
   }
-  
+
   // UploadedFile methods
-  
+
   /**
    * Save an uploaded file to the repository
    */
@@ -239,7 +236,7 @@ export class HadronRepository {
       throw error;
     }
   }
-  
+
   /**
    * Update an existing file in the repository
    */
@@ -251,7 +248,7 @@ export class HadronRepository {
       if (!existingFile) {
         throw new Error(`File with ID ${file.id} not found`);
       }
-      
+
       file.validate();
       await this.dataService.upsert(this.fileCollection, file.id, this.toDbRecord(file));
       return file;
@@ -259,7 +256,7 @@ export class HadronRepository {
       throw error;
     }
   }
-  
+
   /**
    * Get an uploaded file by ID
    */
@@ -267,65 +264,68 @@ export class HadronRepository {
     const record = await this.dataService.findById(this.fileCollection, id);
     return record ? UploadedFile.fromRecord(record) : null;
   }
-  
+
   /**
    * Get all files for a session
    */
   async getFilesBySession(sessionId: string): Promise<UploadedFile[]> {
     const records = await this.dataService.find(this.fileCollection, { session_id: sessionId });
-    return records.map(r => UploadedFile.fromRecord(r));
+    return records.map((r) => UploadedFile.fromRecord(r));
   }
-  
+
   /**
    * Get files by session ID - alias for getFilesBySession for backward compatibility
    */
   async getFilesBySessionId(sessionId: string): Promise<UploadedFile[]> {
     return this.getFilesBySession(sessionId);
   }
-  
+
   /**
    * Get all files uploaded by a user
    */
   async getFilesByUser(userId: string): Promise<UploadedFile[]> {
     const records = await this.dataService.find(this.fileCollection, { user_id: userId });
-    return records.map(r => UploadedFile.fromRecord(r));
+    return records.map((r) => UploadedFile.fromRecord(r));
   }
-  
+
   /**
    * Find files by a specific value in their metadata
-   * 
+   *
    * @param field The metadata field to search for
    * @param value The value to match
    * @returns Array of files that match the criteria
    */
-  async findFilesByMetadataField(field: string, value: string | number | boolean | null): Promise<UploadedFile[]> {
+  async findFilesByMetadataField(
+    field: string,
+    value: string | number | boolean | null
+  ): Promise<UploadedFile[]> {
     try {
       // Search for files where metadata.field = value
       // This is a custom query that isn't directly supported by the CollectionDataService
       // So we'll get all files and filter them here
       const allFiles = await this.dataService.find(this.fileCollection, {});
-      
+
       // Filter the files based on their metadata
-      const matchingFiles = allFiles.filter(record => {
+      const matchingFiles = allFiles.filter((record) => {
         try {
           // Check if the record has metadata
           if (!record.metadata) return false;
-          
+
           // Check if the field exists and matches the value
           return record.metadata[field] === value;
         } catch {
           return false;
         }
       });
-      
+
       // Convert the records to UploadedFile objects
-      return matchingFiles.map(r => UploadedFile.fromRecord(r));
+      return matchingFiles.map((r) => UploadedFile.fromRecord(r));
     } catch (error) {
       // Propagate the error
       throw error;
     }
   }
-  
+
   /**
    * Delete an uploaded file
    */
@@ -335,14 +335,14 @@ export class HadronRepository {
     for (const analysis of analyses) {
       await this.deleteAnalysisResult(analysis.id);
     }
-    
+
     // Then delete the file itself
     await this.dataService.delete(this.fileCollection, id);
     return true;
   }
-  
+
   // CodeSnippet methods
-  
+
   /**
    * Save a code snippet to the repository
    */
@@ -355,7 +355,7 @@ export class HadronRepository {
       throw error;
     }
   }
-  
+
   /**
    * Get a code snippet by ID
    */
@@ -363,23 +363,23 @@ export class HadronRepository {
     const record = await this.dataService.findById(this.snippetCollection, id);
     return record ? CodeSnippet.fromRecord(record) : null;
   }
-  
+
   /**
    * Get all snippets for a session
    */
   async getSnippetsBySession(sessionId: string): Promise<CodeSnippet[]> {
     const records = await this.dataService.find(this.snippetCollection, { session_id: sessionId });
-    return records.map(r => CodeSnippet.fromRecord(r));
+    return records.map((r) => CodeSnippet.fromRecord(r));
   }
-  
+
   /**
    * Get all snippets created by a user
    */
   async getSnippetsByUser(userId: string): Promise<CodeSnippet[]> {
     const records = await this.dataService.find(this.snippetCollection, { user_id: userId });
-    return records.map(r => CodeSnippet.fromRecord(r));
+    return records.map((r) => CodeSnippet.fromRecord(r));
   }
-  
+
   /**
    * Delete a code snippet
    */
@@ -389,14 +389,14 @@ export class HadronRepository {
     for (const analysis of analyses) {
       await this.deleteAnalysisResult(analysis.id);
     }
-    
+
     // Then delete the snippet itself
     await this.dataService.delete(this.snippetCollection, id);
     return true;
   }
-  
+
   // AnalysisResult methods
-  
+
   /**
    * Save an analysis result to the repository
    */
@@ -409,7 +409,7 @@ export class HadronRepository {
       throw error;
     }
   }
-  
+
   /**
    * Get an analysis result by ID
    */
@@ -417,39 +417,39 @@ export class HadronRepository {
     const record = await this.dataService.findById(this.analysisCollection, id);
     return record ? AnalysisResult.fromRecord(record) : null;
   }
-  
+
   /**
    * Get all analyses for a session
    */
   async getAnalysesBySession(sessionId: string): Promise<AnalysisResult[]> {
     const records = await this.dataService.find(this.analysisCollection, { session_id: sessionId });
-    return records.map(r => AnalysisResult.fromRecord(r));
+    return records.map((r) => AnalysisResult.fromRecord(r));
   }
-  
+
   /**
    * Get all analyses for a file
    */
   async getAnalysesByFile(fileId: string): Promise<AnalysisResult[]> {
     const records = await this.dataService.find(this.analysisCollection, { file_id: fileId });
-    return records.map(r => AnalysisResult.fromRecord(r));
+    return records.map((r) => AnalysisResult.fromRecord(r));
   }
-  
+
   /**
    * Get all analyses for a snippet
    */
   async getAnalysesBySnippet(snippetId: string): Promise<AnalysisResult[]> {
     const records = await this.dataService.find(this.analysisCollection, { snippet_id: snippetId });
-    return records.map(r => AnalysisResult.fromRecord(r));
+    return records.map((r) => AnalysisResult.fromRecord(r));
   }
-  
+
   /**
    * Get all analyses by a user
    */
   async getAnalysesByUser(userId: string): Promise<AnalysisResult[]> {
     const records = await this.dataService.find(this.analysisCollection, { user_id: userId });
-    return records.map(r => AnalysisResult.fromRecord(r));
+    return records.map((r) => AnalysisResult.fromRecord(r));
   }
-  
+
   /**
    * Delete an analysis result
    */
@@ -457,12 +457,12 @@ export class HadronRepository {
     await this.dataService.delete(this.analysisCollection, id);
     return true;
   }
-  
+
   // Utility methods
-  
+
   /**
    * Convert an object to a database record with snake_case keys
-   * 
+   *
    * @param obj Object to convert
    * @returns Database record
    */
@@ -471,24 +471,35 @@ export class HadronRepository {
     if (!obj || typeof obj !== 'object') {
       throw new Error('Cannot convert null or non-object to database record');
     }
-    
+
     const record: Record<string, unknown> = {};
-    
+
     try {
       // Convert camelCase keys to snake_case
       for (const [key, value] of Object.entries(obj)) {
         // Skip functions and undefined values
         if (typeof value === 'function' || value === undefined) continue;
-        
+
         // Convert key from camelCase to snake_case
-        const snakeKey = key.replace(/[A-Z]/g, letter => `_${letter.toLowerCase()}`);
-        
+        const snakeKey = key.replace(/[A-Z]/g, (letter) => `_${letter.toLowerCase()}`);
+
         // Handle special fields that need JSON serialization
-        if (key === 'metadata' || key === 'preferences' || key === 'tags' || 
-            key === 'potentialRootCauses' || key === 'troubleshootingSteps') {
+        if (
+          key === 'metadata' ||
+          key === 'preferences' ||
+          key === 'tags' ||
+          key === 'potentialRootCauses' ||
+          key === 'troubleshootingSteps'
+        ) {
           // Only attempt to stringify objects, arrays, or non-null values
-          if (value !== null && (Array.isArray(value) || typeof value === 'object' || 
-              typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean')) {
+          if (
+            value !== null &&
+            (Array.isArray(value) ||
+              typeof value === 'object' ||
+              typeof value === 'string' ||
+              typeof value === 'number' ||
+              typeof value === 'boolean')
+          ) {
             try {
               // For strings that are already JSON, avoid double serialization
               if (typeof value === 'string' && (value.startsWith('{') || value.startsWith('['))) {
@@ -518,11 +529,13 @@ export class HadronRepository {
           record[snakeKey] = value;
         }
       }
-      
+
       return record;
     } catch (error) {
       logger.error('Error converting object to database record', { error });
-      throw new Error(`Failed to convert object to database record: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Failed to convert object to database record: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 }

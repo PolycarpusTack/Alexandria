@@ -73,20 +73,20 @@ const CHECKS = [
 function runCheck(check) {
   console.log(`\n🔍 Running: ${check.name}`);
   console.log(`   ${check.description}`);
-  
+
   try {
-    const output = execSync(check.command, { 
+    const output = execSync(check.command, {
       encoding: 'utf-8',
       cwd: path.join(__dirname, '..')
     });
-    
+
     if (check.validateOutput) {
       const isValid = check.validateOutput(output);
       if (!isValid && !check.optional) {
         return false;
       }
     }
-    
+
     console.log('✅ Passed');
     return true;
   } catch (error) {
@@ -104,24 +104,24 @@ function generateReport(results) {
   const passed = results.filter(r => r.passed).length;
   const total = results.length;
   const percentage = Math.round((passed / total) * 100);
-  
+
   console.log('\n' + '='.repeat(50));
   console.log('📊 Quality Check Report');
   console.log('='.repeat(50));
-  
+
   results.forEach(result => {
     const icon = result.passed ? '✅' : '❌';
     console.log(`${icon} ${result.name}`);
   });
-  
+
   console.log('\n' + '-'.repeat(50));
   console.log(`Total: ${passed}/${total} passed (${percentage}%)`);
-  
+
   if (percentage < 80) {
     console.log('\n⚠️  Quality threshold not met (80% required)');
     return false;
   }
-  
+
   console.log('\n✨ Quality standards met!');
   return true;
 }

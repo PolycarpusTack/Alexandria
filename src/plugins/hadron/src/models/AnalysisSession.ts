@@ -1,5 +1,4 @@
 import { IAnalysisSession, AnalysisSessionStatus } from './interfaces';
-import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Analysis Session model implementation
@@ -17,7 +16,7 @@ export class AnalysisSession implements IAnalysisSession {
 
   /**
    * Create a new AnalysisSession instance
-   * 
+   *
    * @param data Analysis session data, partial or complete
    */
   constructor(data: Partial<IAnalysisSession>) {
@@ -34,7 +33,7 @@ export class AnalysisSession implements IAnalysisSession {
 
   /**
    * Validate analysis session data
-   * 
+   *
    * @returns true if valid, throws error if invalid
    */
   validate(): boolean {
@@ -51,7 +50,7 @@ export class AnalysisSession implements IAnalysisSession {
 
   /**
    * Update the status of the analysis session
-   * 
+   *
    * @param status New status
    * @returns Updated analysis session
    */
@@ -63,7 +62,7 @@ export class AnalysisSession implements IAnalysisSession {
 
   /**
    * Convert to JSON object
-   * 
+   *
    * @returns Analysis session data as plain object
    */
   toJSON(): Record<string, any> {
@@ -82,7 +81,7 @@ export class AnalysisSession implements IAnalysisSession {
 
   /**
    * Create an AnalysisSession instance from database record
-   * 
+   *
    * @param record Database record
    * @returns AnalysisSession instance
    */

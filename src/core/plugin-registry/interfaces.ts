@@ -1,6 +1,6 @@
 /**
  * Plugin Registry interfaces for the Alexandria Platform
- * 
+ *
  * These interfaces define the plugin system architecture and how plugins
  * interact with the core platform.
  */
@@ -9,9 +9,69 @@ import { UIComponent } from '../system/interfaces';
 import { EventBus } from '../event-bus/interfaces';
 
 /**
+ * Logger service interface for plugin context
+ */
+interface LoggerService {
+  debug(message: string, context?: Record<string, unknown>): void;
+  info(message: string, context?: Record<string, unknown>): void;
+  warn(message: string, context?: Record<string, unknown>): void;
+  error(message: string, context?: Record<string, unknown>): void;
+}
+
+/**
+ * Data service interface for plugin data persistence
+ */
+interface DataService {
+  get<T = unknown>(key: string): Promise<T | null>;
+  set<T = unknown>(key: string, value: T): Promise<void>;
+  delete(key: string): Promise<boolean>;
+  query<T = unknown>(query: string, params?: unknown[]): Promise<T[]>;
+}
+
+/**
+ * UI service interface for plugin component registration
+ */
+interface UIService {
+  registerComponent(component: UIComponent): void;
+  unregisterComponent(id: string): void;
+  getComponent(id: string): UIComponent | undefined;
+}
+
+/**
+ * Feature flag service interface for plugin feature toggles
+ */
+interface FeatureFlagService {
+  isEnabled(flag: string): boolean;
+  getFlags(): Record<string, boolean>;
+}
+
+/**
+ * Security service interface for plugin permission checking and encryption
+ */
+interface SecurityService {
+  checkPermission(permission: string, context?: Record<string, unknown>): boolean;
+  encryptData(data: string): string;
+  decryptData(encryptedData: string): string;
+}
+
+/**
+ * API service interface for plugin HTTP requests
+ */
+interface APIService {
+  request<T = unknown>(
+    endpoint: string,
+    options?: {
+      method?: string;
+      headers?: Record<string, string>;
+      body?: unknown;
+    }
+  ): Promise<T>;
+}
+
+/**
  * Plugin permissions
  */
-export type PluginPermission = 
+export type PluginPermission =
   // File permissions
   | 'file:read'
   | 'file:write'
@@ -84,32 +144,32 @@ export interface PluginManifest {
    * Unique identifier for the plugin
    */
   id: string;
-  
+
   /**
    * Human-readable name
    */
   name: string;
-  
+
   /**
    * Semantic version
    */
   version: string;
-  
+
   /**
    * Plugin description
    */
   description: string;
-  
+
   /**
    * Main entry point file
    */
   main: string;
-  
+
   /**
    * Module type (for ES modules vs CommonJS)
    */
   type?: 'module' | 'commonjs';
-  
+
   /**
    * Author information
    */
@@ -118,34 +178,34 @@ export interface PluginManifest {
     email?: string;
     url?: string;
   };
-  
+
   /**
    * License information
    */
   license?: string;
-  
+
   /**
    * Minimum platform version required
    */
   minPlatformVersion: string;
-  
+
   /**
    * Maximum platform version supported
    */
   maxPlatformVersion?: string;
-  
+
   /**
    * Plugin dependencies
    */
   dependencies?: {
     [pluginId: string]: string; // plugin ID to version requirement
   };
-  
+
   /**
    * Required platform permissions
    */
   permissions?: PluginPermission[];
-  
+
   /**
    * UI contribution points
    */
@@ -156,7 +216,7 @@ export interface PluginManifest {
       component: string; // reference to a component
     }[];
   };
-  
+
   /**
    * Event subscriptions
    */
@@ -164,27 +224,36 @@ export interface PluginManifest {
     topic: string;
     handler: string; // reference to a function in the plugin
   }[];
-  
+
   /**
    * Plugin settings schema
    */
-  settingsSchema?: Record<string, any>;
-  
+  settingsSchema?: Record<
+    string,
+    {
+      type: string;
+      description?: string;
+      default?: unknown;
+      required?: boolean;
+      enum?: unknown[];
+    }
+  >;
+
   /**
    * Plugin homepage URL
    */
   homepage?: string;
-  
+
   /**
    * Repository URL
    */
   repository?: string;
-  
+
   /**
    * Bug tracker URL
    */
   bugs?: string;
-  
+
   /**
    * Keywords for searchability
    */
@@ -199,41 +268,41 @@ export interface Plugin {
    * Plugin manifest
    */
   manifest: PluginManifest;
-  
+
   /**
    * Current state
    */
   state: PluginState;
-  
+
   /**
    * Error message if in error state
    */
   error?: string;
-  
+
   /**
    * Plugin instance
    */
-  instance?: any;
-  
+  instance?: PluginLifecycle;
+
   /**
    * Installation timestamp
    */
   installedAt?: Date;
-  
+
   /**
    * Last activation timestamp
    */
   activatedAt?: Date;
-  
+
   /**
    * Path to plugin directory
    */
   path: string;
-  
+
   /**
    * Plugin settings
    */
-  settings?: Record<string, any>;
+  settings?: Record<string, unknown>;
 }
 
 /**
@@ -253,22 +322,22 @@ export interface PluginLifecycle {
    * Called when the plugin is installed
    */
   onInstall?(): Promise<void>;
-  
+
   /**
    * Called when the plugin is activated
    */
   onActivate?(): Promise<void>;
-  
+
   /**
    * Called when the plugin is deactivated
    */
   onDeactivate?(): Promise<void>;
-  
+
   /**
    * Called when the plugin is uninstalled
    */
   onUninstall?(): Promise<void>;
-  
+
   /**
    * Called when the plugin is updated
    */
@@ -284,32 +353,32 @@ export interface PluginAPI {
    * Event bus for plugin communication
    */
   events: EventBus;
-  
+
   /**
    * Register a UI component
    */
   registerComponent(component: UIComponent): void;
-  
+
   /**
    * Unregister a UI component
    */
   unregisterComponent(id: string): void;
-  
+
   /**
    * Get plugin settings
    */
-  getSettings<T extends Record<string, any>>(): T;
-  
+  getSettings<T extends Record<string, unknown>>(): T;
+
   /**
    * Update plugin settings
    */
-  updateSettings(settings: Record<string, any>): Promise<void>;
-  
+  updateSettings(settings: Record<string, unknown>): Promise<void>;
+
   /**
    * Register a route handler
    */
-  registerRoute(path: string, handler: any): void;
-  
+  registerRoute(path: string, handler: (req: unknown, res: unknown) => void | Promise<void>): void;
+
   /**
    * Get information about the platform
    */
@@ -318,26 +387,30 @@ export interface PluginAPI {
     environment: string;
     features: string[];
   };
-  
+
   /**
    * Get information about the current plugin
    */
   getPlugin(): Plugin;
-  
+
   /**
    * Get information about other installed plugins
    */
   getInstalledPlugins(): Plugin[];
-  
+
   /**
    * Check if a plugin is installed and active
    */
   isPluginActive(pluginId: string): boolean;
-  
+
   /**
    * Log a message to the platform's logging system
    */
-  log(level: 'debug' | 'info' | 'warn' | 'error', message: string, context?: Record<string, any>): void;
+  log(
+    level: 'debug' | 'info' | 'warn' | 'error',
+    message: string,
+    context?: Record<string, unknown>
+  ): void;
 }
 
 /**
@@ -348,52 +421,52 @@ export interface PluginRegistry {
    * Discover plugins from the given directory
    */
   discoverPlugins(directory: string): Promise<Plugin[]>;
-  
+
   /**
    * Get all registered plugins
    */
   getAllPlugins(): Plugin[];
-  
+
   /**
    * Get a plugin by ID
    */
   getPlugin(id: string): Plugin | undefined;
-  
+
   /**
    * Get all active plugins
    */
   getActivePlugins(): Plugin[];
-  
+
   /**
    * Install a plugin
    */
   installPlugin(plugin: Plugin): Promise<void>;
-  
+
   /**
    * Uninstall a plugin
    */
   uninstallPlugin(id: string): Promise<void>;
-  
+
   /**
    * Activate a plugin
    */
   activatePlugin(id: string): Promise<void>;
-  
+
   /**
    * Deactivate a plugin
    */
   deactivatePlugin(id: string): Promise<void>;
-  
+
   /**
    * Update a plugin
    */
   updatePlugin(id: string, newVersion: Plugin): Promise<void>;
-  
+
   /**
    * Get all plugins that depend on a specific plugin
    */
   getDependentPlugins(id: string): Plugin[];
-  
+
   /**
    * Check if dependencies can be resolved
    */
@@ -401,7 +474,7 @@ export interface PluginRegistry {
     resolved: boolean;
     missing: { id: string; version: string }[];
   };
-  
+
   /**
    * Create a plugin API instance for a specific plugin
    */
@@ -416,7 +489,7 @@ export interface PluginContext {
    * The plugin API
    */
   api: PluginAPI;
-  
+
   /**
    * Core services available to plugins
    */
@@ -424,39 +497,39 @@ export interface PluginContext {
     /**
      * Logger service
      */
-    logger: any;
-    
+    logger: LoggerService;
+
     /**
      * Event bus service
      */
     eventBus: EventBus;
-    
+
     /**
      * Data service
      */
-    data: any;
-    
+    data: DataService;
+
     /**
      * UI registry
      */
-    ui: any;
-    
+    ui: UIService;
+
     /**
      * Feature flag service
      */
-    featureFlags: any;
+    featureFlags: FeatureFlagService;
 
     /**
      * Security service
      */
-    security?: any;
+    security?: SecurityService;
 
     /**
      * API service
      */
-    api?: any;
+    api?: APIService;
   };
-  
+
   /**
    * Plugin manifest
    */

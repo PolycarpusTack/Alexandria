@@ -4,7 +4,7 @@
  */
 
 import { Logger } from '@utils/logger';
-import { 
+import {
   HeimdallPluginContext,
   HeimdallQuery,
   StreamSubscription,
@@ -13,7 +13,6 @@ import {
   ComponentHealth
 } from '../interfaces';
 import { LogProcessor } from './log-processor';
-import { v4 as uuidv4 } from 'uuid';
 // TODO: Replace with uuid v7 when available
 const uuidv7 = () => `${Date.now()}-${uuidv4()}`;
 
@@ -35,7 +34,7 @@ export class StreamManager {
 
   async stop(): Promise<void> {
     this.logger.info('Stopping stream manager');
-    
+
     // Cancel all subscriptions
     for (const [id, subscription] of this.subscriptions) {
       this.logger.debug('Cancelling subscription', { id });
@@ -54,16 +53,16 @@ export class StreamManager {
       options,
       callback
     };
-    
+
     this.subscriptions.set(subscription.id, subscription);
-    
+
     this.logger.info('Created stream subscription', {
       id: subscription.id,
       quality: options.quality
     });
-    
+
     // TODO: Implement actual streaming logic
-    
+
     return subscription;
   }
 

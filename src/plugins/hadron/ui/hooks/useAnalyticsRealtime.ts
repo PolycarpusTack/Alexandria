@@ -22,13 +22,7 @@ interface UseAnalyticsRealtimeOptions {
 }
 
 export function useAnalyticsRealtime(options: UseAnalyticsRealtimeOptions = {}) {
-  const {
-    enabled = true,
-    onEvent,
-    onConnect,
-    onDisconnect,
-    reconnectInterval = 5000
-  } = options;
+  const { enabled = true, onEvent, onConnect, onDisconnect, reconnectInterval = 5000 } = options;
 
   const wsRef = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -57,17 +51,21 @@ export function useAnalyticsRealtime(options: UseAnalyticsRealtimeOptions = {}) 
         // Send authentication if needed
         const token = localStorage.getItem('auth_token');
         if (token) {
-          ws.send(JSON.stringify({
-            type: 'auth',
-            token
-          }));
+          ws.send(
+            JSON.stringify({
+              type: 'auth',
+              token
+            })
+          );
         }
 
         // Subscribe to analytics events
-        ws.send(JSON.stringify({
-          type: 'subscribe',
-          channels: ['analytics', 'crashes', 'models']
-        }));
+        ws.send(
+          JSON.stringify({
+            type: 'subscribe',
+            channels: ['analytics', 'crashes', 'models']
+          })
+        );
       };
 
       ws.onmessage = (event) => {

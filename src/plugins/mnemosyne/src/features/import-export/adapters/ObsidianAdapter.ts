@@ -19,9 +19,6 @@ import {
   ImportTransformation
 } from '../interfaces';
 import { MnemosyneDocument } from '../../../interfaces';
-import { TemplateContext } from '../../templates/interfaces';
-import { v4 as uuidv4 } from 'uuid';
-import * as matter from 'gray-matter';
 
 interface ObsidianVault {
   path: string;
@@ -75,25 +72,25 @@ export class ObsidianAdapter implements ImportAdapter {
   async analyze(source: ImportSource): Promise<ImportAnalysis> {
     const vault = await this.loadVault(source.path);
     const notes = await this.scanVault(vault);
-    
+
     // Analyze vault structure
     const structure = await this.analyzeStructure(vault.path);
     const samples = await this.generateSamples(notes, 5);
     const transformations = this.identifyTransformations(notes);
-    
+
     // Count various elements
     const linkCount = notes.reduce((sum, note) => {
       const links = this.extractWikilinks(note.content);
       return sum + links.length;
     }, 0);
-    
+
     const tagCount = notes.reduce((sum, note) => {
       const tags = this.extractTags(note);
       return sum + tags.length;
     }, 0);
-    
+
     const attachmentCount = await this.countAttachments(vault.path);
-    
+
     return {
       source,
       documentCount: notes.length,
@@ -115,14 +112,14 @@ export class ObsidianAdapter implements ImportAdapter {
     const vault = await this.loadVault(source.path);
     const notes = await this.scanVault(vault);
     const documents: ParsedDocument[] = [];
-    
+
     for (const note of notes) {
       const parsed = await this.parseNote(note, vault);
       documents.push(parsed);
     }
-    
+
     const structure = await this.analyzeStructure(vault.path);
-    
+
     return {
       documents,
       structure,
@@ -136,22 +133,19 @@ export class ObsidianAdapter implements ImportAdapter {
   /**
    * Transform parsed content to Mnemosyne documents
    */
-  async transform(
-    content: ParsedContent,
-    options: ImportOptions
-  ): Promise<MnemosyneDocument[]> {
+  async transform(content: ParsedContent, options: ImportOptions): Promise<MnemosyneDocument[]> {
     const documents: MnemosyneDocument[] = [];
-    
+
     for (const parsed of content.documents) {
       const doc = await this.transformDocument(parsed, options);
       documents.push(doc);
     }
-    
+
     // Apply folder mapping if specified
     if (options.mapping?.folderMapping) {
       this.applyFolderMapping(documents, options.mapping.folderMapping);
     }
-    
+
     return documents;
   }
 
@@ -159,7 +153,7 @@ export class ObsidianAdapter implements ImportAdapter {
    * Map relationships for knowledge graph
    */
   async mapRelationships(docs: MnemosyneDocument[]): Promise<KnowledgeGraphUpdate> {
-    const nodes = docs.map(doc => ({
+    const nodes = docs.map((doc) => ({
       id: doc.id,
       type: 'document' as const,
       properties: {
@@ -168,13 +162,13 @@ export class ObsidianAdapter implements ImportAdapter {
         tags: doc.tags
       }
     }));
-    
+
     const edges: any[] = [];
-    
+
     // Create edges from links
     for (const doc of docs) {
       const links = doc.metadata?.parsedLinks || [];
-      
+
       for (const link of links) {
         const targetDoc = this.findDocumentByTitle(docs, link.target);
         if (targetDoc) {
@@ -189,20 +183,17 @@ export class ObsidianAdapter implements ImportAdapter {
         }
       }
     }
-    
+
     // Create folder hierarchy
     const clusters = this.createFolderClusters(docs);
-    
+
     return { nodes, edges, clusters };
   }
 
   /**
    * Track provenance for imported document
    */
-  async trackProvenance(
-    doc: MnemosyneDocument,
-    source: ImportSource
-  ): Promise<ProvenanceNode> {
+  async trackProvenance(doc: MnemosyneDocument, source: ImportSource): Promise<ProvenanceNode> {
     return {
       id: uuidv4(),
       type: 'provenance',
@@ -262,7 +253,7 @@ export class ObsidianAdapter implements ImportAdapter {
     const vault: ObsidianVault = {
       path: vaultPath
     };
-    
+
     // Load Obsidian configuration
     try {
       const configPath = path.join(vaultPath, '.obsidian', 'config');
@@ -271,7 +262,7 @@ export class ObsidianAdapter implements ImportAdapter {
     } catch {
       // Config might not exist
     }
-    
+
     // Load enabled plugins
     try {
       const pluginsPath = path.join(vaultPath, '.obsidian', 'community-plugins.json');
@@ -285,19 +276,19 @@ export class ObsidianAdapter implements ImportAdapter {
     } catch {
       vault.plugins = [];
     }
-    
+
     return vault;
   }
 
   private async scanVault(vault: ObsidianVault): Promise<ObsidianNote[]> {
     const notes: ObsidianNote[] = [];
-    
+
     async function scan(dir: string): Promise<void> {
       const entries = await fs.readdir(dir, { withFileTypes: true });
-      
+
       for (const entry of entries) {
         const fullPath = path.join(dir, entry.name);
-        
+
         if (entry.isDirectory()) {
           // Skip .obsidian and other hidden folders
           if (!entry.name.startsWith('.')) {
@@ -307,7 +298,7 @@ export class ObsidianAdapter implements ImportAdapter {
           const content = await fs.readFile(fullPath, 'utf-8');
           const stats = await fs.stat(fullPath);
           const parsed = matter(content);
-          
+
           notes.push({
             path: path.relative(vault.path, fullPath),
             content: parsed.content,
@@ -317,7 +308,7 @@ export class ObsidianAdapter implements ImportAdapter {
         }
       }
     }
-    
+
     await scan(vault.path);
     return notes;
   }
@@ -331,7 +322,7 @@ export class ObsidianAdapter implements ImportAdapter {
       hasTags: false,
       hasMetadata: false
     };
-    
+
     async function analyzeDir(dir: string, depth: number = 0): Promise<FolderNode> {
       const folderNode: FolderNode = {
         name: path.basename(dir),
@@ -339,14 +330,14 @@ export class ObsidianAdapter implements ImportAdapter {
         documentCount: 0,
         children: []
       };
-      
+
       structure.maxDepth = Math.max(structure.maxDepth, depth);
-      
+
       const entries = await fs.readdir(dir, { withFileTypes: true });
-      
+
       for (const entry of entries) {
         const fullPath = path.join(dir, entry.name);
-        
+
         if (entry.isDirectory() && !entry.name.startsWith('.')) {
           const childNode = await analyzeDir(fullPath, depth + 1);
           folderNode.children.push(childNode);
@@ -358,24 +349,21 @@ export class ObsidianAdapter implements ImportAdapter {
           structure.hasAttachments = true;
         }
       }
-      
+
       return folderNode;
     }
-    
+
     const rootNode = await analyzeDir(vaultPath);
     structure.folders = rootNode.children;
-    
+
     return structure;
   }
 
-  private async parseNote(
-    note: ObsidianNote,
-    vault: ObsidianVault
-  ): Promise<ParsedDocument> {
+  private async parseNote(note: ObsidianNote, vault: ObsidianVault): Promise<ParsedDocument> {
     const links = this.extractWikilinks(note.content);
     const tags = this.extractTags(note);
     const attachments = await this.extractAttachments(note, vault);
-    
+
     return {
       path: note.path,
       title: this.extractTitle(note),
@@ -400,12 +388,12 @@ export class ObsidianAdapter implements ImportAdapter {
     options: ImportOptions
   ): Promise<MnemosyneDocument> {
     let content = parsed.content;
-    
+
     // Convert wikilinks if requested
     if (options.convertWikilinks) {
       content = this.convertWikilinks(content);
     }
-    
+
     const doc: MnemosyneDocument = {
       id: uuidv4(),
       title: parsed.title,
@@ -420,7 +408,7 @@ export class ObsidianAdapter implements ImportAdapter {
       updatedAt: parsed.metadata?.obsidian?.modified || new Date(),
       version: 1
     };
-    
+
     return doc;
   }
 
@@ -428,7 +416,7 @@ export class ObsidianAdapter implements ImportAdapter {
     const links: ParsedLink[] = [];
     const regex = /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g;
     let match;
-    
+
     while ((match = regex.exec(content)) !== null) {
       links.push({
         type: 'wikilink',
@@ -440,26 +428,26 @@ export class ObsidianAdapter implements ImportAdapter {
         }
       });
     }
-    
+
     return links;
   }
 
   private extractTags(note: ObsidianNote): string[] {
     const tags: Set<string> = new Set();
-    
+
     // From frontmatter
     if (note.frontmatter?.tags) {
-      const fmTags = Array.isArray(note.frontmatter.tags) 
-        ? note.frontmatter.tags 
+      const fmTags = Array.isArray(note.frontmatter.tags)
+        ? note.frontmatter.tags
         : [note.frontmatter.tags];
       fmTags.forEach((tag: string) => tags.add(tag));
     }
-    
+
     // From content
     const hashtagRegex = /#[\w-]+/g;
     const matches = note.content.match(hashtagRegex) || [];
-    matches.forEach(tag => tags.add(tag.substring(1)));
-    
+    matches.forEach((tag) => tags.add(tag.substring(1)));
+
     return Array.from(tags);
   }
 
@@ -468,13 +456,13 @@ export class ObsidianAdapter implements ImportAdapter {
     if (note.frontmatter?.title) {
       return note.frontmatter.title;
     }
-    
+
     // From first heading
     const headingMatch = note.content.match(/^#\s+(.+)$/m);
     if (headingMatch) {
       return headingMatch[1];
     }
-    
+
     // From filename
     return path.basename(note.path, '.md');
   }
@@ -486,15 +474,11 @@ export class ObsidianAdapter implements ImportAdapter {
     const attachments: ParsedAttachment[] = [];
     const attachmentRegex = /!\[\[([^\]]+)\]\]/g;
     let match;
-    
+
     while ((match = attachmentRegex.exec(note.content)) !== null) {
       const filename = match[1];
-      const attachmentPath = await this.resolveAttachmentPath(
-        filename,
-        note.path,
-        vault
-      );
-      
+      const attachmentPath = await this.resolveAttachmentPath(filename, note.path, vault);
+
       if (attachmentPath) {
         try {
           const stats = await fs.stat(attachmentPath);
@@ -509,7 +493,7 @@ export class ObsidianAdapter implements ImportAdapter {
         }
       }
     }
-    
+
     return attachments;
   }
 
@@ -523,7 +507,7 @@ export class ObsidianAdapter implements ImportAdapter {
       // Same folder as note
       path.join(path.dirname(notePath), filename),
       // Configured attachment folder
-      vault.config?.attachmentFolderPath 
+      vault.config?.attachmentFolderPath
         ? path.join(vault.path, vault.config.attachmentFolderPath, filename)
         : null,
       // Root attachments folder
@@ -531,7 +515,7 @@ export class ObsidianAdapter implements ImportAdapter {
       // Root of vault
       path.join(vault.path, filename)
     ].filter(Boolean) as string[];
-    
+
     for (const possiblePath of possiblePaths) {
       try {
         await fs.access(possiblePath);
@@ -540,19 +524,16 @@ export class ObsidianAdapter implements ImportAdapter {
         // Continue to next path
       }
     }
-    
+
     return null;
   }
 
   private convertWikilinks(content: string): string {
-    return content.replace(
-      /\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g,
-      (match, target, alias) => {
-        const linkId = this.generateLinkId(target);
-        const displayText = alias || target;
-        return `[${displayText}](mnemosyne://${linkId})`;
-      }
-    );
+    return content.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (match, target, alias) => {
+      const linkId = this.generateLinkId(target);
+      const displayText = alias || target;
+      return `[${displayText}](mnemosyne://${linkId})`;
+    });
   }
 
   private generateLinkId(target: string): string {
@@ -563,14 +544,12 @@ export class ObsidianAdapter implements ImportAdapter {
     docs: MnemosyneDocument[],
     title: string
   ): MnemosyneDocument | undefined {
-    return docs.find(doc => 
-      doc.title.toLowerCase() === title.toLowerCase()
-    );
+    return docs.find((doc) => doc.title.toLowerCase() === title.toLowerCase());
   }
 
   private createFolderClusters(docs: MnemosyneDocument[]): any[] {
     const clusters: Map<string, string[]> = new Map();
-    
+
     for (const doc of docs) {
       const folderPath = path.dirname(doc.metadata?.obsidian?.originalPath || '');
       if (folderPath && folderPath !== '.') {
@@ -580,7 +559,7 @@ export class ObsidianAdapter implements ImportAdapter {
         clusters.get(folderPath)!.push(doc.id);
       }
     }
-    
+
     return Array.from(clusters.entries()).map(([folder, nodeIds]) => ({
       id: folder.replace(/\//g, '-'),
       name: folder,
@@ -593,7 +572,7 @@ export class ObsidianAdapter implements ImportAdapter {
     let hash = 0;
     for (let i = 0; i < content.length; i++) {
       const char = content.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
+      hash = (hash << 5) - hash + char;
       hash = hash & hash; // Convert to 32-bit integer
     }
     return Math.abs(hash).toString(16);
@@ -601,22 +580,31 @@ export class ObsidianAdapter implements ImportAdapter {
 
   private isAttachment(filename: string): boolean {
     const extensions = [
-      '.png', '.jpg', '.jpeg', '.gif', '.svg',
-      '.pdf', '.mp3', '.mp4', '.mov',
-      '.zip', '.tar', '.gz'
+      '.png',
+      '.jpg',
+      '.jpeg',
+      '.gif',
+      '.svg',
+      '.pdf',
+      '.mp3',
+      '.mp4',
+      '.mov',
+      '.zip',
+      '.tar',
+      '.gz'
     ];
-    return extensions.some(ext => filename.toLowerCase().endsWith(ext));
+    return extensions.some((ext) => filename.toLowerCase().endsWith(ext));
   }
 
   private async calculateVaultSize(vaultPath: string): Promise<number> {
     let totalSize = 0;
-    
+
     async function calculateDir(dir: string): Promise<void> {
       const entries = await fs.readdir(dir, { withFileTypes: true });
-      
+
       for (const entry of entries) {
         const fullPath = path.join(dir, entry.name);
-        
+
         if (entry.isDirectory() && !entry.name.startsWith('.')) {
           await calculateDir(fullPath);
         } else if (entry.isFile()) {
@@ -625,20 +613,20 @@ export class ObsidianAdapter implements ImportAdapter {
         }
       }
     }
-    
+
     await calculateDir(vaultPath);
     return totalSize;
   }
 
   private async countAttachments(vaultPath: string): Promise<number> {
     let count = 0;
-    
+
     async function countInDir(dir: string): Promise<void> {
       const entries = await fs.readdir(dir, { withFileTypes: true });
-      
+
       for (const entry of entries) {
         const fullPath = path.join(dir, entry.name);
-        
+
         if (entry.isDirectory() && !entry.name.startsWith('.')) {
           await countInDir(fullPath);
         } else if (entry.isFile() && this.isAttachment(entry.name)) {
@@ -646,18 +634,15 @@ export class ObsidianAdapter implements ImportAdapter {
         }
       }
     }
-    
+
     await countInDir(vaultPath);
     return count;
   }
 
-  private async generateSamples(
-    notes: ObsidianNote[],
-    count: number
-  ): Promise<ImportSample[]> {
+  private async generateSamples(notes: ObsidianNote[], count: number): Promise<ImportSample[]> {
     const samples: ImportSample[] = [];
     const sampleNotes = notes.slice(0, count);
-    
+
     for (const note of sampleNotes) {
       samples.push({
         path: note.path,
@@ -666,7 +651,7 @@ export class ObsidianAdapter implements ImportAdapter {
         metadata: note.frontmatter
       });
     }
-    
+
     return samples;
   }
 
@@ -680,19 +665,19 @@ export class ObsidianAdapter implements ImportAdapter {
     let wikiLinkCount = 0;
     let tagCount = 0;
     let metadataCount = 0;
-    
+
     for (const note of notes) {
       const links = this.extractWikilinks(note.content);
       wikiLinkCount += links.length;
-      
+
       const tags = this.extractTags(note);
       tagCount += tags.length;
-      
+
       if (note.frontmatter && Object.keys(note.frontmatter).length > 0) {
         metadataCount++;
       }
     }
-    
+
     if (wikiLinkCount > 0) {
       transformations.push({
         type: 'wikilink',
@@ -701,7 +686,7 @@ export class ObsidianAdapter implements ImportAdapter {
         examples: ['[[Note]]', '[[Note|Alias]]']
       });
     }
-    
+
     if (tagCount > 0) {
       transformations.push({
         type: 'tag',
@@ -710,7 +695,7 @@ export class ObsidianAdapter implements ImportAdapter {
         examples: ['#tag', 'tags: [tag1, tag2]']
       });
     }
-    
+
     if (metadataCount > 0) {
       transformations.push({
         type: 'metadata',
@@ -719,7 +704,7 @@ export class ObsidianAdapter implements ImportAdapter {
         examples: ['title:', 'date:', 'author:']
       });
     }
-    
+
     return transformations;
   }
 

@@ -47,7 +47,7 @@ export class TemplateRepository {
   async getAllTemplates(): Promise<CodeTemplate[]> {
     try {
       const data = await this.dataService.find(this.COLLECTION_NAME, {});
-      return data.map(item => this.deserializeTemplate(item));
+      return data.map((item) => this.deserializeTemplate(item));
     } catch (error) {
       this.logger.error('Failed to get all templates', { error });
       throw error;
@@ -59,7 +59,7 @@ export class TemplateRepository {
       const data = await this.dataService.find(this.COLLECTION_NAME, {
         category
       });
-      return data.map(item => this.deserializeTemplate(item));
+      return data.map((item) => this.deserializeTemplate(item));
     } catch (error) {
       this.logger.error('Failed to get templates by category', { error, category });
       throw error;
@@ -71,7 +71,7 @@ export class TemplateRepository {
       const data = await this.dataService.find(this.COLLECTION_NAME, {
         language
       });
-      return data.map(item => this.deserializeTemplate(item));
+      return data.map((item) => this.deserializeTemplate(item));
     } catch (error) {
       this.logger.error('Failed to get templates by language', { error, language });
       throw error;
@@ -88,8 +88,8 @@ export class TemplateRepository {
           { tags: { $in: [query.toLowerCase()] } }
         ]
       });
-      
-      return data.map(item => this.deserializeTemplate(item));
+
+      return data.map((item) => this.deserializeTemplate(item));
     } catch (error) {
       this.logger.error('Failed to search templates', { error, query });
       throw error;
@@ -110,21 +110,25 @@ export class TemplateRepository {
   async exportTemplates(templateIds?: string[]): Promise<string> {
     try {
       let templates: CodeTemplate[];
-      
+
       if (templateIds && templateIds.length > 0) {
         const data = await this.dataService.find(this.COLLECTION_NAME, {
           id: { $in: templateIds }
         });
-        templates = data.map(item => this.deserializeTemplate(item));
+        templates = data.map((item) => this.deserializeTemplate(item));
       } else {
         templates = await this.getAllTemplates();
       }
 
-      return JSON.stringify({
-        version: '1.0',
-        exportDate: new Date().toISOString(),
-        templates
-      }, null, 2);
+      return JSON.stringify(
+        {
+          version: '1.0',
+          exportDate: new Date().toISOString(),
+          templates
+        },
+        null,
+        2
+      );
     } catch (error) {
       this.logger.error('Failed to export templates', { error });
       throw error;
@@ -134,17 +138,17 @@ export class TemplateRepository {
   async importTemplates(jsonData: string): Promise<number> {
     try {
       const parsed = JSON.parse(jsonData);
-      
+
       if (!parsed.templates || !Array.isArray(parsed.templates)) {
         throw new Error('Invalid import format');
       }
 
       let importedCount = 0;
-      
+
       for (const templateData of parsed.templates) {
         // Remove id to create new one
         const { id, ...templateWithoutId } = templateData;
-        
+
         // Create new template with new ID
         const newTemplate: CodeTemplate = {
           ...templateWithoutId,

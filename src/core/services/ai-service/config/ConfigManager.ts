@@ -1,19 +1,13 @@
 /**
  * Configuration Manager for AI Models
- * 
+ *
  * Handles loading and saving API model configurations
  */
 
-import { promises as fs } from 'fs';
 import path from 'path';
 import { EventEmitter } from 'events';
 import { Logger } from '../../../../utils/logger';
-import { 
-  DynamicModelConfig, 
-  ModelProvider, 
-  APIModelConfig,
-  ModelRegistryEvents 
-} from './types';
+import { DynamicModelConfig, ModelProvider, APIModelConfig, ModelRegistryEvents } from './types';
 
 export class ConfigManager extends EventEmitter {
   private configPath: string;
@@ -24,7 +18,7 @@ export class ConfigManager extends EventEmitter {
     super();
     this.configPath = configPath;
     this.logger = logger;
-    
+
     // Initialize with empty config
     this.config = {
       providers: [],
@@ -33,17 +27,16 @@ export class ConfigManager extends EventEmitter {
     };
   }
 
-
   /**
    * Load configuration from file
    */
   async loadConfig(): Promise<DynamicModelConfig> {
     try {
       const configDir = path.dirname(this.configPath);
-      
+
       // Ensure config directory exists
       await fs.mkdir(configDir, { recursive: true });
-      
+
       // Check if config file exists
       try {
         await fs.access(this.configPath);
@@ -51,16 +44,16 @@ export class ConfigManager extends EventEmitter {
         // Create default config if it doesn't exist
         await this.createDefaultConfig();
       }
-      
+
       // Load config
       const configData = await fs.readFile(this.configPath, 'utf-8');
       this.config = JSON.parse(configData);
-      
+
       this.logger.info('AI model configuration loaded', {
         providers: this.config.providers.length,
         apiModels: this.config.apiModels.length
       });
-      
+
       this.emit('config:loaded', { config: this.config });
       return this.config;
     } catch (error) {
@@ -69,7 +62,6 @@ export class ConfigManager extends EventEmitter {
     }
   }
 
-
   /**
    * Save configuration to file
    */
@@ -77,13 +69,9 @@ export class ConfigManager extends EventEmitter {
     try {
       const configDir = path.dirname(this.configPath);
       await fs.mkdir(configDir, { recursive: true });
-      
-      await fs.writeFile(
-        this.configPath,
-        JSON.stringify(this.config, null, 2),
-        'utf-8'
-      );
-      
+
+      await fs.writeFile(this.configPath, JSON.stringify(this.config, null, 2), 'utf-8');
+
       this.logger.info('AI model configuration saved');
       this.emit('config:saved', { config: this.config });
     } catch (error) {
@@ -128,7 +116,7 @@ export class ConfigManager extends EventEmitter {
         // No default model - will be determined dynamically
       }
     };
-    
+
     await this.saveConfig();
   }
 
@@ -139,12 +127,11 @@ export class ConfigManager extends EventEmitter {
     return this.config.providers;
   }
 
-
   /**
    * Get enabled providers
    */
   getEnabledProviders(): ModelProvider[] {
-    return this.config.providers.filter(p => p.enabled && p.apiKey);
+    return this.config.providers.filter((p) => p.enabled && p.apiKey);
   }
 
   /**
@@ -152,7 +139,7 @@ export class ConfigManager extends EventEmitter {
    */
   getAPIModels(providerId?: string): APIModelConfig[] {
     if (providerId) {
-      return this.config.apiModels.filter(m => m.providerId === providerId);
+      return this.config.apiModels.filter((m) => m.providerId === providerId);
     }
     return this.config.apiModels;
   }
@@ -161,14 +148,14 @@ export class ConfigManager extends EventEmitter {
    * Add or update a provider
    */
   async upsertProvider(provider: ModelProvider): Promise<void> {
-    const index = this.config.providers.findIndex(p => p.id === provider.id);
-    
+    const index = this.config.providers.findIndex((p) => p.id === provider.id);
+
     if (index >= 0) {
       this.config.providers[index] = provider;
     } else {
       this.config.providers.push(provider);
     }
-    
+
     await this.saveConfig();
   }
 
@@ -176,14 +163,14 @@ export class ConfigManager extends EventEmitter {
    * Add or update an API model
    */
   async upsertAPIModel(model: APIModelConfig): Promise<void> {
-    const index = this.config.apiModels.findIndex(m => m.id === model.id);
-    
+    const index = this.config.apiModels.findIndex((m) => m.id === model.id);
+
     if (index >= 0) {
       this.config.apiModels[index] = model;
     } else {
       this.config.apiModels.push(model);
     }
-    
+
     await this.saveConfig();
   }
 
@@ -195,7 +182,7 @@ export class ConfigManager extends EventEmitter {
       ...this.config.preferences,
       ...preferences
     };
-    
+
     await this.saveConfig();
   }
 

@@ -1,0 +1,30 @@
+# Dependencies
+node_modules
+.pnpm-store
+
+# Build output
+dist
+build
+coverage
+
+# Package files
+package-lock.json
+pnpm-lock.yaml
+yarn.lock
+
+# Environment and config
+.env*
+*.log
+
+# Generated files
+**/*.d.ts
+**/*.js.map
+
+# Documentation and markdown (preserve formatting)
+*.md
+
+# Specific files to ignore
+public/index.html
+**/__mocks__/**
+**/scripts/**
+garbage/**

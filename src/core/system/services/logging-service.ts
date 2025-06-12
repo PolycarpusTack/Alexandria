@@ -4,7 +4,7 @@
 
 import { LogEntry } from '../interfaces';
 import { Logger } from '../../../utils/logger';
-import { v4 as uuidv4 } from 'uuid';
+import { idUtils } from '@alexandria/shared';
 
 export interface LoggingServiceOptions {
   logger: Logger;
@@ -23,11 +23,11 @@ export class LoggingService {
   log(entry: Omit<LogEntry, 'id' | 'timestamp'> & { source?: string }): void {
     const fullEntry: LogEntry = {
       ...entry,
-      id: uuidv4(),
+      id: idUtils.uuid(),
       timestamp: new Date(),
       source: entry.source || 'LoggingService'
     };
-    
+
     // Log to the configured logger
     switch (fullEntry.level) {
       case 'debug':

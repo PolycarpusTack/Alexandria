@@ -3,6 +3,24 @@
  */
 
 declare module '@elastic/elasticsearch' {
+  // Elasticsearch type definitions
+  interface ExplanationDetail {
+    value: number;
+    description: string;
+    details?: ExplanationDetail[];
+  }
+
+  interface ElasticsearchQuery {
+    [key: string]: unknown;
+  }
+
+  interface ElasticsearchAggregation {
+    [key: string]: unknown;
+  }
+
+  interface ElasticsearchSort {
+    [key: string]: 'asc' | 'desc' | { order: 'asc' | 'desc'; [key: string]: unknown };
+  }
   export interface SearchResponse<T> {
     took: number;
     timed_out: boolean;
@@ -29,37 +47,37 @@ declare module '@elastic/elasticsearch' {
         _explanation?: {
           value: number;
           description: string;
-          details: any[];
+          details: ExplanationDetail[];
         };
-        fields?: any;
-        highlight?: any;
-        inner_hits?: any;
+        fields?: Record<string, unknown[]>;
+        highlight?: Record<string, string[]>;
+        inner_hits?: Record<string, SearchResponse<unknown>>;
         matched_queries?: string[];
         sort?: string[];
       }>;
     };
-    aggregations?: any;
+    aggregations?: Record<string, ElasticsearchAggregation>;
   }
 
   export interface SearchRequest {
     index?: string | string[];
     type?: string | string[];
     body?: {
-      query?: any;
-      aggs?: any;
-      sort?: any[];
+      query?: ElasticsearchQuery;
+      aggs?: Record<string, ElasticsearchAggregation>;
+      sort?: ElasticsearchSort[];
       _source?: string[] | boolean;
       size?: number;
       from?: number;
       fields?: string[];
-      highlight?: any;
-      script_fields?: any;
-      post_filter?: any;
-      search_after?: any[];
-      rescore?: any;
+      highlight?: Record<string, unknown>;
+      script_fields?: Record<string, { script: { source: string; params?: Record<string, unknown> } }>;
+      post_filter?: ElasticsearchQuery;
+      search_after?: (string | number)[];
+      rescore?: Record<string, unknown>;
       explain?: boolean;
       version?: boolean;
-      indices_boost?: any[];
+      indices_boost?: Array<Record<string, number>>;
       min_score?: number;
       track_scores?: boolean;
       track_total_hits?: boolean | number;
@@ -124,15 +142,15 @@ declare module '@elastic/elasticsearch' {
         serverName?: string;
         secureProtocol?: string;
       };
-      agent?: any;
-      proxy?: string | any;
+      agent?: Record<string, unknown>;
+      proxy?: string | Record<string, unknown>;
       headers?: Record<string, string>;
       opaqueIdPrefix?: string;
       name?: string;
-      emit?: (...args: any[]) => void;
+      emit?: (...args: unknown[]) => void;
     });
 
-    search<T = any>(
+    search<T = unknown>(
       params: SearchRequest,
       options?: { ignore?: number | number[]; requestTimeout?: number; maxRetries?: number; }
     ): Promise<SearchResponse<T>>;
@@ -141,33 +159,33 @@ declare module '@elastic/elasticsearch' {
       index: string;
       id?: string;
       refresh?: 'true' | 'false' | 'wait_for';
-      body: any;
-    }): Promise<any>;
+      body: Record<string, unknown>;
+    }): Promise<{ _id: string; _index: string; _version: number; result: string }>;
 
     update(params: {
       index: string;
       id: string;
       refresh?: 'true' | 'false' | 'wait_for';
-      body: any;
-    }): Promise<any>;
+      body: { doc?: Record<string, unknown>; script?: Record<string, unknown> };
+    }): Promise<{ _id: string; _index: string; _version: number; result: string }>;
 
     delete(params: {
       index: string;
       id: string;
       refresh?: 'true' | 'false' | 'wait_for';
-    }): Promise<any>;
+    }): Promise<{ _id: string; _index: string; _version: number; result: string }>;
 
     bulk(params: {
       index?: string;
-      body: any[];
+      body: Array<Record<string, unknown>>;
       refresh?: 'true' | 'false' | 'wait_for';
-    }): Promise<any>;
+    }): Promise<{ items: Array<Record<string, unknown>>; errors: boolean }>;
 
     count(params: {
       index?: string | string[];
-      body?: any;
+      body?: { query?: ElasticsearchQuery };
       query?: string;
-    }): Promise<{ count: number; _shards: any }>;
+    }): Promise<{ count: number; _shards: { total: number; successful: number; skipped: number; failed: number } }>;
 
     exists(params: {
       index: string;
@@ -175,34 +193,34 @@ declare module '@elastic/elasticsearch' {
       source?: string | string[];
     }): Promise<boolean>;
 
-    get<T = any>(params: {
+    get<T = unknown>(params: {
       index: string;
       id: string;
       source?: string | string[];
-    }): Promise<{ _source: T; found: boolean }>;
+    }): Promise<{ _source: T; found: boolean; _index: string; _id: string; _version: number }>;
 
     indices: {
       create(params: {
         index: string;
-        body?: any;
-      }): Promise<any>;
+        body?: Record<string, unknown>;
+      }): Promise<{ acknowledged: boolean; shards_acknowledged: boolean; index: string }>;
       delete(params: {
         index: string;
-      }): Promise<any>;
+      }): Promise<{ acknowledged: boolean }>;
       exists(params: {
         index: string;
       }): Promise<boolean>;
       refresh(params: {
         index?: string | string[];
-      }): Promise<any>;
+      }): Promise<{ _shards: { total: number; successful: number; failed: number } }>;
       putMapping(params: {
         index: string | string[];
-        body: any;
-      }): Promise<any>;
+        body: Record<string, unknown>;
+      }): Promise<{ acknowledged: boolean }>;
     };
 
     ping(): Promise<boolean>;
-    info(): Promise<any>;
+    info(): Promise<{ cluster_name: string; version: Record<string, unknown>; [key: string]: unknown }>;
     close(): Promise<void>;
   }
 }

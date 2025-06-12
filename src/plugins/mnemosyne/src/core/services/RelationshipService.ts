@@ -1,6 +1,6 @@
 /**
  * Mnemosyne Relationship Service
- * 
+ *
  * Enterprise-grade relationship management with bidirectional links,
  * intelligent relationship detection, strength calculation, and analytics
  */
@@ -77,7 +77,7 @@ export interface BidirectionalLinkAnalysis {
 
 /**
  * Relationship Service
- * 
+ *
  * Advanced relationship management with intelligent analysis,
  * bidirectional link handling, and relationship pattern detection
  */
@@ -138,7 +138,6 @@ export class RelationshipService implements MnemosyneService {
 
       this.status = ServiceStatus.INITIALIZED;
       this.logger.info('Relationship Service initialized successfully');
-
     } catch (error) {
       this.status = ServiceStatus.ERROR;
       this.logger.error('Failed to initialize Relationship Service', { error });
@@ -164,7 +163,6 @@ export class RelationshipService implements MnemosyneService {
 
       this.status = ServiceStatus.ACTIVE;
       this.logger.info('Relationship Service activated successfully');
-
     } catch (error) {
       this.status = ServiceStatus.ERROR;
       this.logger.error('Failed to activate Relationship Service', { error });
@@ -197,7 +195,6 @@ export class RelationshipService implements MnemosyneService {
 
       this.status = ServiceStatus.INACTIVE;
       this.logger.info('Relationship Service shut down successfully');
-
     } catch (error) {
       this.status = ServiceStatus.ERROR;
       this.logger.error('Error shutting down Relationship Service', { error });
@@ -225,7 +222,7 @@ export class RelationshipService implements MnemosyneService {
     const relationshipCount = await this.getRelationshipCount();
     const bidirectionalCount = await this.getBidirectionalRelationshipCount();
     const avgStrength = await this.getAverageRelationshipStrength();
-    
+
     this.metrics.customMetrics = {
       ...this.metrics.customMetrics,
       relationshipCount,
@@ -267,12 +264,23 @@ export class RelationshipService implements MnemosyneService {
       }
 
       // Calculate initial strength
-      const strength = options.autoCalculateStrength !== false 
-        ? await this.calculateRelationshipStrength(sourceId, targetId, type, options.evidence || [])
-        : 1.0;
+      const strength =
+        options.autoCalculateStrength !== false
+          ? await this.calculateRelationshipStrength(
+              sourceId,
+              targetId,
+              type,
+              options.evidence || []
+            )
+          : 1.0;
 
       // Calculate confidence
-      const confidence = await this.calculateRelationshipConfidence(sourceId, targetId, type, options.evidence || []);
+      const confidence = await this.calculateRelationshipConfidence(
+        sourceId,
+        targetId,
+        type,
+        options.evidence || []
+      );
 
       const query = `
         INSERT INTO mnemosyne_knowledge_relationships (
@@ -316,7 +324,6 @@ export class RelationshipService implements MnemosyneService {
       this.logger.debug(`Created relationship: ${relationship.id} (${sourceId} -> ${targetId})`);
 
       return relationship;
-
     } catch (error) {
       this.updateMetrics(startTime, false);
       this.logger.error('Failed to create relationship', { error, sourceId, targetId, type });
@@ -360,7 +367,11 @@ export class RelationshipService implements MnemosyneService {
       // Create reverse relationship
       const reverse = await this.createRelationship(nodeId2, nodeId1, type, {
         evidence: options.evidence,
-        metadata: { ...options.metadata, bidirectionalPair: true, forwardRelationshipId: forward.id },
+        metadata: {
+          ...options.metadata,
+          bidirectionalPair: true,
+          forwardRelationshipId: forward.id
+        },
         autoCalculateStrength: options.strength2to1 === undefined,
         checkBidirectional: false,
         createdBy: options.createdBy
@@ -379,10 +390,14 @@ export class RelationshipService implements MnemosyneService {
       this.logger.debug(`Created bidirectional relationship: ${forward.id} <-> ${reverse.id}`);
 
       return { forward, reverse };
-
     } catch (error) {
       this.updateMetrics(startTime, false);
-      this.logger.error('Failed to create bidirectional relationship', { error, nodeId1, nodeId2, type });
+      this.logger.error('Failed to create bidirectional relationship', {
+        error,
+        nodeId1,
+        nodeId2,
+        type
+      });
       throw error;
     }
   }
@@ -417,7 +432,11 @@ export class RelationshipService implements MnemosyneService {
         RETURNING *;
       `;
 
-      const result = await this.dataService.query(query, [newStrength, newEvidence, relationshipId]);
+      const result = await this.dataService.query(query, [
+        newStrength,
+        newEvidence,
+        relationshipId
+      ]);
       const updatedRelationship = this.mapDbRowToRelationship(result[0]);
 
       // Update cache
@@ -431,10 +450,11 @@ export class RelationshipService implements MnemosyneService {
       });
 
       this.updateMetrics(startTime, true);
-      this.logger.debug(`Strengthened relationship: ${relationshipId} (${relationship.strength} -> ${newStrength})`);
+      this.logger.debug(
+        `Strengthened relationship: ${relationshipId} (${relationship.strength} -> ${newStrength})`
+      );
 
       return updatedRelationship;
-
     } catch (error) {
       this.updateMetrics(startTime, false);
       this.logger.error('Failed to strengthen relationship', { error, relationshipId });
@@ -483,7 +503,6 @@ export class RelationshipService implements MnemosyneService {
 
       this.updateMetrics(startTime, true);
       return analyses;
-
     } catch (error) {
       this.updateMetrics(startTime, false);
       this.logger.error('Failed to analyze bidirectional opportunities', { error, nodeId });
@@ -518,8 +537,8 @@ export class RelationshipService implements MnemosyneService {
         originalRelationship.type,
         {
           evidence: analysis.targetToSource.evidence,
-          metadata: { 
-            bidirectionalPair: true, 
+          metadata: {
+            bidirectionalPair: true,
             forwardRelationshipId: originalRelationship.id,
             autoCreated: true,
             symmetryScore: analysis.symmetryScore
@@ -531,7 +550,10 @@ export class RelationshipService implements MnemosyneService {
       );
 
       // Set calculated strength
-      await this.updateRelationshipStrength(reverseRelationship.id, analysis.targetToSource.strength);
+      await this.updateRelationshipStrength(
+        reverseRelationship.id,
+        analysis.targetToSource.strength
+      );
 
       // Mark both as bidirectional
       await this.markAsBidirectional(originalRelationship.id, reverseRelationship.id);
@@ -540,7 +562,6 @@ export class RelationshipService implements MnemosyneService {
       this.logger.debug(`Auto-created bidirectional relationship from analysis: ${analysisId}`);
 
       return [originalRelationship, reverseRelationship];
-
     } catch (error) {
       this.updateMetrics(startTime, false);
       this.logger.error('Failed to create bidirectional from analysis', { error, analysisId });
@@ -560,7 +581,7 @@ export class RelationshipService implements MnemosyneService {
     try {
       const cacheKey = `patterns_${nodeIds?.join(',') || 'all'}_${patternTypes?.join(',') || 'all'}`;
       const cached = this.patternCache.get(cacheKey);
-      
+
       if (cached) {
         this.updateMetrics(startTime, true);
         return cached;
@@ -568,21 +589,21 @@ export class RelationshipService implements MnemosyneService {
 
       // Detect hub patterns (nodes with many connections)
       const hubPatterns = await this.detectHubPatterns(nodeIds);
-      
+
       // Detect chain patterns (sequential connections)
       const chainPatterns = await this.detectChainPatterns(nodeIds);
-      
+
       // Detect cluster patterns (tightly connected groups)
       const clusterPatterns = await this.detectClusterPatterns(nodeIds);
-      
+
       // Detect star patterns (central node with many spokes)
       const starPatterns = await this.detectStarPatterns(nodeIds);
 
       const allPatterns = [...hubPatterns, ...chainPatterns, ...clusterPatterns, ...starPatterns];
-      
+
       // Filter by pattern types if specified
-      const filteredPatterns = patternTypes 
-        ? allPatterns.filter(p => patternTypes.includes(p.name))
+      const filteredPatterns = patternTypes
+        ? allPatterns.filter((p) => patternTypes.includes(p.name))
         : allPatterns;
 
       // Cache results
@@ -590,7 +611,6 @@ export class RelationshipService implements MnemosyneService {
 
       this.updateMetrics(startTime, true);
       return filteredPatterns;
-
     } catch (error) {
       this.updateMetrics(startTime, false);
       this.logger.error('Failed to detect relationship patterns', { error, nodeIds, patternTypes });
@@ -626,7 +646,6 @@ export class RelationshipService implements MnemosyneService {
 
       this.updateMetrics(startTime, true);
       return clusters;
-
     } catch (error) {
       this.updateMetrics(startTime, false);
       this.logger.error('Failed to cluster relationships', { error, algorithm, threshold });
@@ -646,7 +665,7 @@ export class RelationshipService implements MnemosyneService {
     try {
       const cacheKey = `analysis_${relationshipId}_${timeRange}`;
       const cached = this.analysisCache.get(cacheKey);
-      
+
       if (cached) {
         this.updateMetrics(startTime, true);
         return cached;
@@ -659,7 +678,7 @@ export class RelationshipService implements MnemosyneService {
 
       // Get historical strength data
       const strengthHistory = await this.getRelationshipStrengthHistory(relationshipId, timeRange);
-      
+
       // Calculate metrics
       const traversalFrequency = await this.getTraversalFrequency(relationshipId, timeRange);
       const strengthTrend = this.calculateStrengthTrend(strengthHistory);
@@ -690,10 +709,12 @@ export class RelationshipService implements MnemosyneService {
 
       this.updateMetrics(startTime, true);
       return analysis;
-
     } catch (error) {
       this.updateMetrics(startTime, false);
-      this.logger.error('Failed to analyze relationship strength trends', { error, relationshipId });
+      this.logger.error('Failed to analyze relationship strength trends', {
+        error,
+        relationshipId
+      });
       throw error;
     }
   }
@@ -779,7 +800,7 @@ export class RelationshipService implements MnemosyneService {
     `;
 
     const results = await this.dataService.query(query);
-    
+
     for (const row of results) {
       const relationship = this.mapDbRowToRelationship(row);
       this.relationshipCache.set(relationship.id, relationship);
@@ -864,20 +885,28 @@ export class RelationshipService implements MnemosyneService {
     return Math.min(1.0, confidence);
   }
 
-  private async analyzeBidirectionalOpportunity(relationship: KnowledgeRelationship): Promise<void> {
+  private async analyzeBidirectionalOpportunity(
+    relationship: KnowledgeRelationship
+  ): Promise<void> {
     const analysis = await this.analyzeBidirectionalPotential(relationship);
-    
-    if (analysis.symmetryScore > this.bidirectionalThreshold && 
-        analysis.recommendation === 'create_reverse') {
-      
+
+    if (
+      analysis.symmetryScore > this.bidirectionalThreshold &&
+      analysis.recommendation === 'create_reverse'
+    ) {
       // Auto-create bidirectional if confidence is high
       if (analysis.targetToSource.confidence > 0.8) {
-        await this.createBidirectionalFromAnalysis(analysis.relationshipId, this.bidirectionalThreshold);
+        await this.createBidirectionalFromAnalysis(
+          analysis.relationshipId,
+          this.bidirectionalThreshold
+        );
       }
     }
   }
 
-  private async analyzeBidirectionalPotential(relationship: KnowledgeRelationship): Promise<BidirectionalLinkAnalysis> {
+  private async analyzeBidirectionalPotential(
+    relationship: KnowledgeRelationship
+  ): Promise<BidirectionalLinkAnalysis> {
     // Calculate reverse relationship potential
     const reverseStrength = await this.calculateRelationshipStrength(
       relationship.targetId,
@@ -885,7 +914,7 @@ export class RelationshipService implements MnemosyneService {
       relationship.type,
       []
     );
-    
+
     const reverseConfidence = await this.calculateRelationshipConfidence(
       relationship.targetId,
       relationship.sourceId,
@@ -901,7 +930,7 @@ export class RelationshipService implements MnemosyneService {
 
     // Determine recommendation
     let recommendation: BidirectionalLinkAnalysis['recommendation'] = 'maintain';
-    
+
     if (symmetryScore > 0.8 && reverseConfidence > 0.7) {
       recommendation = 'create_reverse';
     } else if (symmetryScore > 0.6) {
@@ -927,7 +956,10 @@ export class RelationshipService implements MnemosyneService {
     };
   }
 
-  private async markAsBidirectional(relationshipId1: string, relationshipId2: string): Promise<void> {
+  private async markAsBidirectional(
+    relationshipId1: string,
+    relationshipId2: string
+  ): Promise<void> {
     const query = `
       UPDATE mnemosyne_knowledge_relationships 
       SET bidirectional = true, 
@@ -945,16 +977,22 @@ export class RelationshipService implements MnemosyneService {
     ]);
   }
 
-  private calculateStrengthIncrease(evidence: string[], relationship: KnowledgeRelationship): number {
+  private calculateStrengthIncrease(
+    evidence: string[],
+    relationship: KnowledgeRelationship
+  ): number {
     // Calculate strength increase based on evidence quality and quantity
     const baseIncrease = 0.1;
     const evidenceMultiplier = Math.min(2.0, evidence.length * 0.1);
     const currentStrengthFactor = (10 - relationship.strength) / 10; // Diminishing returns
-    
+
     return baseIncrease * evidenceMultiplier * currentStrengthFactor;
   }
 
-  private async updateRelationshipStrength(relationshipId: string, newStrength: number): Promise<void> {
+  private async updateRelationshipStrength(
+    relationshipId: string,
+    newStrength: number
+  ): Promise<void> {
     const query = `
       UPDATE mnemosyne_knowledge_relationships 
       SET strength = $1, modified = NOW()
@@ -967,7 +1005,7 @@ export class RelationshipService implements MnemosyneService {
   private async detectHubPatterns(nodeIds?: string[]): Promise<RelationshipPattern[]> {
     const whereClause = nodeIds ? `AND source_id = ANY($1)` : '';
     const params = nodeIds ? [nodeIds] : [];
-    
+
     const query = `
       SELECT source_id, COUNT(*) as connection_count
       FROM mnemosyne_active_relationships
@@ -978,8 +1016,8 @@ export class RelationshipService implements MnemosyneService {
     `;
 
     const results = await this.dataService.query(query, params);
-    
-    return results.map(row => ({
+
+    return results.map((row) => ({
       id: `hub-${row.source_id}`,
       name: `Hub Pattern`,
       description: `Node ${row.source_id} acts as a hub with ${row.connection_count} connections`,
@@ -1033,10 +1071,10 @@ export class RelationshipService implements MnemosyneService {
   private async runPeriodicAnalysis(): Promise<void> {
     // Run periodic relationship analysis
     this.logger.debug('Running periodic relationship analysis');
-    
+
     // Analyze bidirectional opportunities
     const opportunities = await this.analyzeBidirectionalOpportunities();
-    
+
     // Auto-create high-confidence bidirectional relationships
     for (const opportunity of opportunities) {
       if (opportunity.symmetryScore > 0.9 && opportunity.targetToSource.confidence > 0.9) {
@@ -1059,7 +1097,7 @@ export class RelationshipService implements MnemosyneService {
   }
 
   // Additional helper methods would continue here...
-  
+
   private mapDbRowToRelationship(row: any): KnowledgeRelationship {
     return {
       id: row.id,
@@ -1089,16 +1127,20 @@ export class RelationshipService implements MnemosyneService {
 
     const query = `SELECT * FROM mnemosyne_active_relationships WHERE id = $1;`;
     const result = await this.dataService.query(query, [relationshipId]);
-    
+
     if (result.length === 0) return null;
-    
+
     const relationship = this.mapDbRowToRelationship(result[0]);
     this.relationshipCache.set(relationshipId, relationship);
-    
+
     return relationship;
   }
 
-  private async emitRelationshipEvent(eventType: string, relationship: KnowledgeRelationship, metadata?: any): Promise<void> {
+  private async emitRelationshipEvent(
+    eventType: string,
+    relationship: KnowledgeRelationship,
+    metadata?: any
+  ): Promise<void> {
     this.eventBus.emit(`mnemosyne:${eventType}`, {
       relationshipId: relationship.id,
       sourceId: relationship.sourceId,
@@ -1111,14 +1153,14 @@ export class RelationshipService implements MnemosyneService {
 
   private updateMetrics(startTime: number, success: boolean): void {
     const responseTime = Date.now() - startTime;
-    
+
     this.metrics.requestCount++;
     if (!success) {
       this.metrics.errorCount++;
     }
-    
-    this.metrics.avgResponseTime = 
-      (this.metrics.avgResponseTime * (this.metrics.requestCount - 1) + responseTime) / 
+
+    this.metrics.avgResponseTime =
+      (this.metrics.avgResponseTime * (this.metrics.requestCount - 1) + responseTime) /
       this.metrics.requestCount;
   }
 
@@ -1129,33 +1171,73 @@ export class RelationshipService implements MnemosyneService {
   }
 
   private async getRelationshipCount(): Promise<number> {
-    const result = await this.dataService.query('SELECT COUNT(*) as count FROM mnemosyne_active_relationships');
+    const result = await this.dataService.query(
+      'SELECT COUNT(*) as count FROM mnemosyne_active_relationships'
+    );
     return parseInt(result[0].count);
   }
 
   private async getBidirectionalRelationshipCount(): Promise<number> {
-    const result = await this.dataService.query('SELECT COUNT(*) as count FROM mnemosyne_active_relationships WHERE bidirectional = true');
+    const result = await this.dataService.query(
+      'SELECT COUNT(*) as count FROM mnemosyne_active_relationships WHERE bidirectional = true'
+    );
     return parseInt(result[0].count);
   }
 
   private async getAverageRelationshipStrength(): Promise<number> {
-    const result = await this.dataService.query('SELECT AVG(strength) as avg FROM mnemosyne_active_relationships');
+    const result = await this.dataService.query(
+      'SELECT AVG(strength) as avg FROM mnemosyne_active_relationships'
+    );
     return parseFloat(result[0].avg) || 0;
   }
 
   // Placeholder methods for complex calculations
-  private async getNodeCentrality(nodeId: string): Promise<number> { return 0.5; }
-  private async calculateContentSimilarity(sourceId: string, targetId: string): Promise<number> { return 0.3; }
-  private getTypeStrengthMultiplier(type: RelationshipType): number { return 1.0; }
-  private async matchRelationshipPatterns(sourceId: string, targetId: string, type: RelationshipType): Promise<number> { return 0.5; }
-  private async getBidirectionalAnalysis(analysisId: string): Promise<BidirectionalLinkAnalysis | null> { return null; }
-  private async updateRelationshipPatterns(relationship: KnowledgeRelationship): Promise<void> { }
-  private async analyzeNewNodeRelationships(nodeId: string): Promise<void> { }
-  private async updateDocumentRelationships(documentId: string): Promise<void> { }
-  private async getRelationshipStrengthHistory(relationshipId: string, timeRange: string): Promise<any[]> { return []; }
-  private calculateStrengthTrend(history: any[]): 'increasing' | 'decreasing' | 'stable' { return 'stable'; }
-  private async calculateBidirectionalScore(relationship: KnowledgeRelationship): Promise<number> { return 0.5; }
-  private async calculateContextualRelevance(relationship: KnowledgeRelationship): Promise<number> { return 0.7; }
-  private async getTraversalFrequency(relationshipId: string, timeRange: string): Promise<number> { return 5; }
-  private async generateRelationshipRecommendations(relationship: KnowledgeRelationship, metrics: any): Promise<RelationshipRecommendation[]> { return []; }
+  private async getNodeCentrality(nodeId: string): Promise<number> {
+    return 0.5;
+  }
+  private async calculateContentSimilarity(sourceId: string, targetId: string): Promise<number> {
+    return 0.3;
+  }
+  private getTypeStrengthMultiplier(type: RelationshipType): number {
+    return 1.0;
+  }
+  private async matchRelationshipPatterns(
+    sourceId: string,
+    targetId: string,
+    type: RelationshipType
+  ): Promise<number> {
+    return 0.5;
+  }
+  private async getBidirectionalAnalysis(
+    analysisId: string
+  ): Promise<BidirectionalLinkAnalysis | null> {
+    return null;
+  }
+  private async updateRelationshipPatterns(relationship: KnowledgeRelationship): Promise<void> {}
+  private async analyzeNewNodeRelationships(nodeId: string): Promise<void> {}
+  private async updateDocumentRelationships(documentId: string): Promise<void> {}
+  private async getRelationshipStrengthHistory(
+    relationshipId: string,
+    timeRange: string
+  ): Promise<any[]> {
+    return [];
+  }
+  private calculateStrengthTrend(history: any[]): 'increasing' | 'decreasing' | 'stable' {
+    return 'stable';
+  }
+  private async calculateBidirectionalScore(relationship: KnowledgeRelationship): Promise<number> {
+    return 0.5;
+  }
+  private async calculateContextualRelevance(relationship: KnowledgeRelationship): Promise<number> {
+    return 0.7;
+  }
+  private async getTraversalFrequency(relationshipId: string, timeRange: string): Promise<number> {
+    return 5;
+  }
+  private async generateRelationshipRecommendations(
+    relationship: KnowledgeRelationship,
+    metrics: any
+  ): Promise<RelationshipRecommendation[]> {
+    return [];
+  }
 }

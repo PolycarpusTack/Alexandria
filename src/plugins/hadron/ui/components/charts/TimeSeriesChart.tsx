@@ -3,7 +3,7 @@ import { TimeSeriesData } from '../../../src/interfaces/analytics';
 import { useChartInteractions, useChartCustomization } from '../ChartInteractions';
 import { ChartCustomization } from '../ChartCustomization';
 import { DrillDownModal } from '../DrillDownModal';
-import { Button } from '../../../../../client/components/ui/button'
+import { Button } from '../../../../../client/components/ui/button';
 import { ZoomIn } from 'lucide-react';
 import { getChartTheme } from '../../utils/theme';
 
@@ -79,9 +79,9 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({
 
       // Get theme colors
       const chartTheme = getChartTheme(isDark);
-      
+
       // Prepare data
-      const labels = data.series.map(point => {
+      const labels = data.series.map((point) => {
         const date = new Date(point.timestamp);
         if (data.granularity === 'hour') {
           return date.toLocaleString('en-US', { hour: '2-digit', minute: '2-digit' });
@@ -96,27 +96,29 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({
 
       const chartData = {
         labels,
-        datasets: [{
-          label: 'Crash Count',
-          data: data.series.map(point => point.count),
-          borderColor: chartTheme.datasetColors[0],
-          backgroundColor: chartTheme.datasetColors[0] + '1A', // 10% opacity
-          borderWidth: 2,
-          tension: 0.4,
-          fill: true,
-          pointRadius: 4,
-          pointHoverRadius: 6,
-          pointBackgroundColor: chartTheme.datasetColors[0],
-          pointBorderColor: isDark ? '#1f2937' : '#ffffff',
-          pointBorderWidth: 2
-        }]
+        datasets: [
+          {
+            label: 'Crash Count',
+            data: data.series.map((point) => point.count),
+            borderColor: chartTheme.datasetColors[0],
+            backgroundColor: chartTheme.datasetColors[0] + '1A', // 10% opacity
+            borderWidth: 2,
+            tension: 0.4,
+            fill: true,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBackgroundColor: chartTheme.datasetColors[0],
+            pointBorderColor: isDark ? '#1f2937' : '#ffffff',
+            pointBorderWidth: 2
+          }
+        ]
       };
 
       // Add comparison data if available
       if (data.comparisonSeries) {
         chartData.datasets.push({
           label: 'Previous Period',
-          data: data.comparisonSeries.map(point => point.count),
+          data: data.comparisonSeries.map((point) => point.count),
           borderColor: chartTheme.textColor,
           backgroundColor: chartTheme.textColor + '1A',
           borderWidth: 2,
@@ -165,7 +167,7 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({
             cornerRadius: 8,
             displayColors: true,
             callbacks: {
-              label: function(context: any) {
+              label: function (context: any) {
                 let label = context.dataset.label || '';
                 if (label) {
                   label += ': ';
@@ -202,7 +204,7 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({
               font: {
                 size: 11
               },
-              callback: function(value: any) {
+              callback: function (value: any) {
                 return value.toLocaleString();
               }
             }
@@ -242,7 +244,7 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({
       }
 
       // Apply smooth lines setting
-      chartData.datasets.forEach(dataset => {
+      chartData.datasets.forEach((dataset) => {
         dataset.tension = smoothLines ? 0.4 : 0;
       });
 
@@ -260,21 +262,27 @@ export const TimeSeriesChart: React.FC<TimeSeriesChartProps> = ({
         chartInstanceRef.current.destroy();
       }
     };
-  }, [data, isDark, showLegend, animate, chartType, showDataLabels, showGrid, smoothLines, enableInteractions]);
+  }, [
+    data,
+    isDark,
+    showLegend,
+    animate,
+    chartType,
+    showDataLabels,
+    showGrid,
+    smoothLines,
+    enableInteractions
+  ]);
 
   return (
     <>
-      <div className="space-y-2">
+      <div className='space-y-2'>
         {enableInteractions && (
-          <div className="flex justify-between items-center">
-            <div className="flex gap-2">
+          <div className='flex justify-between items-center'>
+            <div className='flex gap-2'>
               {isZoomed && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={resetZoom}
-                >
-                  <ZoomIn className="h-4 w-4 mr-1" />
+                <Button variant='outline' size='sm' onClick={resetZoom}>
+                  <ZoomIn className='h-4 w-4 mr-1' />
                   Reset Zoom
                 </Button>
               )}
@@ -316,5 +324,5 @@ function getWeekNumber(date: Date): number {
   const dayNum = d.getUTCDay() || 7;
   d.setUTCDate(d.getUTCDate() + 4 - dayNum);
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  return Math.ceil((((d.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
+  return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
 }

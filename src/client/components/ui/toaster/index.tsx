@@ -1,10 +1,10 @@
 /**
  * Toaster Component
- * 
+ *
  * A toast notification system for displaying non-intrusive feedback to users.
  * Based on the Radix UI Toast primitive with VSCode/Notion-style design.
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import * as ToastPrimitive from '@radix-ui/react-toast';
 import { X } from 'lucide-react';
 
@@ -41,7 +41,7 @@ export const useToast = () => {
   return context;
 };
 
-export const ToastProvider: React.FC<{children: React.ReactNode}> = ({ children }) => {
+export const ToastProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const addToast = (toast: Omit<Toast, 'id'>) => {
@@ -70,7 +70,7 @@ const toastColors = {
     background: 'bg-white dark:bg-gray-800',
     border: 'border-gray-200 dark:border-gray-700',
     title: 'text-gray-900 dark:text-gray-100',
-    description: 'text-gray-600 dark:text-gray-400' 
+    description: 'text-gray-600 dark:text-gray-400'
   },
   success: {
     background: 'bg-green-50 dark:bg-green-900/20',
@@ -103,13 +103,11 @@ export const Toaster: React.FC = () => {
 
   return (
     <ToastPrimitive.Provider>
-      <div className="fixed top-0 right-0 z-50 flex flex-col gap-2 p-4 max-h-screen overflow-auto">
+      <div className='fixed top-0 right-0 z-50 flex flex-col gap-2 p-4 max-h-screen overflow-auto'>
         {toasts.map((toast) => (
           <ToastPrimitive.Root
             key={toast.id}
-            className={`${
-              toastColors[toast.type].background
-            } border ${
+            className={`${toastColors[toast.type].background} border ${
               toastColors[toast.type].border
             } rounded-md shadow-lg p-4 flex flex-col gap-1 w-80 animate-slide-in-right`}
             duration={toast.duration || 5000}
@@ -119,31 +117,35 @@ export const Toaster: React.FC = () => {
               }
             }}
           >
-            <div className="flex justify-between items-start">
+            <div className='flex justify-between items-start'>
               {toast.title && (
-                <ToastPrimitive.Title className={`font-medium text-sm ${toastColors[toast.type].title}`}>
+                <ToastPrimitive.Title
+                  className={`font-medium text-sm ${toastColors[toast.type].title}`}
+                >
                   {toast.title}
                 </ToastPrimitive.Title>
               )}
               <ToastPrimitive.Close asChild>
                 <button
-                  className="rounded-full p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  aria-label="Close"
+                  className='rounded-full p-1 text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 dark:hover:text-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500'
+                  aria-label='Close'
                 >
                   <X size={14} />
                 </button>
               </ToastPrimitive.Close>
             </div>
             {toast.description && (
-              <ToastPrimitive.Description className={`text-sm ${toastColors[toast.type].description}`}>
+              <ToastPrimitive.Description
+                className={`text-sm ${toastColors[toast.type].description}`}
+              >
                 {toast.description}
               </ToastPrimitive.Description>
             )}
             {toast.action && (
-              <div className="mt-2">
+              <div className='mt-2'>
                 <button
                   onClick={toast.action.onClick}
-                  className="text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 focus:outline-none"
+                  className='text-xs font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 focus:outline-none'
                 >
                   {toast.action.label}
                 </button>

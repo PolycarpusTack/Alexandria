@@ -8,7 +8,7 @@ const LiveDashboard = React.lazy(() => import('./LiveDashboard'));
 
 const DashboardWrapper: React.FC = () => {
   const { layoutMode } = useLayout();
-  
+
   // Use LiveDashboard for enhanced-mockup mode to show real data
   if (layoutMode === 'enhanced-mockup') {
     return (
@@ -17,11 +17,11 @@ const DashboardWrapper: React.FC = () => {
       </React.Suspense>
     );
   }
-  
+
   if (layoutMode === 'enhanced') {
     return <EnhancedDashboard />;
   }
-  
+
   return <Dashboard />;
 };
 

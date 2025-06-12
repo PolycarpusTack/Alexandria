@@ -1,6 +1,6 @@
 /**
  * Authentication Middleware Test Suite
- * 
+ *
  * Comprehensive tests for authentication middleware including:
  * - JWT token validation
  * - Bearer token extraction
@@ -15,7 +15,10 @@
 
 import request from 'supertest';
 import express from 'express';
-import { authenticationMiddleware, createAuthMiddleware } from '../../core/security/auth-middleware';
+import {
+  authenticationMiddleware,
+  createAuthMiddleware
+} from '../../core/security/auth-middleware';
 import { AuthenticationService } from '../../core/security/authentication-service';
 import { SessionStore } from '../../core/session/session-store';
 import { Logger } from '../../utils/logger';
@@ -38,10 +41,11 @@ describe('Authentication Middleware', () => {
     roles: ['user'],
     permissions: ['read', 'write'],
     lastLogin: new Date(),
-    isActive: true,
+    isActive: true
   };
 
-  const validToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLTEyMyIsImlhdCI6MTUxNjIzOTAyMn0.test';
+  const validToken =
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLTEyMyIsImlhdCI6MTUxNjIzOTAyMn0.test';
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -56,7 +60,7 @@ describe('Authentication Middleware', () => {
       warn: jest.fn(),
       error: jest.fn(),
       debug: jest.fn(),
-      child: jest.fn().mockReturnThis(),
+      child: jest.fn().mockReturnThis()
     } as any;
 
     // Setup mock authentication service
@@ -64,7 +68,7 @@ describe('Authentication Middleware', () => {
       validateToken: jest.fn(),
       getUserFromToken: jest.fn(),
       refreshToken: jest.fn(),
-      blacklistToken: jest.fn(),
+      blacklistToken: jest.fn()
     } as any;
 
     // Setup mock session store
@@ -72,7 +76,7 @@ describe('Authentication Middleware', () => {
       get: jest.fn(),
       set: jest.fn(),
       destroy: jest.fn(),
-      touch: jest.fn(),
+      touch: jest.fn()
     } as any;
   });
 
@@ -83,7 +87,7 @@ describe('Authentication Middleware', () => {
         authService: mockAuthService,
         sessionStore: mockSessionStore,
         logger: mockLogger,
-        required: true,
+        required: true
       });
 
       app.use(authMiddleware);
@@ -95,7 +99,7 @@ describe('Authentication Middleware', () => {
     it('should extract token from Authorization header', async () => {
       mockAuthService.validateToken.mockResolvedValue({
         valid: true,
-        payload: { sub: 'user-123', exp: Date.now() / 1000 + 3600 },
+        payload: { sub: 'user-123', exp: Date.now() / 1000 + 3600 }
       });
       mockAuthService.getUserFromToken.mockResolvedValue(mockUser);
 
@@ -113,7 +117,7 @@ describe('Authentication Middleware', () => {
         authService: mockAuthService,
         sessionStore: mockSessionStore,
         logger: mockLogger,
-        cookieName: 'auth_token',
+        cookieName: 'auth_token'
       });
 
       app.use(authMiddleware);
@@ -123,37 +127,27 @@ describe('Authentication Middleware', () => {
 
       mockAuthService.validateToken.mockResolvedValue({
         valid: true,
-        payload: { sub: 'user-123' },
+        payload: { sub: 'user-123' }
       });
       mockAuthService.getUserFromToken.mockResolvedValue(mockUser);
 
-      await request(app)
-        .get('/cookie-test')
-        .set('Cookie', `auth_token=${validToken}`)
-        .expect(200);
+      await request(app).get('/cookie-test').set('Cookie', `auth_token=${validToken}`).expect(200);
 
       expect(mockAuthService.validateToken).toHaveBeenCalledWith(validToken);
     });
 
     it('should handle missing Authorization header', async () => {
-      await request(app)
-        .get('/test')
-        .expect(401)
-        .expect({
-          error: 'Authentication required',
-          message: 'No authentication token provided',
-        });
+      await request(app).get('/test').expect(401).expect({
+        error: 'Authentication required',
+        message: 'No authentication token provided'
+      });
     });
 
     it('should handle malformed Authorization header', async () => {
-      await request(app)
-        .get('/test')
-        .set('Authorization', 'InvalidFormat')
-        .expect(401)
-        .expect({
-          error: 'Authentication required',
-          message: 'Invalid authorization header format',
-        });
+      await request(app).get('/test').set('Authorization', 'InvalidFormat').expect(401).expect({
+        error: 'Authentication required',
+        message: 'Invalid authorization header format'
+      });
     });
 
     it('should handle non-Bearer token types', async () => {
@@ -163,7 +157,7 @@ describe('Authentication Middleware', () => {
         .expect(401)
         .expect({
           error: 'Authentication required',
-          message: 'Bearer token required',
+          message: 'Bearer token required'
         });
     });
   });
@@ -173,7 +167,7 @@ describe('Authentication Middleware', () => {
       const authMiddleware = createAuthMiddleware({
         authService: mockAuthService,
         sessionStore: mockSessionStore,
-        logger: mockLogger,
+        logger: mockLogger
       });
 
       app.use(authMiddleware);
@@ -188,15 +182,12 @@ describe('Authentication Middleware', () => {
         payload: {
           sub: 'user-123',
           iat: Math.floor(Date.now() / 1000) - 100,
-          exp: Math.floor(Date.now() / 1000) + 3600,
-        },
+          exp: Math.floor(Date.now() / 1000) + 3600
+        }
       });
       mockAuthService.getUserFromToken.mockResolvedValue(mockUser);
 
-      await request(app)
-        .get('/test')
-        .set('Authorization', `Bearer ${validToken}`)
-        .expect(200);
+      await request(app).get('/test').set('Authorization', `Bearer ${validToken}`).expect(200);
 
       expect(mockAuthService.validateToken).toHaveBeenCalledWith(validToken);
       expect(mockAuthService.getUserFromToken).toHaveBeenCalledWith(validToken);
@@ -205,7 +196,7 @@ describe('Authentication Middleware', () => {
     it('should reject invalid tokens', async () => {
       mockAuthService.validateToken.mockResolvedValue({
         valid: false,
-        error: 'Token signature invalid',
+        error: 'Token signature invalid'
       });
 
       await request(app)
@@ -214,7 +205,7 @@ describe('Authentication Middleware', () => {
         .expect(401)
         .expect({
           error: 'Invalid token',
-          message: 'Token signature invalid',
+          message: 'Token signature invalid'
         });
     });
 
@@ -222,7 +213,7 @@ describe('Authentication Middleware', () => {
       mockAuthService.validateToken.mockResolvedValue({
         valid: false,
         error: 'Token expired',
-        expired: true,
+        expired: true
       });
 
       await request(app)
@@ -231,22 +222,19 @@ describe('Authentication Middleware', () => {
         .expect(401)
         .expect({
           error: 'Token expired',
-          message: 'Token expired',
+          message: 'Token expired'
         });
     });
 
     it('should handle token validation errors', async () => {
       mockAuthService.validateToken.mockRejectedValue(new Error('Validation service unavailable'));
 
-      await request(app)
-        .get('/test')
-        .set('Authorization', `Bearer ${validToken}`)
-        .expect(500);
+      await request(app).get('/test').set('Authorization', `Bearer ${validToken}`).expect(500);
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         'Token validation failed',
         expect.objectContaining({
-          error: expect.any(Error),
+          error: expect.any(Error)
         })
       );
     });
@@ -257,7 +245,7 @@ describe('Authentication Middleware', () => {
       const authMiddleware = createAuthMiddleware({
         authService: mockAuthService,
         sessionStore: mockSessionStore,
-        logger: mockLogger,
+        logger: mockLogger
       });
 
       app.use(authMiddleware);
@@ -269,7 +257,7 @@ describe('Authentication Middleware', () => {
     it('should load user context from valid token', async () => {
       mockAuthService.validateToken.mockResolvedValue({
         valid: true,
-        payload: { sub: 'user-123' },
+        payload: { sub: 'user-123' }
       });
       mockAuthService.getUserFromToken.mockResolvedValue(mockUser);
 
@@ -285,7 +273,7 @@ describe('Authentication Middleware', () => {
     it('should handle user not found', async () => {
       mockAuthService.validateToken.mockResolvedValue({
         valid: true,
-        payload: { sub: 'nonexistent-user' },
+        payload: { sub: 'nonexistent-user' }
       });
       mockAuthService.getUserFromToken.mockResolvedValue(null);
 
@@ -295,16 +283,16 @@ describe('Authentication Middleware', () => {
         .expect(401)
         .expect({
           error: 'User not found',
-          message: 'User associated with token not found',
+          message: 'User associated with token not found'
         });
     });
 
     it('should handle inactive users', async () => {
       const inactiveUser = { ...mockUser, isActive: false };
-      
+
       mockAuthService.validateToken.mockResolvedValue({
         valid: true,
-        payload: { sub: 'user-123' },
+        payload: { sub: 'user-123' }
       });
       mockAuthService.getUserFromToken.mockResolvedValue(inactiveUser);
 
@@ -314,7 +302,7 @@ describe('Authentication Middleware', () => {
         .expect(401)
         .expect({
           error: 'Account inactive',
-          message: 'User account has been deactivated',
+          message: 'User account has been deactivated'
         });
     });
   });
@@ -325,7 +313,7 @@ describe('Authentication Middleware', () => {
         authService: mockAuthService,
         sessionStore: mockSessionStore,
         logger: mockLogger,
-        enableSessions: true,
+        enableSessions: true
       });
 
       app.use(authMiddleware);
@@ -338,12 +326,12 @@ describe('Authentication Middleware', () => {
       const sessionData = {
         userId: 'user-123',
         createdAt: new Date(),
-        lastActivity: new Date(),
+        lastActivity: new Date()
       };
 
       mockAuthService.validateToken.mockResolvedValue({
         valid: true,
-        payload: { sub: 'user-123', sessionId: 'session-456' },
+        payload: { sub: 'user-123', sessionId: 'session-456' }
       });
       mockAuthService.getUserFromToken.mockResolvedValue(mockUser);
       mockSessionStore.get.mockResolvedValue(sessionData);
@@ -360,7 +348,7 @@ describe('Authentication Middleware', () => {
     it('should reject tokens with invalid sessions', async () => {
       mockAuthService.validateToken.mockResolvedValue({
         valid: true,
-        payload: { sub: 'user-123', sessionId: 'invalid-session' },
+        payload: { sub: 'user-123', sessionId: 'invalid-session' }
       });
       mockSessionStore.get.mockResolvedValue(null);
 
@@ -370,7 +358,7 @@ describe('Authentication Middleware', () => {
         .expect(401)
         .expect({
           error: 'Session invalid',
-          message: 'Session not found or expired',
+          message: 'Session not found or expired'
         });
     });
 
@@ -378,20 +366,17 @@ describe('Authentication Middleware', () => {
       const sessionData = {
         userId: 'user-123',
         createdAt: new Date(),
-        lastActivity: new Date(Date.now() - 60000),
+        lastActivity: new Date(Date.now() - 60000)
       };
 
       mockAuthService.validateToken.mockResolvedValue({
         valid: true,
-        payload: { sub: 'user-123', sessionId: 'session-456' },
+        payload: { sub: 'user-123', sessionId: 'session-456' }
       });
       mockAuthService.getUserFromToken.mockResolvedValue(mockUser);
       mockSessionStore.get.mockResolvedValue(sessionData);
 
-      await request(app)
-        .get('/test')
-        .set('Authorization', `Bearer ${validToken}`)
-        .expect(200);
+      await request(app).get('/test').set('Authorization', `Bearer ${validToken}`).expect(200);
 
       expect(mockSessionStore.touch).toHaveBeenCalledWith('session-456');
     });
@@ -404,7 +389,7 @@ describe('Authentication Middleware', () => {
         sessionStore: mockSessionStore,
         logger: mockLogger,
         enableRefresh: true,
-        refreshThreshold: 300, // 5 minutes
+        refreshThreshold: 300 // 5 minutes
       });
 
       app.use(authMiddleware);
@@ -421,13 +406,13 @@ describe('Authentication Middleware', () => {
         valid: true,
         payload: {
           sub: 'user-123',
-          exp: nearExpiryTime,
-        },
+          exp: nearExpiryTime
+        }
       });
       mockAuthService.getUserFromToken.mockResolvedValue(mockUser);
       mockAuthService.refreshToken.mockResolvedValue({
         token: newToken,
-        expiresAt: new Date(Date.now() + 3600000),
+        expiresAt: new Date(Date.now() + 3600000)
       });
 
       const response = await request(app)
@@ -446,8 +431,8 @@ describe('Authentication Middleware', () => {
         valid: true,
         payload: {
           sub: 'user-123',
-          exp: futureExpiryTime,
-        },
+          exp: futureExpiryTime
+        }
       });
       mockAuthService.getUserFromToken.mockResolvedValue(mockUser);
 
@@ -467,7 +452,7 @@ describe('Authentication Middleware', () => {
         authService: mockAuthService,
         sessionStore: mockSessionStore,
         logger: mockLogger,
-        securityHeaders: true,
+        securityHeaders: true
       });
 
       app.use(authMiddleware);
@@ -479,7 +464,7 @@ describe('Authentication Middleware', () => {
     it('should set security headers', async () => {
       mockAuthService.validateToken.mockResolvedValue({
         valid: true,
-        payload: { sub: 'user-123' },
+        payload: { sub: 'user-123' }
       });
       mockAuthService.getUserFromToken.mockResolvedValue(mockUser);
 
@@ -500,33 +485,31 @@ describe('Authentication Middleware', () => {
         authService: mockAuthService,
         sessionStore: mockSessionStore,
         logger: mockLogger,
-        required: false,
+        required: false
       });
 
       app.use(authMiddleware);
       app.get('/test', (req, res) => {
-        res.json({ 
+        res.json({
           authenticated: !!req.user,
-          user: req.user || null,
+          user: req.user || null
         });
       });
     });
 
     it('should allow requests without authentication', async () => {
-      const response = await request(app)
-        .get('/test')
-        .expect(200);
+      const response = await request(app).get('/test').expect(200);
 
       expect(response.body).toEqual({
         authenticated: false,
-        user: null,
+        user: null
       });
     });
 
     it('should authenticate when token is provided', async () => {
       mockAuthService.validateToken.mockResolvedValue({
         valid: true,
-        payload: { sub: 'user-123' },
+        payload: { sub: 'user-123' }
       });
       mockAuthService.getUserFromToken.mockResolvedValue(mockUser);
 
@@ -537,14 +520,14 @@ describe('Authentication Middleware', () => {
 
       expect(response.body).toEqual({
         authenticated: true,
-        user: mockUser,
+        user: mockUser
       });
     });
 
     it('should continue without error for invalid tokens', async () => {
       mockAuthService.validateToken.mockResolvedValue({
         valid: false,
-        error: 'Invalid token',
+        error: 'Invalid token'
       });
 
       const response = await request(app)
@@ -554,7 +537,7 @@ describe('Authentication Middleware', () => {
 
       expect(response.body).toEqual({
         authenticated: false,
-        user: null,
+        user: null
       });
 
       expect(mockLogger.debug).toHaveBeenCalledWith(
@@ -573,8 +556,8 @@ describe('Authentication Middleware', () => {
         rateLimiting: {
           enabled: true,
           maxAttempts: 5,
-          windowMs: 60000,
-        },
+          windowMs: 60000
+        }
       });
 
       app.use(authMiddleware);
@@ -586,22 +569,19 @@ describe('Authentication Middleware', () => {
     it('should track failed authentication attempts', async () => {
       mockAuthService.validateToken.mockResolvedValue({
         valid: false,
-        error: 'Invalid token',
+        error: 'Invalid token'
       });
 
       // Make multiple failed attempts
       for (let i = 0; i < 3; i++) {
-        await request(app)
-          .get('/test')
-          .set('Authorization', 'Bearer invalid-token')
-          .expect(401);
+        await request(app).get('/test').set('Authorization', 'Bearer invalid-token').expect(401);
       }
 
       expect(mockLogger.warn).toHaveBeenCalledWith(
         'Authentication failure tracked',
         expect.objectContaining({
           attempts: expect.any(Number),
-          ip: expect.any(String),
+          ip: expect.any(String)
         })
       );
     });
@@ -609,14 +589,12 @@ describe('Authentication Middleware', () => {
     it('should block after too many failed attempts', async () => {
       mockAuthService.validateToken.mockResolvedValue({
         valid: false,
-        error: 'Invalid token',
+        error: 'Invalid token'
       });
 
       // Exceed rate limit
       for (let i = 0; i < 6; i++) {
-        await request(app)
-          .get('/test')
-          .set('Authorization', 'Bearer invalid-token');
+        await request(app).get('/test').set('Authorization', 'Bearer invalid-token');
       }
 
       // Last request should be rate limited
@@ -627,7 +605,7 @@ describe('Authentication Middleware', () => {
 
       expect(response.body).toEqual({
         error: 'Too many authentication attempts',
-        message: 'Rate limit exceeded. Please try again later.',
+        message: 'Rate limit exceeded. Please try again later.'
       });
     });
   });
@@ -637,7 +615,7 @@ describe('Authentication Middleware', () => {
       const authMiddleware = createAuthMiddleware({
         authService: mockAuthService,
         sessionStore: mockSessionStore,
-        logger: mockLogger,
+        logger: mockLogger
       });
 
       app.use(authMiddleware);
@@ -655,13 +633,13 @@ describe('Authentication Middleware', () => {
         .expect(500)
         .expect({
           error: 'Authentication service error',
-          message: 'Unable to validate authentication',
+          message: 'Unable to validate authentication'
         });
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         'Authentication middleware error',
         expect.objectContaining({
-          error: expect.any(Error),
+          error: expect.any(Error)
         })
       );
     });
@@ -669,7 +647,7 @@ describe('Authentication Middleware', () => {
     it('should handle session store errors', async () => {
       mockAuthService.validateToken.mockResolvedValue({
         valid: true,
-        payload: { sub: 'user-123', sessionId: 'session-456' },
+        payload: { sub: 'user-123', sessionId: 'session-456' }
       });
       mockSessionStore.get.mockRejectedValue(new Error('Session store unavailable'));
 
@@ -677,15 +655,12 @@ describe('Authentication Middleware', () => {
         authService: mockAuthService,
         sessionStore: mockSessionStore,
         logger: mockLogger,
-        enableSessions: true,
+        enableSessions: true
       });
 
       app.use(authMiddleware);
 
-      await request(app)
-        .get('/test')
-        .set('Authorization', `Bearer ${validToken}`)
-        .expect(500);
+      await request(app).get('/test').set('Authorization', `Bearer ${validToken}`).expect(500);
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         'Session validation failed',

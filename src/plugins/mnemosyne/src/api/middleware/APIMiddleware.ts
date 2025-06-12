@@ -1,6 +1,6 @@
 /**
  * Mnemosyne API Middleware
- * 
+ *
  * Core middleware components for request processing, logging, CORS,
  * body parsing, and error handling
  */
@@ -17,7 +17,7 @@ export interface RequestWithId extends Request {
 
 /**
  * Core API Middleware
- * 
+ *
  * Provides essential middleware for request processing and handling
  */
 export class APIMiddleware {
@@ -45,7 +45,7 @@ export class APIMiddleware {
     // Log response when finished
     res.on('finish', () => {
       const duration = req.startTime ? Date.now() - req.startTime : 0;
-      
+
       this.logger.info('API request completed', {
         requestId: req.requestId,
         method: req.method,
@@ -128,7 +128,7 @@ export class APIMiddleware {
     next: NextFunction
   ): void => {
     const requestId = req.requestId || 'unknown';
-    
+
     this.logger.error('API request error', {
       requestId,
       error: error.message,
@@ -141,7 +141,7 @@ export class APIMiddleware {
 
     // Don't send error details in production
     const isDevelopment = process.env.NODE_ENV === 'development';
-    
+
     const errorResponse = {
       success: false,
       error: {
@@ -157,7 +157,7 @@ export class APIMiddleware {
 
     // Determine status code based on error type
     let statusCode = 500;
-    
+
     if (error.name === 'ValidationError') {
       statusCode = 400;
       errorResponse.error.code = 'VALIDATION_ERROR';
@@ -243,10 +243,10 @@ export class APIMiddleware {
     res.setHeader('X-Frame-Options', 'DENY');
     res.setHeader('X-XSS-Protection', '1; mode=block');
     res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
-    
+
     // Content Security Policy for API responses
     res.setHeader('Content-Security-Policy', "default-src 'none'");
-    
+
     // Remove potentially revealing headers
     res.removeHeader('X-Powered-By');
     res.removeHeader('Server');
@@ -261,15 +261,15 @@ export class APIMiddleware {
     // Extract API version from header or path
     const versionHeader = req.get('X-API-Version');
     const versionPath = req.path.match(/^\/v(\d+)\//);
-    
+
     const apiVersion = versionHeader || (versionPath ? versionPath[1] : '1');
-    
+
     // Store version in request for use by handlers
     (req as any).apiVersion = apiVersion;
-    
+
     // Set response header
     res.setHeader('X-API-Version', apiVersion);
-    
+
     next();
   };
 
@@ -279,7 +279,7 @@ export class APIMiddleware {
   public contentNegotiation = (req: Request, res: Response, next: NextFunction): void => {
     // Check Accept header for supported content types
     const acceptHeader = req.get('Accept') || 'application/json';
-    
+
     if (!acceptHeader.includes('application/json') && !acceptHeader.includes('*/*')) {
       return res.status(406).json({
         success: false,
@@ -289,10 +289,10 @@ export class APIMiddleware {
         }
       });
     }
-    
+
     // Set default content type
     res.setHeader('Content-Type', 'application/json');
-    
+
     next();
   };
 
@@ -302,10 +302,10 @@ export class APIMiddleware {
   public requestIdInjection = (req: RequestWithId, res: Response, next: NextFunction): void => {
     // Use existing request ID or generate new one
     const requestId = req.requestId || req.get('X-Request-ID') || this.generateRequestId();
-    
+
     req.requestId = requestId;
     res.setHeader('X-Request-ID', requestId);
-    
+
     next();
   };
 
@@ -332,7 +332,7 @@ export class APIMiddleware {
 
     const value = parseFloat(match[1]);
     const unit = match[2] || 'b';
-    
+
     return value * units[unit];
   }
 }

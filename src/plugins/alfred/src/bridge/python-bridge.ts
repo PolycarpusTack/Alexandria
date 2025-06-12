@@ -1,6 +1,6 @@
 /**
  * Python-TypeScript Bridge for Alfred Plugin
- * 
+ *
  * This module provides a bridge to run the existing Python Alfred code
  * within the Alexandria platform, allowing seamless integration while
  * maintaining the original functionality.
@@ -10,7 +10,12 @@ import { spawn, ChildProcess } from 'child_process';
 import { EventEmitter } from 'events';
 import * as path from 'path';
 import { Logger } from '../../../../utils/logger';
-import { PluginError, ServiceUnavailableError, TimeoutError, ErrorHandler } from '../../../../core/errors';
+import {
+  PluginError,
+  ServiceUnavailableError,
+  TimeoutError,
+  ErrorHandler
+} from '../../../../core/errors';
 
 export interface PythonMessage {
   type: 'chat' | 'project' | 'structure' | 'error' | 'status';
@@ -51,7 +56,7 @@ export class PythonBridge extends EventEmitter {
     try {
       // Create bridge script that runs Alfred in API mode
       const bridgeScriptPath = path.join(this.alfredPath, 'alfred_bridge.py');
-      
+
       this.process = spawn(this.pythonPath, [bridgeScriptPath], {
         cwd: this.alfredPath,
         env: {
@@ -63,7 +68,7 @@ export class PythonBridge extends EventEmitter {
 
       this.setupProcessHandlers();
       this.isRunning = true;
-      
+
       this.logger.info('Python bridge started successfully');
     } catch (error) {
       const standardError = ErrorHandler.toStandardError(error);
@@ -74,7 +79,7 @@ export class PythonBridge extends EventEmitter {
         pythonPath: this.pythonPath,
         alfredPath: this.alfredPath
       });
-      
+
       throw new PluginError(
         'alfred',
         'start-python-bridge',
@@ -103,7 +108,7 @@ export class PythonBridge extends EventEmitter {
       });
 
       this.process!.kill('SIGTERM');
-      
+
       // Force kill after 5 seconds if graceful shutdown fails
       setTimeout(() => {
         if (this.isRunning && this.process) {
@@ -132,7 +137,7 @@ export class PythonBridge extends EventEmitter {
     try {
       const messageStr = JSON.stringify(message) + '\n';
       this.process.stdin.write(messageStr);
-      
+
       this.logger.debug('Message sent to Python bridge', {
         messageType: message.type,
         messageId: message.id
@@ -144,7 +149,7 @@ export class PythonBridge extends EventEmitter {
         messageType: message.type,
         messageId: message.id
       });
-      
+
       throw new PluginError(
         'alfred',
         'send-python-message',
@@ -163,34 +168,30 @@ export class PythonBridge extends EventEmitter {
    */
   async call<T = any>(method: string, params: any = {}): Promise<T> {
     const id = this.generateId();
-    
+
     return new Promise((resolve, reject) => {
       const timeout = setTimeout(() => {
         this.removeAllListeners(`response:${id}`);
-        
-        const timeoutError = new TimeoutError(
-          `python-bridge-call-${method}`,
-          30000,
-          {
-            method,
-            params,
-            callId: id
-          }
-        );
-        
+
+        const timeoutError = new TimeoutError(`python-bridge-call-${method}`, 30000, {
+          method,
+          params,
+          callId: id
+        });
+
         this.logger.error('Python bridge call timeout', {
           error: timeoutError.message,
           method,
           callId: id,
           timeoutMs: 30000
         });
-        
+
         reject(timeoutError);
       }, 30000);
 
       this.once(`response:${id}`, (response: any) => {
         clearTimeout(timeout);
-        
+
         if (response.error) {
           const error = new PluginError(
             'alfred',
@@ -203,21 +204,21 @@ export class PythonBridge extends EventEmitter {
               pythonError: response.error
             }
           );
-          
+
           this.logger.error('Python bridge method failed', {
             error: error.message,
             method,
             callId: id,
             pythonError: response.error
           });
-          
+
           reject(error);
         } else {
           this.logger.debug('Python bridge call successful', {
             method,
             callId: id
           });
-          
+
           resolve(response.result);
         }
       });
@@ -285,7 +286,7 @@ export class PythonBridge extends EventEmitter {
           rawLine: line,
           lineLength: line.length
         });
-        
+
         // Emit error event for monitoring
         this.emit('parse-error', {
           error: standardError,
@@ -307,7 +308,7 @@ export class PythonBridge extends EventEmitter {
 
     // Emit typed events
     this.emit(message.type, message.data);
-    
+
     // Also emit a generic message event
     this.emit('message', message);
   }

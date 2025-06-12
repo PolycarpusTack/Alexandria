@@ -1,0 +1,101 @@
+{
+  "name": "Alexandria Platform Quality Gate",
+  "description": "Custom quality gate for Alexandria Platform with strict quality requirements",
+  "conditions": [
+    {
+      "metric": "new_coverage",
+      "operator": "LT",
+      "value": "80",
+      "error": true
+    },
+    {
+      "metric": "coverage",
+      "operator": "LT", 
+      "value": "70",
+      "error": false
+    },
+    {
+      "metric": "new_duplicated_lines_density",
+      "operator": "GT",
+      "value": "3",
+      "error": true
+    },
+    {
+      "metric": "duplicated_lines_density",
+      "operator": "GT",
+      "value": "5",
+      "error": false
+    },
+    {
+      "metric": "new_maintainability_rating",
+      "operator": "GT",
+      "value": "1",
+      "error": true
+    },
+    {
+      "metric": "maintainability_rating",
+      "operator": "GT",
+      "value": "2",
+      "error": false
+    },
+    {
+      "metric": "new_reliability_rating",
+      "operator": "GT",
+      "value": "1",
+      "error": true
+    },
+    {
+      "metric": "reliability_rating",
+      "operator": "GT",
+      "value": "2",
+      "error": false
+    },
+    {
+      "metric": "new_security_rating",
+      "operator": "GT",
+      "value": "1",
+      "error": true
+    },
+    {
+      "metric": "security_rating",
+      "operator": "GT",
+      "value": "2",
+      "error": false
+    },
+    {
+      "metric": "new_security_hotspots_reviewed",
+      "operator": "LT",
+      "value": "100",
+      "error": true
+    },
+    {
+      "metric": "security_hotspots_reviewed",
+      "operator": "LT",
+      "value": "80",
+      "error": false
+    },
+    {
+      "metric": "new_bugs",
+      "operator": "GT",
+      "value": "0",
+      "error": true
+    },
+    {
+      "metric": "new_vulnerabilities",
+      "operator": "GT",
+      "value": "0",
+      "error": true
+    },
+    {
+      "metric": "new_code_smells",
+      "operator": "GT",
+      "value": "5",
+      "error": true
+    }
+  ],
+  "tags": [
+    "typescript",
+    "enterprise",
+    "strict"
+  ]
+}

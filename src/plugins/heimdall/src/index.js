@@ -18,7 +18,7 @@ class LogVisualizationPlugin {
     // Handle case where api is not provided (e.g., during plugin registry initialization)
     if (api && api.log) {
       api.log('info', 'Log Visualization plugin activated');
-      
+
       // Register API routes
       if (api.registerRoute) {
         api.registerRoute('/log-visualization/sources', {

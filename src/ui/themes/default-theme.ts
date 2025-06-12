@@ -1,6 +1,6 @@
 /**
  * Default theme for the Alexandria Platform
- * 
+ *
  * This file defines the default light theme for the platform.
  */
 
@@ -24,11 +24,11 @@ export const defaultTheme: UITheme = {
     text: {
       primary: '#212121',
       secondary: '#757575',
-      disabled: '#9e9e9e',
+      disabled: '#9e9e9e'
     },
     border: '#e0e0e0',
     divider: '#e0e0e0',
-    shadow: 'rgba(0, 0, 0, 0.1)',
+    shadow: 'rgba(0, 0, 0, 0.1)'
   },
   spacing: {
     xs: '4px',
@@ -36,40 +36,41 @@ export const defaultTheme: UITheme = {
     md: '16px',
     lg: '24px',
     xl: '32px',
-    xxl: '48px',
+    xxl: '48px'
   },
   typography: {
-    fontFamily: '"Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif',
+    fontFamily:
+      '"Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif',
     fontSize: {
       xs: '12px',
       sm: '14px',
       md: '16px',
       lg: '18px',
       xl: '24px',
-      xxl: '32px',
+      xxl: '32px'
     },
     fontWeight: {
       light: 300,
       regular: 400,
       medium: 500,
-      bold: 700,
-    },
+      bold: 700
+    }
   },
   borderRadius: {
     sm: '2px',
     md: '4px',
     lg: '8px',
-    pill: '999px',
+    pill: '999px'
   },
   shadows: {
     sm: '0 1px 3px rgba(0, 0, 0, 0.1)',
     md: '0 2px 6px rgba(0, 0, 0, 0.15)',
-    lg: '0 4px 12px rgba(0, 0, 0, 0.2)',
+    lg: '0 4px 12px rgba(0, 0, 0, 0.2)'
   },
   transitions: {
     fast: '0.15s ease-in-out',
     medium: '0.3s ease-in-out',
-    slow: '0.5s ease-in-out',
+    slow: '0.5s ease-in-out'
   },
   zIndex: {
     base: 0,
@@ -78,8 +79,8 @@ export const defaultTheme: UITheme = {
     fixed: 300,
     modal: 400,
     popover: 500,
-    toast: 600,
-  },
+    toast: 600
+  }
 };
 
 /**
@@ -100,11 +101,11 @@ export const darkTheme: UITheme = {
     text: {
       primary: '#ffffff',
       secondary: '#b0b0b0',
-      disabled: '#6c6c6c',
+      disabled: '#6c6c6c'
     },
     border: '#333333',
     divider: '#333333',
-    shadow: 'rgba(0, 0, 0, 0.3)',
+    shadow: 'rgba(0, 0, 0, 0.3)'
   },
   spacing: {
     xs: '4px',
@@ -112,40 +113,41 @@ export const darkTheme: UITheme = {
     md: '16px',
     lg: '24px',
     xl: '32px',
-    xxl: '48px',
+    xxl: '48px'
   },
   typography: {
-    fontFamily: '"Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif',
+    fontFamily:
+      '"Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif',
     fontSize: {
       xs: '12px',
       sm: '14px',
       md: '16px',
       lg: '18px',
       xl: '24px',
-      xxl: '32px',
+      xxl: '32px'
     },
     fontWeight: {
       light: 300,
       regular: 400,
       medium: 500,
-      bold: 700,
-    },
+      bold: 700
+    }
   },
   borderRadius: {
     sm: '2px',
     md: '4px',
     lg: '8px',
-    pill: '999px',
+    pill: '999px'
   },
   shadows: {
     sm: '0 1px 3px rgba(0, 0, 0, 0.3)',
     md: '0 2px 6px rgba(0, 0, 0, 0.4)',
-    lg: '0 4px 12px rgba(0, 0, 0, 0.5)',
+    lg: '0 4px 12px rgba(0, 0, 0, 0.5)'
   },
   transitions: {
     fast: '0.15s ease-in-out',
     medium: '0.3s ease-in-out',
-    slow: '0.5s ease-in-out',
+    slow: '0.5s ease-in-out'
   },
   zIndex: {
     base: 0,
@@ -154,6 +156,6 @@ export const darkTheme: UITheme = {
     fixed: 300,
     modal: 400,
     popover: 500,
-    toast: 600,
-  },
+    toast: 600
+  }
 };

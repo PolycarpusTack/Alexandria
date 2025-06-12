@@ -1,6 +1,6 @@
 /**
  * Standardized Error State Management Hook
- * 
+ *
  * Provides consistent error handling patterns for React hooks following
  * AlexandriaError standards established in the server-side codebase.
  */
@@ -46,7 +46,7 @@ export function useErrorState(initialError?: AlexandriaError) {
 
   const setError = useCallback((error: any, context?: Record<string, any>) => {
     const standardError = ErrorHandler.toStandardError(error);
-    
+
     const newErrorState: ErrorState = {
       hasError: true,
       error: standardError,
@@ -57,7 +57,7 @@ export function useErrorState(initialError?: AlexandriaError) {
     };
 
     setErrorState(newErrorState);
-    
+
     // Log the error for debugging
     logger.error('Client-side error occurred', {
       code: standardError.code,
@@ -77,15 +77,18 @@ export function useErrorState(initialError?: AlexandriaError) {
     });
   }, []);
 
-  const retryWithError = useCallback(async (operation: () => Promise<any>, retryContext?: Record<string, any>) => {
-    clearError();
-    try {
-      return await operation();
-    } catch (error) {
-      setError(error, { ...retryContext, isRetry: true });
-      throw error;
-    }
-  }, [clearError, setError]);
+  const retryWithError = useCallback(
+    async (operation: () => Promise<any>, retryContext?: Record<string, any>) => {
+      clearError();
+      try {
+        return await operation();
+      } catch (error) {
+        setError(error, { ...retryContext, isRetry: true });
+        throw error;
+      }
+    },
+    [clearError, setError]
+  );
 
   return {
     errorState,
@@ -114,20 +117,20 @@ export function useLoadingState(initialLoading: boolean = false) {
     });
   }, []);
 
-  const withLoading = useCallback(async <T>(
-    operation: () => Promise<T>,
-    operationName?: string
-  ): Promise<T> => {
-    setLoading(true, operationName);
-    try {
-      const result = await operation();
-      setLoading(false);
-      return result;
-    } catch (error) {
-      setLoading(false);
-      throw error;
-    }
-  }, [setLoading]);
+  const withLoading = useCallback(
+    async <T>(operation: () => Promise<T>, operationName?: string): Promise<T> => {
+      setLoading(true, operationName);
+      try {
+        const result = await operation();
+        setLoading(false);
+        return result;
+      } catch (error) {
+        setLoading(false);
+        throw error;
+      }
+    },
+    [setLoading]
+  );
 
   return {
     loadingState,
@@ -148,37 +151,40 @@ export function useAsyncOperation<T = any>(initialData?: T) {
     initialData ? new Date() : undefined
   );
 
-  const execute = useCallback(async (
-    operation: () => Promise<T>,
-    operationName?: string,
-    context?: Record<string, any>
-  ): Promise<T> => {
-    clearError();
-    
-    try {
-      const result = await withLoading(operation, operationName);
-      setData(result);
-      setLastUpdated(new Date());
-      
-      logger.debug('Async operation completed successfully', {
-        operation: operationName,
-        hasData: !!result,
-        context
-      });
-      
-      return result;
-    } catch (error) {
-      setError(error, { operation: operationName, ...context });
-      throw error;
-    }
-  }, [clearError, withLoading, setError]);
+  const execute = useCallback(
+    async (
+      operation: () => Promise<T>,
+      operationName?: string,
+      context?: Record<string, any>
+    ): Promise<T> => {
+      clearError();
 
-  const retry = useCallback(async (
-    operation: () => Promise<T>,
-    operationName?: string
-  ): Promise<T> => {
-    return execute(operation, operationName, { isRetry: true });
-  }, [execute]);
+      try {
+        const result = await withLoading(operation, operationName);
+        setData(result);
+        setLastUpdated(new Date());
+
+        logger.debug('Async operation completed successfully', {
+          operation: operationName,
+          hasData: !!result,
+          context
+        });
+
+        return result;
+      } catch (error) {
+        setError(error, { operation: operationName, ...context });
+        throw error;
+      }
+    },
+    [clearError, withLoading, setError]
+  );
+
+  const retry = useCallback(
+    async (operation: () => Promise<T>, operationName?: string): Promise<T> => {
+      return execute(operation, operationName, { isRetry: true });
+    },
+    [execute]
+  );
 
   const reset = useCallback(() => {
     clearError();
@@ -211,16 +217,21 @@ export function useAsyncOperation<T = any>(initialData?: T) {
 export function useMultipleAsyncOperations<T extends Record<string, any> = Record<string, any>>() {
   const [operations, setOperations] = useState<Record<string, AsyncOperationState>>({});
 
-  const getOperation = useCallback((key: string): AsyncOperationState => {
-    return operations[key] || {
-      loading: { isLoading: false },
-      error: { hasError: false, error: null },
-      data: undefined
-    };
-  }, [operations]);
+  const getOperation = useCallback(
+    (key: string): AsyncOperationState => {
+      return (
+        operations[key] || {
+          loading: { isLoading: false },
+          error: { hasError: false, error: null },
+          data: undefined
+        }
+      );
+    },
+    [operations]
+  );
 
   const setOperationState = useCallback((key: string, state: Partial<AsyncOperationState>) => {
-    setOperations(prev => ({
+    setOperations((prev) => ({
       ...prev,
       [key]: {
         ...prev[key],
@@ -229,54 +240,57 @@ export function useMultipleAsyncOperations<T extends Record<string, any> = Recor
     }));
   }, []);
 
-  const executeOperation = useCallback(async <R>(
-    key: string,
-    operation: () => Promise<R>,
-    context?: Record<string, any>
-  ): Promise<R> => {
-    // Set loading state
-    setOperationState(key, {
-      loading: { isLoading: true, operation: key, startTime: new Date() },
-      error: { hasError: false, error: null }
-    });
-
-    try {
-      const result = await operation();
-      
+  const executeOperation = useCallback(
+    async <R>(
+      key: string,
+      operation: () => Promise<R>,
+      context?: Record<string, any>
+    ): Promise<R> => {
+      // Set loading state
       setOperationState(key, {
-        loading: { isLoading: false },
-        data: result,
-        lastUpdated: new Date()
+        loading: { isLoading: true, operation: key, startTime: new Date() },
+        error: { hasError: false, error: null }
       });
 
-      return result;
-    } catch (error) {
-      const standardError = ErrorHandler.toStandardError(error);
-      
-      setOperationState(key, {
-        loading: { isLoading: false },
-        error: {
-          hasError: true,
-          error: standardError,
+      try {
+        const result = await operation();
+
+        setOperationState(key, {
+          loading: { isLoading: false },
+          data: result,
+          lastUpdated: new Date()
+        });
+
+        return result;
+      } catch (error) {
+        const standardError = ErrorHandler.toStandardError(error);
+
+        setOperationState(key, {
+          loading: { isLoading: false },
+          error: {
+            hasError: true,
+            error: standardError,
+            code: standardError.code,
+            message: standardError.message,
+            context: { ...standardError.context, ...context },
+            timestamp: new Date()
+          }
+        });
+
+        logger.error(`Operation '${key}' failed`, {
+          error: standardError.message,
           code: standardError.code,
-          message: standardError.message,
-          context: { ...standardError.context, ...context },
-          timestamp: new Date()
-        }
-      });
+          context
+        });
 
-      logger.error(`Operation '${key}' failed`, {
-        error: standardError.message,
-        code: standardError.code,
-        context
-      });
-
-      throw error;
-    }
-  }, [setOperationState]);
+        throw error;
+      }
+    },
+    [setOperationState]
+  );
 
   const clearOperation = useCallback((key: string) => {
-    setOperations(prev => {
+    setOperations((prev) => {
       const newOps = { ...prev };
       delete newOps[key];
       return newOps;
@@ -293,7 +307,7 @@ export function useMultipleAsyncOperations<T extends Record<string, any> = Recor
     executeOperation,
     clearOperation,
     clearAllOperations,
-    hasAnyLoading: Object.values(operations).some(op => op.loading.isLoading),
-    hasAnyErrors: Object.values(operations).some(op => op.error.hasError)
+    hasAnyLoading: Object.values(operations).some((op) => op.loading.isLoading),
+    hasAnyErrors: Object.values(operations).some((op) => op.error.hasError)
   };
 }

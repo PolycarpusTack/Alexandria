@@ -1,6 +1,6 @@
 /**
  * CLI Command for managing plugin permissions
- * 
+ *
  * Provides commands to list available permissions, validate plugin manifests,
  * and get detailed information about permissions
  */
@@ -16,7 +16,7 @@ const logger = createLogger({ serviceName: 'permissions-cli' });
 
 export class PermissionsCommand {
   private permissionValidator: EnhancedPermissionValidator;
-  
+
   constructor(
     private authorizationService?: AuthorizationService,
     private pluginRegistry?: PluginRegistry
@@ -31,26 +31,30 @@ export class PermissionsCommand {
    * List all available permissions
    */
   public async listPermissions(options: { category?: string; verbose?: boolean }): Promise<void> {
-    console.log('\n📋 Alexandria Platform - Available Permissions\n');
-    
+    logger.info('Listing permissions', { category: options.category, verbose: options.verbose });
+    process.stdout.write('\n📋 Alexandria Platform - Available Permissions\n\n');
+
     if (options.category) {
       const permissions = this.permissionValidator.getPermissionsByCategory(options.category);
-      
+
       if (permissions.length === 0) {
-        console.log(`❌ No permissions found in category "${options.category}"`);
-        console.log(`\nAvailable categories: ${Array.from(this.permissionValidator.getPermissionCategories()).join(', ')}`);
+        logger.warn('No permissions found in category', { category: options.category });
+        process.stdout.write(`❌ No permissions found in category "${options.category}"\n`);
+        process.stdout.write(
+          `\nAvailable categories: ${Array.from(this.permissionValidator.getPermissionCategories()).join(', ')}\n`
+        );
         return;
       }
-      
-      console.log(`Category: ${options.category}`);
-      console.log('─'.repeat(50));
-      
-      permissions.forEach(permission => {
+
+      process.stdout.write(`Category: ${options.category}\n`);
+      process.stdout.write('─'.repeat(50) + '\n');
+
+      permissions.forEach((permission) => {
         if (options.verbose) {
           const info = this.permissionValidator.getPermissionInfo(permission);
-          console.log(`  ✓ ${permission}`);
+          process.stdout.write(`  ✓ ${permission}\n`);
           if (info?.description) {
-            console.log(`    Description: ${info.description}`);
+            process.stdout.write(`    Description: ${info.description}\n`);
           }
           if (info?.riskLevel) {
             const riskIcons = {
@@ -59,96 +63,121 @@ export class PermissionsCommand {
               high: '🟠',
               critical: '🔴'
             };
-            console.log(`    Risk Level: ${riskIcons[info.riskLevel]} ${info.riskLevel}`);
+            process.stdout.write(
+              `    Risk Level: ${riskIcons[info.riskLevel]} ${info.riskLevel}\n`
+            );
           }
-          console.log();
+          process.stdout.write('\n');
         } else {
-          console.log(`  ✓ ${permission}`);
+          process.stdout.write(`  ✓ ${permission}\n`);
         }
       });
     } else {
       const allPermissions = this.permissionValidator.getAllPermissions();
       const categorized = this.permissionValidator.categorizePermissions(allPermissions);
-      
+
       Object.entries(categorized).forEach(([category, perms]) => {
-        console.log(`📁 ${category}:`);
-        perms.forEach(permission => {
+        process.stdout.write(`📁 ${category}:\n`);
+        perms.forEach((permission) => {
           if (options.verbose) {
             const info = this.permissionValidator.getPermissionInfo(permission);
-            console.log(`  ✓ ${permission}`);
+            process.stdout.write(`  ✓ ${permission}\n`);
             if (info?.description) {
-              console.log(`    ${info.description}`);
+              process.stdout.write(`    ${info.description}\n`);
             }
             if (info?.riskLevel) {
               const riskIcons = {
                 low: '🟢',
-                medium: '🟡', 
+                medium: '🟡',
                 high: '🟠',
                 critical: '🔴'
               };
-              console.log(`    Risk: ${riskIcons[info.riskLevel]} ${info.riskLevel}`);
+              process.stdout.write(`    Risk: ${riskIcons[info.riskLevel]} ${info.riskLevel}\n`);
             }
           } else {
-            console.log(`  ✓ ${permission}`);
+            process.stdout.write(`  ✓ ${permission}\n`);
           }
         });
-        console.log();
+        process.stdout.write('\n');
       });
     }
-    
-    console.log(`\nTotal permissions: ${this.permissionValidator.getAllPermissions().length}`);
+
+    const totalCount = this.permissionValidator.getAllPermissions().length;
+    logger.info('Listed permissions', { totalCount, category: options.category });
+    process.stdout.write(`\nTotal permissions: ${totalCount}\n`);
   }
   /**
    * Validate a plugin's permissions
    */
   public async validatePlugin(pluginPath: string): Promise<void> {
-    console.log('\n🔍 Validating Plugin Permissions\n');
-    
+    logger.info('Starting plugin validation', { pluginPath });
+    process.stdout.write('\n🔍 Validating Plugin Permissions\n\n');
+
     try {
       const manifest = await this.loadPluginManifest(pluginPath);
-      
-      console.log(`Plugin: ${manifest.name} (${manifest.id})`);
-      console.log(`Version: ${manifest.version}`);
-      console.log('─'.repeat(50));
-      
+
+      logger.info('Plugin manifest loaded', {
+        name: manifest.name,
+        id: manifest.id,
+        version: manifest.version
+      });
+      process.stdout.write(`Plugin: ${manifest.name} (${manifest.id})\n`);
+      process.stdout.write(`Version: ${manifest.version}\n`);
+      process.stdout.write('─'.repeat(50) + '\n');
+
       const permissions = manifest.permissions || [];
-      
+
       if (permissions.length === 0) {
-        console.log('✅ No permissions requested');
+        logger.info('Plugin validation complete - no permissions requested', {
+          pluginId: manifest.id
+        });
+        process.stdout.write('✅ No permissions requested\n');
         return;
       }
-      
-      console.log(`\nRequested permissions: ${permissions.length}`);
-      permissions.forEach((p: string) => console.log(`  • ${p}`));
-      
-      const result = this.permissionValidator.validatePluginPermissions(
-        manifest.id,
-        permissions
-      );
-      
-      console.log('\n─── Validation Results ───');
-      console.log(`Status: ${result.isValid ? '✅ VALID' : '❌ INVALID'}`);
-      
+
+      logger.info('Plugin permissions found', { permissionCount: permissions.length, permissions });
+      process.stdout.write(`\nRequested permissions: ${permissions.length}\n`);
+      permissions.forEach((p: string) => process.stdout.write(`  • ${p}\n`));
+
+      const result = this.permissionValidator.validatePluginPermissions(manifest.id, permissions);
+
+      logger.info('Plugin validation completed', {
+        isValid: result.isValid,
+        errorCount: result.errors.length,
+        suggestionCount: result.suggestions.length,
+        warningCount: result.warnings.length
+      });
+      process.stdout.write('\n─── Validation Results ───\n');
+      process.stdout.write(`Status: ${result.isValid ? '✅ VALID' : '❌ INVALID'}\n`);
+
       if (result.errors.length > 0) {
-        console.log('\n❌ Errors:');
-        result.errors.forEach(e => console.log(`  • ${e}`));
+        logger.error('Plugin validation errors found', { errors: result.errors });
+        process.stdout.write('\n❌ Errors:\n');
+        result.errors.forEach((e) => process.stdout.write(`  • ${e}\n`));
       }
-      
+
       if (result.suggestions.length > 0) {
-        console.log('\n💡 Suggestions:');
-        result.suggestions.forEach(s => console.log(`  • ${s}`));
+        logger.info('Plugin validation suggestions available', { suggestions: result.suggestions });
+        process.stdout.write('\n💡 Suggestions:\n');
+        result.suggestions.forEach((s) => process.stdout.write(`  • ${s}\n`));
       }
-      
+
       if (result.warnings.length > 0) {
-        console.log('\n⚠️  Warnings:');
-        result.warnings.forEach(w => console.log(`  • ${w}`));
+        logger.warn('Plugin validation warnings found', { warnings: result.warnings });
+        process.stdout.write('\n⚠️  Warnings:\n');
+        result.warnings.forEach((w) => process.stdout.write(`  • ${w}\n`));
       }
-      
+
       // Show risk analysis
       this.showRiskAnalysis(permissions);
-      
     } catch (error) {
-      console.error(`\n❌ Error: ${error instanceof Error ? error.message : String(error)}`);
+      logger.error('Plugin validation failed', {
+        error: error instanceof Error ? error.message : String(error),
+        pluginPath
+      });
+      process.stderr.write(
+        `\n❌ Error: ${error instanceof Error ? error.message : String(error)}\n`
+      );
       process.exit(1);
     }
   }
@@ -156,55 +185,61 @@ export class PermissionsCommand {
    * Show risk analysis for permissions
    */
   private showRiskAnalysis(permissions: string[]): void {
-    console.log('\n📊 Risk Analysis:');
-    
+    logger.info('Performing risk analysis', { permissionCount: permissions.length });
+    process.stdout.write('\n📊 Risk Analysis:\n');
+
     const riskCounts = {
       low: 0,
       medium: 0,
       high: 0,
       critical: 0
     };
-    
-    permissions.forEach(permission => {
+
+    permissions.forEach((permission) => {
       const info = this.permissionValidator.getPermissionInfo(permission);
       if (info?.riskLevel) {
         riskCounts[info.riskLevel]++;
       }
     });
-    
-    const riskScore = 
-      riskCounts.low * 1 +
-      riskCounts.medium * 5 +
-      riskCounts.high * 10 +
-      riskCounts.critical * 20;
-    
-    console.log(`  🟢 Low risk: ${riskCounts.low}`);
-    console.log(`  🟡 Medium risk: ${riskCounts.medium}`);
-    console.log(`  🟠 High risk: ${riskCounts.high}`);
-    console.log(`  🔴 Critical risk: ${riskCounts.critical}`);
-    console.log(`\n  Total Risk Score: ${riskScore}`);
-    
+
+    const riskScore =
+      riskCounts.low * 1 + riskCounts.medium * 5 + riskCounts.high * 10 + riskCounts.critical * 20;
+
+    logger.info('Risk analysis completed', { riskCounts, riskScore });
+    process.stdout.write(`  🟢 Low risk: ${riskCounts.low}\n`);
+    process.stdout.write(`  🟡 Medium risk: ${riskCounts.medium}\n`);
+    process.stdout.write(`  🟠 High risk: ${riskCounts.high}\n`);
+    process.stdout.write(`  🔴 Critical risk: ${riskCounts.critical}\n`);
+    process.stdout.write(`\n  Total Risk Score: ${riskScore}\n`);
+
+    let assessment: string;
     if (riskScore === 0) {
-      console.log('  Assessment: ✅ Minimal risk');
+      assessment = '✅ Minimal risk';
     } else if (riskScore <= 10) {
-      console.log('  Assessment: ✅ Low risk');
+      assessment = '✅ Low risk';
     } else if (riskScore <= 30) {
-      console.log('  Assessment: ⚠️  Moderate risk');
+      assessment = '⚠️  Moderate risk';
     } else if (riskScore <= 50) {
-      console.log('  Assessment: ⚠️  High risk - Review carefully');
+      assessment = '⚠️  High risk - Review carefully';
     } else {
-      console.log('  Assessment: ❌ Very high risk - Manual approval recommended');
+      assessment = '❌ Very high risk - Manual approval recommended';
     }
+
+    logger.info('Risk assessment completed', {
+      assessment: assessment.replace(/[✅⚠️❌]\s*/, ''),
+      riskScore
+    });
+    process.stdout.write(`  Assessment: ${assessment}\n`);
   }
   /**
    * Load plugin manifest from file
    */
   private async loadPluginManifest(pluginPath: string): Promise<any> {
     let manifestPath: string;
-    
+
     // Check if pluginPath is a directory or file
     const stats = await fs.stat(pluginPath);
-    
+
     if (stats.isDirectory()) {
       manifestPath = path.join(pluginPath, 'plugin.json');
     } else if (pluginPath.endsWith('.json')) {
@@ -212,21 +247,23 @@ export class PermissionsCommand {
     } else {
       throw new Error('Invalid plugin path. Must be a directory or a plugin.json file.');
     }
-    
+
     // Check if manifest exists
     try {
       await fs.access(manifestPath);
     } catch {
       throw new Error(`Plugin manifest not found at: ${manifestPath}`);
     }
-    
+
     // Read and parse manifest
     const manifestContent = await fs.readFile(manifestPath, 'utf-8');
-    
+
     try {
       return JSON.parse(manifestContent);
     } catch (error) {
-      throw new Error(`Invalid JSON in plugin manifest: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Invalid JSON in plugin manifest: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
@@ -234,34 +271,38 @@ export class PermissionsCommand {
    * Search for similar permissions (helper command)
    */
   public async searchPermissions(searchTerm: string): Promise<void> {
-    console.log(`\n🔍 Searching for permissions similar to: "${searchTerm}"\n`);
-    
+    logger.info('Searching permissions', { searchTerm });
+    process.stdout.write(`\n🔍 Searching for permissions similar to: "${searchTerm}"\n\n`);
+
     const allPermissions = this.permissionValidator.getAllPermissions();
     const results: Array<{ permission: string; score: number }> = [];
-    
-    allPermissions.forEach(permission => {
+
+    allPermissions.forEach((permission) => {
       const score = this.calculateSimilarity(searchTerm.toLowerCase(), permission.toLowerCase());
-      if (score > 0.3) { // Lower threshold for search
+      if (score > 0.3) {
+        // Lower threshold for search
         results.push({ permission, score });
       }
     });
-    
+
     if (results.length === 0) {
-      console.log('No similar permissions found.');
-      console.log('\nTry using a category name or partial permission name.');
+      logger.info('No similar permissions found', { searchTerm });
+      process.stdout.write('No similar permissions found.\n');
+      process.stdout.write('\nTry using a category name or partial permission name.\n');
       return;
     }
-    
+
     // Sort by score
     results.sort((a, b) => b.score - a.score);
-    
-    console.log('Found similar permissions:');
+
+    logger.info('Search completed', { searchTerm, resultCount: results.length });
+    process.stdout.write('Found similar permissions:\n');
     results.slice(0, 10).forEach(({ permission, score }) => {
       const info = this.permissionValidator.getPermissionInfo(permission);
       const percentage = Math.round(score * 100);
-      console.log(`  ${percentage}% match: ${permission}`);
+      process.stdout.write(`  ${percentage}% match: ${permission}\n`);
       if (info?.description) {
-        console.log(`      ${info.description}`);
+        process.stdout.write(`      ${info.description}\n`);
       }
     });
   }
@@ -272,9 +313,9 @@ export class PermissionsCommand {
   private calculateSimilarity(str1: string, str2: string): number {
     const longer = str1.length > str2.length ? str1 : str2;
     const shorter = str1.length > str2.length ? str2 : str1;
-    
+
     if (longer.length === 0) return 1.0;
-    
+
     const editDistance = this.levenshteinDistance(longer, shorter);
     return (longer.length - editDistance) / longer.length;
   }
@@ -284,15 +325,15 @@ export class PermissionsCommand {
    */
   private levenshteinDistance(str1: string, str2: string): number {
     const matrix: number[][] = [];
-    
+
     for (let i = 0; i <= str2.length; i++) {
       matrix[i] = [i];
     }
-    
+
     for (let j = 0; j <= str1.length; j++) {
       matrix[0][j] = j;
     }
-    
+
     for (let i = 1; i <= str2.length; i++) {
       for (let j = 1; j <= str1.length; j++) {
         if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
@@ -306,7 +347,7 @@ export class PermissionsCommand {
         }
       }
     }
-    
+
     return matrix[str2.length][str1.length];
   }
 }

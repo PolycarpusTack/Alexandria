@@ -1,6 +1,6 @@
 /**
  * Chain-of-Thought Reasoning Templates for Crash Analysis
- * 
+ *
  * Implements step-by-step reasoning patterns for complex analysis
  */
 
@@ -310,18 +310,14 @@ Provide thread-safe solution.`,
   /**
    * Execute chain-of-thought reasoning
    */
-  static buildReasoningPrompt(
-    templateId: string,
-    crashData: any,
-    includeSteps?: string[]
-  ): string {
+  static buildReasoningPrompt(templateId: string, crashData: any, includeSteps?: string[]): string {
     const template = this.templates.get(templateId);
     if (!template) {
       throw new Error(`Template ${templateId} not found`);
     }
 
-    const steps = includeSteps 
-      ? template.steps.filter(s => includeSteps.includes(s.id))
+    const steps = includeSteps
+      ? template.steps.filter((s) => includeSteps.includes(s.id))
       : template.steps;
 
     const prompt = `You will analyze this crash using chain-of-thought reasoning.
@@ -332,12 +328,14 @@ ${JSON.stringify(crashData, null, 2)}
 ## Analysis Process
 Follow these steps carefully, showing your reasoning at each stage:
 
-${steps.map((step, index) => {
-  const deps = step.dependencies 
-    ? `\n(This step depends on: ${step.dependencies.join(', ')})` 
-    : '';
-  return `${step.prompt}${deps}`;
-}).join('\n\n')}
+${steps
+  .map((step, index) => {
+    const deps = step.dependencies
+      ? `\n(This step depends on: ${step.dependencies.join(', ')})`
+      : '';
+    return `${step.prompt}${deps}`;
+  })
+  .join('\n\n')}
 
 ## Final Output
 Synthesize your step-by-step analysis into this format:
@@ -351,14 +349,10 @@ Think through each step systematically before providing the final JSON output.`;
   /**
    * Create validation prompt for a reasoning step
    */
-  static createValidationPrompt(
-    templateId: string,
-    stepId: string,
-    stepOutput: any
-  ): string {
+  static createValidationPrompt(templateId: string, stepId: string, stepOutput: any): string {
     const template = this.templates.get(templateId);
-    const step = template?.steps.find(s => s.id === stepId);
-    
+    const step = template?.steps.find((s) => s.id === stepId);
+
     if (!step?.validation) {
       return '';
     }
@@ -377,12 +371,12 @@ Is the analysis correct and complete? If not, what's missing or incorrect?`;
   static getTemplateForError(errorType: string): ChainOfThoughtTemplate | null {
     // Map error types to templates
     const errorTemplateMap: Record<string, string> = {
-      'OutOfMemoryError': 'memory-leak-investigation',
-      'MemoryLeak': 'memory-leak-investigation',
-      'Deadlock': 'concurrency-debugging',
-      'RaceCondition': 'concurrency-debugging',
-      'ThreadStarvation': 'concurrency-debugging',
-      'default': 'complex-crash-analysis'
+      OutOfMemoryError: 'memory-leak-investigation',
+      MemoryLeak: 'memory-leak-investigation',
+      Deadlock: 'concurrency-debugging',
+      RaceCondition: 'concurrency-debugging',
+      ThreadStarvation: 'concurrency-debugging',
+      default: 'complex-crash-analysis'
     };
 
     const templateId = errorTemplateMap[errorType] || errorTemplateMap['default'];
@@ -395,12 +389,14 @@ Is the analysis correct and complete? If not, what's missing or incorrect?`;
   static createCustomChain(steps: ReasoningStep[]): string {
     return `Analyze this issue using the following reasoning steps:
 
-${steps.map((step, index) => {
-  return `### Step ${index + 1}: ${step.description}
+${steps
+  .map((step, index) => {
+    return `### Step ${index + 1}: ${step.description}
 ${step.prompt}
 ${step.dependencies ? `(Depends on: ${step.dependencies.join(', ')})` : ''}
 `;
-}).join('\n')}
+  })
+  .join('\n')}
 
 Provide your analysis following each step sequentially.`;
   }

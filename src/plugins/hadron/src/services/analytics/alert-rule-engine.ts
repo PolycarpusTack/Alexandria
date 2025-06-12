@@ -106,12 +106,12 @@ export class AlertRuleEngine {
     logic: 'AND' | 'OR' = 'AND'
   ): boolean {
     if (logic === 'AND') {
-      return conditions.every(condition => {
+      return conditions.every((condition) => {
         const value = values[condition.metric || 'default'];
         return this.evaluateCondition(value, condition);
       });
     } else {
-      return conditions.some(condition => {
+      return conditions.some((condition) => {
         const value = values[condition.metric || 'default'];
         return this.evaluateCondition(value, condition);
       });
@@ -142,10 +142,7 @@ export class AlertRuleEngine {
   /**
    * Check if alert should be suppressed (cooldown period)
    */
-  shouldSuppress(
-    rule: AlertRule,
-    lastAlertTime?: Date
-  ): boolean {
+  shouldSuppress(rule: AlertRule, lastAlertTime?: Date): boolean {
     if (!lastAlertTime || !rule.cooldown) {
       return false;
     }

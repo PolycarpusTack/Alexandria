@@ -1,6 +1,6 @@
 /**
  * Cached AI Service
- * 
+ *
  * Wraps any AI service implementation with a caching layer to improve
  * performance and reduce redundant API calls.
  */
@@ -51,7 +51,7 @@ export class CachedAIService implements AIService {
     this.embeddingCache = new Map();
     this.modelCache = new Map();
     this.cacheStats = { hits: 0, misses: 0, evictions: 0 };
-    
+
     // Start cache cleanup interval
     setInterval(() => this.cleanupCache(), 60000); // Clean every minute
   }
@@ -84,16 +84,16 @@ export class CachedAIService implements AIService {
   async listModels(): Promise<AIModel[]> {
     const cacheKey = 'list-models';
     const cached = this.getCached(this.modelCache, cacheKey);
-    
+
     if (cached) {
       this.cacheStats.hits++;
       return cached;
     }
-    
+
     this.cacheStats.misses++;
     const models = await this.baseService.listModels();
     this.setCached(this.modelCache, cacheKey, models);
-    
+
     return models;
   }
 
@@ -101,23 +101,23 @@ export class CachedAIService implements AIService {
     if (!this.config.enableCompletionCache) {
       return this.baseService.complete(prompt, options);
     }
-    
+
     const cacheKey = this.generateCompletionCacheKey(prompt, options);
     const cached = this.getCached(this.completionCache, cacheKey);
-    
+
     if (cached) {
       this.cacheStats.hits++;
-      this.logger?.debug('Completion cache hit', { 
+      this.logger?.debug('Completion cache hit', {
         cacheKey: cacheKey.substring(0, 8),
-        hits: this.cacheStats.hits 
+        hits: this.cacheStats.hits
       });
       return cached;
     }
-    
+
     this.cacheStats.misses++;
     const response = await this.baseService.complete(prompt, options);
     this.setCached(this.completionCache, cacheKey, response);
-    
+
     return response;
   }
 
@@ -125,19 +125,19 @@ export class CachedAIService implements AIService {
     if (!this.config.enableCompletionCache) {
       return this.baseService.completeChat(options);
     }
-    
+
     const cacheKey = this.generateChatCacheKey(options);
     const cached = this.getCached(this.completionCache, cacheKey);
-    
+
     if (cached) {
       this.cacheStats.hits++;
       return cached;
     }
-    
+
     this.cacheStats.misses++;
     const response = await this.baseService.completeChat(options);
     this.setCached(this.completionCache, cacheKey, response);
-    
+
     return response;
   }
 
@@ -154,19 +154,19 @@ export class CachedAIService implements AIService {
     if (!this.config.enableEmbeddingCache) {
       return this.baseService.embed(text, options);
     }
-    
+
     const cacheKey = this.generateEmbeddingCacheKey(text, options);
     const cached = this.getCached(this.embeddingCache, cacheKey);
-    
+
     if (cached) {
       this.cacheStats.hits++;
       return cached;
     }
-    
+
     this.cacheStats.misses++;
     const embedding = await this.baseService.embed(text, options);
     this.setCached(this.embeddingCache, cacheKey, embedding);
-    
+
     return embedding;
   }
 
@@ -174,16 +174,16 @@ export class CachedAIService implements AIService {
     if (!this.config.enableEmbeddingCache) {
       return this.baseService.embedBatch(texts, options);
     }
-    
+
     const results: number[][] = [];
     const uncachedTexts: string[] = [];
     const uncachedIndices: number[] = [];
-    
+
     // Check cache for each text
     for (let i = 0; i < texts.length; i++) {
       const cacheKey = this.generateEmbeddingCacheKey(texts[i], options);
       const cached = this.getCached(this.embeddingCache, cacheKey);
-      
+
       if (cached) {
         this.cacheStats.hits++;
         results[i] = cached;
@@ -192,12 +192,12 @@ export class CachedAIService implements AIService {
         uncachedIndices.push(i);
       }
     }
-    
+
     // Get embeddings for uncached texts
     if (uncachedTexts.length > 0) {
       this.cacheStats.misses += uncachedTexts.length;
       const newEmbeddings = await this.baseService.embedBatch(uncachedTexts, options);
-      
+
       // Cache and assign results
       for (let i = 0; i < uncachedTexts.length; i++) {
         const cacheKey = this.generateEmbeddingCacheKey(uncachedTexts[i], options);
@@ -205,7 +205,7 @@ export class CachedAIService implements AIService {
         results[uncachedIndices[i]] = newEmbeddings[i];
       }
     }
-    
+
     return results;
   }
 
@@ -254,24 +254,24 @@ export class CachedAIService implements AIService {
     if (!type || type === 'model') {
       this.modelCache.clear();
     }
-    
+
     this.logger?.info('Cache cleared', { type: type || 'all' });
   }
 
   // Private helper methods
   private getCached<T>(cache: Map<string, CacheEntry<T>>, key: string): T | null {
     const entry = cache.get(key);
-    
+
     if (!entry) {
       return null;
     }
-    
+
     const age = Date.now() - entry.timestamp;
     if (age > this.config.ttl * 1000) {
       cache.delete(key);
       return null;
     }
-    
+
     entry.hits++;
     return entry.value;
   }
@@ -285,7 +285,7 @@ export class CachedAIService implements AIService {
         this.cacheStats.evictions++;
       }
     }
-    
+
     cache.set(key, {
       value,
       timestamp: Date.now(),
@@ -296,21 +296,21 @@ export class CachedAIService implements AIService {
   private findOldestEntry<T>(cache: Map<string, CacheEntry<T>>): string | null {
     let oldestKey: string | null = null;
     let oldestTime = Infinity;
-    
+
     for (const [key, entry] of cache.entries()) {
       if (entry.timestamp < oldestTime) {
         oldestTime = entry.timestamp;
         oldestKey = key;
       }
     }
-    
+
     return oldestKey;
   }
 
   private cleanupCache(): void {
     const now = Date.now();
     let cleaned = 0;
-    
+
     // Clean completion cache
     for (const [key, entry] of this.completionCache.entries()) {
       if (now - entry.timestamp > this.config.ttl * 1000) {
@@ -318,7 +318,7 @@ export class CachedAIService implements AIService {
         cleaned++;
       }
     }
-    
+
     // Clean embedding cache
     for (const [key, entry] of this.embeddingCache.entries()) {
       if (now - entry.timestamp > this.config.ttl * 1000) {
@@ -326,7 +326,7 @@ export class CachedAIService implements AIService {
         cleaned++;
       }
     }
-    
+
     // Clean model cache
     for (const [key, entry] of this.modelCache.entries()) {
       if (now - entry.timestamp > this.config.ttl * 1000) {
@@ -334,7 +334,7 @@ export class CachedAIService implements AIService {
         cleaned++;
       }
     }
-    
+
     if (cleaned > 0) {
       this.logger?.debug('Cache cleanup completed', { entriesCleaned: cleaned });
     }
@@ -349,10 +349,8 @@ export class CachedAIService implements AIService {
       systemPrompt: options?.systemPrompt,
       format: options?.format
     };
-    
-    return crypto.createHash('sha256')
-      .update(JSON.stringify(data))
-      .digest('hex');
+
+    return crypto.createHash('sha256').update(JSON.stringify(data)).digest('hex');
   }
 
   private generateChatCacheKey(options: ChatCompletionOptions): string {
@@ -364,10 +362,8 @@ export class CachedAIService implements AIService {
       systemPrompt: options.systemPrompt,
       format: options.format
     };
-    
-    return crypto.createHash('sha256')
-      .update(JSON.stringify(data))
-      .digest('hex');
+
+    return crypto.createHash('sha256').update(JSON.stringify(data)).digest('hex');
   }
 
   private generateEmbeddingCacheKey(text: string, options?: EmbeddingOptions): string {
@@ -376,9 +372,7 @@ export class CachedAIService implements AIService {
       model: options?.model,
       dimensions: options?.dimensions
     };
-    
-    return crypto.createHash('sha256')
-      .update(JSON.stringify(data))
-      .digest('hex');
+
+    return crypto.createHash('sha256').update(JSON.stringify(data)).digest('hex');
   }
 }

@@ -1,6 +1,6 @@
 /**
  * Wizard Service Context
- * 
+ *
  * Provides access to the template wizard service throughout the UI
  */
 
@@ -20,28 +20,26 @@ export interface WizardServiceProviderProps {
   children: React.ReactNode;
 }
 
-export const WizardServiceProvider: React.FC<WizardServiceProviderProps> = ({
-  children
-}) => {
+export const WizardServiceProvider: React.FC<WizardServiceProviderProps> = ({ children }) => {
   const pluginContext = usePluginContext();
-  
+
   const wizardService = useMemo(() => {
     if (!pluginContext) return null;
-    
+
     // Get required services from plugin context
     const { logger, eventBus, services } = pluginContext;
     const { aiService, storageService } = services;
-    
+
     // Get Alfred-specific services
     const templateEngine = services.get('alfred.templateEngine');
     const discoveryService = services.get('alfred.discoveryService');
     const variableResolver = services.get('alfred.variableResolver');
-    
+
     if (!templateEngine || !discoveryService || !variableResolver || !storageService) {
       logger.warn('Required services not available for wizard');
       return null;
     }
-    
+
     return new TemplateWizardService(
       logger,
       eventBus,
@@ -52,7 +50,7 @@ export const WizardServiceProvider: React.FC<WizardServiceProviderProps> = ({
       aiService
     );
   }, [pluginContext]);
-  
+
   return (
     <WizardServiceContext.Provider value={{ wizardService }}>
       {children}
@@ -65,11 +63,13 @@ export const WizardServiceProvider: React.FC<WizardServiceProviderProps> = ({
  */
 export const useWizardService = () => {
   const { wizardService } = useContext(WizardServiceContext);
-  
+
   if (!wizardService) {
-    throw new Error('WizardService not available. Make sure WizardServiceProvider is in the component tree.');
+    throw new Error(
+      'WizardService not available. Make sure WizardServiceProvider is in the component tree.'
+    );
   }
-  
+
   return wizardService;
 };
 

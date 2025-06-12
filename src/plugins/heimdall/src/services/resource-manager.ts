@@ -1,6 +1,6 @@
 /**
  * Hyperion Resource Manager for Heimdall
- * 
+ *
  * Enterprise-grade resource management with connection pooling,
  * memory management, and resource lifecycle control
  */
@@ -8,11 +8,11 @@
 import { EventEmitter } from 'events';
 import { Logger } from '@utils/logger';
 import { BulletproofConnectionPool } from './connection-pool/bulletproof-connection-pool';
-import { 
-  PoolConfiguration, 
-  Connection, 
+import {
+  PoolConfiguration,
+  Connection,
   Priority,
-  CircuitBreakerConfig 
+  CircuitBreakerConfig
 } from './connection-pool/types';
 
 export interface ResourceLimits {
@@ -69,11 +69,11 @@ export class HyperionResourceManager extends EventEmitter {
   private readonly config: ResourceManagerConfig;
   private readonly resources: Map<string, ManagedResource> = new Map();
   private readonly connectionPools: Map<string, BulletproofConnectionPool> = new Map();
-  
+
   private healthCheckTimer?: NodeJS.Timeout;
   private resourceMonitorTimer?: NodeJS.Timeout;
   private memoryPressureHandler?: NodeJS.Timeout;
-  
+
   private isShuttingDown = false;
   private totalMemoryUsage = 0;
   private totalConnections = 0;
@@ -82,7 +82,7 @@ export class HyperionResourceManager extends EventEmitter {
     super();
     this.config = config;
     this.logger = logger;
-    
+
     this.initializeMonitoring();
   }
 
@@ -103,7 +103,7 @@ export class HyperionResourceManager extends EventEmitter {
       connectionFactory,
       minSize: options.minSize || 5,
       maxSize: Math.min(
-        options.maxSize || 20, 
+        options.maxSize || 20,
         this.config.limits.maxConnections - this.totalConnections
       ),
       connectionTimeout: options.connectionTimeout || 30000,
@@ -290,11 +290,11 @@ export class HyperionResourceManager extends EventEmitter {
    */
   private async checkResourceLimits(poolName: string): Promise<void> {
     const usage = this.getResourceUsage();
-    
+
     // Check memory limit
     if (usage.total.memoryMB > this.config.limits.maxMemoryMB * 0.9) {
       await this.performMemoryPressureRelief();
-      
+
       if (usage.total.memoryMB > this.config.limits.maxMemoryMB) {
         throw new Error('Memory limit exceeded');
       }
@@ -385,7 +385,7 @@ export class HyperionResourceManager extends EventEmitter {
       this.memoryPressureHandler = setInterval(() => {
         const memUsage = process.memoryUsage();
         const heapUsedMB = memUsage.heapUsed / 1024 / 1024;
-        
+
         if (heapUsedMB > this.config.limits.maxMemoryMB * 0.8) {
           this.performMemoryPressureRelief();
         }
@@ -403,9 +403,9 @@ export class HyperionResourceManager extends EventEmitter {
           const status = resource.pool.getPoolStatus();
           resource.isHealthy = status.totalConnections > 0;
         }
-        
+
         resource.lastHealthCheck = new Date();
-        
+
         if (!resource.isHealthy && this.config.enableResourceRecovery) {
           await this.recoverResource(resource);
         }
@@ -421,7 +421,7 @@ export class HyperionResourceManager extends EventEmitter {
    */
   private monitorResourceUsage(): void {
     const usage = this.getResourceUsage();
-    
+
     // Log high usage warnings
     if (usage.total.memoryMB > this.config.limits.maxMemoryMB * 0.8) {
       this.logger.warn('High memory usage detected', {
@@ -498,7 +498,7 @@ export class HyperionResourceManager extends EventEmitter {
       totalIdle += cpu.times.idle;
     });
 
-    return 100 - Math.floor(totalIdle / totalTick * 100);
+    return 100 - Math.floor((totalIdle / totalTick) * 100);
   }
 
   /**
@@ -563,7 +563,7 @@ export class HyperionResourceManager extends EventEmitter {
    * Get all resources of a specific type
    */
   getResourcesByType(type: ResourceType): ManagedResource[] {
-    return Array.from(this.resources.values()).filter(r => r.type === type);
+    return Array.from(this.resources.values()).filter((r) => r.type === type);
   }
 
   /**
@@ -590,8 +590,8 @@ export class HyperionResourceManager extends EventEmitter {
       usage: usage.total,
       limits: this.config.limits,
       health: {
-        healthy: Array.from(this.resources.values()).filter(r => r.isHealthy).length,
-        unhealthy: Array.from(this.resources.values()).filter(r => !r.isHealthy).length
+        healthy: Array.from(this.resources.values()).filter((r) => r.isHealthy).length,
+        unhealthy: Array.from(this.resources.values()).filter((r) => !r.isHealthy).length
       }
     };
   }

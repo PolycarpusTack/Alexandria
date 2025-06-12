@@ -1,6 +1,6 @@
 /**
  * UI Components for the client application
- * 
+ *
  * This file exports all UI components for use in the client application
  */
 
@@ -11,7 +11,16 @@ export { Input } from './input';
 export { Textarea } from './textarea';
 export { default as Modal } from './modal';
 export { default as UIShell } from './ui-shell';
-export { Table, TableHeader, TableBody, TableFooter, TableHead, TableRow, TableCell, TableCaption } from './table';
+export {
+  Table,
+  TableHeader,
+  TableBody,
+  TableFooter,
+  TableHead,
+  TableRow,
+  TableCell,
+  TableCaption
+} from './table';
 export { Tabs, TabsList, TabsTrigger, TabsContent } from './tabs';
 export { Badge, badgeVariants } from './badge';
 export { Avatar, AvatarImage, AvatarFallback } from './avatar';
@@ -32,7 +41,7 @@ export {
 export { useToast, ToastProvider } from './use-toast';
 export { Toaster } from './toaster';
 
-// Progress and Scroll Area components  
+// Progress and Scroll Area components
 export { Progress } from './progress';
 export { ScrollArea, ScrollBar } from './scroll-area';
 
@@ -48,7 +57,7 @@ export {
   AlertDialogTitle,
   AlertDialogDescription,
   AlertDialogAction,
-  AlertDialogCancel,
+  AlertDialogCancel
 } from './alert-dialog';
 
 // Context

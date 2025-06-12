@@ -18,20 +18,20 @@ interface SimpleChartProps {
   label?: string;
 }
 
-export const SimpleChart: React.FC<SimpleChartProps> = ({ 
-  data, 
-  height = 300, 
+export const SimpleChart: React.FC<SimpleChartProps> = ({
+  data,
+  height = 300,
   color = '#8884d8',
   showGrid = true,
   label = 'Value'
 }) => {
   if (!data || data.length === 0) {
     return (
-      <div 
-        style={{ 
-          height, 
-          display: 'flex', 
-          alignItems: 'center', 
+      <div
+        style={{
+          height,
+          display: 'flex',
+          alignItems: 'center',
           justifyContent: 'center',
           color: 'var(--muted-foreground)',
           backgroundColor: 'var(--card)',
@@ -45,7 +45,7 @@ export const SimpleChart: React.FC<SimpleChartProps> = ({
   }
 
   // Calculate min and max values
-  const values = data.map(d => d.value);
+  const values = data.map((d) => d.value);
   const minValue = Math.min(...values);
   const maxValue = Math.max(...values);
   const range = maxValue - minValue || 1;
@@ -58,11 +58,13 @@ export const SimpleChart: React.FC<SimpleChartProps> = ({
   const innerHeight = chartHeight - padding * 2;
 
   // Create SVG path
-  const points = data.map((point, index) => {
-    const x = (index / (data.length - 1)) * innerWidth + padding;
-    const y = innerHeight - ((point.value - minValue) / range) * innerHeight + padding;
-    return `${x},${y}`;
-  }).join(' ');
+  const points = data
+    .map((point, index) => {
+      const x = (index / (data.length - 1)) * innerWidth + padding;
+      const y = innerHeight - ((point.value - minValue) / range) * innerHeight + padding;
+      return `${x},${y}`;
+    })
+    .join(' ');
 
   // Create grid lines
   const gridLines = [];
@@ -77,8 +79,8 @@ export const SimpleChart: React.FC<SimpleChartProps> = ({
           y1={y}
           x2={chartWidth - padding}
           y2={y}
-          stroke="var(--border)"
-          strokeOpacity="0.3"
+          stroke='var(--border)'
+          strokeOpacity='0.3'
         />
       );
     }
@@ -93,8 +95,8 @@ export const SimpleChart: React.FC<SimpleChartProps> = ({
           y1={padding}
           x2={x}
           y2={chartHeight - padding}
-          stroke="var(--border)"
-          strokeOpacity="0.3"
+          stroke='var(--border)'
+          strokeOpacity='0.3'
         />
       );
     }
@@ -110,9 +112,9 @@ export const SimpleChart: React.FC<SimpleChartProps> = ({
         key={`y-label-${i}`}
         x={padding - 5}
         y={y + 5}
-        textAnchor="end"
-        fill="var(--muted-foreground)"
-        fontSize="12"
+        textAnchor='end'
+        fill='var(--muted-foreground)'
+        fontSize='12'
       >
         {value.toFixed(0)}
       </text>
@@ -130,9 +132,9 @@ export const SimpleChart: React.FC<SimpleChartProps> = ({
         key={`x-label-${i}`}
         x={x}
         y={chartHeight - padding + 20}
-        textAnchor="middle"
-        fill="var(--muted-foreground)"
-        fontSize="10"
+        textAnchor='middle'
+        fill='var(--muted-foreground)'
+        fontSize='10'
       >
         {new Date(time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
       </text>
@@ -140,11 +142,11 @@ export const SimpleChart: React.FC<SimpleChartProps> = ({
   }
 
   return (
-    <div className="relative w-full" style={{ height }}>
+    <div className='relative w-full' style={{ height }}>
       <svg
         viewBox={`0 0 ${chartWidth} ${chartHeight + 30}`}
-        className="w-full h-full"
-        preserveAspectRatio="xMidYMid meet"
+        className='w-full h-full'
+        preserveAspectRatio='xMidYMid meet'
       >
         {/* Grid */}
         {gridLines}
@@ -155,14 +157,14 @@ export const SimpleChart: React.FC<SimpleChartProps> = ({
           y1={chartHeight - padding}
           x2={chartWidth - padding}
           y2={chartHeight - padding}
-          stroke="var(--border)"
+          stroke='var(--border)'
         />
         <line
           x1={padding}
           y1={padding}
           x2={padding}
           y2={chartHeight - padding}
-          stroke="var(--border)"
+          stroke='var(--border)'
         />
 
         {/* Labels */}
@@ -173,30 +175,17 @@ export const SimpleChart: React.FC<SimpleChartProps> = ({
         <polygon
           points={`${padding},${chartHeight - padding} ${points} ${chartWidth - padding},${chartHeight - padding}`}
           fill={color}
-          fillOpacity="0.1"
+          fillOpacity='0.1'
         />
 
         {/* Line */}
-        <polyline
-          points={points}
-          fill="none"
-          stroke={color}
-          strokeWidth="2"
-        />
+        <polyline points={points} fill='none' stroke={color} strokeWidth='2' />
 
         {/* Data points */}
         {data.map((point, index) => {
           const x = (index / (data.length - 1)) * innerWidth + padding;
           const y = innerHeight - ((point.value - minValue) / range) * innerHeight + padding;
-          return (
-            <circle
-              key={`point-${index}`}
-              cx={x}
-              cy={y}
-              r="3"
-              fill={color}
-            />
-          );
+          return <circle key={`point-${index}`} cx={x} cy={y} r='3' fill={color} />;
         })}
 
         {/* Y-axis label */}
@@ -204,9 +193,9 @@ export const SimpleChart: React.FC<SimpleChartProps> = ({
           x={15}
           y={height / 2}
           transform={`rotate(-90, 15, ${height / 2})`}
-          textAnchor="middle"
-          fill="var(--muted-foreground)"
-          fontSize="12"
+          textAnchor='middle'
+          fill='var(--muted-foreground)'
+          fontSize='12'
         >
           {label}
         </text>
@@ -235,11 +224,11 @@ export const SimpleBarChart: React.FC<SimpleBarChartProps> = ({
 }) => {
   if (!data || data.length === 0) {
     return (
-      <div 
-        style={{ 
-          height, 
-          display: 'flex', 
-          alignItems: 'center', 
+      <div
+        style={{
+          height,
+          display: 'flex',
+          alignItems: 'center',
           justifyContent: 'center',
           color: 'var(--muted-foreground)'
         }}
@@ -249,36 +238,32 @@ export const SimpleBarChart: React.FC<SimpleBarChartProps> = ({
     );
   }
 
-  const maxValue = Math.max(...data.map(d => d.value));
+  const maxValue = Math.max(...data.map((d) => d.value));
   const barWidth = 100 / data.length - 2;
 
   return (
-    <div className="relative w-full" style={{ height }}>
-      <div className="flex items-end justify-around h-full">
+    <div className='relative w-full' style={{ height }}>
+      <div className='flex items-end justify-around h-full'>
         {data.map((item, index) => {
           const barHeight = (item.value / maxValue) * 100;
           return (
             <div
               key={index}
-              className="flex flex-col items-center"
+              className='flex flex-col items-center'
               style={{ width: `${barWidth}%` }}
             >
               {showValues && (
-                <span className="text-xs text-muted-foreground mb-1">
-                  {item.value}
-                </span>
+                <span className='text-xs text-muted-foreground mb-1'>{item.value}</span>
               )}
               <div
-                className="w-full transition-all duration-300 rounded-t"
+                className='w-full transition-all duration-300 rounded-t'
                 style={{
                   height: `${barHeight}%`,
                   backgroundColor: item.color || 'var(--primary)',
                   minHeight: '4px'
                 }}
               />
-              <span className="text-xs text-muted-foreground mt-1 text-center">
-                {item.label}
-              </span>
+              <span className='text-xs text-muted-foreground mt-1 text-center'>{item.label}</span>
             </div>
           );
         })}

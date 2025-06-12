@@ -1,5 +1,4 @@
 import { ICodeSnippet } from './interfaces';
-import { v4 as uuidv4 } from 'uuid';
 
 /**
  * CodeSnippet model implementation
@@ -17,7 +16,7 @@ export class CodeSnippet implements ICodeSnippet {
 
   /**
    * Create a new CodeSnippet instance
-   * 
+   *
    * @param data Code snippet data, partial or complete
    */
   constructor(data: Partial<ICodeSnippet>) {
@@ -34,7 +33,7 @@ export class CodeSnippet implements ICodeSnippet {
 
   /**
    * Validate code snippet data
-   * 
+   *
    * @returns true if valid, throws error if invalid
    */
   validate(): boolean {
@@ -55,7 +54,7 @@ export class CodeSnippet implements ICodeSnippet {
 
   /**
    * Get the line count of the snippet
-   * 
+   *
    * @returns Number of lines
    */
   getLineCount(): number {
@@ -65,7 +64,7 @@ export class CodeSnippet implements ICodeSnippet {
 
   /**
    * Update the content of the code snippet
-   * 
+   *
    * @param content New content
    * @returns Updated code snippet
    */
@@ -77,7 +76,7 @@ export class CodeSnippet implements ICodeSnippet {
 
   /**
    * Convert to JSON object
-   * 
+   *
    * @returns CodeSnippet data as plain object
    */
   toJSON(): Record<string, any> {
@@ -96,7 +95,7 @@ export class CodeSnippet implements ICodeSnippet {
 
   /**
    * Create a CodeSnippet instance from database record
-   * 
+   *
    * @param record Database record
    * @returns CodeSnippet instance
    */

@@ -12,7 +12,7 @@ import { DataService } from '../../../../core/data/interfaces';
 export interface EnhancedDataService extends DataService {
   /**
    * Find all records in a collection with optional filtering
-   * 
+   *
    * @param collectionName Collection name
    * @param options Optional query options
    */
@@ -26,43 +26,43 @@ export interface EnhancedDataService extends DataService {
       filter?: Record<string, any>;
     }
   ): Promise<T[]>;
-  
+
   /**
    * Create a new record in a collection
-   * 
+   *
    * @param collectionName Collection name
    * @param data Data to save
    */
   create<T = any>(collectionName: string, data: T): Promise<T>;
-  
+
   /**
    * Update an existing record in a collection
-   * 
+   *
    * @param collectionName Collection name
    * @param id Record ID
    * @param data Data to update
    */
   update<T = any>(collectionName: string, id: string, data: Partial<T>): Promise<T>;
-  
+
   /**
    * Delete a record from a collection
-   * 
+   *
    * @param collectionName Collection name
    * @param id Record ID
    */
   delete(collectionName: string, id: string): Promise<boolean>;
-  
+
   /**
    * Find a record by ID
-   * 
+   *
    * @param collectionName Collection name
    * @param id Record ID
    */
   findById<T = any>(collectionName: string, id: string): Promise<T | null>;
-  
+
   /**
    * Get repository for collection
-   * 
+   *
    * @param collectionName Collection name
    */
   getRepository(collectionName: string): any;

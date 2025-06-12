@@ -28,7 +28,7 @@ describe('AnalyticsService Performance', () => {
     // Register mocks
     container.register<IDataService>('DataService', { useValue: mockDataService as IDataService });
     container.register<EventBus>('EventBus', { useValue: mockEventBus as EventBus });
-    
+
     analyticsService = container.resolve(AnalyticsService);
   });
 
@@ -64,19 +64,15 @@ describe('AnalyticsService Performance', () => {
       (mockDataService.query as jest.Mock).mockResolvedValue(mockData);
 
       // First call - should hit database
-      await measurePerformance('first_call', () => 
-        analyticsService.getTimeSeriesData(timeRange)
-      );
+      await measurePerformance('first_call', () => analyticsService.getTimeSeriesData(timeRange));
 
       // Second call - should hit cache
-      await measurePerformance('cached_call', () => 
-        analyticsService.getTimeSeriesData(timeRange)
-      );
+      await measurePerformance('cached_call', () => analyticsService.getTimeSeriesData(timeRange));
 
       // Cache hit should be under 50ms
-      const cachedCallMetric = performanceMetrics.find(m => m.operation === 'cached_call');
+      const cachedCallMetric = performanceMetrics.find((m) => m.operation === 'cached_call');
       expect(cachedCallMetric?.duration).toBeLessThan(50);
-      
+
       // Should only query database once
       expect(mockDataService.query).toHaveBeenCalledTimes(1);
     });
@@ -96,12 +92,12 @@ describe('AnalyticsService Performance', () => {
 
       (mockDataService.query as jest.Mock).mockResolvedValue(mockData);
 
-      await measurePerformance('large_dataset', () => 
+      await measurePerformance('large_dataset', () =>
         analyticsService.getTimeSeriesData(timeRange)
       );
 
       // Should process large dataset within 500ms
-      const metric = performanceMetrics.find(m => m.operation === 'large_dataset');
+      const metric = performanceMetrics.find((m) => m.operation === 'large_dataset');
       expect(metric?.duration).toBeLessThan(500);
     });
   });
@@ -126,7 +122,7 @@ describe('AnalyticsService Performance', () => {
 
       // Verify materialized view was used
       const queries = (mockDataService.query as jest.Mock).mock.calls;
-      expect(queries.some(call => call[0].includes('_mv'))).toBe(true);
+      expect(queries.some((call) => call[0].includes('_mv'))).toBe(true);
     });
   });
 
@@ -143,13 +139,11 @@ describe('AnalyticsService Performance', () => {
 
       (mockDataService.query as jest.Mock).mockImplementation(() => {
         const delay = queryDelays[queryCount++] || 0;
-        return new Promise(resolve => 
-          setTimeout(() => resolve([]), delay)
-        );
+        return new Promise((resolve) => setTimeout(() => resolve([]), delay));
       });
 
       const start = Date.now();
-      
+
       // These should run in parallel
       await Promise.all([
         analyticsService.getTimeSeriesData(timeRange),
@@ -168,15 +162,13 @@ describe('AnalyticsService Performance', () => {
     it('should preload common queries', async () => {
       (mockDataService.query as jest.Mock).mockResolvedValue([]);
 
-      await measurePerformance('cache_warmup', () => 
-        analyticsService.warmupCache()
-      );
+      await measurePerformance('cache_warmup', () => analyticsService.warmupCache());
 
       // Should have made multiple queries for common time ranges
       expect(mockDataService.query).toHaveBeenCalledTimes(6); // 3 time ranges × 2 query types
 
       // Warmup should complete within reasonable time
-      const metric = performanceMetrics.find(m => m.operation === 'cache_warmup');
+      const metric = performanceMetrics.find((m) => m.operation === 'cache_warmup');
       expect(metric?.duration).toBeLessThan(1000);
     });
   });
@@ -208,12 +200,12 @@ describe('AnalyticsService Performance', () => {
       console.log(`${operation}: ${duration}ms`);
     });
 
-    const avgDuration = 
+    const avgDuration =
       performanceMetrics.reduce((sum, m) => sum + m.duration, 0) / performanceMetrics.length;
     console.log(`\nAverage duration: ${avgDuration.toFixed(2)}ms`);
 
     // All operations should be under 500ms
-    const slowOperations = performanceMetrics.filter(m => m.duration > 500);
+    const slowOperations = performanceMetrics.filter((m) => m.duration > 500);
     if (slowOperations.length > 0) {
       console.warn('\nSlow operations detected:');
       slowOperations.forEach(({ operation, duration }) => {

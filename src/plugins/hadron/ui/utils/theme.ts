@@ -7,10 +7,8 @@
  */
 export const getThemeColor = (variable: string): string => {
   if (typeof window === 'undefined') return '';
-  
-  return getComputedStyle(document.documentElement)
-    .getPropertyValue(variable)
-    .trim();
+
+  return getComputedStyle(document.documentElement).getPropertyValue(variable).trim();
 };
 
 /**
@@ -39,7 +37,7 @@ export const getThemeColors = () => {
  */
 export const getChartTheme = (isDark: boolean) => {
   const colors = getThemeColors();
-  
+
   return {
     // Primary dataset colors
     datasetColors: [
@@ -50,11 +48,11 @@ export const getChartTheme = (isDark: boolean) => {
       colors.danger || '#ef4444',
       colors.hadron || '#f43f5e'
     ],
-    
+
     // Grid and axis colors
     gridColor: isDark ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)',
     textColor: isDark ? '#94a3b8' : '#64748b',
-    
+
     // Tooltip colors
     tooltipBackground: isDark ? '#1e293b' : '#f8fafc',
     tooltipBorder: isDark ? '#334155' : '#e2e8f0',
@@ -79,7 +77,7 @@ export const getSeverityColors = () => {
  */
 export const hadronTheme = {
   accentColor: getThemeColor('--hadron-color') || '#f43f5e',
-  
+
   // Hadron-specific classes
   classes: {
     card: 'plugin-card hadron',
@@ -88,7 +86,7 @@ export const hadronTheme = {
     border: 'border-rose-500 dark:border-rose-400',
     background: 'bg-rose-50 dark:bg-rose-900/20'
   },
-  
+
   // Chart colors for Hadron analytics
   chartColors: {
     crashes: '#ef4444',

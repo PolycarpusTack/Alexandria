@@ -3,16 +3,22 @@
  */
 
 import { EventEmitter } from 'events';
-import { v4 as uuidv4 } from 'uuid';
 import { Logger } from '../../../../utils/logger';
 import { DataService } from '../../../../core/data/interfaces';
 import { EventBus } from '../../../../core/event-bus/interfaces';
 import { AIService } from '../../../../core/services/ai-service/interfaces';
 import { StorageService } from '../../../../core/services/storage/interfaces';
-import { 
-  AlfredServiceInterface, 
-  AlfredSession, 
-  AlfredMessage, 
+import {
+  BasePluginService,
+  PluginHealth,
+  idUtils,
+  createErrorContext,
+  BaseError
+} from '@alexandria/shared';
+import {
+  AlfredServiceInterface,
+  AlfredSession,
+  AlfredMessage,
   CodeGenerationRequest,
   CodeGenerationResponse,
   ProjectAnalysis,
@@ -54,58 +60,57 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
     this.storageService = options.storageService;
     this.sessionRepository = options.sessionRepository;
     this.alfredPath = options.alfredPath || '/mnt/c/Projects/alfred';
-    
+
     // Create AI adapter to use shared AI service
     this.aiAdapter = new AlfredAIAdapter({
       aiService: this.aiService,
       logger: this.logger
     });
-    
+
     this.initialize();
   }
 
   private async initialize(): Promise<void> {
     this.logger.info('Initializing Alfred service');
-    
+
     try {
       // Create bridge script if it doesn't exist
       await createBridgeScript(this.alfredPath);
-      
+
       // Initialize Python bridge for legacy features
       this.pythonBridge = new PythonBridge({
         alfredPath: this.alfredPath,
         logger: this.logger
       });
-      
+
       // Start the bridge
       await this.pythonBridge.start();
-      
+
       // Setup bridge event handlers
       this.setupBridgeHandlers();
-      
     } catch (error) {
       this.logger.warn('Failed to initialize Python bridge, using TypeScript-only mode', { error });
     }
-    
+
     // Subscribe to relevant events
-    this.eventBus.on('user:message', this.handleUserMessage.bind(this));
-    this.eventBus.on('system:shutdown', this.shutdown.bind(this));
-    
+    this.eventBus.subscribe('user:message', this.handleUserMessage.bind(this));
+    this.eventBus.subscribe('system:shutdown', this.shutdown.bind(this));
+
     // Load existing sessions from database
     await this.loadSessions();
   }
-  
+
   private setupBridgeHandlers(): void {
     if (!this.pythonBridge) return;
-    
+
     this.pythonBridge.on('chat', (data) => {
       this.emit('chat:response', data);
     });
-    
+
     this.pythonBridge.on('error', (error) => {
       this.logger.error('Python bridge error', { error });
     });
-    
+
     this.pythonBridge.on('status', (status) => {
       this.logger.info('Python bridge status', { status });
     });
@@ -113,24 +118,24 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
 
   private async shutdown(): Promise<void> {
     this.logger.info('Shutting down Alfred service');
-    
+
     // Save all active sessions
     for (const session of this.sessions.values()) {
       await this.saveSession(session);
     }
-    
+
     // Stop Python bridge if running
     if (this.pythonBridge) {
       await this.pythonBridge.stop();
     }
-    
+
     this.removeAllListeners();
   }
 
   async createSession(projectPath?: string): Promise<AlfredSession> {
     const sessionId = uuidv4();
     const now = new Date();
-    
+
     const session: AlfredSession = {
       id: sessionId,
       projectPath: projectPath || 'default',
@@ -145,7 +150,7 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
 
     this.sessions.set(sessionId, session);
     this.activeSessions.add(sessionId);
-    
+
     // Save to repository immediately
     await this.saveSession(session);
 
@@ -161,8 +166,8 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
       }
     }
 
-    // Emit event
-    this.eventBus.emit('alfred:session:created', session);
+    // Publish event
+    this.eventBus.publish('alfred:session:created', { session });
 
     return session;
   }
@@ -185,8 +190,8 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
     session.messages.push(userMessage);
     session.updatedAt = new Date();
 
-    // Emit user message event immediately
-    this.eventBus.emit('alfred:message', userMessage);
+    // Publish user message event immediately
+    this.eventBus.publish('alfred:message', { message: userMessage });
 
     let assistantMessage: AlfredMessage;
     let retryCount = 0;
@@ -195,7 +200,7 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
     while (retryCount < maxRetries) {
       try {
         // Get chat history for context (last 10 messages)
-        const history = session.messages.slice(-11, -1).map(msg => ({
+        const history = session.messages.slice(-11, -1).map((msg) => ({
           role: msg.role,
           content: msg.content
         }));
@@ -216,43 +221,45 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
         };
 
         session.messages.push(assistantMessage);
-        session.metadata.totalTokens += this.estimateTokens(content) + this.estimateTokens(response);
-        
+        session.metadata.totalTokens +=
+          this.estimateTokens(content) + this.estimateTokens(response);
+
         // Save to database
         await this.saveSession(session);
 
-        // Emit assistant message event
-        this.eventBus.emit('alfred:message', assistantMessage);
+        // Publish assistant message event
+        this.eventBus.publish('alfred:message', { message: assistantMessage });
 
         return assistantMessage;
       } catch (error) {
         retryCount++;
         this.logger.warn(`AI response attempt ${retryCount} failed`, { error, sessionId });
-        
+
         if (retryCount >= maxRetries) {
           // Create error message after all retries failed
           assistantMessage = {
             id: uuidv4(),
             role: 'assistant',
-            content: 'I apologize, but I encountered an error processing your request. Please try again later.',
+            content:
+              'I apologize, but I encountered an error processing your request. Please try again later.',
             timestamp: new Date(),
             metadata: {
               error: true,
               errorMessage: error instanceof Error ? error.message : 'Unknown error'
             }
           };
-          
+
           session.messages.push(assistantMessage);
           await this.saveSession(session);
-          
-          this.eventBus.emit('alfred:message', assistantMessage);
-          this.eventBus.emit('alfred:error', { sessionId, error });
-          
+
+          this.eventBus.publish('alfred:message', { message: assistantMessage });
+          this.eventBus.publish('alfred:error', { sessionId, error });
+
           return assistantMessage;
         }
-        
+
         // Wait before retry (exponential backoff)
-        await new Promise(resolve => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
+        await new Promise((resolve) => setTimeout(resolve, Math.pow(2, retryCount) * 1000));
       }
     }
 
@@ -286,7 +293,7 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
     this.activeSessions.delete(sessionId);
 
     // Emit event
-    this.eventBus.emit('alfred:session:deleted', { sessionId });
+    this.eventBus.publish('alfred:session:deleted', { sessionId });
   }
 
   async generateCode(request: CodeGenerationRequest): Promise<CodeGenerationResponse> {
@@ -304,14 +311,10 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
       }
 
       // Generate code using AI adapter
-      const code = await this.aiAdapter.generateCode(
-        request.prompt,
-        context,
-        {
-          temperature: request.temperature,
-          maxTokens: request.maxTokens
-        }
-      );
+      const code = await this.aiAdapter.generateCode(request.prompt, context, {
+        temperature: request.temperature,
+        maxTokens: request.maxTokens
+      });
 
       // Extract code blocks if present
       const codeMatch = code.match(/```(?:[a-z]+)?\n([\s\S]*?)\n```/);
@@ -346,7 +349,7 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
       }
 
       // Emit event
-      this.eventBus.emit('alfred:code:generated', response);
+      this.eventBus.publish('alfred:code:generated', { response });
 
       return response;
     } catch (error) {
@@ -362,7 +365,7 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
       // Use the dedicated project analyzer service for comprehensive analysis
       const projectAnalyzer = await this.getProjectAnalyzer();
       const projectContext = await projectAnalyzer.analyzeProject(projectPath);
-      
+
       // Store analysis in storage for future reference
       await this.storageService.indexDocument({
         title: `Project Analysis: ${projectContext.projectName}`,
@@ -376,8 +379,8 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
         }
       });
 
-      // Emit event
-      this.eventBus.emit('alfred:project:analyzed', {
+      // Publish event
+      this.eventBus.publish('alfred:project:analyzed', {
         projectPath: projectContext.projectPath,
         projectType: projectContext.projectType,
         fileCount: projectContext.structure.statistics.totalFiles,
@@ -387,14 +390,16 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
       return projectContext;
     } catch (error) {
       this.logger.error('Project analysis failed', { error });
-      
+
       // Fallback to basic analysis
       try {
         const fallbackAnalysis = await this.basicProjectAnalysis(projectPath);
         return fallbackAnalysis;
       } catch (fallbackError) {
         this.logger.error('Fallback project analysis also failed', { fallbackError });
-        throw new Error(`Project analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        throw new Error(
+          `Project analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
       }
     }
   }
@@ -403,11 +408,11 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
   private async basicProjectAnalysis(projectPath: string): Promise<ProjectAnalysis> {
     const fs = await import('fs/promises');
     const path = await import('path');
-    
+
     try {
       const files = await fs.readdir(projectPath);
       const projectName = path.basename(projectPath);
-      
+
       // Basic project type detection
       let projectType = 'unknown';
       if (files.includes('package.json')) projectType = 'javascript/typescript';
@@ -419,26 +424,26 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
       // Basic structure (parallel processing for better performance)
       const structure: any = { '/': { type: 'directory', children: {} } };
       const insights: string[] = [];
-      
+
       // Process files in parallel instead of sequentially
       const fileStatsPromises = files.map(async (file) => {
         const filePath = path.join(projectPath, file);
         const stats = await fs.stat(filePath);
-        
+
         return {
           file,
           stats,
           isDirectory: stats.isDirectory()
         };
       });
-      
+
       const fileStats = await Promise.allSettled(fileStatsPromises);
-      
+
       // Build structure from results
       for (const result of fileStats) {
         if (result.status === 'fulfilled') {
           const { file, stats, isDirectory } = result.value;
-          
+
           if (isDirectory) {
             structure['/'].children[file] = { type: 'directory' };
           } else {
@@ -446,11 +451,11 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
           }
         }
       }
-      
+
       // Generate insights
       insights.push(`Detected project type: ${projectType}`);
       insights.push(`Contains ${files.length} items in root directory`);
-      
+
       const analysis: ProjectAnalysis = {
         projectPath,
         projectName,
@@ -459,8 +464,12 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
           rootPath: projectPath,
           files: [],
           statistics: {
-            totalFiles: files.filter(f => !require('fs').lstatSync(path.join(projectPath, f)).isDirectory()).length,
-            totalDirectories: files.filter(f => require('fs').lstatSync(path.join(projectPath, f)).isDirectory()).length,
+            totalFiles: files.filter(
+              (f) => !require('fs').lstatSync(path.join(projectPath, f)).isDirectory()
+            ).length,
+            totalDirectories: files.filter((f) =>
+              require('fs').lstatSync(path.join(projectPath, f)).isDirectory()
+            ).length,
             totalSize: 0,
             languageBreakdown: {},
             largestFiles: []
@@ -471,7 +480,9 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
 
       return analysis;
     } catch (error) {
-      throw new Error(`Basic project analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Basic project analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -480,20 +491,20 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
     const { ProjectAnalyzerService } = await import('./project-analyzer');
     return new ProjectAnalyzerService(this.logger, this.eventBus, this.storageService);
   }
-  
+
   // Private helper methods
-  
+
   private async loadSessions(): Promise<void> {
     try {
       // Load sessions from repository if available
       if (this.sessionRepository) {
         const chatSessions = await this.sessionRepository.getAllSessions();
-        chatSessions.forEach(chatSession => {
+        chatSessions.forEach((chatSession) => {
           // Convert ChatSession to AlfredSession
           const alfredSession: AlfredSession = {
             id: chatSession.id,
             projectPath: chatSession.projectId || 'default',
-            messages: chatSession.messages.map(msg => ({
+            messages: chatSession.messages.map((msg) => ({
               id: msg.id,
               role: msg.role, // Keep the role field as-is
               content: msg.content,
@@ -512,7 +523,7 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
       this.logger.error('Failed to load sessions', { error });
     }
   }
-  
+
   private async saveSession(session: AlfredSession): Promise<void> {
     try {
       if (this.sessionRepository) {
@@ -521,7 +532,7 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
           id: session.id,
           name: `Session ${session.createdAt.toLocaleDateString()}`,
           projectId: session.projectPath,
-          messages: session.messages.map(msg => ({
+          messages: session.messages.map((msg) => ({
             id: msg.id,
             role: msg.role, // Use role field directly
             content: msg.content,
@@ -539,29 +550,33 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
       // Don't rethrow to avoid breaking the chat flow
     }
   }
-  
-  private async handleUserMessage(data: any): Promise<void> {
+
+  private async handleUserMessage(event: { topic: string; data: any; timestamp: Date; source?: string }): Promise<void> {
     // Handle user messages from event bus if needed
-    this.logger.debug('Received user message', { data });
+    this.logger.debug('Received user message', { event });
   }
 
   // Project Management Methods
 
-  async getProjectFiles(projectPath: string): Promise<Array<{
-    path: string;
-    name: string;
-    type: 'file' | 'directory';
-    size?: number;
-    language?: string;
-    lastModified?: Date;
-  }>> {
+  async getProjectFiles(projectPath: string): Promise<
+    Array<{
+      path: string;
+      name: string;
+      type: 'file' | 'directory';
+      size?: number;
+      language?: string;
+      lastModified?: Date;
+    }>
+  > {
     this.logger.info('Getting project files', { projectPath });
 
     try {
       // Try Python bridge first
       if (this.pythonBridge && this.pythonBridge.running) {
         try {
-          const structure = await this.pythonBridge.call('get_project_structure', { path: projectPath });
+          const structure = await this.pythonBridge.call('get_project_structure', {
+            path: projectPath
+          });
           return this.flattenProjectStructure(structure);
         } catch (error) {
           this.logger.warn('Failed to get files via Python bridge', { error });
@@ -574,7 +589,7 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
         includeStats: true
       });
 
-      return files.map(file => ({
+      return files.map((file) => ({
         path: file.path,
         name: file.name,
         type: file.isDirectory ? 'directory' : 'file',
@@ -584,7 +599,9 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
       }));
     } catch (error) {
       this.logger.error('Failed to get project files', { error, projectPath });
-      throw new Error(`Failed to load project files: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to load project files: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -596,7 +613,9 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
       return await this.storageService.readFile(fullPath);
     } catch (error) {
       this.logger.error('Failed to get file content', { error, projectPath, filePath });
-      throw new Error(`Failed to read file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to read file: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -606,16 +625,18 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
     try {
       const fullPath = `${projectPath}/${filePath}`.replace(/\/+/g, '/');
       await this.storageService.writeFile(fullPath, content);
-      
-      // Emit event for project structure update
-      this.eventBus.emit('alfred:file:created', {
+
+      // Publish event for project structure update
+      this.eventBus.publish('alfred:file:created', {
         projectPath,
         filePath,
         timestamp: new Date()
       });
     } catch (error) {
       this.logger.error('Failed to create file', { error, projectPath, filePath });
-      throw new Error(`Failed to create file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to create file: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -625,16 +646,18 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
     try {
       const fullPath = `${projectPath}/${filePath}`.replace(/\/+/g, '/');
       await this.storageService.writeFile(fullPath, content);
-      
+
       // Emit event for file update
-      this.eventBus.emit('alfred:file:updated', {
+      this.eventBus.publish('alfred:file:updated', {
         projectPath,
         filePath,
         timestamp: new Date()
       });
     } catch (error) {
       this.logger.error('Failed to update file', { error, projectPath, filePath });
-      throw new Error(`Failed to update file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to update file: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -644,16 +667,18 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
     try {
       const fullPath = `${projectPath}/${filePath}`.replace(/\/+/g, '/');
       await this.storageService.deleteFile(fullPath);
-      
+
       // Emit event for file deletion
-      this.eventBus.emit('alfred:file:deleted', {
+      this.eventBus.publish('alfred:file:deleted', {
         projectPath,
         filePath,
         timestamp: new Date()
       });
     } catch (error) {
       this.logger.error('Failed to delete file', { error, projectPath, filePath });
-      throw new Error(`Failed to delete file: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Failed to delete file: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -678,10 +703,10 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
 
     const traverse = (node: any, currentPath: string = '') => {
       if (Array.isArray(node)) {
-        node.forEach(item => traverse(item, currentPath));
+        node.forEach((item) => traverse(item, currentPath));
       } else if (typeof node === 'object' && node !== null) {
         const path = currentPath ? `${currentPath}/${node.name}` : node.name;
-        
+
         result.push({
           path,
           name: node.name,
@@ -703,7 +728,7 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
 
   private detectLanguage(fileName: string): string | undefined {
     const extension = fileName.split('.').pop()?.toLowerCase();
-    
+
     const languageMap: Record<string, string> = {
       ts: 'typescript',
       tsx: 'typescript',
@@ -738,7 +763,7 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
 
   // Streaming message support
   async sendMessageStream(
-    sessionId: string, 
+    sessionId: string,
     content: string
   ): Promise<AsyncGenerator<{ type: 'chunk' | 'complete'; data: string | AlfredMessage }>> {
     const session = this.sessions.get(sessionId);
@@ -757,18 +782,18 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
     // Add to session and emit immediately
     session.messages.push(userMessage);
     session.updatedAt = new Date();
-    this.eventBus.emit('alfred:message', userMessage);
+    this.eventBus.publish('alfred:message', { message: userMessage });
 
     return this.streamAIResponse(session, content);
   }
 
   private async *streamAIResponse(
-    session: AlfredSession, 
+    session: AlfredSession,
     userMessage: string
   ): AsyncGenerator<{ type: 'chunk' | 'complete'; data: string | AlfredMessage }> {
     try {
       // Get chat history for context
-      const history = session.messages.slice(-11, -1).map(msg => ({
+      const history = session.messages.slice(-11, -1).map((msg) => ({
         role: msg.role,
         content: msg.content
       }));
@@ -797,17 +822,17 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
 
       // Add to session and save
       session.messages.push(assistantMessage);
-      session.metadata.totalTokens += this.estimateTokens(userMessage) + this.estimateTokens(fullResponse);
+      session.metadata.totalTokens +=
+        this.estimateTokens(userMessage) + this.estimateTokens(fullResponse);
       await this.saveSession(session);
 
       // Emit final message event
-      this.eventBus.emit('alfred:message', assistantMessage);
-      
-      yield { type: 'complete', data: assistantMessage };
+      this.eventBus.publish('alfred:message', { message: assistantMessage });
 
+      yield { type: 'complete', data: assistantMessage };
     } catch (error) {
       this.logger.error('Streaming AI response failed', { error });
-      
+
       // Create error message
       const errorMessage: AlfredMessage = {
         id: uuidv4(),
@@ -822,10 +847,10 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
 
       session.messages.push(errorMessage);
       await this.saveSession(session);
-      
-      this.eventBus.emit('alfred:message', errorMessage);
-      this.eventBus.emit('alfred:error', { sessionId: session.id, error });
-      
+
+      this.eventBus.publish('alfred:message', { message: errorMessage });
+      this.eventBus.publish('alfred:error', { sessionId: session.id, error });
+
       yield { type: 'complete', data: errorMessage };
     }
   }
@@ -839,13 +864,13 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
 
     // Apply updates
     Object.assign(session, updates, { updatedAt: new Date() });
-    
+
     // Save to database
     await this.saveSession(session);
-    
+
     // Emit update event
-    this.eventBus.emit('alfred:session:updated', session);
-    
+    this.eventBus.publish('alfred:session:updated', { session });
+
     return session;
   }
 
@@ -870,23 +895,26 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
   }
 
   // Project context integration
-  async createSessionWithContext(projectPath: string, projectContext?: any): Promise<AlfredSession> {
+  async createSessionWithContext(
+    projectPath: string,
+    projectContext?: any
+  ): Promise<AlfredSession> {
     const session = await this.createSession(projectPath);
-    
+
     if (projectContext) {
       session.metadata.context = projectContext;
       await this.saveSession(session);
     }
-    
+
     return session;
   }
 
   // Health check for the service
-  async checkHealth(): Promise<{ 
-    status: 'healthy' | 'unhealthy'; 
-    aiService: boolean; 
-    repository: boolean; 
-    activeSessions: number 
+  async checkHealth(): Promise<{
+    status: 'healthy' | 'unhealthy';
+    aiService: boolean;
+    repository: boolean;
+    activeSessions: number;
   }> {
     const health = {
       status: 'healthy' as const,

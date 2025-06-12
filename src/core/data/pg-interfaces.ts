@@ -1,6 +1,6 @@
 /**
  * PostgreSQL Data Service Interfaces for the Alexandria Platform
- * 
+ *
  * These interfaces extend the base data interfaces with PostgreSQL-specific types
  */
 
@@ -50,28 +50,37 @@ export interface RepositoryOptions {
  * Generic repository interface for PostgreSQL entities
  */
 export interface Repository<T extends Entity> {
-  find(criteria?: Record<string, any>, options?: {
-    limit?: number;
-    offset?: number;
-    orderBy?: string;
-    orderDirection?: 'ASC' | 'DESC';
-    select?: string[];
-  }): Promise<T[]>;
-  
-  findById(id: string, options?: {
-    select?: string[];
-  }): Promise<T | null>;
-  
-  findOne(criteria: Record<string, any>, options?: {
-    select?: string[];
-  }): Promise<T | null>;
-  
+  find(
+    criteria?: Record<string, any>,
+    options?: {
+      limit?: number;
+      offset?: number;
+      orderBy?: string;
+      orderDirection?: 'ASC' | 'DESC';
+      select?: string[];
+    }
+  ): Promise<T[]>;
+
+  findById(
+    id: string,
+    options?: {
+      select?: string[];
+    }
+  ): Promise<T | null>;
+
+  findOne(
+    criteria: Record<string, any>,
+    options?: {
+      select?: string[];
+    }
+  ): Promise<T | null>;
+
   count(criteria?: Record<string, any>): Promise<number>;
-  
+
   create(data: Omit<T, 'id'> & { id?: string }): Promise<T>;
-  
+
   update(id: string, data: Partial<T>): Promise<T>;
-  
+
   delete(id: string): Promise<boolean>;
 }
 
@@ -81,9 +90,9 @@ export interface Repository<T extends Entity> {
 export interface PostgresDataService {
   initialize(): Promise<void>;
   disconnect(): Promise<void>;
-  
+
   query<T = any>(sql: string, params?: any[], options?: QueryOptions): Promise<QueryResult<T>>;
-  
+
   find<T extends Entity>(
     entityType: EntityType,
     criteria?: Record<string, any>,
@@ -97,7 +106,7 @@ export interface PostgresDataService {
       existingTransaction?: PoolClient;
     }
   ): Promise<T[]>;
-  
+
   findById<T extends Entity>(
     entityType: EntityType,
     id: string,
@@ -107,7 +116,7 @@ export interface PostgresDataService {
       existingTransaction?: PoolClient;
     }
   ): Promise<T | null>;
-  
+
   findOne<T extends Entity>(
     entityType: EntityType,
     criteria: Record<string, any>,
@@ -117,7 +126,7 @@ export interface PostgresDataService {
       existingTransaction?: PoolClient;
     }
   ): Promise<T | null>;
-  
+
   count(
     entityType: EntityType,
     criteria?: Record<string, any>,
@@ -126,7 +135,7 @@ export interface PostgresDataService {
       existingTransaction?: PoolClient;
     }
   ): Promise<number>;
-  
+
   create<T extends Entity>(
     entityType: EntityType,
     data: Omit<T, 'id'> & { id?: string },
@@ -135,7 +144,7 @@ export interface PostgresDataService {
       existingTransaction?: PoolClient;
     }
   ): Promise<T>;
-  
+
   update<T extends Entity>(
     entityType: EntityType,
     id: string,
@@ -145,7 +154,7 @@ export interface PostgresDataService {
       existingTransaction?: PoolClient;
     }
   ): Promise<T>;
-  
+
   delete(
     entityType: EntityType,
     id: string,

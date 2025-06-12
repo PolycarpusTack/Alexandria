@@ -1,13 +1,12 @@
 /**
  * Performance-Optimized Mustache Compiler
- * 
+ *
  * High-performance template compilation with aggressive caching and optimization
  * Supports template pre-compilation, context analysis, and parallel rendering
  */
 
 import { Logger } from '../../../../../utils/logger';
 import { VariableMap, PerformanceMetrics, RenderedFile } from './interfaces';
-import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as crypto from 'crypto';
 
@@ -52,7 +51,8 @@ export class PerformanceOptimizedMustacheCompiler {
   private templateCache: Map<string, CompiledTemplate> = new Map();
   private renderCache: Map<string, { result: string; timestamp: Date }> = new Map();
   private options: Required<CacheOptions>;
-  private renderOptions: Required<Omit<RenderOptions, 'partialResolver'>> & Pick<RenderOptions, 'partialResolver'>;
+  private renderOptions: Required<Omit<RenderOptions, 'partialResolver'>> &
+    Pick<RenderOptions, 'partialResolver'>;
 
   // Performance tracking
   private metrics = {
@@ -70,7 +70,7 @@ export class PerformanceOptimizedMustacheCompiler {
     renderOptions: Partial<RenderOptions> = {}
   ) {
     this.logger = logger;
-    
+
     this.options = {
       maxSize: cacheOptions.maxSize || 50, // 50MB
       maxEntries: cacheOptions.maxEntries || 1000,
@@ -102,13 +102,13 @@ export class PerformanceOptimizedMustacheCompiler {
       cached.usageCount++;
       cached.lastUsed = new Date();
       this.metrics.cacheHits++;
-      
-      this.logger.debug('Template cache hit', { 
-        templateId, 
+
+      this.logger.debug('Template cache hit', {
+        templateId,
         usageCount: cached.usageCount,
         age: Date.now() - cached.compiledAt.getTime()
       });
-      
+
       return cached;
     }
 
@@ -127,10 +127,10 @@ export class PerformanceOptimizedMustacheCompiler {
           usageCount: template.usageCount + 1,
           lastUsed: new Date()
         };
-        
+
         this.templateCache.set(templateId, cloned);
         this.metrics.cacheHits++;
-        
+
         this.logger.debug('Template hash match found', { templateId, originalId: id });
         return cloned;
       }
@@ -176,10 +176,11 @@ export class PerformanceOptimizedMustacheCompiler {
       });
 
       return compiled;
-
     } catch (error) {
       this.logger.error('Template compilation failed', { templateId, error });
-      throw new Error(`Template compilation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Template compilation failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -205,7 +206,10 @@ export class PerformanceOptimizedMustacheCompiler {
       if (renderOpts.enableCaching) {
         const cached = this.renderCache.get(cacheKey);
         if (cached && this.isRenderCacheValid(cached)) {
-          this.logger.debug('Render cache hit', { templateId, cacheKey: cacheKey.substring(0, 16) });
+          this.logger.debug('Render cache hit', {
+            templateId,
+            cacheKey: cacheKey.substring(0, 16)
+          });
           return {
             content: cached.result,
             performance: {
@@ -264,10 +268,11 @@ export class PerformanceOptimizedMustacheCompiler {
       });
 
       return { content, performance };
-
     } catch (error) {
       this.logger.error('Template render failed', { templateId, error });
-      throw new Error(`Template render failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      throw new Error(
+        `Template render failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 
@@ -300,7 +305,7 @@ export class PerformanceOptimizedMustacheCompiler {
 
     for (let i = 0; i < templates.length; i += batchSize) {
       const batch = templates.slice(i, i + batchSize);
-      
+
       const batchPromises = batch.map(async (template) => {
         try {
           const result = await this.renderTemplate(template.id, template.context, options);
@@ -321,7 +326,7 @@ export class PerformanceOptimizedMustacheCompiler {
       });
 
       const batchResults = await Promise.all(batchPromises);
-      
+
       for (const { id, file } of batchResults) {
         results.set(id, file);
       }
@@ -342,13 +347,13 @@ export class PerformanceOptimizedMustacheCompiler {
     const tokens: MustacheToken[] = [];
     const openTag = '{{';
     const closeTag = '}}';
-    
+
     let position = 0;
     let line = 1;
 
     while (position < source.length) {
       const openIndex = source.indexOf(openTag, position);
-      
+
       if (openIndex === -1) {
         // No more tags, add remaining text
         if (position < source.length) {
@@ -432,7 +437,7 @@ export class PerformanceOptimizedMustacheCompiler {
         // Opening section
         token.children = [];
         stack.push(token);
-        
+
         if (stack.length === 1) {
           nested.push(token);
         } else {
@@ -442,7 +447,7 @@ export class PerformanceOptimizedMustacheCompiler {
         // Closing section
         const sectionName = token.value.substring(1);
         const current = stack.pop();
-        
+
         if (!current || current.value !== sectionName) {
           throw new Error(`Mismatched section: expected ${current?.value}, got ${sectionName}`);
         }
@@ -457,7 +462,7 @@ export class PerformanceOptimizedMustacheCompiler {
     }
 
     if (stack.length > 0) {
-      throw new Error(`Unclosed sections: ${stack.map(s => s.value).join(', ')}`);
+      throw new Error(`Unclosed sections: ${stack.map((s) => s.value).join(', ')}`);
     }
 
     return nested;
@@ -469,17 +474,21 @@ export class PerformanceOptimizedMustacheCompiler {
   private compileRenderFunction(tokens: MustacheToken[]): (context: VariableMap) => string {
     // Generate optimized JavaScript function
     const functionBody = this.generateRenderCode(tokens);
-    
+
     try {
       // Create function with safe context access
-      return new Function('context', 'helpers', `
+      return new Function(
+        'context',
+        'helpers',
+        `
         'use strict';
         const escapeHtml = helpers.escapeHtml;
         const getValue = helpers.getValue;
         const isTruthy = helpers.isTruthy;
         
         ${functionBody}
-      `).bind(null, undefined, {
+      `
+      ).bind(null, undefined, {
         escapeHtml: this.escapeHtml.bind(this),
         getValue: this.getValue.bind(this),
         isTruthy: this.isTruthy.bind(this)
@@ -503,11 +512,11 @@ export class PerformanceOptimizedMustacheCompiler {
           case 'text':
             code.push(`result += ${JSON.stringify(token.value)};`);
             break;
-            
+
           case 'variable':
             code.push(`result += escapeHtml(getValue(context, ${JSON.stringify(token.value)}));`);
             break;
-            
+
           case 'section':
             const varName = `section_${depth}_${Math.random().toString(36).substring(2)}`;
             code.push(`const ${varName} = getValue(context, ${JSON.stringify(token.value)});`);
@@ -524,19 +533,21 @@ export class PerformanceOptimizedMustacheCompiler {
             code.push(`  }`);
             code.push(`}`);
             break;
-            
+
           case 'inverted':
             const invertedVarName = `inverted_${depth}_${Math.random().toString(36).substring(2)}`;
-            code.push(`const ${invertedVarName} = getValue(context, ${JSON.stringify(token.value)});`);
+            code.push(
+              `const ${invertedVarName} = getValue(context, ${JSON.stringify(token.value)});`
+            );
             code.push(`if (!isTruthy(${invertedVarName})) {`);
             if (token.children) generateTokenCode(token.children, depth + 1);
             code.push(`}`);
             break;
-            
+
           case 'comment':
             // Comments are ignored
             break;
-            
+
           case 'partial':
             // Partials would need special handling - skip for now
             code.push(`// Partial: ${token.value}`);
@@ -547,7 +558,7 @@ export class PerformanceOptimizedMustacheCompiler {
 
     generateTokenCode(tokens);
     code.push('return result;');
-    
+
     return code.join('\n');
   }
 
@@ -562,12 +573,12 @@ export class PerformanceOptimizedMustacheCompiler {
         case 'text':
           result += token.value;
           break;
-          
+
         case 'variable':
           const value = this.getValue(context, token.value);
           result += this.escapeHtml(value);
           break;
-          
+
         case 'section':
           const sectionValue = this.getValue(context, token.value);
           if (this.isTruthy(sectionValue)) {
@@ -581,18 +592,18 @@ export class PerformanceOptimizedMustacheCompiler {
             }
           }
           break;
-          
+
         case 'inverted':
           const invertedValue = this.getValue(context, token.value);
           if (!this.isTruthy(invertedValue)) {
             result += this.renderTokens(token.children || [], context);
           }
           break;
-          
+
         case 'comment':
           // Comments are ignored
           break;
-          
+
         case 'partial':
           // Partials would need special handling
           result += `<!-- Partial: ${token.value} -->`;
@@ -609,14 +620,15 @@ export class PerformanceOptimizedMustacheCompiler {
   private async performRender(
     template: CompiledTemplate,
     context: VariableMap,
-    options: Required<Omit<RenderOptions, 'partialResolver'>> & Pick<RenderOptions, 'partialResolver'>
+    options: Required<Omit<RenderOptions, 'partialResolver'>> &
+      Pick<RenderOptions, 'partialResolver'>
   ): Promise<string> {
     try {
       return template.renderFunction(context);
     } catch (error) {
-      this.logger.error('Render function failed, falling back to interpreter', { 
-        templateId: template.id, 
-        error 
+      this.logger.error('Render function failed, falling back to interpreter', {
+        templateId: template.id,
+        error
       });
       return this.renderTokens(template.tokens, context);
     }
@@ -648,15 +660,15 @@ export class PerformanceOptimizedMustacheCompiler {
    */
   private getValue(context: VariableMap, path: string): any {
     if (!path) return undefined;
-    
+
     const keys = path.split('.');
     let value: any = context;
-    
+
     for (const key of keys) {
       if (value == null) return undefined;
       value = value[key];
     }
-    
+
     return value;
   }
 
@@ -678,7 +690,7 @@ export class PerformanceOptimizedMustacheCompiler {
    */
   private escapeHtml(value: any): string {
     if (value == null) return '';
-    
+
     const str = String(value);
     return str
       .replace(/&/g, '&amp;')
@@ -741,7 +753,7 @@ export class PerformanceOptimizedMustacheCompiler {
       '.bat': 'batch',
       '.ps1': 'powershell'
     };
-    
+
     return langMap[ext] || 'text';
   }
 
@@ -752,7 +764,7 @@ export class PerformanceOptimizedMustacheCompiler {
     if (context == null) {
       throw new Error('Render context cannot be null or undefined');
     }
-    
+
     if (typeof context !== 'object') {
       throw new Error('Render context must be an object');
     }
@@ -762,7 +774,7 @@ export class PerformanceOptimizedMustacheCompiler {
       if (typeof value === 'function') {
         throw new Error(`Function values not allowed in context: ${path}`);
       }
-      
+
       if (value && typeof value === 'object' && !Array.isArray(value)) {
         for (const [key, val] of Object.entries(value)) {
           checkValue(val, `${path}.${key}`);
@@ -812,7 +824,10 @@ export class PerformanceOptimizedMustacheCompiler {
     const maxSizeBytes = this.options.maxSize * 1024 * 1024;
 
     // Remove old entries if cache is too large
-    while ((this.templateCache.size >= this.options.maxEntries || currentSize > maxSizeBytes) && this.templateCache.size > 0) {
+    while (
+      (this.templateCache.size >= this.options.maxEntries || currentSize > maxSizeBytes) &&
+      this.templateCache.size > 0
+    ) {
       let oldestKey: string | null = null;
       let oldestTime = Date.now();
 

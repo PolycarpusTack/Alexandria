@@ -3,10 +3,10 @@
  */
 
 import { injectable, inject } from 'tsyringe';
-import { 
-  IAnalyticsService, 
-  TimeRange, 
-  TimeSeriesData, 
+import {
+  IAnalyticsService,
+  TimeRange,
+  TimeSeriesData,
   RootCauseDistribution,
   ModelPerformanceData,
   SeverityTrendData,
@@ -67,8 +67,8 @@ export class AnalyticsService implements IAnalyticsService {
       // Check cache first
       const cached = await this.cacheManager.get<TimeSeriesData>(cacheKey);
       if (cached) {
-        logger.info('Cache hit for time series data', { 
-          responseTime: Date.now() - startTime 
+        logger.info('Cache hit for time series data', {
+          responseTime: Date.now() - startTime
         });
         return cached;
       }
@@ -76,36 +76,29 @@ export class AnalyticsService implements IAnalyticsService {
       // Use circuit breaker for database calls
       const result = await this.circuitBreaker.execute(async () => {
         // Optimize query based on time range
-        const optimizedQuery = this.queryOptimizer.optimizeTimeSeriesQuery(
-          timeRange,
-          options
-        );
+        const optimizedQuery = this.queryOptimizer.optimizeTimeSeriesQuery(timeRange, options);
 
         // Execute parallel queries for better performance
         const [rawData, comparisonData] = await Promise.all([
           this.dataService.query(optimizedQuery.primary),
-          options?.includeComparison 
+          options?.includeComparison
             ? this.dataService.query(optimizedQuery.comparison)
             : Promise.resolve(null)
         ]);
 
         // Aggregate data efficiently
-        const aggregated = await this.dataAggregator.aggregateTimeSeries(
-          rawData,
-          timeRange,
-          {
-            fillGaps: true,
-            includeMetadata: options?.includeMetadata
-          }
-        );
+        const aggregated = await this.dataAggregator.aggregateTimeSeries(rawData, timeRange, {
+          fillGaps: true,
+          includeMetadata: options?.includeMetadata
+        });
 
         // Add comparison if requested
         if (comparisonData) {
-          aggregated.comparisonSeries = await this.dataAggregator.aggregateTimeSeries(
-            comparisonData,
-            this.getComparisonTimeRange(timeRange),
-            { fillGaps: true }
-          ).then(d => d.series);
+          aggregated.comparisonSeries = await this.dataAggregator
+            .aggregateTimeSeries(comparisonData, this.getComparisonTimeRange(timeRange), {
+              fillGaps: true
+            })
+            .then((d) => d.series);
         }
 
         return aggregated;
@@ -117,7 +110,7 @@ export class AnalyticsService implements IAnalyticsService {
       // Track performance
       const responseTime = Date.now() - startTime;
       this.performanceOptimizer.recordMetric('timeseries_query', responseTime);
-      
+
       if (responseTime > 500) {
         logger.warn('Slow time series query', { responseTime, timeRange });
       }
@@ -148,30 +141,24 @@ export class AnalyticsService implements IAnalyticsService {
 
       const result = await this.circuitBreaker.execute(async () => {
         // Use optimized aggregation query
-        const query = this.queryOptimizer.buildAggregationQuery(
-          'crash_logs',
-          {
-            groupBy: ['root_cause_category'],
-            aggregations: [
-              { field: 'id', operation: 'count', alias: 'count' },
-              { field: 'confidence_score', operation: 'avg', alias: 'avg_confidence' }
-            ],
-            timeRange,
-            filters: options?.filters
-          }
-        );
+        const query = this.queryOptimizer.buildAggregationQuery('crash_logs', {
+          groupBy: ['root_cause_category'],
+          aggregations: [
+            { field: 'id', operation: 'count', alias: 'count' },
+            { field: 'confidence_score', operation: 'avg', alias: 'avg_confidence' }
+          ],
+          timeRange,
+          filters: options?.filters
+        });
 
         const data = await this.dataService.query(query);
 
         // Calculate percentages and trends in parallel
         const totalCount = data.reduce((sum: number, row: any) => sum + row.count, 0);
-        
+
         const categories = await Promise.all(
           data.map(async (row: any) => {
-            const trend = await this.calculateTrend(
-              row.root_cause_category,
-              timeRange
-            );
+            const trend = await this.calculateTrend(row.root_cause_category, timeRange);
 
             return {
               category: row.root_cause_category,
@@ -195,7 +182,7 @@ export class AnalyticsService implements IAnalyticsService {
       });
 
       await this.cacheManager.set(cacheKey, result);
-      
+
       const responseTime = Date.now() - startTime;
       this.performanceOptimizer.recordMetric('rootcause_query', responseTime);
 
@@ -224,10 +211,7 @@ export class AnalyticsService implements IAnalyticsService {
 
       const result = await this.circuitBreaker.execute(async () => {
         // Use batch query for all models
-        const query = this.queryOptimizer.buildModelPerformanceQuery(
-          modelName,
-          timeRange
-        );
+        const query = this.queryOptimizer.buildModelPerformanceQuery(modelName, timeRange);
 
         const data = await this.dataService.query(query);
 
@@ -256,7 +240,7 @@ export class AnalyticsService implements IAnalyticsService {
       });
 
       await this.cacheManager.set(cacheKey, result);
-      
+
       const responseTime = Date.now() - startTime;
       this.performanceOptimizer.recordMetric('modelperf_query', responseTime);
 
@@ -294,10 +278,10 @@ export class AnalyticsService implements IAnalyticsService {
         // Generate predictions if requested
         let predictions = [];
         if (options?.includePredictions) {
-          predictions = await this.performanceOptimizer.runInWorker(
-            'generatePredictions',
-            { trends, timeRange }
-          );
+          predictions = await this.performanceOptimizer.runInWorker('generatePredictions', {
+            trends,
+            timeRange
+          });
         }
 
         // Generate insights
@@ -316,7 +300,7 @@ export class AnalyticsService implements IAnalyticsService {
       });
 
       await this.cacheManager.set(cacheKey, result);
-      
+
       const responseTime = Date.now() - startTime;
       this.performanceOptimizer.recordMetric('severity_query', responseTime);
 
@@ -332,21 +316,33 @@ export class AnalyticsService implements IAnalyticsService {
    */
   async warmupCache(): Promise<void> {
     logger.info('Starting analytics cache warmup');
-    
+
     const commonTimeRanges = [
-      { start: new Date(Date.now() - 24 * 60 * 60 * 1000), end: new Date(), granularity: 'hour' as const },
-      { start: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), end: new Date(), granularity: 'day' as const },
-      { start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000), end: new Date(), granularity: 'day' as const }
+      {
+        start: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        end: new Date(),
+        granularity: 'hour' as const
+      },
+      {
+        start: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+        end: new Date(),
+        granularity: 'day' as const
+      },
+      {
+        start: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+        end: new Date(),
+        granularity: 'day' as const
+      }
     ];
 
     // Warmup in parallel
     await Promise.all(
-      commonTimeRanges.map(timeRange => 
+      commonTimeRanges.map((timeRange) =>
         Promise.all([
-          this.getTimeSeriesData(timeRange).catch(err => 
+          this.getTimeSeriesData(timeRange).catch((err) =>
             logger.warn('Cache warmup failed for time series', { err })
           ),
-          this.getRootCauseDistribution(timeRange).catch(err => 
+          this.getRootCauseDistribution(timeRange).catch((err) =>
             logger.warn('Cache warmup failed for root cause', { err })
           )
         ])
@@ -388,10 +384,7 @@ export class AnalyticsService implements IAnalyticsService {
     };
   }
 
-  private async calculateTrend(
-    category: string,
-    timeRange: TimeRange
-  ): Promise<number> {
+  private async calculateTrend(category: string, timeRange: TimeRange): Promise<number> {
     // Implement trend calculation logic
     // This is a simplified version - real implementation would query historical data
     return Math.random() * 10 - 5; // Random trend between -5 and 5
@@ -419,14 +412,8 @@ export class AnalyticsService implements IAnalyticsService {
     };
   }
 
-  private async calculateSuccessMetrics(
-    modelName: string,
-    timeRange?: TimeRange
-  ): Promise<any> {
-    const query = this.queryOptimizer.buildSuccessMetricsQuery(
-      modelName,
-      timeRange
-    );
+  private async calculateSuccessMetrics(modelName: string, timeRange?: TimeRange): Promise<any> {
+    const query = this.queryOptimizer.buildSuccessMetricsQuery(modelName, timeRange);
 
     const result = await this.dataService.query(query);
     return {
@@ -435,13 +422,11 @@ export class AnalyticsService implements IAnalyticsService {
     };
   }
 
-  private async generateRootCauseInsights(
-    categories: any[]
-  ): Promise<any[]> {
+  private async generateRootCauseInsights(categories: any[]): Promise<any[]> {
     const insights = [];
-    
+
     // Find trending categories
-    const trending = categories.filter(c => c.trend > 2);
+    const trending = categories.filter((c) => c.trend > 2);
     if (trending.length > 0) {
       insights.push({
         title: 'Trending Issues',
@@ -451,7 +436,7 @@ export class AnalyticsService implements IAnalyticsService {
     }
 
     // Find high-impact categories
-    const highImpact = categories.filter(c => c.percentage > 30);
+    const highImpact = categories.filter((c) => c.percentage > 30);
     if (highImpact.length > 0) {
       insights.push({
         title: 'High Impact Issue',
@@ -463,20 +448,17 @@ export class AnalyticsService implements IAnalyticsService {
     return insights;
   }
 
-  private generateSeverityInsights(
-    trends: any[],
-    predictions: any[]
-  ): string[] {
+  private generateSeverityInsights(trends: any[], predictions: any[]): string[] {
     const insights = [];
-    
+
     // Check for critical issues trend
-    const recentCritical = trends.slice(-3).reduce(
-      (sum, t) => sum + (t.distribution.critical || 0), 0
-    );
-    const olderCritical = trends.slice(0, 3).reduce(
-      (sum, t) => sum + (t.distribution.critical || 0), 0
-    );
-    
+    const recentCritical = trends
+      .slice(-3)
+      .reduce((sum, t) => sum + (t.distribution.critical || 0), 0);
+    const olderCritical = trends
+      .slice(0, 3)
+      .reduce((sum, t) => sum + (t.distribution.critical || 0), 0);
+
     if (recentCritical > olderCritical * 1.5) {
       insights.push('Critical issues are increasing - immediate attention required');
     }

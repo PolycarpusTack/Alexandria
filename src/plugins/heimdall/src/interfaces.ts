@@ -34,32 +34,32 @@ export enum DataClassification {
 
 export interface HeimdallLogEntry {
   // Immutable core fields
-  id: string;                    // UUID v7 (time-sortable)
-  timestamp: bigint;             // Nanosecond precision
-  version: number;               // Schema version
-  
+  id: string; // UUID v7 (time-sortable)
+  timestamp: bigint; // Nanosecond precision
+  version: number; // Schema version
+
   // Structured fields with validation
   level: LogLevel;
   source: LogSource;
-  
+
   // Content with multiple representations
   message: LogMessage;
-  
+
   // Enhanced context
   trace?: TraceContext;
-  
+
   // Normalized relations
   entities?: EntityContext;
-  
+
   // Performance metrics
   metrics?: PerformanceMetrics;
-  
+
   // Security & compliance
   security: SecurityContext;
-  
+
   // ML-enriched fields
   ml?: MLEnrichment;
-  
+
   // Storage metadata
   storage?: StorageMetadata;
 }
@@ -76,12 +76,12 @@ export interface LogSource {
 export interface LogMessage {
   raw: string;
   structured?: Record<string, any>;
-  template?: string;              // "User {userId} logged in from {ip}"
+  template?: string; // "User {userId} logged in from {ip}"
   parameters?: Record<string, any>;
 }
 
 export interface TraceContext {
-  traceId: string;               // W3C Trace Context
+  traceId: string; // W3C Trace Context
   spanId: string;
   parentSpanId?: string;
   flags: number;
@@ -98,11 +98,11 @@ export interface EntityContext {
 }
 
 export interface PerformanceMetrics {
-  duration?: number;             // Milliseconds
-  cpuUsage?: number;            // Percentage
-  memoryUsage?: number;         // Bytes
-  errorRate?: number;           // Percentage
-  throughput?: number;          // Requests per second
+  duration?: number; // Milliseconds
+  cpuUsage?: number; // Percentage
+  memoryUsage?: number; // Bytes
+  errorRate?: number; // Percentage
+  throughput?: number; // Requests per second
   customMetrics?: Record<string, number>;
 }
 
@@ -115,7 +115,7 @@ export interface SecurityContext {
 }
 
 export interface MLEnrichment {
-  anomalyScore?: number;        // 0-1
+  anomalyScore?: number; // 0-1
   predictedCategory?: string;
   similarityVector?: Float32Array;
   confidence?: number;
@@ -136,16 +136,16 @@ export interface StorageMetadata {
 export interface HeimdallQuery {
   // Time range is required
   timeRange: TimeRange;
-  
+
   // Natural language query
   naturalLanguage?: string;
-  
+
   // Structured query
   structured?: StructuredQuery;
-  
+
   // ML-powered features
   mlFeatures?: MLQueryFeatures;
-  
+
   // Performance hints
   hints?: QueryHints;
 }
@@ -187,7 +187,7 @@ export enum FilterOperator {
   CONTAINS = 'contains',
   REGEX = 'regex',
   EXISTS = 'exists',
-  NEAR = 'near'          // For geospatial or vector similarity
+  NEAR = 'near' // For geospatial or vector similarity
 }
 
 export interface Aggregation {
@@ -214,10 +214,10 @@ export enum AggregationType {
 }
 
 export interface AggregationOptions {
-  interval?: string;           // For date_histogram
-  size?: number;              // For terms
-  percentiles?: number[];     // For percentile
-  sigma?: number;             // For extended_stats
+  interval?: string; // For date_histogram
+  size?: number; // For terms
+  percentiles?: number[]; // For percentile
+  sigma?: number; // For extended_stats
   minDocCount?: number;
   missing?: any;
 }
@@ -294,7 +294,7 @@ export interface Insight {
 }
 
 export interface QueryPerformance {
-  took: number;              // Milliseconds
+  took: number; // Milliseconds
   timedOut: boolean;
   shards?: {
     total: number;
@@ -386,8 +386,8 @@ export interface StorageEngine {
 
 export interface StorageStats {
   tier: string;
-  used: number;              // Bytes
-  available: number;         // Bytes
+  used: number; // Bytes
+  available: number; // Bytes
   documentCount: number;
   oldestDocument?: Date;
   newestDocument?: Date;
@@ -440,7 +440,7 @@ export interface Alert {
   name: string;
   condition: AlertCondition;
   actions: AlertAction[];
-  schedule?: string;         // Cron expression
+  schedule?: string; // Cron expression
   enabled: boolean;
   metadata?: Record<string, any>;
 }
@@ -459,7 +459,7 @@ export interface AlertCondition {
 export interface AlertAction {
   type: 'email' | 'slack' | 'webhook' | 'pagerduty' | 'custom';
   config: Record<string, any>;
-  throttle?: string;        // Minimum time between alerts
+  throttle?: string; // Minimum time between alerts
 }
 
 // ============= Security Interfaces =============
@@ -596,10 +596,10 @@ export interface DashboardStats {
     warning: number;
     info: number;
   };
-  topServices: Array<{ 
-    name: string; 
-    count: number; 
-    errorRate: number; 
+  topServices: Array<{
+    name: string;
+    count: number;
+    errorRate: number;
     trend: number;
   }>;
   storageStats: {
@@ -634,7 +634,7 @@ export interface DetectedPattern {
   metadata: {
     frequency: number;
     duration: number;
-    peak_times: string[];
+    peakTimes: string[];
     correlations: Array<{
       metric: string;
       correlation: number;
@@ -704,15 +704,15 @@ export interface QueryHistory {
 // ============= Plugin Context Extension =============
 
 export interface HeimdallPluginContext extends PluginContext {
-  kafka?: any;                    // Kafka client
-  ml?: any;                      // ML service client
+  kafka?: any; // Kafka client
+  ml?: any; // ML service client
   storage: {
     hot: DataService;
     warm?: DataService;
     cold?: DataService;
   };
-  cache: any;                    // Cache service
-  metrics: any;                  // Metrics collector
+  cache: any; // Cache service
+  metrics: any; // Metrics collector
 }
 
 // ============= Backward Compatibility =============

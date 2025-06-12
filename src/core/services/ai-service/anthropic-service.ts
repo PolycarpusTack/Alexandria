@@ -1,17 +1,17 @@
 /**
  * Anthropic Service Implementation
- * 
+ *
  * Implements the AIService interface for Anthropic's Claude API
  */
 
 import { EventEmitter } from 'events';
 import { Logger } from '../../../utils/logger';
-import { 
-  AIService, 
-  AIServiceConfig, 
-  AIModel, 
-  ModelStatus, 
-  CompletionOptions, 
+import {
+  AIService,
+  AIServiceConfig,
+  AIModel,
+  ModelStatus,
+  CompletionOptions,
   ChatCompletionOptions,
   CompletionResponse,
   StreamOptions,
@@ -109,7 +109,7 @@ export class AnthropicService extends EventEmitter implements AIService {
   async listModels(): Promise<AIModel[]> {
     try {
       // For Anthropic, we use predefined models since the API doesn't provide a model list endpoint
-      return this.availableModels.map(model => ({
+      return this.availableModels.map((model) => ({
         ...model,
         loaded: this.loadedModels.has(model.id),
         lastUsed: this.modelUsage.get(model.id)?.lastUsed
@@ -121,7 +121,7 @@ export class AnthropicService extends EventEmitter implements AIService {
   }
 
   async loadModel(modelId: string): Promise<void> {
-    const model = this.availableModels.find(m => m.id === modelId);
+    const model = this.availableModels.find((m) => m.id === modelId);
     if (!model) {
       throw new ModelNotFoundError(modelId);
     }
@@ -129,24 +129,24 @@ export class AnthropicService extends EventEmitter implements AIService {
     // For Anthropic, "loading" just means marking as available
     this.loadedModels.add(modelId);
     this.emit('model:loaded', { modelId, model });
-    
+
     this.logger.info('Anthropic model loaded', { modelId });
   }
 
   async unloadModel(modelId: string): Promise<void> {
     this.loadedModels.delete(modelId);
     this.emit('model:unloaded', { modelId });
-    
+
     this.logger.info('Anthropic model unloaded', { modelId });
   }
 
   getActiveModels(): AIModel[] {
-    return this.availableModels.filter(model => this.loadedModels.has(model.id));
+    return this.availableModels.filter((model) => this.loadedModels.has(model.id));
   }
 
   async getModelStatus(modelId: string): Promise<ModelStatus> {
     const usage = this.modelUsage.get(modelId);
-    
+
     return {
       modelId,
       loaded: this.loadedModels.has(modelId),
@@ -167,11 +167,9 @@ export class AnthropicService extends EventEmitter implements AIService {
     }
 
     const model = options?.model || this.config.defaultModel || 'claude-3-sonnet-20240229';
-    
+
     try {
-      const messages = [
-        { role: 'user' as const, content: prompt }
-      ];
+      const messages = [{ role: 'user' as const, content: prompt }];
 
       const response = await this.makeRequest('/messages', {
         model,
@@ -197,8 +195,15 @@ export class AnthropicService extends EventEmitter implements AIService {
         finishReason: this.mapFinishReason(response.stop_reason)
       };
     } catch (error) {
-      this.logger.error('Anthropic completion failed', { error, model, prompt: prompt.substring(0, 100) });
-      throw new CompletionError(`Anthropic completion failed: ${error instanceof Error ? error.message : String(error)}`, error);
+      this.logger.error('Anthropic completion failed', {
+        error,
+        model,
+        prompt: prompt.substring(0, 100)
+      });
+      throw new CompletionError(
+        `Anthropic completion failed: ${error instanceof Error ? error.message : String(error)}`,
+        error
+      );
     }
   }
 
@@ -208,11 +213,11 @@ export class AnthropicService extends EventEmitter implements AIService {
     }
 
     const model = options.model || this.config.defaultModel || 'claude-3-sonnet-20240229';
-    
+
     try {
       // Convert ChatMessage format to Anthropic format
       const messages = this.convertChatMessages(options.messages);
-      const systemMessage = options.messages.find(msg => msg.role === 'system')?.content;
+      const systemMessage = options.messages.find((msg) => msg.role === 'system')?.content;
 
       const requestBody: any = {
         model,
@@ -244,17 +249,20 @@ export class AnthropicService extends EventEmitter implements AIService {
       };
     } catch (error) {
       this.logger.error('Anthropic chat completion failed', { error, model });
-      throw new CompletionError(`Anthropic chat completion failed: ${error instanceof Error ? error.message : String(error)}`, error);
+      throw new CompletionError(
+        `Anthropic chat completion failed: ${error instanceof Error ? error.message : String(error)}`,
+        error
+      );
     }
   }
 
-  async* stream(prompt: string, options?: StreamOptions): AsyncGenerator<string> {
+  async *stream(prompt: string, options?: StreamOptions): AsyncGenerator<string> {
     if (!this.apiKey) {
       throw new AIServiceError('Anthropic API key not configured', 'NO_API_KEY');
     }
 
     const model = options?.model || this.config.defaultModel || 'claude-3-sonnet-20240229';
-    
+
     try {
       const messages = [{ role: 'user' as const, content: prompt }];
 
@@ -303,10 +311,10 @@ export class AnthropicService extends EventEmitter implements AIService {
           for (const line of lines) {
             if (line.startsWith('data: ')) {
               const data = line.slice(6);
-              
+
               try {
                 const parsed = JSON.parse(data);
-                
+
                 if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
                   const text = parsed.delta.text;
                   fullText += text;
@@ -330,20 +338,23 @@ export class AnthropicService extends EventEmitter implements AIService {
     } catch (error) {
       this.logger.error('Anthropic streaming failed', { error, model });
       options?.onError?.(error instanceof Error ? error : new Error(String(error)));
-      throw new CompletionError(`Anthropic streaming failed: ${error instanceof Error ? error.message : String(error)}`, error);
+      throw new CompletionError(
+        `Anthropic streaming failed: ${error instanceof Error ? error.message : String(error)}`,
+        error
+      );
     }
   }
 
-  async* streamChat(options: ChatCompletionOptions & StreamOptions): AsyncGenerator<string> {
+  async *streamChat(options: ChatCompletionOptions & StreamOptions): AsyncGenerator<string> {
     if (!this.apiKey) {
       throw new AIServiceError('Anthropic API key not configured', 'NO_API_KEY');
     }
 
     const model = options.model || this.config.defaultModel || 'claude-3-sonnet-20240229';
-    
+
     try {
       const messages = this.convertChatMessages(options.messages);
-      const systemMessage = options.messages.find(msg => msg.role === 'system')?.content;
+      const systemMessage = options.messages.find((msg) => msg.role === 'system')?.content;
 
       const requestBody: any = {
         model,
@@ -390,10 +401,10 @@ export class AnthropicService extends EventEmitter implements AIService {
           for (const line of lines) {
             if (line.startsWith('data: ')) {
               const data = line.slice(6);
-              
+
               try {
                 const parsed = JSON.parse(data);
-                
+
                 if (parsed.type === 'content_block_delta' && parsed.delta?.text) {
                   const text = parsed.delta.text;
                   fullText += text;
@@ -417,7 +428,10 @@ export class AnthropicService extends EventEmitter implements AIService {
     } catch (error) {
       this.logger.error('Anthropic chat streaming failed', { error, model });
       options?.onError?.(error instanceof Error ? error : new Error(String(error)));
-      throw new CompletionError(`Anthropic chat streaming failed: ${error instanceof Error ? error.message : String(error)}`, error);
+      throw new CompletionError(
+        `Anthropic chat streaming failed: ${error instanceof Error ? error.message : String(error)}`,
+        error
+      );
     }
   }
 
@@ -469,7 +483,7 @@ export class AnthropicService extends EventEmitter implements AIService {
 
   private async makeRequest(endpoint: string, body: any): Promise<any> {
     const url = `${this.baseUrl}${endpoint}`;
-    
+
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), this.config.requestTimeout || 30000);
 
@@ -493,8 +507,10 @@ export class AnthropicService extends EventEmitter implements AIService {
         } catch {
           errorData = { message: errorText };
         }
-        
-        throw new Error(`Anthropic API error: ${response.status} ${response.statusText} - ${errorData.error?.message || errorData.message || 'Unknown error'}`);
+
+        throw new Error(
+          `Anthropic API error: ${response.status} ${response.statusText} - ${errorData.error?.message || errorData.message || 'Unknown error'}`
+        );
       }
 
       return await response.json();
@@ -508,12 +524,14 @@ export class AnthropicService extends EventEmitter implements AIService {
     }
   }
 
-  private convertChatMessages(messages: ChatMessage[]): Array<{ role: 'user' | 'assistant', content: string }> {
+  private convertChatMessages(
+    messages: ChatMessage[]
+  ): Array<{ role: 'user' | 'assistant'; content: string }> {
     // Filter out system messages (handled separately) and convert to Anthropic format
     return messages
-      .filter(msg => msg.role !== 'system' && msg.role !== 'function')
-      .map(msg => ({
-        role: msg.role === 'user' ? 'user' as const : 'assistant' as const,
+      .filter((msg) => msg.role !== 'system' && msg.role !== 'function')
+      .map((msg) => ({
+        role: msg.role === 'user' ? ('user' as const) : ('assistant' as const),
         content: msg.content
       }));
   }

@@ -108,11 +108,7 @@ export class CacheService {
   /**
    * Set cached query result
    */
-  async set(
-    query: HeimdallQuery,
-    result: HeimdallQueryResult,
-    ttl?: number
-  ): Promise<void> {
+  async set(query: HeimdallQuery, result: HeimdallQueryResult, ttl?: number): Promise<void> {
     const key = this.generateKey(query);
     const size = this.estimateSize(result);
 
@@ -188,7 +184,7 @@ export class CacheService {
     const normalized = {
       timeRange: query.timeRange,
       structured: query.structured,
-      mlFeatures: query.mlFeatures,
+      mlFeatures: query.mlFeatures
       // Exclude hints as they don't affect results
     };
 
@@ -227,8 +223,8 @@ export class CacheService {
       .map(([key, entry]) => ({ key, entry }))
       .sort((a, b) => {
         // Sort by last access time (created + hits * avgAccessInterval)
-        const aLastAccess = a.entry.created + (a.entry.hits * 60000);
-        const bLastAccess = b.entry.created + (b.entry.hits * 60000);
+        const aLastAccess = a.entry.created + a.entry.hits * 60000;
+        const bLastAccess = b.entry.created + b.entry.hits * 60000;
         return aLastAccess - bLastAccess;
       });
 

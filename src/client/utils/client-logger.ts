@@ -1,6 +1,6 @@
 /**
  * Client-side logger for the Alexandria Platform
- * 
+ *
  * This module provides a simplified console-based logger for the client side
  * that matches the interface of the server-side logger but uses the browser console.
  */
@@ -24,11 +24,8 @@ export interface ClientLoggerOptions {
  * Create a client-side logger
  */
 export function createClientLogger(options?: ClientLoggerOptions): Logger {
-  const { 
-    level = 'info', 
-    serviceName = 'alexandria-client' 
-  } = options || {};
-  
+  const { level = 'info', serviceName = 'alexandria-client' } = options || {};
+
   const logger: Logger = {
     debug: (message: string, context?: Record<string, any>): void => {
       if (level === 'debug') {
@@ -56,7 +53,7 @@ export function createClientLogger(options?: ClientLoggerOptions): Logger {
       }
     }
   };
-  
+
   return logger;
 }
 

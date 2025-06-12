@@ -1,6 +1,6 @@
 /**
  * Resource Manager
- * 
+ *
  * Manages and enforces resource limits for template generation including
  * file count, total size, memory usage, and execution time constraints
  */
@@ -8,7 +8,6 @@
 import { Logger } from '../../../../../utils/logger';
 import { TemplateLimits, PerformanceMetrics } from './interfaces';
 import { EventBus } from '../../../../../core/event-bus/interfaces';
-import * as fs from 'fs/promises';
 import * as path from 'path';
 
 export interface ResourceLimits {
@@ -35,7 +34,16 @@ export interface ResourceUsage {
 }
 
 export interface ResourceViolation {
-  type: 'file_count' | 'total_size' | 'file_size' | 'memory' | 'execution_time' | 'concurrency' | 'path' | 'extension' | 'mime_type';
+  type:
+    | 'file_count'
+    | 'total_size'
+    | 'file_size'
+    | 'memory'
+    | 'execution_time'
+    | 'concurrency'
+    | 'path'
+    | 'extension'
+    | 'mime_type';
   message: string;
   value: number | string;
   limit: number | string;
@@ -102,17 +110,55 @@ export class ResourceManager {
       maxConcurrency: defaultLimits.maxConcurrency ?? 10,
       maxDepth: defaultLimits.maxDepth ?? 20,
       allowedExtensions: defaultLimits.allowedExtensions ?? [
-        '.js', '.ts', '.tsx', '.jsx', '.json', '.md', '.txt', '.html', '.css', '.scss',
-        '.py', '.java', '.go', '.rs', '.php', '.rb', '.cs', '.yml', '.yaml', '.xml',
-        '.sh', '.bat', '.ps1', '.dockerfile', '.gitignore', '.env.example'
+        '.js',
+        '.ts',
+        '.tsx',
+        '.jsx',
+        '.json',
+        '.md',
+        '.txt',
+        '.html',
+        '.css',
+        '.scss',
+        '.py',
+        '.java',
+        '.go',
+        '.rs',
+        '.php',
+        '.rb',
+        '.cs',
+        '.yml',
+        '.yaml',
+        '.xml',
+        '.sh',
+        '.bat',
+        '.ps1',
+        '.dockerfile',
+        '.gitignore',
+        '.env.example'
       ],
       blockedPaths: defaultLimits.blockedPaths ?? [
-        '..', '../', '..\\', '/etc', '/var', '/tmp', '/root', '/home',
-        'C:\\Windows', 'C:\\System32', 'C:\\Program Files'
+        '..',
+        '../',
+        '..\\',
+        '/etc',
+        '/var',
+        '/tmp',
+        '/root',
+        '/home',
+        'C:\\Windows',
+        'C:\\System32',
+        'C:\\Program Files'
       ],
       allowedMimeTypes: defaultLimits.allowedMimeTypes ?? [
-        'text/plain', 'text/javascript', 'text/css', 'text/html', 'text/markdown',
-        'application/json', 'application/yaml', 'application/xml'
+        'text/plain',
+        'text/javascript',
+        'text/css',
+        'text/html',
+        'text/markdown',
+        'application/json',
+        'application/yaml',
+        'application/xml'
       ]
     };
 
@@ -136,7 +182,7 @@ export class ResourceManager {
    */
   createQuota(quotaId: string, templateLimits?: TemplateLimits): ResourceQuota {
     const limits = this.mergeLimits(templateLimits);
-    
+
     const quota: ResourceQuota = {
       id: quotaId,
       limits,
@@ -159,7 +205,7 @@ export class ResourceManager {
     };
 
     this.quotas.set(quotaId, quota);
-    
+
     this.logger.info('Created resource quota', {
       quotaId,
       limits: {
@@ -277,13 +323,13 @@ export class ResourceManager {
       });
     }
 
-    const allowed = violations.filter(v => v.severity === 'error').length === 0;
+    const allowed = violations.filter((v) => v.severity === 'error').length === 0;
 
     if (!allowed) {
       this.logger.warn('Resource limits violated', {
         quotaId,
         operation,
-        violations: violations.map(v => ({ type: v.type, message: v.message }))
+        violations: violations.map((v) => ({ type: v.type, message: v.message }))
       });
     }
 
@@ -436,31 +482,34 @@ export class ResourceManager {
 
       // Memory alerts
       if (memoryUsagePercent > this.options.alertThresholds.memory) {
-        this.eventBus.emit('resource:alert', {
+        this.eventBus.publish('alfred:resource:alert', {
           quotaId,
-          type: 'memory',
-          usage: memoryUsagePercent,
-          threshold: this.options.alertThresholds.memory
+          resourceType: 'memory' as const,
+          currentUsage: quota.used.memoryUsage,
+          limit: quota.limits.maxMemoryUsage,
+          usagePercent: memoryUsagePercent
         });
       }
 
       // File count alerts
       if (fileUsagePercent > this.options.alertThresholds.files) {
-        this.eventBus.emit('resource:alert', {
+        this.eventBus.publish('alfred:resource:alert', {
           quotaId,
-          type: 'files',
-          usage: fileUsagePercent,
-          threshold: this.options.alertThresholds.files
+          resourceType: 'files' as const,
+          currentUsage: quota.used.fileCount,
+          limit: quota.limits.maxFiles,
+          usagePercent: fileUsagePercent
         });
       }
 
       // Size alerts
       if (sizeUsagePercent > this.options.alertThresholds.size) {
-        this.eventBus.emit('resource:alert', {
+        this.eventBus.publish('alfred:resource:alert', {
           quotaId,
-          type: 'size',
-          usage: sizeUsagePercent,
-          threshold: this.options.alertThresholds.size
+          resourceType: 'size' as const,
+          currentUsage: quota.used.totalSize,
+          limit: quota.limits.maxTotalSize,
+          usagePercent: sizeUsagePercent
         });
       }
 
@@ -548,9 +597,9 @@ export class ResourceManager {
       if (templateLimits.allowedPaths) {
         // Template can only restrict further, not expand
         const templatePaths = templateLimits.allowedPaths;
-        limits.allowedExtensions = limits.allowedExtensions.filter(ext => {
-          return templatePaths.some(allowedPath => 
-            allowedPath.includes('*') || allowedPath.endsWith(ext)
+        limits.allowedExtensions = limits.allowedExtensions.filter((ext) => {
+          return templatePaths.some(
+            (allowedPath) => allowedPath.includes('*') || allowedPath.endsWith(ext)
           );
         });
       }
@@ -570,11 +619,16 @@ export class ResourceManager {
     const unit = match[2].toUpperCase();
 
     switch (unit) {
-      case 'B': return value;
-      case 'KB': return value * 1024;
-      case 'MB': return value * 1024 * 1024;
-      case 'GB': return value * 1024 * 1024 * 1024;
-      default: return 0;
+      case 'B':
+        return value;
+      case 'KB':
+        return value * 1024;
+      case 'MB':
+        return value * 1024 * 1024;
+      case 'GB':
+        return value * 1024 * 1024 * 1024;
+      default:
+        return 0;
     }
   }
 
@@ -583,11 +637,11 @@ export class ResourceManager {
    */
   private formatBytes(bytes: number): string {
     if (bytes === 0) return '0B';
-    
+
     const k = 1024;
     const sizes = ['B', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    
+
     return `${(bytes / Math.pow(k, i)).toFixed(1)}${sizes[i]}`;
   }
 
@@ -628,14 +682,21 @@ export class ResourceManager {
    */
   private performAutoCleanup(quotaId: string): void {
     this.logger.info('Performing auto cleanup', { quotaId });
-    
+
     // Force garbage collection if available
     if (typeof global !== 'undefined' && global.gc) {
       global.gc();
     }
 
     // Emit cleanup event
-    this.eventBus.emit('resource:cleanup', { quotaId });
+    this.eventBus.publish('alfred:resource:cleanup', { 
+      quotaId,
+      cleanedResources: {
+        memory: 0, // TODO: Track actual cleanup metrics
+        files: 0,
+        size: 0
+      }
+    });
   }
 
   /**
@@ -661,7 +722,7 @@ export class ResourceManager {
     }>;
   } {
     const currentMemory = this.getCurrentMemoryUsage();
-    
+
     return {
       totalQuotas: this.quotas.size,
       activeOperations: this.activeOperations.size,
@@ -671,7 +732,7 @@ export class ResourceManager {
         peak: this.formatBytes(this.memoryPeak)
       },
       gcStats: this.gcStats,
-      quotas: Array.from(this.quotas.values()).map(quota => ({
+      quotas: Array.from(this.quotas.values()).map((quota) => ({
         id: quota.id,
         status: quota.status,
         usage: {
@@ -717,7 +778,7 @@ export class ResourceManager {
       }
 
       this.quotas.delete(quotaId);
-      
+
       this.logger.info('Released quota', {
         quotaId,
         finalUsage: {

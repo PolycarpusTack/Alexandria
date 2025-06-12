@@ -26,7 +26,8 @@
 }
 
 .enhanced-ui-container {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'SF Pro Display', 'Inter', sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'SF Pro Display', 'Inter', sans-serif;
   background-color: var(--color-bg-dark);
   color: #e5e5e5;
   margin: 0;
@@ -87,16 +88,16 @@
   cursor: pointer;
 }
 
-.enhanced-ui-container .window-control.close { 
-  background-color: #ff605c; 
+.enhanced-ui-container .window-control.close {
+  background-color: #ff605c;
 }
 
-.enhanced-ui-container .window-control.minimize { 
-  background-color: #ffbd44; 
+.enhanced-ui-container .window-control.minimize {
+  background-color: #ffbd44;
 }
 
-.enhanced-ui-container .window-control.maximize { 
-  background-color: #00ca4e; 
+.enhanced-ui-container .window-control.maximize {
+  background-color: #00ca4e;
 }
 
 /* Main Content Area */

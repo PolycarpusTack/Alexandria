@@ -1,6 +1,6 @@
 /**
  * Dynamic AI Service Factory
- * 
+ *
  * Creates AI services based on dynamically detected models
  */
 
@@ -11,7 +11,6 @@ import { OllamaService } from './ollama-service';
 import { OpenAIService } from './openai-service';
 import { AnthropicService } from './anthropic-service';
 import { ConfigManager, ModelRegistry, DetectedModel } from './config';
-import { CachedAIService } from './cached-ai-service';
 import { MetricsAIService } from './metrics-ai-service';
 
 export interface DynamicAIServiceOptions {
@@ -37,20 +36,18 @@ export class AIServiceFactory extends EventEmitter {
     this.logger = logger;
     this.services = new Map();
     this.options = options;
-    
+
     // Initialize configuration manager
-    const configPath = options.configPath || 
-      process.env.AI_CONFIG_PATH || 
-      'config/ai-models.json';
-    
+    const configPath = options.configPath || process.env.AI_CONFIG_PATH || 'config/ai-models.json';
+
     this.configManager = new ConfigManager(configPath, logger);
     this.modelRegistry = new ModelRegistry(this.configManager, logger);
-    
+
     // Forward model registry events
     this.modelRegistry.on('model:available', (data) => {
       this.emit('model:available', data);
     });
-    
+
     this.modelRegistry.on('model:unavailable', (data) => {
       this.emit('model:unavailable', data);
     });
@@ -60,30 +57,61 @@ export class AIServiceFactory extends EventEmitter {
    * Initialize the factory and detect models
    */
   async initialize(): Promise<void> {
-    this.logger.info('Initializing AI service factory');
-    
-    // Initialize model registry
-    await this.modelRegistry.initialize();
-    
-    // Create services for available models
-    await this.createServices();
-    
-    // Set up default service
-    await this.setupDefaultService();
-    
-    this.logger.info('AI service factory initialized', {
-      availableModels: this.modelRegistry.getAvailableModels().length,
-      services: this.services.size
-    });
-  }
+    try {
+      this.logger.info('Initializing AI service factory');
 
+      // Initialize model registry with error handling
+      try {
+        await this.modelRegistry.initialize();
+      } catch (error) {
+        this.logger.error('Failed to initialize model registry', {
+          error: error instanceof Error ? error.message : String(error)
+        });
+        throw new Error(
+          `Model registry initialization failed: ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
+
+      // Create services for available models with error handling
+      try {
+        await this.createServices();
+      } catch (error) {
+        this.logger.error('Failed to create AI services', {
+          error: error instanceof Error ? error.message : String(error)
+        });
+        // Don't throw here - some services might have been created successfully
+      }
+
+      // Set up default service with error handling
+      try {
+        await this.setupDefaultService();
+      } catch (error) {
+        this.logger.warn('Failed to set up default service', {
+          error: error instanceof Error ? error.message : String(error),
+          availableServices: this.services.size
+        });
+        // Don't throw here - factory can still be used without default service
+      }
+
+      this.logger.info('AI service factory initialized', {
+        availableModels: this.modelRegistry.getAvailableModels().length,
+        services: this.services.size,
+        hasDefaultService: this.defaultService !== null
+      });
+    } catch (error) {
+      this.logger.error('Critical failure during AI service factory initialization', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
+    }
+  }
 
   /**
    * Create services for available models
    */
   private async createServices(): Promise<void> {
     const models = this.modelRegistry.getAvailableModels();
-    
+
     // Create all services in parallel using Promise.allSettled for better error handling
     const serviceCreationResults = await Promise.allSettled(
       models.map(async (model) => {
@@ -100,15 +128,15 @@ export class AIServiceFactory extends EventEmitter {
         }
       })
     );
-    
+
     // Process results and register successful services
     let successfulServices = 0;
     let failedServices = 0;
-    
+
     for (const result of serviceCreationResults) {
       if (result.status === 'fulfilled') {
         const { model, service, success } = result.value;
-        
+
         if (success && service) {
           this.services.set(model.id, service);
           this.logger.info('Created service for model', {
@@ -127,7 +155,7 @@ export class AIServiceFactory extends EventEmitter {
         failedServices++;
       }
     }
-    
+
     this.logger.info('Service creation completed', {
       total: models.length,
       successful: successfulServices,
@@ -152,10 +180,10 @@ export class AIServiceFactory extends EventEmitter {
         retryAttempts: 3,
         retryDelay: 1000
       };
-      
+
       service = new OllamaService(config, this.logger);
     }
-    
+
     // Create API services for OpenAI and Anthropic
     if (model.type === 'api') {
       switch (model.provider) {
@@ -171,9 +199,9 @@ export class AIServiceFactory extends EventEmitter {
             retryAttempts: 2,
             retryDelay: 1000
           };
-          
+
           service = new OpenAIService(config, this.logger);
-          
+
           // Auto-load the model if API key is available
           if (config.apiKey) {
             try {
@@ -185,10 +213,10 @@ export class AIServiceFactory extends EventEmitter {
               });
             }
           }
-          
+
           break;
         }
-        
+
         case 'anthropic': {
           const config: AIServiceConfig = {
             provider: 'anthropic',
@@ -200,9 +228,9 @@ export class AIServiceFactory extends EventEmitter {
             retryAttempts: 2,
             retryDelay: 1000
           };
-          
+
           service = new AnthropicService(config, this.logger);
-          
+
           // Auto-load the model if API key is available
           if (config.apiKey) {
             try {
@@ -214,10 +242,10 @@ export class AIServiceFactory extends EventEmitter {
               });
             }
           }
-          
+
           break;
         }
-        
+
         default:
           this.logger.warn('Unsupported API model provider', {
             modelId: model.id,
@@ -226,7 +254,7 @@ export class AIServiceFactory extends EventEmitter {
           return null;
       }
     }
-    
+
     // Wrap service with metrics if enabled and service was created
     if (service && this.options.enableMetrics !== false) {
       service = new MetricsAIService(service, this.logger);
@@ -235,7 +263,7 @@ export class AIServiceFactory extends EventEmitter {
         provider: model.provider
       });
     }
-    
+
     return service;
   }
 
@@ -244,7 +272,7 @@ export class AIServiceFactory extends EventEmitter {
    */
   private async setupDefaultService(): Promise<void> {
     const defaultModel = this.modelRegistry.getDefaultModel();
-    
+
     if (defaultModel) {
       const service = this.services.get(defaultModel.id);
       if (service) {
@@ -254,7 +282,7 @@ export class AIServiceFactory extends EventEmitter {
         });
       }
     }
-    
+
     // If no default service, use first available
     if (!this.defaultService && this.services.size > 0) {
       this.defaultService = this.services.values().next().value || null;
@@ -268,7 +296,6 @@ export class AIServiceFactory extends EventEmitter {
   getDefaultService(): AIService | null {
     return this.defaultService;
   }
-
 
   /**
    * Get service for a specific model
@@ -302,15 +329,83 @@ export class AIServiceFactory extends EventEmitter {
    * Refresh model detection
    */
   async refresh(): Promise<void> {
-    await this.modelRegistry.detectAllModels();
-    await this.createServices();
-    await this.setupDefaultService();
+    try {
+      this.logger.info('Refreshing AI service factory');
+
+      // Detect all models with error handling
+      try {
+        await this.modelRegistry.detectAllModels();
+      } catch (error) {
+        this.logger.error('Failed to detect models during refresh', {
+          error: error instanceof Error ? error.message : String(error)
+        });
+        throw new Error(
+          `Model detection failed: ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
+
+      // Recreate services with error handling
+      try {
+        await this.createServices();
+      } catch (error) {
+        this.logger.error('Failed to recreate services during refresh', {
+          error: error instanceof Error ? error.message : String(error)
+        });
+        // Don't throw here - some services might have been created successfully
+      }
+
+      // Re-setup default service with error handling
+      try {
+        await this.setupDefaultService();
+      } catch (error) {
+        this.logger.warn('Failed to re-setup default service during refresh', {
+          error: error instanceof Error ? error.message : String(error),
+          availableServices: this.services.size
+        });
+        // Don't throw here - factory can still be used without default service
+      }
+
+      this.logger.info('AI service factory refreshed successfully', {
+        availableModels: this.modelRegistry.getAvailableModels().length,
+        services: this.services.size,
+        hasDefaultService: this.defaultService !== null
+      });
+    } catch (error) {
+      this.logger.error('Failed to refresh AI service factory', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
+    }
   }
 
   /**
    * Shutdown the factory
    */
   shutdown(): void {
-    this.modelRegistry.stopPeriodicDetection();
+    try {
+      this.logger.info('Shutting down AI service factory');
+
+      // Stop periodic detection with error handling
+      try {
+        this.modelRegistry.stopPeriodicDetection();
+      } catch (error) {
+        this.logger.error('Error stopping periodic detection during shutdown', {
+          error: error instanceof Error ? error.message : String(error)
+        });
+      }
+
+      // Clear services map
+      this.services.clear();
+      this.defaultService = null;
+
+      // Remove all event listeners to prevent memory leaks
+      this.removeAllListeners();
+
+      this.logger.info('AI service factory shutdown completed');
+    } catch (error) {
+      this.logger.error('Error during AI service factory shutdown', {
+        error: error instanceof Error ? error.message : String(error)
+      });
+    }
   }
 }

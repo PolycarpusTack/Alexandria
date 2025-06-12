@@ -3,9 +3,9 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import { PluginProvider } from '../../context/plugin-context';
 
 // Lazy load the Heimdall Dashboard
-const HeimdallDashboard = React.lazy(() => 
-  import('../../../plugins/heimdall/ui/components/HeimdallDashboard').then(module => ({ 
-    default: module.default 
+const HeimdallDashboard = React.lazy(() =>
+  import('../../../plugins/heimdall/ui/components/HeimdallDashboard').then((module) => ({
+    default: module.default
   }))
 );
 
@@ -91,19 +91,22 @@ export const HeimdallRoutes: React.FC = () => {
   const mockPlugin = createMockPluginAPI();
 
   return (
-    <PluginProvider pluginId="heimdall" api={mockPlugin}>
+    <PluginProvider pluginId='heimdall' api={mockPlugin}>
       <Routes>
-        <Route path="/" element={
-          <React.Suspense fallback={<div>Loading Heimdall Dashboard...</div>}>
-            <HeimdallDashboard />
-          </React.Suspense>
-        } />
-        <Route path="/search" element={<div>Heimdall Search (Coming Soon)</div>} />
-        <Route path="/analytics" element={<div>Heimdall Analytics (Coming Soon)</div>} />
-        <Route path="/patterns" element={<div>Pattern Detection (Coming Soon)</div>} />
-        <Route path="/alerts" element={<div>Alert Management (Coming Soon)</div>} />
-        <Route path="/health" element={<div>System Health (Coming Soon)</div>} />
-        <Route path="*" element={<Navigate to="/heimdall" replace />} />
+        <Route
+          path='/'
+          element={
+            <React.Suspense fallback={<div>Loading Heimdall Dashboard...</div>}>
+              <HeimdallDashboard />
+            </React.Suspense>
+          }
+        />
+        <Route path='/search' element={<div>Heimdall Search (Coming Soon)</div>} />
+        <Route path='/analytics' element={<div>Heimdall Analytics (Coming Soon)</div>} />
+        <Route path='/patterns' element={<div>Pattern Detection (Coming Soon)</div>} />
+        <Route path='/alerts' element={<div>Alert Management (Coming Soon)</div>} />
+        <Route path='/health' element={<div>System Health (Coming Soon)</div>} />
+        <Route path='*' element={<Navigate to='/heimdall' replace />} />
       </Routes>
     </PluginProvider>
   );

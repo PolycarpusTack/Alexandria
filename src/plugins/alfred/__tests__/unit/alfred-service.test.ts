@@ -230,10 +230,7 @@ describe('AlfredService', () => {
 
   describe('getSessions', () => {
     it('should return all sessions', async () => {
-      const mockSessions = [
-        createMockChatSession('session-1'),
-        createMockChatSession('session-2')
-      ];
+      const mockSessions = [createMockChatSession('session-1'), createMockChatSession('session-2')];
       mockSessionRepository.getAllSessions.mockResolvedValue(mockSessions);
 
       const sessions = await service.getSessions();
@@ -244,13 +241,15 @@ describe('AlfredService', () => {
 
     it('should convert ChatSession to AlfredSession format', async () => {
       const chatSession = createMockChatSession('test-id');
-      chatSession.messages = [{
-        id: uuidv4(),
-        role: 'user',
-        content: 'Test',
-        timestamp: new Date(),
-        metadata: {}
-      }];
+      chatSession.messages = [
+        {
+          id: uuidv4(),
+          role: 'user',
+          content: 'Test',
+          timestamp: new Date(),
+          metadata: {}
+        }
+      ];
       mockSessionRepository.getAllSessions.mockResolvedValue([chatSession]);
 
       const sessions = await service.getSessions();
@@ -282,10 +281,9 @@ describe('AlfredService', () => {
       await service.deleteSession(session.id);
 
       expect(mockSessionRepository.deleteSession).toHaveBeenCalledWith(session.id);
-      expect(mockEventBus.emit).toHaveBeenCalledWith(
-        'alfred:session:deleted',
-        { sessionId: session.id }
-      );
+      expect(mockEventBus.emit).toHaveBeenCalledWith('alfred:session:deleted', {
+        sessionId: session.id
+      });
 
       const retrieved = await service.getSession(session.id);
       expect(retrieved).toBeUndefined();
@@ -309,10 +307,7 @@ describe('AlfredService', () => {
       expect(response).toBeDefined();
       expect(response.code).toBe('AI response');
       expect(response.language).toBe('typescript');
-      expect(mockEventBus.emit).toHaveBeenCalledWith(
-        'alfred:code:generated',
-        expect.any(Object)
-      );
+      expect(mockEventBus.emit).toHaveBeenCalledWith('alfred:code:generated', expect.any(Object));
     });
 
     it('should use template if provided', async () => {
@@ -333,7 +328,7 @@ describe('AlfredService', () => {
   describe('analyzeProject', () => {
     it('should analyze a project successfully', async () => {
       const projectPath = '/test/project';
-      
+
       // Mock file system operations would be needed here
       // For now, we'll test the basic flow
       const analysis = await service.analyzeProject(projectPath);
@@ -355,12 +350,13 @@ describe('AlfredService', () => {
       };
 
       // Get the handler that was registered
-      const userMessageHandler = (mockEventBus.on as jest.Mock).mock.calls
-        .find(call => call[0] === 'user:message')[1];
+      const userMessageHandler = (mockEventBus.on as jest.Mock).mock.calls.find(
+        (call) => call[0] === 'user:message'
+      )[1];
 
       // The handler should exist
       expect(userMessageHandler).toBeDefined();
-      
+
       // Call it
       userMessageHandler(messageData);
 
@@ -372,8 +368,9 @@ describe('AlfredService', () => {
       const session = await service.createSession();
 
       // Get the shutdown handler
-      const shutdownHandler = (mockEventBus.on as jest.Mock).mock.calls
-        .find(call => call[0] === 'system:shutdown')[1];
+      const shutdownHandler = (mockEventBus.on as jest.Mock).mock.calls.find(
+        (call) => call[0] === 'system:shutdown'
+      )[1];
 
       // Call it
       await shutdownHandler();

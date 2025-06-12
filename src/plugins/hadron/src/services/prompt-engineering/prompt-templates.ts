@@ -1,6 +1,6 @@
 /**
  * Prompt Templates for Different Crash Types
- * 
+ *
  * Specialized templates optimized for various crash scenarios
  */
 
@@ -345,7 +345,7 @@ Response structure:
   static findBestTemplate(crashData: ParsedCrashData): PromptTemplate | null {
     // Extract crash type indicators
     const indicators = this.extractCrashIndicators(crashData);
-    
+
     // Score each template
     let bestTemplate: PromptTemplate | null = null;
     let bestScore = 0;
@@ -370,7 +370,7 @@ Response structure:
     // Check error messages
     for (const error of crashData.errorMessages) {
       const msg = error.message.toLowerCase();
-      
+
       if (msg.includes('outofmemory') || msg.includes('heap')) {
         indicators.add('OutOfMemoryError');
         indicators.add('MemoryLeak');
@@ -394,10 +394,10 @@ Response structure:
 
     // Check stack traces
     for (const stack of crashData.stackTraces) {
-      if (stack.frames.some(f => f.functionName?.includes('Memory'))) {
+      if (stack.frames.some((f) => f.functionName?.includes('Memory'))) {
         indicators.add('MemoryLeak');
       }
-      if (stack.frames.some(f => f.functionName?.includes('Thread'))) {
+      if (stack.frames.some((f) => f.functionName?.includes('Thread'))) {
         indicators.add('ThreadStarvation');
       }
     }
@@ -410,7 +410,7 @@ Response structure:
    */
   private static scoreTemplate(template: PromptTemplate, indicators: Set<string>): number {
     let score = 0;
-    
+
     for (const crashType of template.crashTypes) {
       if (indicators.has(crashType)) {
         score += 10;
@@ -428,7 +428,11 @@ Response structure:
   /**
    * Fill template variables with crash data
    */
-  static fillTemplate(template: PromptTemplate, crashData: ParsedCrashData, additionalData?: Record<string, any>): string {
+  static fillTemplate(
+    template: PromptTemplate,
+    crashData: ParsedCrashData,
+    additionalData?: Record<string, any>
+  ): string {
     let prompt = template.template;
     const data = this.extractTemplateData(crashData, additionalData);
 
@@ -444,20 +448,28 @@ Response structure:
   /**
    * Extract template data from crash data
    */
-  private static extractTemplateData(crashData: ParsedCrashData, additionalData?: Record<string, any>): Record<string, string> {
+  private static extractTemplateData(
+    crashData: ParsedCrashData,
+    additionalData?: Record<string, any>
+  ): Record<string, string> {
     const data: Record<string, string> = {};
 
     // Basic error information
-    data.errorMessage = crashData.errorMessages.map(e => e.message).join('\n');
-    data.errorPattern = crashData.errorMessages.map(e => `[${e.level}] ${e.message}`).join('\n');
+    data.errorMessage = crashData.errorMessages.map((e) => e.message).join('\n');
+    data.errorPattern = crashData.errorMessages.map((e) => `[${e.level}] ${e.message}`).join('\n');
 
     // Stack traces
-    data.stackTrace = crashData.stackTraces.map(st => {
-      const frames = st.frames.map(f => 
-        `  at ${f.functionName || 'unknown'} (${f.fileName || 'unknown'}:${f.lineNumber || '?'})`
-      ).join('\n');
-      return `${st.message || 'Stack Trace'}:\n${frames}`;
-    }).join('\n\n');
+    data.stackTrace = crashData.stackTraces
+      .map((st) => {
+        const frames = st.frames
+          .map(
+            (f) =>
+              `  at ${f.functionName || 'unknown'} (${f.fileName || 'unknown'}:${f.lineNumber || '?'})`
+          )
+          .join('\n');
+        return `${st.message || 'Stack Trace'}:\n${frames}`;
+      })
+      .join('\n\n');
 
     data.callStack = data.stackTrace; // Alias
 

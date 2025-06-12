@@ -27,7 +27,7 @@ const mockSecurityService: SecurityService = {
 
 describe('Plugin Registry with Enhanced Permission Validation', () => {
   let pluginRegistry: PluginRegistryImpl;
-  
+
   beforeEach(() => {
     pluginRegistry = new PluginRegistryImpl(
       mockLogger,
@@ -64,12 +64,12 @@ describe('Plugin Registry with Enhanced Permission Validation', () => {
       fail('Expected activation to fail');
     } catch (error) {
       const errorMessage = (error as Error).message;
-      
+
       // Check for detailed error information
       expect(errorMessage).toContain('Failed to activate plugin test-plugin:');
       expect(errorMessage).toContain('Unknown permission: invalid:permission');
       expect(errorMessage).toContain('Unknown permission: databse:access');
-      
+
       // Check for suggestions
       expect(errorMessage).toContain('Suggestions:');
       expect(errorMessage).toContain('Did you mean');
@@ -140,7 +140,7 @@ describe('Plugin Registry with Enhanced Permission Validation', () => {
       fail('Expected activation to fail');
     } catch (error) {
       const errorMessage = (error as Error).message;
-      
+
       expect(errorMessage).toContain('Unknown category "unknowncategory"');
       expect(errorMessage).toContain('Available categories:');
     }
@@ -173,9 +173,7 @@ describe('Plugin Registry with Enhanced Permission Validation', () => {
     expect(warnSpy).toHaveBeenCalledWith(
       expect.any(String),
       expect.objectContaining({
-        warnings: expect.arrayContaining([
-          expect.stringContaining('Redundant permissions')
-        ])
+        warnings: expect.arrayContaining([expect.stringContaining('Redundant permissions')])
       })
     );
   });

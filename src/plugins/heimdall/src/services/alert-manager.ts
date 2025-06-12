@@ -5,7 +5,13 @@
 
 import { Logger } from '@utils/logger';
 import { EventBus } from '@core/event-bus/interfaces';
-import { HeimdallPluginContext, HeimdallLogEntry, Alert, AlertAction, ComponentHealth } from '../interfaces';
+import {
+  HeimdallPluginContext,
+  HeimdallLogEntry,
+  Alert,
+  AlertAction,
+  ComponentHealth
+} from '../interfaces';
 
 export class AlertManager {
   private readonly context: HeimdallPluginContext;
@@ -22,14 +28,14 @@ export class AlertManager {
 
   async initialize(): Promise<void> {
     this.logger.info('Initializing alert manager');
-    
+
     // Load alerts from database
     await this.loadAlerts();
   }
 
   async start(): Promise<void> {
     this.logger.info('Starting alert manager');
-    
+
     // Start periodic alert checking
     this.checkInterval = setInterval(() => {
       this.checkActiveAlerts();
@@ -38,7 +44,7 @@ export class AlertManager {
 
   async stop(): Promise<void> {
     this.logger.info('Stopping alert manager');
-    
+
     if (this.checkInterval) {
       clearInterval(this.checkInterval);
       this.checkInterval = undefined;
@@ -49,7 +55,7 @@ export class AlertManager {
     // Check if log triggers any alerts
     for (const [id, alert] of this.alerts) {
       if (!alert.enabled) continue;
-      
+
       if (await this.evaluateCondition(alert, log)) {
         await this.triggerAlert(alert, [log]);
       }
@@ -62,19 +68,19 @@ export class AlertManager {
       .filter(([, alert]) => alert.enabled)
       .map(async ([id, alert]) => {
         try {
-          const matchingLogs = logs.filter(log => this.evaluateCondition(alert, log));
+          const matchingLogs = logs.filter((log) => this.evaluateCondition(alert, log));
           if (matchingLogs.length > 0) {
             await this.triggerAlert(alert, matchingLogs);
-            this.logger.debug('Alert triggered for batch', { 
-              alertId: id, 
-              matchingLogsCount: matchingLogs.length 
+            this.logger.debug('Alert triggered for batch', {
+              alertId: id,
+              matchingLogsCount: matchingLogs.length
             });
           }
         } catch (error) {
-          this.logger.error('Failed to check alert against batch', { 
-            alertId: id, 
-            alertName: alert.name, 
-            error 
+          this.logger.error('Failed to check alert against batch', {
+            alertId: id,
+            alertName: alert.name,
+            error
           });
           // Don't throw - let other alerts continue processing
         }
@@ -87,7 +93,7 @@ export class AlertManager {
   async handleAnomaly(data: any): Promise<void> {
     // Create alert for detected anomaly
     this.logger.warn('Anomaly detected', data);
-    
+
     await this.eventBus.publish('heimdall:alert:anomaly', {
       anomalyId: data.id,
       severity: data.score > 0.8 ? 'critical' : 'warning',
@@ -100,7 +106,7 @@ export class AlertManager {
       status: 'up',
       details: {
         activeAlerts: this.alerts.size,
-        enabledAlerts: Array.from(this.alerts.values()).filter(a => a.enabled).length,
+        enabledAlerts: Array.from(this.alerts.values()).filter((a) => a.enabled).length,
         lastCheck: new Date().toISOString()
       }
     };
@@ -210,11 +216,11 @@ export class AlertManager {
     let alerts = Array.from(this.alerts.values());
 
     if (filters?.enabled !== undefined) {
-      alerts = alerts.filter(alert => alert.enabled === filters.enabled);
+      alerts = alerts.filter((alert) => alert.enabled === filters.enabled);
     }
 
     if (filters?.type) {
-      alerts = alerts.filter(alert => alert.condition.type === filters.type);
+      alerts = alerts.filter((alert) => alert.condition.type === filters.type);
     }
 
     return alerts;
@@ -253,7 +259,7 @@ export class AlertManager {
 
       // Test condition evaluation
       const conditionResult = await this.evaluateCondition(alert, testLog);
-      
+
       if (conditionResult) {
         // Test actions without actually sending notifications
         for (const action of alert.actions) {
@@ -262,35 +268,35 @@ export class AlertManager {
             actionType: action.type
           });
         }
-        
-        return { 
-          success: true, 
-          message: `Alert test successful. Condition matched and ${alert.actions.length} actions would execute.` 
+
+        return {
+          success: true,
+          message: `Alert test successful. Condition matched and ${alert.actions.length} actions would execute.`
         };
       } else {
-        return { 
-          success: true, 
-          message: 'Alert test successful. Condition did not match test log.' 
+        return {
+          success: true,
+          message: 'Alert test successful. Condition did not match test log.'
         };
       }
     } catch (error) {
-      return { 
-        success: false, 
-        message: `Alert test failed: ${error instanceof Error ? error.message : String(error)}` 
+      return {
+        success: false,
+        message: `Alert test failed: ${error instanceof Error ? error.message : String(error)}`
       };
     }
   }
 
   private async loadAlerts(): Promise<void> {
     try {
-      const alerts = await this.context.getDataService().query(
-        'SELECT * FROM heimdall_alerts WHERE enabled = true'
-      );
-      
+      const alerts = await this.context
+        .getDataService()
+        .query('SELECT * FROM heimdall_alerts WHERE enabled = true');
+
       for (const alert of alerts) {
         this.alerts.set(alert.id, alert);
       }
-      
+
       this.logger.info('Loaded alerts', { count: alerts.length });
     } catch (error) {
       this.logger.error('Failed to load alerts', {
@@ -304,17 +310,17 @@ export class AlertManager {
       switch (alert.condition.type) {
         case 'threshold':
           return await this.evaluateThresholdCondition(alert, log);
-        
+
         case 'pattern':
           return await this.evaluatePatternCondition(alert, log);
-        
+
         case 'anomaly':
           return await this.evaluateAnomalyCondition(alert, log);
-        
+
         case 'absence':
           // Absence conditions are checked differently in periodic checks
           return false;
-        
+
         default:
           this.logger.warn('Unknown alert condition type', {
             alertId: alert.id,
@@ -337,7 +343,7 @@ export class AlertManager {
 
     // Extract numeric value from log based on the query field
     let value: number;
-    
+
     // Common threshold fields
     if (log.metrics?.duration !== undefined) {
       value = log.metrics.duration;
@@ -354,7 +360,7 @@ export class AlertManager {
       const structured = log.message.structured;
       if (structured && typeof structured === 'object') {
         const keys = Object.keys(structured);
-        const numericKey = keys.find(key => typeof structured[key] === 'number');
+        const numericKey = keys.find((key) => typeof structured[key] === 'number');
         if (numericKey) {
           value = structured[numericKey] as number;
         } else {
@@ -388,7 +394,7 @@ export class AlertManager {
 
     try {
       const regex = new RegExp(pattern, 'i');
-      
+
       // Check against raw message
       if (regex.test(log.message.raw)) {
         return true;
@@ -425,7 +431,7 @@ export class AlertManager {
 
     // Default threshold is 0.7, but can be configured
     const threshold = alert.condition.threshold?.value || 0.7;
-    
+
     return log.ml.anomalyScore > threshold;
   }
 
@@ -435,7 +441,7 @@ export class AlertManager {
       alertName: alert.name,
       logCount: logs.length
     });
-    
+
     // Execute alert actions
     for (const action of alert.actions) {
       try {
@@ -448,17 +454,17 @@ export class AlertManager {
         });
       }
     }
-    
+
     // Update alert last triggered timestamp
     await this.context.getDataService().update(
       'heimdall_alerts',
       { id: alert.id },
-      { 
+      {
         last_triggered: new Date(),
         trigger_count: (alert as any).trigger_count + 1
       }
     );
-    
+
     // Emit alert event
     await this.eventBus.publish('heimdall:alert:triggered', {
       alertId: alert.id,
@@ -468,7 +474,11 @@ export class AlertManager {
     });
   }
 
-  private async executeAction(action: AlertAction, alert: Alert, logs: HeimdallLogEntry[]): Promise<void> {
+  private async executeAction(
+    action: AlertAction,
+    alert: Alert,
+    logs: HeimdallLogEntry[]
+  ): Promise<void> {
     // Check throttling
     if (await this.isActionThrottled(action, alert)) {
       this.logger.debug('Action throttled', {
@@ -483,23 +493,23 @@ export class AlertManager {
         case 'email':
           await this.sendEmailNotification(action, alert, logs);
           break;
-        
+
         case 'slack':
           await this.sendSlackNotification(action, alert, logs);
           break;
-        
+
         case 'webhook':
           await this.callWebhook(action, alert, logs);
           break;
-        
+
         case 'pagerduty':
           await this.createPagerDutyIncident(action, alert, logs);
           break;
-        
+
         case 'custom':
           await this.executeCustomAction(action, alert, logs);
           break;
-        
+
         default:
           this.logger.warn('Unknown action type', {
             alertId: alert.id,
@@ -509,7 +519,6 @@ export class AlertManager {
 
       // Update throttling record
       await this.updateActionThrottle(action, alert);
-      
     } catch (error) {
       this.logger.error('Action execution failed', {
         alertId: alert.id,
@@ -520,9 +529,13 @@ export class AlertManager {
     }
   }
 
-  private async sendEmailNotification(action: AlertAction, alert: Alert, logs: HeimdallLogEntry[]): Promise<void> {
+  private async sendEmailNotification(
+    action: AlertAction,
+    alert: Alert,
+    logs: HeimdallLogEntry[]
+  ): Promise<void> {
     const config = action.config;
-    
+
     if (!config.to || !config.smtp) {
       throw new Error('Email action missing required configuration (to, smtp)');
     }
@@ -549,15 +562,20 @@ export class AlertManager {
       //   subject,
       //   html: body
       // });
-
     } catch (error) {
-      throw new Error(`Email notification failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Email notification failed: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
-  private async sendSlackNotification(action: AlertAction, alert: Alert, logs: HeimdallLogEntry[]): Promise<void> {
+  private async sendSlackNotification(
+    action: AlertAction,
+    alert: Alert,
+    logs: HeimdallLogEntry[]
+  ): Promise<void> {
     const config = action.config;
-    
+
     if (!config.webhook_url && !config.token) {
       throw new Error('Slack action missing required configuration (webhook_url or token)');
     }
@@ -570,9 +588,9 @@ export class AlertManager {
         const response = await fetch(config.webhook_url, {
           method: 'POST',
           headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json'
           },
-          body: JSON.stringify(message),
+          body: JSON.stringify(message)
         });
 
         if (!response.ok) {
@@ -583,13 +601,13 @@ export class AlertManager {
         const response = await fetch('https://slack.com/api/chat.postMessage', {
           method: 'POST',
           headers: {
-            'Authorization': `Bearer ${config.token}`,
-            'Content-Type': 'application/json',
+            Authorization: `Bearer ${config.token}`,
+            'Content-Type': 'application/json'
           },
           body: JSON.stringify({
             channel: config.channel || '#alerts',
             ...message
-          }),
+          })
         });
 
         const result = await response.json();
@@ -603,15 +621,20 @@ export class AlertManager {
         channel: config.channel || '#alerts',
         logCount: logs.length
       });
-
     } catch (error) {
-      throw new Error(`Slack notification failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Slack notification failed: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
-  private async callWebhook(action: AlertAction, alert: Alert, logs: HeimdallLogEntry[]): Promise<void> {
+  private async callWebhook(
+    action: AlertAction,
+    alert: Alert,
+    logs: HeimdallLogEntry[]
+  ): Promise<void> {
     const config = action.config;
-    
+
     if (!config.url) {
       throw new Error('Webhook action missing required configuration (url)');
     }
@@ -623,7 +646,7 @@ export class AlertManager {
         condition: alert.condition,
         timestamp: new Date().toISOString()
       },
-      logs: logs.map(log => ({
+      logs: logs.map((log) => ({
         id: log.id,
         timestamp: new Date(Number(log.timestamp / 1000000n)).toISOString(), // Convert nanoseconds to milliseconds
         level: log.level,
@@ -635,7 +658,7 @@ export class AlertManager {
       summary: {
         logCount: logs.length,
         severity: this.calculateAlertSeverity(logs),
-        affectedServices: [...new Set(logs.map(log => log.source.service))]
+        affectedServices: [...new Set(logs.map((log) => log.source.service))]
       }
     };
 
@@ -660,15 +683,20 @@ export class AlertManager {
         logCount: logs.length,
         status: response.status
       });
-
     } catch (error) {
-      throw new Error(`Webhook notification failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `Webhook notification failed: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
-  private async createPagerDutyIncident(action: AlertAction, alert: Alert, logs: HeimdallLogEntry[]): Promise<void> {
+  private async createPagerDutyIncident(
+    action: AlertAction,
+    alert: Alert,
+    logs: HeimdallLogEntry[]
+  ): Promise<void> {
     const config = action.config;
-    
+
     if (!config.integration_key) {
       throw new Error('PagerDuty action missing required configuration (integration_key)');
     }
@@ -687,9 +715,9 @@ export class AlertManager {
         custom_details: {
           alert_id: alert.id,
           log_count: logs.length,
-          affected_services: [...new Set(logs.map(log => log.source.service))],
+          affected_services: [...new Set(logs.map((log) => log.source.service))],
           time_range: this.getLogTimeRange(logs),
-          sample_logs: logs.slice(0, 3).map(log => ({
+          sample_logs: logs.slice(0, 3).map((log) => ({
             timestamp: new Date(Number(log.timestamp / 1000000n)).toISOString(),
             level: log.level,
             message: log.message.raw,
@@ -703,14 +731,14 @@ export class AlertManager {
       const response = await fetch('https://events.pagerduty.com/v2/enqueue', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify(payload),
         signal: AbortSignal.timeout(10000)
       });
 
       const result = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(`PagerDuty API failed: ${response.status} ${JSON.stringify(result)}`);
       }
@@ -721,15 +749,20 @@ export class AlertManager {
         status: result.status,
         logCount: logs.length
       });
-
     } catch (error) {
-      throw new Error(`PagerDuty notification failed: ${error instanceof Error ? error.message : String(error)}`);
+      throw new Error(
+        `PagerDuty notification failed: ${error instanceof Error ? error.message : String(error)}`
+      );
     }
   }
 
-  private async executeCustomAction(action: AlertAction, alert: Alert, logs: HeimdallLogEntry[]): Promise<void> {
+  private async executeCustomAction(
+    action: AlertAction,
+    alert: Alert,
+    logs: HeimdallLogEntry[]
+  ): Promise<void> {
     const config = action.config;
-    
+
     if (!config.script && !config.command) {
       throw new Error('Custom action missing required configuration (script or command)');
     }
@@ -748,17 +781,17 @@ export class AlertManager {
 
   private async checkActiveAlerts(): Promise<void> {
     this.logger.debug('Checking active alerts');
-    
+
     // Check absence-type alerts
     await this.checkAbsenceAlerts();
-    
+
     // Check for any alerts that need periodic evaluation
     await this.checkPeriodicAlerts();
   }
 
   private async checkAbsenceAlerts(): Promise<void> {
     const absenceAlerts = Array.from(this.alerts.values()).filter(
-      alert => alert.enabled && alert.condition.type === 'absence'
+      (alert) => alert.enabled && alert.condition.type === 'absence'
     );
 
     for (const alert of absenceAlerts) {
@@ -769,7 +802,7 @@ export class AlertManager {
 
         // Check if expected logs are missing
         const recentLogs = await this.getRecentLogs(alert.condition.query, cutoffTime);
-        
+
         if (recentLogs.length === 0) {
           // No logs found in the expected time window - trigger alert
           await this.triggerAlert(alert, []);
@@ -786,7 +819,7 @@ export class AlertManager {
   private async checkPeriodicAlerts(): Promise<void> {
     // Check for alerts that need aggregation over time windows
     const periodicAlerts = Array.from(this.alerts.values()).filter(
-      alert => alert.enabled && alert.condition.window && alert.condition.type !== 'absence'
+      (alert) => alert.enabled && alert.condition.window && alert.condition.type !== 'absence'
     );
 
     for (const alert of periodicAlerts) {
@@ -796,7 +829,7 @@ export class AlertManager {
         const cutoffTime = BigInt(Date.now() - windowMs) * 1000000n;
 
         const recentLogs = await this.getRecentLogs(alert.condition.query, cutoffTime);
-        
+
         // Apply aggregation logic based on alert condition
         if (await this.evaluateAggregatedCondition(alert, recentLogs)) {
           await this.triggerAlert(alert, recentLogs);
@@ -810,9 +843,12 @@ export class AlertManager {
     }
   }
 
-  private async evaluateAggregatedCondition(alert: Alert, logs: HeimdallLogEntry[]): Promise<boolean> {
+  private async evaluateAggregatedCondition(
+    alert: Alert,
+    logs: HeimdallLogEntry[]
+  ): Promise<boolean> {
     const { condition } = alert;
-    
+
     if (condition.type === 'threshold' && condition.threshold) {
       // Count-based threshold
       if (condition.threshold.operator === 'gt' && logs.length > condition.threshold.value) {
@@ -842,22 +878,27 @@ export class AlertManager {
     const unit = match[2];
 
     switch (unit) {
-      case 's': return value * 1000;
-      case 'm': return value * 60 * 1000;
-      case 'h': return value * 60 * 60 * 1000;
-      case 'd': return value * 24 * 60 * 60 * 1000;
-      default: throw new Error(`Unknown time unit: ${unit}`);
+      case 's':
+        return value * 1000;
+      case 'm':
+        return value * 60 * 1000;
+      case 'h':
+        return value * 60 * 60 * 1000;
+      case 'd':
+        return value * 24 * 60 * 60 * 1000;
+      default:
+        throw new Error(`Unknown time unit: ${unit}`);
     }
   }
 
   // Throttling and formatting helper methods
-  
+
   private async isActionThrottled(action: AlertAction, alert: Alert): Promise<boolean> {
     if (!action.throttle) return false;
 
     const throttleKey = `${alert.id}-${action.type}`;
     const throttleMs = this.parseTimeWindow(action.throttle);
-    
+
     // Check last execution time from storage or memory
     // For now, implement simple in-memory throttling
     const lastExecution = (this as any).lastActionExecution?.get(throttleKey);
@@ -870,24 +911,28 @@ export class AlertManager {
 
   private async updateActionThrottle(action: AlertAction, alert: Alert): Promise<void> {
     const throttleKey = `${alert.id}-${action.type}`;
-    
+
     if (!(this as any).lastActionExecution) {
       (this as any).lastActionExecution = new Map();
     }
-    
+
     (this as any).lastActionExecution.set(throttleKey, Date.now());
   }
 
   private formatAlertSubject(alert: Alert, logs: HeimdallLogEntry[]): string {
     const severity = this.calculateAlertSeverity(logs);
-    const serviceList = [...new Set(logs.map(log => log.source.service))].slice(0, 3).join(', ');
-    
+    const serviceList = [...new Set(logs.map((log) => log.source.service))].slice(0, 3).join(', ');
+
     return `[${severity.toUpperCase()}] Heimdall Alert: ${alert.name} (${logs.length} events from ${serviceList})`;
   }
 
-  private formatAlertBody(alert: Alert, logs: HeimdallLogEntry[], format: 'email' | 'slack'): string {
+  private formatAlertBody(
+    alert: Alert,
+    logs: HeimdallLogEntry[],
+    format: 'email' | 'slack'
+  ): string {
     const severity = this.calculateAlertSeverity(logs);
-    const services = [...new Set(logs.map(log => log.source.service))];
+    const services = [...new Set(logs.map((log) => log.source.service))];
     const timeRange = this.getLogTimeRange(logs);
 
     if (format === 'email') {
@@ -901,12 +946,17 @@ export class AlertManager {
         
         <h3>Sample Log Entries:</h3>
         <ul>
-          ${logs.slice(0, 5).map(log => `
+          ${logs
+            .slice(0, 5)
+            .map(
+              (log) => `
             <li>
               <strong>${new Date(Number(log.timestamp / 1000000n)).toISOString()}</strong>
               [${log.level}] ${log.source.service}: ${log.message.raw}
             </li>
-          `).join('')}
+          `
+            )
+            .join('')}
         </ul>
       `;
     }
@@ -916,52 +966,59 @@ export class AlertManager {
 
   private formatSlackMessage(alert: Alert, logs: HeimdallLogEntry[]): any {
     const severity = this.calculateAlertSeverity(logs);
-    const services = [...new Set(logs.map(log => log.source.service))];
-    
+    const services = [...new Set(logs.map((log) => log.source.service))];
+
     const color = severity === 'critical' ? 'danger' : severity === 'warning' ? 'warning' : 'good';
-    
+
     return {
       text: `Heimdall Alert: ${alert.name}`,
-      attachments: [{
-        color,
-        fields: [
-          { title: 'Severity', value: severity, short: true },
-          { title: 'Log Count', value: logs.length.toString(), short: true },
-          { title: 'Condition', value: alert.condition.type, short: true },
-          { title: 'Services', value: services.join(', '), short: true }
-        ],
-        footer: 'Heimdall Log Intelligence',
-        ts: Math.floor(Date.now() / 1000)
-      }]
+      attachments: [
+        {
+          color,
+          fields: [
+            { title: 'Severity', value: severity, short: true },
+            { title: 'Log Count', value: logs.length.toString(), short: true },
+            { title: 'Condition', value: alert.condition.type, short: true },
+            { title: 'Services', value: services.join(', '), short: true }
+          ],
+          footer: 'Heimdall Log Intelligence',
+          ts: Math.floor(Date.now() / 1000)
+        }
+      ]
     };
   }
 
   private calculateAlertSeverity(logs: HeimdallLogEntry[]): 'info' | 'warning' | 'critical' {
-    const errorLogs = logs.filter(log => log.level === 'ERROR' || log.level === 'FATAL');
-    const warnLogs = logs.filter(log => log.level === 'WARN');
-    
+    const errorLogs = logs.filter((log) => log.level === 'ERROR' || log.level === 'FATAL');
+    const warnLogs = logs.filter((log) => log.level === 'WARN');
+
     if (errorLogs.length > 0) return 'critical';
     if (warnLogs.length > logs.length * 0.5) return 'warning';
     return 'info';
   }
 
-  private mapToPagerDutySeverity(logs: HeimdallLogEntry[]): 'info' | 'warning' | 'error' | 'critical' {
+  private mapToPagerDutySeverity(
+    logs: HeimdallLogEntry[]
+  ): 'info' | 'warning' | 'error' | 'critical' {
     const severity = this.calculateAlertSeverity(logs);
-    
+
     switch (severity) {
-      case 'critical': return 'critical';
-      case 'warning': return 'warning';
-      default: return 'info';
+      case 'critical':
+        return 'critical';
+      case 'warning':
+        return 'warning';
+      default:
+        return 'info';
     }
   }
 
   private getLogTimeRange(logs: HeimdallLogEntry[]): string {
     if (logs.length === 0) return 'No logs';
-    
-    const timestamps = logs.map(log => Number(log.timestamp / 1000000n)); // Convert to milliseconds
+
+    const timestamps = logs.map((log) => Number(log.timestamp / 1000000n)); // Convert to milliseconds
     const earliest = new Date(Math.min(...timestamps));
     const latest = new Date(Math.max(...timestamps));
-    
+
     return `${earliest.toISOString()} - ${latest.toISOString()}`;
   }
 
@@ -1063,8 +1120,8 @@ export class AlertManager {
     recentTriggers: number;
   }> {
     const alerts = Array.from(this.alerts.values());
-    const enabled = alerts.filter(a => a.enabled);
-    const disabled = alerts.filter(a => !a.enabled);
+    const enabled = alerts.filter((a) => a.enabled);
+    const disabled = alerts.filter((a) => !a.enabled);
 
     const byType: Record<string, number> = {};
     for (const alert of alerts) {
@@ -1073,13 +1130,14 @@ export class AlertManager {
 
     // Get recent triggers from the last 24 hours
     const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
-    
+
     let recentTriggers = 0;
     try {
-      const result = await this.context.getDataService().query(
-        'SELECT COUNT(*) as count FROM heimdall_alert_triggers WHERE triggered_at > ?',
-        [oneDayAgo]
-      );
+      const result = await this.context
+        .getDataService()
+        .query('SELECT COUNT(*) as count FROM heimdall_alert_triggers WHERE triggered_at > ?', [
+          oneDayAgo
+        ]);
       recentTriggers = result[0]?.count || 0;
     } catch (error) {
       this.logger.warn('Failed to get recent trigger count', {

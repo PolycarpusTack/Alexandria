@@ -4,10 +4,10 @@
  */
 
 import { Logger } from '@utils/logger';
-import { 
-  HeimdallPluginContext, 
-  StorageTier, 
-  StorageStats, 
+import {
+  HeimdallPluginContext,
+  StorageTier,
+  StorageStats,
   HeimdallLogEntry,
   HeimdallQuery,
   HeimdallQueryResult
@@ -38,12 +38,18 @@ export class StorageManager {
   private readonly logger: Logger;
   private readonly resourceManager: HyperionResourceManager;
   private readonly tiers: Map<string, StorageTier> = new Map();
-  private readonly adapters: Map<string, ElasticsearchAdapter | ClickHouseAdapter | S3Adapter> = new Map();
+  private readonly adapters: Map<string, ElasticsearchAdapter | ClickHouseAdapter | S3Adapter> =
+    new Map();
   private readonly config: StorageConfig;
   private migrationTimer?: NodeJS.Timer;
   private isInitialized = false;
-  
-  constructor(context: HeimdallPluginContext, logger: Logger, resourceManager: HyperionResourceManager, config?: Partial<StorageConfig>) {
+
+  constructor(
+    context: HeimdallPluginContext,
+    logger: Logger,
+    resourceManager: HyperionResourceManager,
+    config?: Partial<StorageConfig>
+  ) {
     this.context = context;
     this.logger = logger;
     this.resourceManager = resourceManager;
@@ -60,7 +66,7 @@ export class StorageManager {
 
   async initialize(): Promise<void> {
     this.logger.info('Initializing storage manager');
-    
+
     // Initialize hot tier (always available)
     const hotTier: StorageTier = {
       name: 'hot',
@@ -76,12 +82,16 @@ export class StorageManager {
       }
     };
     this.tiers.set('hot', hotTier);
-    
+
     // Initialize Elasticsearch adapter with resource manager
-    const elasticsearchAdapter = new ElasticsearchAdapter(hotTier, this.logger, this.resourceManager);
+    const elasticsearchAdapter = new ElasticsearchAdapter(
+      hotTier,
+      this.logger,
+      this.resourceManager
+    );
     await elasticsearchAdapter.initialize();
     this.adapters.set('hot', elasticsearchAdapter);
-    
+
     // Initialize warm tier if configured
     if (this.context.storage.warm) {
       const warmTier: StorageTier = {
@@ -97,13 +107,13 @@ export class StorageManager {
         }
       };
       this.tiers.set('warm', warmTier);
-      
+
       // Initialize ClickHouse adapter with resource manager
       const clickhouseAdapter = new ClickHouseAdapter(warmTier, this.logger, this.resourceManager);
       await clickhouseAdapter.initialize();
       this.adapters.set('warm', clickhouseAdapter);
     }
-    
+
     // Initialize cold tier if configured
     if (this.context.storage.cold) {
       const coldTier: StorageTier = {
@@ -122,16 +132,16 @@ export class StorageManager {
         }
       };
       this.tiers.set('cold', coldTier);
-      
+
       // Initialize S3 adapter
       const s3Adapter = new S3Adapter(coldTier, this.logger);
       await s3Adapter.initialize();
       this.adapters.set('cold', s3Adapter);
     }
-    
+
     // Start lifecycle management
     this.startLifecycleManagement();
-    
+
     this.isInitialized = true;
     this.logger.info('Storage manager initialized', {
       tiers: Array.from(this.tiers.keys()),
@@ -162,21 +172,21 @@ export class StorageManager {
     if (!storage) {
       throw new Error(`Storage tier '${tier}' not found`);
     }
-    
+
     try {
       switch (storage.engine.type) {
         case 'elasticsearch':
           await this.storeInElasticsearch(log, storage);
           break;
-        
+
         case 'postgresql':
           await this.storeInPostgreSQL(log, storage);
           break;
-        
+
         case 's3':
           await this.storeInS3(log, storage);
           break;
-        
+
         default:
           throw new Error(`Unsupported storage engine: ${storage.engine.type}`);
       }
@@ -198,24 +208,24 @@ export class StorageManager {
     if (!storage) {
       throw new Error(`Storage tier '${tier}' not found`);
     }
-    
+
     const startTime = Date.now();
-    
+
     try {
       switch (storage.engine.type) {
         case 'elasticsearch':
           await this.storeBatchInElasticsearch(logs, storage);
           break;
-        
+
         case 'postgresql':
           await this.storeBatchInPostgreSQL(logs, storage);
           break;
-        
+
         case 's3':
           await this.storeBatchInS3(logs, storage);
           break;
       }
-      
+
       const duration = Date.now() - startTime;
       this.logger.info('Batch stored successfully', {
         tier,
@@ -238,7 +248,7 @@ export class StorageManager {
    */
   async getStats(): Promise<Record<string, StorageStats>> {
     const stats: Record<string, StorageStats> = {};
-    
+
     for (const [name, tier] of this.tiers) {
       try {
         stats[name] = await this.getTierStats(tier);
@@ -249,7 +259,7 @@ export class StorageManager {
         });
       }
     }
-    
+
     return stats;
   }
 
@@ -264,7 +274,7 @@ export class StorageManager {
     try {
       const strategy = this.determineQueryStrategy(query);
       const results = await this.executeMultiTierQuery(query, strategy);
-      
+
       return this.mergeQueryResults(results, query);
     } catch (error) {
       this.logger.error('Failed to execute query across tiers', {
@@ -288,11 +298,11 @@ export class StorageManager {
       toTier,
       timeRange
     });
-    
+
     try {
       const fromAdapter = this.adapters.get(fromTier);
       const toAdapter = this.adapters.get(toTier);
-      
+
       if (!fromAdapter || !toAdapter) {
         throw new Error(`Adapters not found for migration: ${fromTier} -> ${toTier}`);
       }
@@ -304,7 +314,7 @@ export class StorageManager {
       };
 
       const sourceResult = await fromAdapter.query(query);
-      
+
       if (sourceResult.logs.length === 0) {
         return 0;
       }
@@ -348,7 +358,10 @@ export class StorageManager {
   /**
    * Restore data from cold storage
    */
-  async restoreFromCold(timeRange: { from: Date; to: Date }, targetTier: 'hot' | 'warm' = 'warm'): Promise<number> {
+  async restoreFromCold(
+    timeRange: { from: Date; to: Date },
+    targetTier: 'hot' | 'warm' = 'warm'
+  ): Promise<number> {
     const coldAdapter = this.adapters.get('cold') as S3Adapter;
     if (!coldAdapter) {
       throw new Error('Cold storage adapter not initialized');
@@ -384,9 +397,7 @@ export class StorageManager {
       clearInterval(this.migrationTimer);
     }
 
-    await Promise.all([
-      ...Array.from(this.adapters.values()).map(adapter => adapter.close())
-    ]);
+    await Promise.all([...Array.from(this.adapters.values()).map((adapter) => adapter.close())]);
 
     this.isInitialized = false;
     this.logger.info('Storage manager closed');
@@ -395,7 +406,7 @@ export class StorageManager {
   /**
    * Private helper methods
    */
-  
+
   private async storeInElasticsearch(log: HeimdallLogEntry, storage: StorageTier): Promise<void> {
     const adapter = this.adapters.get('hot') as ElasticsearchAdapter;
     if (!adapter) {
@@ -406,7 +417,7 @@ export class StorageManager {
 
   private async storeInPostgreSQL(log: HeimdallLogEntry, storage: StorageTier): Promise<void> {
     const dataService = this.context.storage.warm as DataService;
-    
+
     await dataService.create('heimdall_logs_warm', {
       id: log.id,
       timestamp: new Date(Number(log.timestamp) / 1000000), // Convert nanoseconds to Date
@@ -434,7 +445,10 @@ export class StorageManager {
     await adapter.store(log);
   }
 
-  private async storeBatchInElasticsearch(logs: HeimdallLogEntry[], storage: StorageTier): Promise<void> {
+  private async storeBatchInElasticsearch(
+    logs: HeimdallLogEntry[],
+    storage: StorageTier
+  ): Promise<void> {
     const adapter = this.adapters.get('hot') as ElasticsearchAdapter;
     if (!adapter) {
       throw new Error('Elasticsearch adapter not initialized');
@@ -442,10 +456,13 @@ export class StorageManager {
     await adapter.storeBatch(logs);
   }
 
-  private async storeBatchInPostgreSQL(logs: HeimdallLogEntry[], storage: StorageTier): Promise<void> {
+  private async storeBatchInPostgreSQL(
+    logs: HeimdallLogEntry[],
+    storage: StorageTier
+  ): Promise<void> {
     const dataService = this.context.storage.warm as DataService;
-    
-    const records = logs.map(log => ({
+
+    const records = logs.map((log) => ({
       id: log.id,
       timestamp: new Date(Number(log.timestamp) / 1000000),
       level: log.level,
@@ -462,7 +479,7 @@ export class StorageManager {
       security_classification: log.security.classification,
       created_at: new Date()
     }));
-    
+
     // TODO: Implement batch insert
     for (const record of records) {
       await dataService.create('heimdall_logs_warm', record);
@@ -482,7 +499,7 @@ export class StorageManager {
     if (!adapter) {
       throw new Error(`Adapter for tier '${tier.name}' not initialized`);
     }
-    
+
     return adapter.getStats();
   }
 
@@ -495,15 +512,15 @@ export class StorageManager {
 
     // Determine which tiers to query based on data age
     const preferredTiers: Array<'hot' | 'warm' | 'cold'> = [];
-    
+
     if (ageInDays <= this.config.lifecycle.hotRetentionDays) {
       preferredTiers.push('hot');
     }
-    
+
     if (ageInDays <= this.config.lifecycle.warmRetentionDays) {
       preferredTiers.push('warm');
     }
-    
+
     // Always include cold for older data
     if (ageInDays > this.config.lifecycle.hotRetentionDays) {
       preferredTiers.push('cold');
@@ -523,7 +540,7 @@ export class StorageManager {
    * Execute query across multiple tiers in parallel
    */
   private async executeMultiTierQuery(
-    query: HeimdallQuery, 
+    query: HeimdallQuery,
     strategy: QueryStrategy
   ): Promise<Array<{ tier: string; result: HeimdallQueryResult }>> {
     const queryPromises: Array<Promise<{ tier: string; result: HeimdallQueryResult }>> = [];
@@ -531,9 +548,7 @@ export class StorageManager {
     for (const tier of strategy.preferredTiers.slice(0, strategy.maxTiers)) {
       const adapter = this.adapters.get(tier);
       if (adapter) {
-        queryPromises.push(
-          adapter.query(query).then(result => ({ tier, result }))
-        );
+        queryPromises.push(adapter.query(query).then((result) => ({ tier, result })));
       }
     }
 
@@ -566,11 +581,11 @@ export class StorageManager {
     }
 
     // Merge results from multiple tiers
-    const allLogs = results.flatMap(r => r.result.logs);
-    
+    const allLogs = results.flatMap((r) => r.result.logs);
+
     // Remove duplicates by ID
-    const uniqueLogs = allLogs.filter((log, index, array) => 
-      array.findIndex(l => l.id === log.id) === index
+    const uniqueLogs = allLogs.filter(
+      (log, index, array) => array.findIndex((l) => l.id === log.id) === index
     );
 
     // Sort by timestamp (newest first is typical for logs)
@@ -583,8 +598,8 @@ export class StorageManager {
 
     // Merge performance metrics
     const totalTook = results.reduce((sum, r) => sum + (r.result.performance?.took || 0), 0);
-    const timedOut = results.some(r => r.result.performance?.timedOut);
-    const storageAccessed = results.map(r => r.tier);
+    const timedOut = results.some((r) => r.result.performance?.timedOut);
+    const storageAccessed = results.map((r) => r.tier);
 
     // Merge aggregations (simplified - just take from first result)
     const aggregations = results[0]?.result.aggregations || {};
@@ -607,7 +622,7 @@ export class StorageManager {
    */
   private startLifecycleManagement(): void {
     const intervalMs = this.config.lifecycle.migrationIntervalHours * 60 * 60 * 1000;
-    
+
     this.migrationTimer = setInterval(async () => {
       await this.performLifecycleMigration();
     }, intervalMs);
@@ -623,16 +638,20 @@ export class StorageManager {
   private async performLifecycleMigration(): Promise<void> {
     try {
       const now = new Date();
-      
+
       // Migrate old hot data to warm
-      const hotCutoff = new Date(now.getTime() - (this.config.lifecycle.hotRetentionDays * 24 * 60 * 60 * 1000));
+      const hotCutoff = new Date(
+        now.getTime() - this.config.lifecycle.hotRetentionDays * 24 * 60 * 60 * 1000
+      );
       const warmMigrated = await this.migrateToWarm({
         from: new Date(0),
         to: hotCutoff
       });
 
       // Migrate old warm data to cold
-      const warmCutoff = new Date(now.getTime() - (this.config.lifecycle.warmRetentionDays * 24 * 60 * 60 * 1000));
+      const warmCutoff = new Date(
+        now.getTime() - this.config.lifecycle.warmRetentionDays * 24 * 60 * 60 * 1000
+      );
       const coldMigrated = await this.migrateToCold({
         from: new Date(0),
         to: warmCutoff

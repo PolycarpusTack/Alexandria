@@ -4,11 +4,7 @@
 
 import { Router } from 'express';
 import { PluginContext } from '@alexandria/plugin-api';
-import { 
-  SendMessageRequest, 
-  CreateSessionRequest, 
-  GenerateCodeRequest 
-} from '../interfaces';
+import { SendMessageRequest, CreateSessionRequest, GenerateCodeRequest } from '../interfaces';
 import { AlfredService } from '../services/alfred-service';
 import { ProjectAnalyzerService } from '../services/project-analyzer';
 import { CodeGeneratorService } from '../services/code-generator';
@@ -16,7 +12,7 @@ import { TemplateManagerService } from '../services/template-manager';
 
 export function setupRoutes(context: PluginContext): void {
   const router = Router();
-  
+
   // Get services
   const alfredService = context.getService<AlfredService>('alfred');
   const projectAnalyzer = context.getService<ProjectAnalyzerService>('alfred-project-analyzer');
@@ -27,12 +23,12 @@ export function setupRoutes(context: PluginContext): void {
   router.post('/sessions', async (req, res, next) => {
     try {
       const { name, projectPath }: CreateSessionRequest = req.body;
-      
+
       let projectContext;
       if (projectPath) {
         projectContext = await projectAnalyzer.analyzeProject(projectPath);
       }
-      
+
       const session = await alfredService.createNewSession(projectContext);
       res.json(session);
     } catch (error) {

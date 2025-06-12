@@ -1,10 +1,8 @@
 /**
  * Prompt Versioning System
- * 
+ *
  * Manages prompt versions and tracks their effectiveness
  */
-
-import { v4 as uuidv4 } from 'uuid';
 
 export interface PromptVersion {
   id: string;
@@ -110,7 +108,7 @@ export class PromptVersioning {
     let promptId: string | null = null;
 
     for (const [pid, versions] of this.versions) {
-      const version = versions.find(v => v.id === versionId);
+      const version = versions.find((v) => v.id === versionId);
       if (version) {
         targetVersion = version;
         promptId = pid;
@@ -151,7 +149,7 @@ export class PromptVersioning {
    */
   static getVersion(versionId: string): PromptVersion | null {
     for (const versions of this.versions.values()) {
-      const version = versions.find(v => v.id === versionId);
+      const version = versions.find((v) => v.id === versionId);
       if (version) return version;
     }
     return null;
@@ -184,24 +182,24 @@ export class PromptVersioning {
 
     // Update success rate
     if (result.success) {
-      metrics.successRate = 
+      metrics.successRate =
         (metrics.successRate * (metrics.usageCount - 1) + 1) / metrics.usageCount;
     } else {
-      metrics.successRate = 
-        (metrics.successRate * (metrics.usageCount - 1)) / metrics.usageCount;
+      metrics.successRate = (metrics.successRate * (metrics.usageCount - 1)) / metrics.usageCount;
       metrics.errorRate = 1 - metrics.successRate;
     }
 
     // Update confidence
     if (result.confidence !== undefined) {
-      metrics.avgConfidence = 
+      metrics.avgConfidence =
         (metrics.avgConfidence * (metrics.usageCount - 1) + result.confidence) / metrics.usageCount;
     }
 
     // Update inference time
     if (result.inferenceTime !== undefined) {
-      metrics.avgInferenceTime = 
-        (metrics.avgInferenceTime * (metrics.usageCount - 1) + result.inferenceTime) / metrics.usageCount;
+      metrics.avgInferenceTime =
+        (metrics.avgInferenceTime * (metrics.usageCount - 1) + result.inferenceTime) /
+        metrics.usageCount;
     }
 
     // Update user ratings
@@ -229,9 +227,15 @@ export class PromptVersioning {
 
     // Determine preferred version (higher success rate and confidence, lower inference time)
     let preferredVersion: string | undefined;
-    const scoreA = versionA.metrics.successRate + versionA.metrics.avgConfidence - (versionA.metrics.avgInferenceTime / 10000);
-    const scoreB = versionB.metrics.successRate + versionB.metrics.avgConfidence - (versionB.metrics.avgInferenceTime / 10000);
-    
+    const scoreA =
+      versionA.metrics.successRate +
+      versionA.metrics.avgConfidence -
+      versionA.metrics.avgInferenceTime / 10000;
+    const scoreB =
+      versionB.metrics.successRate +
+      versionB.metrics.avgConfidence -
+      versionB.metrics.avgInferenceTime / 10000;
+
     if (scoreA > scoreB) {
       preferredVersion = versionAId;
     } else if (scoreB > scoreA) {
@@ -258,22 +262,30 @@ export class PromptVersioning {
     if (versions.length === 0) return null;
 
     // Filter for versions with sufficient usage
-    const qualifiedVersions = versions.filter(v => 
-      v.metrics.usageCount >= 10 && v.status !== 'archived'
+    const qualifiedVersions = versions.filter(
+      (v) => v.metrics.usageCount >= 10 && v.status !== 'archived'
     );
 
     if (qualifiedVersions.length === 0) {
       // Return latest active/draft version
-      return versions
-        .filter(v => v.status === 'active' || v.status === 'draft')
-        .sort((a, b) => b.version - a.version)[0] || null;
+      return (
+        versions
+          .filter((v) => v.status === 'active' || v.status === 'draft')
+          .sort((a, b) => b.version - a.version)[0] || null
+      );
     }
 
     // Score based on success rate, confidence, and inference time
     return qualifiedVersions.reduce((best, current) => {
-      const bestScore = best.metrics.successRate + best.metrics.avgConfidence - (best.metrics.avgInferenceTime / 10000);
-      const currentScore = current.metrics.successRate + current.metrics.avgConfidence - (current.metrics.avgInferenceTime / 10000);
-      
+      const bestScore =
+        best.metrics.successRate +
+        best.metrics.avgConfidence -
+        best.metrics.avgInferenceTime / 10000;
+      const currentScore =
+        current.metrics.successRate +
+        current.metrics.avgConfidence -
+        current.metrics.avgInferenceTime / 10000;
+
       return currentScore > bestScore ? current : best;
     });
   }
@@ -287,7 +299,7 @@ export class PromptVersioning {
 
     // Keep the most recent versions and any active version
     const toArchive = sortedVersions.slice(keepCount);
-    
+
     for (const version of toArchive) {
       if (version.status !== 'active') {
         version.status = 'archived';
@@ -300,7 +312,7 @@ export class PromptVersioning {
    */
   static exportVersionHistory(promptId: string): string {
     const versions = this.getVersionHistory(promptId);
-    const history = versions.map(v => ({
+    const history = versions.map((v) => ({
       version: v.version,
       createdAt: v.createdAt,
       status: v.status,
@@ -315,20 +327,19 @@ export class PromptVersioning {
   /**
    * Clone a version as a new draft
    */
-  static cloneVersion(versionId: string, modifications?: Partial<PromptVersion>): PromptVersion | null {
+  static cloneVersion(
+    versionId: string,
+    modifications?: Partial<PromptVersion>
+  ): PromptVersion | null {
     const original = this.getVersion(versionId);
     if (!original) return null;
 
-    return this.createVersion(
-      original.promptId,
-      modifications?.content || original.content,
-      {
-        template: modifications?.template || original.template,
-        description: modifications?.description || `Cloned from v${original.version}`,
-        changelog: modifications?.changelog || `Based on version ${original.version}`,
-        createdBy: modifications?.createdBy,
-        tags: modifications?.tags || original.tags
-      }
-    );
+    return this.createVersion(original.promptId, modifications?.content || original.content, {
+      template: modifications?.template || original.template,
+      description: modifications?.description || `Cloned from v${original.version}`,
+      changelog: modifications?.changelog || `Based on version ${original.version}`,
+      createdBy: modifications?.createdBy,
+      tags: modifications?.tags || original.tags
+    });
   }
 }

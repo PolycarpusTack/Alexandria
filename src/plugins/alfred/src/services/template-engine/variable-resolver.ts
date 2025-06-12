@@ -1,6 +1,6 @@
 /**
  * Context-Aware Variable Resolver
- * 
+ *
  * Intelligent variable resolution system that combines project analysis,
  * AI assistance, and deterministic fallbacks for template generation
  */
@@ -73,13 +73,18 @@ export class ContextAwareVariableResolver {
   private options: Required<ResolutionOptions>;
 
   // Project analysis cache
-  private projectContextCache: Map<string, { context: ProjectContext; timestamp: Date }> = new Map();
-  private aiSuggestionCache: Map<string, { suggestions: AIVariableSuggestion[]; timestamp: Date }> = new Map();
+  private projectContextCache: Map<string, { context: ProjectContext; timestamp: Date }> =
+    new Map();
+  private aiSuggestionCache: Map<string, { suggestions: AIVariableSuggestion[]; timestamp: Date }> =
+    new Map();
 
   // Deterministic patterns for fallbacks
   private namingPatterns = {
     camelCase: (name: string) => name.replace(/[-_\s]+(.)/g, (_, char) => char.toUpperCase()),
-    PascalCase: (name: string) => name.replace(/[-_\s]+(.)/g, (_, char) => char.toUpperCase()).replace(/^./, char => char.toUpperCase()),
+    PascalCase: (name: string) =>
+      name
+        .replace(/[-_\s]+(.)/g, (_, char) => char.toUpperCase())
+        .replace(/^./, (char) => char.toUpperCase()),
     snake_case: (name: string) => name.replace(/[-\s]+/g, '_').toLowerCase(),
     'kebab-case': (name: string) => name.replace(/[_\s]+/g, '-').toLowerCase()
   };
@@ -128,7 +133,7 @@ export class ContextAwareVariableResolver {
   ): Promise<ResolutionResult> {
     const startTime = Date.now();
     const resolveOptions = { ...this.options, ...options };
-    
+
     const result: ResolutionResult = {
       variables: { ...providedValues },
       confidence: 0,
@@ -153,40 +158,49 @@ export class ContextAwareVariableResolver {
 
       // 2. Resolve each variable
       const resolutionPromises = variables.map(async (schema) => {
-        return this.resolveVariable(schema, templateContext, projectContext, providedValues, resolveOptions);
+        return this.resolveVariable(
+          schema,
+          templateContext,
+          projectContext,
+          providedValues,
+          resolveOptions
+        );
       });
 
       // Execute with timeout
       const timeoutPromise = new Promise<never>((_, reject) => {
-        setTimeout(() => reject(new Error('Variable resolution timeout')), resolveOptions.timeoutMs);
+        setTimeout(
+          () => reject(new Error('Variable resolution timeout')),
+          resolveOptions.timeoutMs
+        );
       });
 
-      const resolutions = await Promise.race([
-        Promise.all(resolutionPromises),
-        timeoutPromise
-      ]);
+      const resolutions = await Promise.race([Promise.all(resolutionPromises), timeoutPromise]);
 
       // 3. Compile results
       for (const resolution of resolutions) {
         if (resolution.value !== undefined) {
           result.variables[resolution.variable] = resolution.value;
         }
-        
+
         if (resolution.aiSuggestion) {
           result.aiSuggestions.push(resolution.aiSuggestion);
         }
-        
+
         if (resolution.fallbackUsed) {
           result.fallbacksUsed.push(resolution.fallbackUsed);
         }
-        
+
         if (resolution.error) {
           result.errors.push(resolution.error);
         }
       }
 
       // 4. Calculate overall confidence
-      result.confidence = this.calculateOverallConfidence(result.aiSuggestions, result.fallbacksUsed);
+      result.confidence = this.calculateOverallConfidence(
+        result.aiSuggestions,
+        result.fallbacksUsed
+      );
       result.analysisTime = Date.now() - startTime;
 
       this.logger.info('Variable resolution completed', {
@@ -198,11 +212,12 @@ export class ContextAwareVariableResolver {
       });
 
       return result;
-
     } catch (error) {
-      result.errors.push(`Variable resolution failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      result.errors.push(
+        `Variable resolution failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
       result.analysisTime = Date.now() - startTime;
-      
+
       this.logger.error('Variable resolution failed', { error, templateContext });
       return result;
     }
@@ -289,7 +304,6 @@ export class ContextAwareVariableResolver {
         variable: variableName,
         error: `Unable to resolve variable: ${variableName}`
       };
-
     } catch (error) {
       return {
         variable: variableName,
@@ -311,13 +325,14 @@ export class ContextAwareVariableResolver {
     // Check cache first
     const cacheKey = this.generateAICacheKey(schema, templateContext, projectContext);
     const cached = this.aiSuggestionCache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp.getTime() < 300000) { // 5 minutes
+    if (cached && Date.now() - cached.timestamp.getTime() < 300000) {
+      // 5 minutes
       return cached.suggestions[0] || null;
     }
 
     try {
       const prompt = this.buildAIPrompt(schema, templateContext, projectContext);
-      
+
       const response = await this.aiService.complete(prompt, {
         model: 'default',
         maxTokens: 200,
@@ -326,7 +341,7 @@ export class ContextAwareVariableResolver {
       });
 
       const suggestion = this.parseAIResponse(schema, response.text);
-      
+
       if (suggestion) {
         // Cache the suggestion
         this.aiSuggestionCache.set(cacheKey, {
@@ -336,7 +351,6 @@ export class ContextAwareVariableResolver {
       }
 
       return suggestion;
-
     } catch (error) {
       this.logger.warn('AI suggestion failed', { variable: schema.name, error });
       return null;
@@ -365,7 +379,8 @@ export class ContextAwareVariableResolver {
       if (schema.validation.pattern) parts.push(`- Pattern: ${schema.validation.pattern}`);
       if (schema.validation.minLength) parts.push(`- Min length: ${schema.validation.minLength}`);
       if (schema.validation.maxLength) parts.push(`- Max length: ${schema.validation.maxLength}`);
-      if (schema.validation.options) parts.push(`- Options: ${schema.validation.options.join(', ')}`);
+      if (schema.validation.options)
+        parts.push(`- Options: ${schema.validation.options.join(', ')}`);
     }
 
     if (projectContext) {
@@ -374,7 +389,7 @@ export class ContextAwareVariableResolver {
       parts.push(`- Language: ${projectContext.language}`);
       if (projectContext.framework) parts.push(`- Framework: ${projectContext.framework}`);
       parts.push(`- Naming convention: ${projectContext.patterns.namingConvention}`);
-      
+
       if (Object.keys(projectContext.dependencies).length > 0) {
         const mainDeps = Object.keys(projectContext.dependencies).slice(0, 5).join(', ');
         parts.push(`- Main dependencies: ${mainDeps}`);
@@ -387,7 +402,7 @@ export class ContextAwareVariableResolver {
 
     parts.push('');
     parts.push('Please suggest an appropriate value. Respond with ONLY the value, no explanation.');
-    parts.push('Make it realistic and follow the project\'s conventions.');
+    parts.push("Make it realistic and follow the project's conventions.");
 
     return parts.join('\n');
   }
@@ -398,7 +413,7 @@ export class ContextAwareVariableResolver {
   private parseAIResponse(schema: VariableSchema, response: string): AIVariableSuggestion | null {
     try {
       const value = response.trim();
-      
+
       // Basic validation against schema
       if (!this.validateValue(value, schema)) {
         return null;
@@ -416,7 +431,6 @@ export class ContextAwareVariableResolver {
         confidence,
         reasoning: 'AI-generated based on project context and conventions'
       };
-
     } catch (error) {
       this.logger.debug('Failed to parse AI response', { response, error });
       return null;
@@ -435,7 +449,7 @@ export class ContextAwareVariableResolver {
     }
 
     if (variableName.includes('author') || variableName === 'author') {
-      return projectContext.gitInfo?.remoteUrl 
+      return projectContext.gitInfo?.remoteUrl
         ? this.extractAuthorFromGitUrl(projectContext.gitInfo.remoteUrl)
         : 'Your Name';
     }
@@ -450,9 +464,10 @@ export class ContextAwareVariableResolver {
 
     if (variableName.includes('type') && schema.validation?.options) {
       // Match project type to available options
-      const matchingOption = schema.validation.options.find(option => 
-        option.toLowerCase().includes(projectContext.projectType) ||
-        projectContext.projectType.includes(option.toLowerCase())
+      const matchingOption = schema.validation.options.find(
+        (option) =>
+          option.toLowerCase().includes(projectContext.projectType) ||
+          projectContext.projectType.includes(option.toLowerCase())
       );
       if (matchingOption) return matchingOption;
     }
@@ -486,7 +501,7 @@ export class ContextAwareVariableResolver {
     if (projectContext && (variableName.includes('name') || variableName.includes('class'))) {
       const baseName = path.basename(templateContext.projectPath || 'Component');
       const converter = this.namingPatterns[projectContext.patterns.namingConvention];
-      
+
       if (variableName.includes('component') || variableName.includes('class')) {
         return converter(baseName);
       }
@@ -504,9 +519,7 @@ export class ContextAwareVariableResolver {
 
     // Description patterns
     if (variableName.includes('description') && schema.type === 'string') {
-      const projectName = projectContext 
-        ? path.basename(projectContext.rootPath)
-        : 'project';
+      const projectName = projectContext ? path.basename(projectContext.rootPath) : 'project';
       return `A ${projectName} component`;
     }
 
@@ -549,13 +562,14 @@ export class ContextAwareVariableResolver {
   private async analyzeProjectContext(projectPath: string): Promise<ProjectContext | null> {
     // Check cache first
     const cached = this.projectContextCache.get(projectPath);
-    if (cached && Date.now() - cached.timestamp.getTime() < 600000) { // 10 minutes
+    if (cached && Date.now() - cached.timestamp.getTime() < 600000) {
+      // 10 minutes
       return cached.context;
     }
 
     try {
       const context = await this.performProjectAnalysis(projectPath);
-      
+
       // Cache the result
       this.projectContextCache.set(projectPath, {
         context,
@@ -563,7 +577,6 @@ export class ContextAwareVariableResolver {
       });
 
       return context;
-
     } catch (error) {
       this.logger.warn('Project analysis failed', { projectPath, error });
       return null;
@@ -595,10 +608,10 @@ export class ContextAwareVariableResolver {
 
     try {
       const files = await fs.readdir(projectPath);
-      
+
       // Detect project type and language
       for (const detector of this.projectTypeDetectors) {
-        if (files.some(file => detector.pattern.test(file))) {
+        if (files.some((file) => detector.pattern.test(file))) {
           context.projectType = detector.type;
           context.language = detector.languages[0];
           break;
@@ -611,26 +624,27 @@ export class ContextAwareVariableResolver {
       }
 
       // Check for TypeScript
-      context.structure.hasTypeScript = files.some(file => 
-        file.endsWith('.ts') || file.endsWith('.tsx') || file === 'tsconfig.json'
+      context.structure.hasTypeScript = files.some(
+        (file) => file.endsWith('.ts') || file.endsWith('.tsx') || file === 'tsconfig.json'
       );
 
       // Check for tests
-      context.structure.hasTests = files.some(file => 
-        file.includes('test') || file.includes('spec') || file === '__tests__'
+      context.structure.hasTests = files.some(
+        (file) => file.includes('test') || file.includes('spec') || file === '__tests__'
       );
 
       // Check for CI
       context.structure.hasCI = files.includes('.github') || files.includes('.gitlab-ci.yml');
 
       // Check for linting
-      context.structure.hasLinting = files.some(file => 
-        file.includes('eslint') || file.includes('prettier') || file.includes('.editorconfig')
+      context.structure.hasLinting = files.some(
+        (file) =>
+          file.includes('eslint') || file.includes('prettier') || file.includes('.editorconfig')
       );
 
       // Check for docs
-      context.structure.hasDocs = files.some(file => 
-        file.toLowerCase().includes('readme') || file === 'docs'
+      context.structure.hasDocs = files.some(
+        (file) => file.toLowerCase().includes('readme') || file === 'docs'
       );
 
       // Detect naming convention by analyzing existing files
@@ -644,7 +658,6 @@ export class ContextAwareVariableResolver {
       });
 
       return context;
-
     } catch (error) {
       this.logger.error('Failed to analyze project', { projectPath, error });
       throw error;
@@ -678,7 +691,7 @@ export class ContextAwareVariableResolver {
       };
 
       for (const [framework, packages] of Object.entries(frameworks)) {
-        if (packages.some(pkg => context.dependencies[pkg])) {
+        if (packages.some((pkg) => context.dependencies[pkg])) {
           context.framework = framework;
           break;
         }
@@ -699,7 +712,6 @@ export class ContextAwareVariableResolver {
       if (testDeps.includes('jest')) context.patterns.testPattern = 'jest';
       else if (testDeps.includes('vitest')) context.patterns.testPattern = 'vitest';
       else if (testDeps.includes('mocha')) context.patterns.testPattern = 'mocha';
-
     } catch (error) {
       this.logger.debug('Failed to analyze package.json', { error });
     }
@@ -708,16 +720,21 @@ export class ContextAwareVariableResolver {
   /**
    * Detect naming convention from existing files
    */
-  private async detectNamingConvention(projectPath: string, context: ProjectContext): Promise<void> {
+  private async detectNamingConvention(
+    projectPath: string,
+    context: ProjectContext
+  ): Promise<void> {
     try {
       const srcPath = path.join(projectPath, 'src');
-      
+
       try {
         await fs.access(srcPath);
         const files = await fs.readdir(srcPath);
-        
-        const jsFiles = files.filter(f => f.endsWith('.js') || f.endsWith('.ts') || f.endsWith('.jsx') || f.endsWith('.tsx'));
-        
+
+        const jsFiles = files.filter(
+          (f) => f.endsWith('.js') || f.endsWith('.ts') || f.endsWith('.jsx') || f.endsWith('.tsx')
+        );
+
         if (jsFiles.length > 0) {
           const naming = this.analyzeFileNaming(jsFiles);
           context.patterns.namingConvention = naming;
@@ -725,7 +742,6 @@ export class ContextAwareVariableResolver {
       } catch {
         // src directory doesn't exist, skip
       }
-
     } catch (error) {
       this.logger.debug('Failed to detect naming convention', { error });
     }
@@ -734,7 +750,9 @@ export class ContextAwareVariableResolver {
   /**
    * Analyze file naming patterns
    */
-  private analyzeFileNaming(files: string[]): 'camelCase' | 'PascalCase' | 'snake_case' | 'kebab-case' {
+  private analyzeFileNaming(
+    files: string[]
+  ): 'camelCase' | 'PascalCase' | 'snake_case' | 'kebab-case' {
     const patterns = {
       camelCase: 0,
       PascalCase: 0,
@@ -744,7 +762,7 @@ export class ContextAwareVariableResolver {
 
     for (const file of files) {
       const name = path.parse(file).name;
-      
+
       if (/^[a-z][a-zA-Z0-9]*$/.test(name)) patterns.camelCase++;
       else if (/^[A-Z][a-zA-Z0-9]*$/.test(name)) patterns.PascalCase++;
       else if (/_/.test(name)) patterns.snake_case++;
@@ -752,7 +770,7 @@ export class ContextAwareVariableResolver {
     }
 
     // Return the most common pattern
-    return Object.entries(patterns).reduce((a, b) => 
+    return Object.entries(patterns).reduce((a, b) =>
       (patterns as any)[a[0]] > (patterns as any)[b[0]] ? a : b
     )[0] as any;
   }
@@ -767,19 +785,19 @@ export class ContextAwareVariableResolver {
 
     if (schema.validation) {
       const validation = schema.validation;
-      
+
       if (validation.pattern && typeof value === 'string') {
         if (!new RegExp(validation.pattern).test(value)) return false;
       }
-      
+
       if (validation.minLength && typeof value === 'string') {
         if (value.length < validation.minLength) return false;
       }
-      
+
       if (validation.maxLength && typeof value === 'string') {
         if (value.length > validation.maxLength) return false;
       }
-      
+
       if (validation.options && !validation.options.includes(value)) {
         return false;
       }
@@ -802,7 +820,7 @@ export class ContextAwareVariableResolver {
         try {
           return JSON.parse(value);
         } catch {
-          return value.split(',').map(s => s.trim());
+          return value.split(',').map((s) => s.trim());
         }
       case 'object':
         try {
@@ -839,15 +857,19 @@ export class ContextAwareVariableResolver {
   /**
    * Calculate overall confidence for all resolutions
    */
-  private calculateOverallConfidence(suggestions: AIVariableSuggestion[], fallbacks: string[]): number {
+  private calculateOverallConfidence(
+    suggestions: AIVariableSuggestion[],
+    fallbacks: string[]
+  ): number {
     if (suggestions.length === 0 && fallbacks.length === 0) return 0;
 
-    const aiConfidence = suggestions.length > 0 
-      ? suggestions.reduce((sum, s) => sum + s.confidence, 0) / suggestions.length
-      : 0;
+    const aiConfidence =
+      suggestions.length > 0
+        ? suggestions.reduce((sum, s) => sum + s.confidence, 0) / suggestions.length
+        : 0;
 
     const fallbackPenalty = fallbacks.length * 0.1; // Reduce confidence for each fallback used
-    
+
     return Math.max(aiConfidence - fallbackPenalty, 0.1);
   }
 
@@ -874,7 +896,7 @@ export class ContextAwareVariableResolver {
       language: projectContext?.language,
       framework: projectContext?.framework
     };
-    
+
     return JSON.stringify(keyData);
   }
 

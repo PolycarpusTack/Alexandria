@@ -1,6 +1,6 @@
 /**
  * Mnemosyne Rate Limiting Middleware
- * 
+ *
  * Advanced rate limiting with multiple strategies, user-based limits,
  * API key tiers, and adaptive throttling
  */
@@ -73,7 +73,7 @@ class MemoryRateLimitStore implements RateLimitStore {
 
   async increment(key: string, windowMs: number): Promise<{ count: number; resetTime: number }> {
     const existing = await this.get(key);
-    
+
     if (existing) {
       existing.count++;
       this.store.set(key, existing);
@@ -102,36 +102,48 @@ class MemoryRateLimitStore implements RateLimitStore {
 
 /**
  * Rate Limiting Middleware
- * 
+ *
  * Provides sophisticated rate limiting with multiple strategies,
  * user tiers, and adaptive throttling capabilities
  */
 export class RateLimitMiddleware {
   private readonly logger: Logger;
   private readonly store: RateLimitStore;
-  
+
   // User tier configurations
   private readonly userTiers: Map<string, UserTier> = new Map([
-    ['free', {
-      name: 'Free',
-      limits: { standard: 100, analytical: 10, upload: 5, search: 50 },
-      windowMs: 3600000 // 1 hour
-    }],
-    ['basic', {
-      name: 'Basic',
-      limits: { standard: 500, analytical: 50, upload: 25, search: 200 },
-      windowMs: 3600000
-    }],
-    ['premium', {
-      name: 'Premium',
-      limits: { standard: 2000, analytical: 200, upload: 100, search: 1000 },
-      windowMs: 3600000
-    }],
-    ['enterprise', {
-      name: 'Enterprise',
-      limits: { standard: 10000, analytical: 1000, upload: 500, search: 5000 },
-      windowMs: 3600000
-    }]
+    [
+      'free',
+      {
+        name: 'Free',
+        limits: { standard: 100, analytical: 10, upload: 5, search: 50 },
+        windowMs: 3600000 // 1 hour
+      }
+    ],
+    [
+      'basic',
+      {
+        name: 'Basic',
+        limits: { standard: 500, analytical: 50, upload: 25, search: 200 },
+        windowMs: 3600000
+      }
+    ],
+    [
+      'premium',
+      {
+        name: 'Premium',
+        limits: { standard: 2000, analytical: 200, upload: 100, search: 1000 },
+        windowMs: 3600000
+      }
+    ],
+    [
+      'enterprise',
+      {
+        name: 'Enterprise',
+        limits: { standard: 10000, analytical: 1000, upload: 500, search: 5000 },
+        windowMs: 3600000
+      }
+    ]
   ]);
 
   // Predefined rate limit configurations
@@ -222,7 +234,6 @@ export class RateLimitMiddleware {
 
         const rateLimiter = this.createRateLimiter(config);
         await rateLimiter(req, res, next);
-
       } catch (error) {
         this.logger.error('Dynamic rate limiting error', {
           error: error.message,
@@ -241,10 +252,10 @@ export class RateLimitMiddleware {
       try {
         // Get current system load (simplified - in production, use actual metrics)
         const systemLoad = await this.getSystemLoad();
-        
+
         // Adjust limits based on load
         const adjustedMax = Math.floor(baseConfig.max * this.getLoadMultiplier(systemLoad));
-        
+
         const adaptiveConfig: RateLimitConfig = {
           ...baseConfig,
           max: Math.max(1, adjustedMax), // Ensure at least 1 request is allowed
@@ -253,7 +264,6 @@ export class RateLimitMiddleware {
 
         const rateLimiter = this.createRateLimiter(adaptiveConfig);
         await rateLimiter(req, res, next);
-
       } catch (error) {
         this.logger.error('Adaptive rate limiting error', {
           error: error.message,
@@ -300,10 +310,10 @@ export class RateLimitMiddleware {
 
         // Generate key for this request
         const key = config.keyGenerator ? config.keyGenerator(req) : this.generateDefaultKey(req);
-        
+
         // Get current rate limit data
         const result = await this.store.increment(key, config.windowMs);
-        
+
         // Set rate limit headers
         this.setRateLimitHeaders(res, config.max, result.count, result.resetTime);
 
@@ -323,7 +333,11 @@ export class RateLimitMiddleware {
             config.onLimitReached(req, res);
           }
 
-          return this.sendRateLimitResponse(res, config.message || 'Rate limit exceeded', result.resetTime);
+          return this.sendRateLimitResponse(
+            res,
+            config.message || 'Rate limit exceeded',
+            result.resetTime
+          );
         }
 
         // Log successful request
@@ -335,13 +349,12 @@ export class RateLimitMiddleware {
         });
 
         next();
-
       } catch (error) {
         this.logger.error('Rate limiting error', {
           error: error.message,
           path: req.path
         });
-        
+
         // On error, allow the request to proceed
         next();
       }
@@ -356,12 +369,12 @@ export class RateLimitMiddleware {
     if (user) {
       return `user:${user.id}:${req.path}`;
     }
-    
+
     const apiKey = req.get('X-API-Key');
     if (apiKey) {
       return `apikey:${apiKey}:${req.path}`;
     }
-    
+
     return `ip:${this.getClientIP(req)}:${req.path}`;
   }
 
@@ -373,7 +386,7 @@ export class RateLimitMiddleware {
     if (user) {
       return `user:${user.id}:${operationType}`;
     }
-    
+
     return `ip:${this.getClientIP(req)}:${operationType}`;
   }
 
@@ -407,9 +420,9 @@ export class RateLimitMiddleware {
    * Set rate limit headers
    */
   private setRateLimitHeaders(
-    res: Response, 
-    max: number, 
-    current: number, 
+    res: Response,
+    max: number,
+    current: number,
     resetTime: number
   ): void {
     res.setHeader('X-RateLimit-Limit', max);

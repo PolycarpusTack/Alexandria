@@ -1,6 +1,6 @@
 /**
  * Enhanced Layout Component Test Suite
- * 
+ *
  * Comprehensive tests for the Enhanced Layout component including:
  * - Layout rendering and structure
  * - Sidebar functionality and responsive behavior
@@ -28,49 +28,57 @@ jest.mock('../../hooks/useLayoutState');
 jest.mock('../../hooks/useKeyboardShortcuts');
 jest.mock('../header', () => ({
   Header: ({ onToggleSidebar, user }: any) => (
-    <header data-testid="header">
-      <button onClick={onToggleSidebar} data-testid="toggle-sidebar">
+    <header data-testid='header'>
+      <button onClick={onToggleSidebar} data-testid='toggle-sidebar'>
         Toggle Sidebar
       </button>
-      {user && <span data-testid="user-info">{user.username}</span>}
+      {user && <span data-testid='user-info'>{user.username}</span>}
     </header>
-  ),
+  )
 }));
 
 jest.mock('../sidebar', () => ({
   Sidebar: ({ isOpen, onClose, currentPath }: any) => (
-    <aside 
-      data-testid="sidebar" 
+    <aside
+      data-testid='sidebar'
       className={isOpen ? 'open' : 'closed'}
       data-current-path={currentPath}
     >
-      <button onClick={onClose} data-testid="close-sidebar">Close</button>
-      <nav data-testid="navigation">
-        <a href="/dashboard" data-testid="nav-dashboard">Dashboard</a>
-        <a href="/plugins" data-testid="nav-plugins">Plugins</a>
-        <a href="/settings" data-testid="nav-settings">Settings</a>
+      <button onClick={onClose} data-testid='close-sidebar'>
+        Close
+      </button>
+      <nav data-testid='navigation'>
+        <a href='/dashboard' data-testid='nav-dashboard'>
+          Dashboard
+        </a>
+        <a href='/plugins' data-testid='nav-plugins'>
+          Plugins
+        </a>
+        <a href='/settings' data-testid='nav-settings'>
+          Settings
+        </a>
       </nav>
     </aside>
-  ),
+  )
 }));
 
 jest.mock('../notifications-panel', () => ({
   NotificationsPanel: ({ notifications, onDismiss }: any) => (
-    <div data-testid="notifications-panel">
+    <div data-testid='notifications-panel'>
       {notifications.map((notif: any) => (
-        <div key={notif.id} data-testid="notification">
+        <div key={notif.id} data-testid='notification'>
           {notif.message}
           <button onClick={() => onDismiss(notif.id)}>Dismiss</button>
         </div>
       ))}
     </div>
-  ),
+  )
 }));
 
 // Test wrapper component
-const TestWrapper: React.FC<{ children: React.ReactNode; uiContextValue?: any }> = ({ 
-  children, 
-  uiContextValue = {} 
+const TestWrapper: React.FC<{ children: React.ReactNode; uiContextValue?: any }> = ({
+  children,
+  uiContextValue = {}
 }) => {
   const defaultUIContext = {
     theme: 'light',
@@ -82,15 +90,13 @@ const TestWrapper: React.FC<{ children: React.ReactNode; uiContextValue?: any }>
     removeNotification: jest.fn(),
     loading: false,
     setLoading: jest.fn(),
-    ...uiContextValue,
+    ...uiContextValue
   };
 
   return (
     <BrowserRouter>
       <ThemeProvider>
-        <UIContext.Provider value={defaultUIContext}>
-          {children}
-        </UIContext.Provider>
+        <UIContext.Provider value={defaultUIContext}>{children}</UIContext.Provider>
       </ThemeProvider>
     </BrowserRouter>
   );
@@ -98,14 +104,16 @@ const TestWrapper: React.FC<{ children: React.ReactNode; uiContextValue?: any }>
 
 describe('EnhancedLayout', () => {
   const mockUseLayoutState = useLayoutState as jest.MockedFunction<typeof useLayoutState>;
-  const mockUseKeyboardShortcuts = useKeyboardShortcuts as jest.MockedFunction<typeof useKeyboardShortcuts>;
+  const mockUseKeyboardShortcuts = useKeyboardShortcuts as jest.MockedFunction<
+    typeof useKeyboardShortcuts
+  >;
 
   const mockUser = {
     id: 'user-123',
     username: 'testuser',
     email: 'test@example.com',
     roles: ['user'],
-    permissions: ['read', 'write'],
+    permissions: ['read', 'write']
   };
 
   const defaultLayoutState = {
@@ -117,22 +125,22 @@ describe('EnhancedLayout', () => {
     theme: 'light',
     setTheme: jest.fn(),
     isCollapsed: false,
-    setIsCollapsed: jest.fn(),
+    setIsCollapsed: jest.fn()
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
-    
+
     mockUseLayoutState.mockReturnValue(defaultLayoutState);
     mockUseKeyboardShortcuts.mockReturnValue({
       registerShortcut: jest.fn(),
-      unregisterShortcut: jest.fn(),
+      unregisterShortcut: jest.fn()
     });
 
     // Mock window.matchMedia for responsive tests
     Object.defineProperty(window, 'matchMedia', {
       writable: true,
-      value: jest.fn().mockImplementation(query => ({
+      value: jest.fn().mockImplementation((query) => ({
         matches: false,
         media: query,
         onchange: null,
@@ -140,8 +148,8 @@ describe('EnhancedLayout', () => {
         removeListener: jest.fn(),
         addEventListener: jest.fn(),
         removeEventListener: jest.fn(),
-        dispatchEvent: jest.fn(),
-      })),
+        dispatchEvent: jest.fn()
+      }))
     });
   });
 
@@ -150,7 +158,7 @@ describe('EnhancedLayout', () => {
       render(
         <TestWrapper>
           <EnhancedLayout user={mockUser}>
-            <div data-testid="main-content">Main Content</div>
+            <div data-testid='main-content'>Main Content</div>
           </EnhancedLayout>
         </TestWrapper>
       );
@@ -165,7 +173,7 @@ describe('EnhancedLayout', () => {
       render(
         <TestWrapper>
           <EnhancedLayout>
-            <div data-testid="main-content">Main Content</div>
+            <div data-testid='main-content'>Main Content</div>
           </EnhancedLayout>
         </TestWrapper>
       );
@@ -190,7 +198,7 @@ describe('EnhancedLayout', () => {
       // Test with sidebar open
       mockUseLayoutState.mockReturnValue({
         ...defaultLayoutState,
-        sidebarOpen: true,
+        sidebarOpen: true
       });
 
       rerender(
@@ -209,10 +217,10 @@ describe('EnhancedLayout', () => {
     it('should toggle sidebar when header button is clicked', async () => {
       const user = userEvent.setup();
       const setSidebarOpen = jest.fn();
-      
+
       mockUseLayoutState.mockReturnValue({
         ...defaultLayoutState,
-        setSidebarOpen,
+        setSidebarOpen
       });
 
       render(
@@ -232,11 +240,11 @@ describe('EnhancedLayout', () => {
     it('should close sidebar when close button is clicked', async () => {
       const user = userEvent.setup();
       const setSidebarOpen = jest.fn();
-      
+
       mockUseLayoutState.mockReturnValue({
         ...defaultLayoutState,
         sidebarOpen: true,
-        setSidebarOpen,
+        setSidebarOpen
       });
 
       render(
@@ -255,10 +263,10 @@ describe('EnhancedLayout', () => {
 
     it('should handle keyboard shortcuts for sidebar toggle', () => {
       const registerShortcut = jest.fn();
-      
+
       mockUseKeyboardShortcuts.mockReturnValue({
         registerShortcut,
-        unregisterShortcut: jest.fn(),
+        unregisterShortcut: jest.fn()
       });
 
       render(
@@ -278,9 +286,9 @@ describe('EnhancedLayout', () => {
 
     it('should be responsive to screen size changes', () => {
       const mockMatchMedia = window.matchMedia as jest.Mock;
-      
+
       // Mock mobile breakpoint
-      mockMatchMedia.mockImplementation(query => ({
+      mockMatchMedia.mockImplementation((query) => ({
         matches: query === '(max-width: 768px)',
         media: query,
         onchange: null,
@@ -288,7 +296,7 @@ describe('EnhancedLayout', () => {
         removeListener: jest.fn(),
         addEventListener: jest.fn(),
         removeEventListener: jest.fn(),
-        dispatchEvent: jest.fn(),
+        dispatchEvent: jest.fn()
       }));
 
       render(
@@ -308,7 +316,7 @@ describe('EnhancedLayout', () => {
     it('should apply theme classes correctly', () => {
       const uiContextValue = {
         theme: 'dark',
-        setTheme: jest.fn(),
+        setTheme: jest.fn()
       };
 
       render(
@@ -326,11 +334,11 @@ describe('EnhancedLayout', () => {
     it('should handle theme switching', async () => {
       const user = userEvent.setup();
       const setTheme = jest.fn();
-      
+
       mockUseLayoutState.mockReturnValue({
         ...defaultLayoutState,
         theme: 'light',
-        setTheme,
+        setTheme
       });
 
       render(
@@ -391,12 +399,12 @@ describe('EnhancedLayout', () => {
     it('should display notifications panel when notifications exist', () => {
       const notifications = [
         { id: '1', message: 'Test notification 1', type: 'info' },
-        { id: '2', message: 'Test notification 2', type: 'success' },
+        { id: '2', message: 'Test notification 2', type: 'success' }
       ];
 
       const uiContextValue = {
         notifications,
-        removeNotification: jest.fn(),
+        removeNotification: jest.fn()
       };
 
       render(
@@ -414,14 +422,12 @@ describe('EnhancedLayout', () => {
     it('should handle notification dismissal', async () => {
       const user = userEvent.setup();
       const removeNotification = jest.fn();
-      
-      const notifications = [
-        { id: '1', message: 'Test notification', type: 'info' },
-      ];
+
+      const notifications = [{ id: '1', message: 'Test notification', type: 'info' }];
 
       const uiContextValue = {
         notifications,
-        removeNotification,
+        removeNotification
       };
 
       render(
@@ -442,7 +448,7 @@ describe('EnhancedLayout', () => {
   describe('Loading States', () => {
     it('should show loading overlay when loading', () => {
       const uiContextValue = {
-        loading: true,
+        loading: true
       };
 
       render(
@@ -458,7 +464,7 @@ describe('EnhancedLayout', () => {
 
     it('should hide loading overlay when not loading', () => {
       const uiContextValue = {
-        loading: false,
+        loading: false
       };
 
       render(
@@ -511,10 +517,10 @@ describe('EnhancedLayout', () => {
     it('should have proper focus management for sidebar', async () => {
       const user = userEvent.setup();
       const setSidebarOpen = jest.fn();
-      
+
       mockUseLayoutState.mockReturnValue({
         ...defaultLayoutState,
-        setSidebarOpen,
+        setSidebarOpen
       });
 
       render(
@@ -577,9 +583,9 @@ describe('EnhancedLayout', () => {
       mockResizeObserver.mockReturnValue({
         observe: jest.fn(),
         unobserve: jest.fn(),
-        disconnect: jest.fn(),
+        disconnect: jest.fn()
       });
-      
+
       global.ResizeObserver = mockResizeObserver;
 
       render(
@@ -646,10 +652,10 @@ describe('EnhancedLayout', () => {
   describe('Custom Hooks Integration', () => {
     it('should register keyboard shortcuts on mount', () => {
       const registerShortcut = jest.fn();
-      
+
       mockUseKeyboardShortcuts.mockReturnValue({
         registerShortcut,
-        unregisterShortcut: jest.fn(),
+        unregisterShortcut: jest.fn()
       });
 
       render(
@@ -669,10 +675,10 @@ describe('EnhancedLayout', () => {
 
     it('should cleanup shortcuts on unmount', () => {
       const unregisterShortcut = jest.fn();
-      
+
       mockUseKeyboardShortcuts.mockReturnValue({
         registerShortcut: jest.fn(),
-        unregisterShortcut,
+        unregisterShortcut
       });
 
       const { unmount } = render(

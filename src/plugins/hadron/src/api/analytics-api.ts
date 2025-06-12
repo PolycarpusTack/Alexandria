@@ -83,7 +83,7 @@ export function createAnalyticsRouter(
   router.get('/model-performance', async (req: Request, res: Response) => {
     try {
       const { model, start, end, granularity } = req.query;
-      
+
       let timeRange: TimeRange | undefined;
       if (start && end && granularity) {
         timeRange = {
@@ -120,7 +120,7 @@ export function createAnalyticsRouter(
   router.get('/summary', async (req: Request, res: Response) => {
     try {
       const { start, end } = req.query;
-      
+
       const timeRange: TimeRange = {
         start: start ? new Date(start as string) : new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
         end: end ? new Date(end as string) : new Date(),
@@ -162,10 +162,10 @@ export function createAnalyticsRouter(
           }
         });
       }
-      
+
       const cacheService = llmService['llmCacheService'];
       const stats = await cacheService.getCacheStats();
-      
+
       res.json({
         success: true,
         data: {
@@ -181,6 +181,6 @@ export function createAnalyticsRouter(
       });
     }
   });
-  
+
   return router;
 }

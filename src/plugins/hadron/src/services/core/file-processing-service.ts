@@ -1,6 +1,6 @@
 /**
  * File Processing Service
- * 
+ *
  * Handles file upload processing, security scanning, validation, and storage
  * for crash logs and other files in the Hadron plugin.
  */
@@ -8,7 +8,6 @@
 import { Logger } from '../../../../../utils/logger';
 import { EventBus } from '../../../../../core/event-bus/event-bus';
 import { ValidationError, SecurityError } from '../../../../../core/errors';
-import { v4 as uuidv4 } from 'uuid';
 
 export interface FileSecurityScanResult {
   status: 'passed' | 'failed' | 'quarantined';
@@ -96,7 +95,9 @@ export class FileProcessingService {
       // If threats detected and quarantine enabled
       if (securityScanResult.threats > 0 && this.config.quarantineThreats) {
         await this.quarantineFile(fileId, file, filename, securityScanResult);
-        throw new SecurityError(`File quarantined due to security threats: ${securityScanResult.threats} threats detected`);
+        throw new SecurityError(
+          `File quarantined due to security threats: ${securityScanResult.threats} threats detected`
+        );
       }
 
       // Store file if safe
@@ -124,8 +125,8 @@ export class FileProcessingService {
         }
       };
 
-      this.logger.info('File processing completed', { 
-        fileId, 
+      this.logger.info('File processing completed', {
+        fileId,
         filename,
         processingTime: Date.now() - startTime,
         securityStatus: securityScanResult.status
@@ -133,9 +134,9 @@ export class FileProcessingService {
 
       return result;
     } catch (error) {
-      this.logger.error('File processing failed', { 
-        fileId, 
-        filename, 
+      this.logger.error('File processing failed', {
+        fileId,
+        filename,
         userId,
         error: error instanceof Error ? error.message : String(error)
       });
@@ -160,7 +161,9 @@ export class FileProcessingService {
     // Check file size
     const fileSize = Buffer.isBuffer(file) ? file.length : file.length;
     if (fileSize > this.config.maxFileSize) {
-      throw new ValidationError(`File size ${fileSize} exceeds maximum allowed size ${this.config.maxFileSize}`);
+      throw new ValidationError(
+        `File size ${fileSize} exceeds maximum allowed size ${this.config.maxFileSize}`
+      );
     }
 
     if (fileSize === 0) {
@@ -170,7 +173,9 @@ export class FileProcessingService {
     // Check file extension
     const extension = this.getFileExtension(filename);
     if (!this.config.allowedExtensions.includes(extension.toLowerCase())) {
-      throw new ValidationError(`File extension '${extension}' is not allowed. Supported: ${this.config.allowedExtensions.join(', ')}`);
+      throw new ValidationError(
+        `File extension '${extension}' is not allowed. Supported: ${this.config.allowedExtensions.join(', ')}`
+      );
     }
 
     // Check filename
@@ -180,10 +185,10 @@ export class FileProcessingService {
 
     // Check for suspicious filename patterns
     const suspiciousPatterns = [
-      /\.\./,  // Directory traversal
-      /[<>:"|?*]/,  // Invalid filename characters
-      /^\./,  // Hidden files
-      /\.(exe|bat|cmd|scr|pif|com)$/i  // Executable extensions
+      /\.\./, // Directory traversal
+      /[<>:"|?*]/, // Invalid filename characters
+      /^\./, // Hidden files
+      /\.(exe|bat|cmd|scr|pif|com)$/i // Executable extensions
     ];
 
     for (const pattern of suspiciousPatterns) {
@@ -196,7 +201,10 @@ export class FileProcessingService {
   /**
    * Normalize file content and detect encoding/mime type
    */
-  private async normalizeContent(file: Buffer | string, filename: string): Promise<{
+  private async normalizeContent(
+    file: Buffer | string,
+    filename: string
+  ): Promise<{
     content: string;
     encoding: string;
     mimeType: string;
@@ -260,13 +268,13 @@ export class FileProcessingService {
   private async generateChecksum(file: Buffer | string): Promise<string> {
     const crypto = require('crypto');
     const hash = crypto.createHash('sha256');
-    
+
     if (Buffer.isBuffer(file)) {
       hash.update(file);
     } else {
       hash.update(file, 'utf8');
     }
-    
+
     return hash.digest('hex');
   }
 
@@ -274,8 +282,8 @@ export class FileProcessingService {
    * Perform security scanning on the file
    */
   private async performSecurityScan(
-    file: Buffer | string, 
-    filename: string, 
+    file: Buffer | string,
+    filename: string,
     fileId: string
   ): Promise<FileSecurityScanResult> {
     const startTime = Date.now();
@@ -309,17 +317,17 @@ export class FileProcessingService {
       // Check for suspicious patterns in content
       const content = Buffer.isBuffer(file) ? file.toString('utf8') : file;
       const suspiciousPatterns = [
-        /eval\s*\(/gi,  // JavaScript eval
-        /<script/gi,    // Script tags
+        /eval\s*\(/gi, // JavaScript eval
+        /<script/gi, // Script tags
         /javascript:/gi, // JavaScript protocol
-        /vbscript:/gi,  // VBScript protocol
-        /\bexec\b/gi,   // Exec commands
-        /\bshell\b/gi,  // Shell references
-        /cmd\.exe/gi,   // Windows command line
+        /vbscript:/gi, // VBScript protocol
+        /\bexec\b/gi, // Exec commands
+        /\bshell\b/gi, // Shell references
+        /cmd\.exe/gi, // Windows command line
         /powershell/gi, // PowerShell
         /\/bin\/bash/gi, // Bash shell
-        /rm\s+-rf/gi,   // Dangerous rm command
-        /sudo\s+/gi     // Sudo commands
+        /rm\s+-rf/gi, // Dangerous rm command
+        /sudo\s+/gi // Sudo commands
       ];
 
       for (const pattern of suspiciousPatterns) {
@@ -371,12 +379,12 @@ export class FileProcessingService {
         scanDuration
       };
 
-      this.logger.info('Security scan completed', { 
-        fileId, 
-        filename, 
-        status, 
-        threats, 
-        scanDuration 
+      this.logger.info('Security scan completed', {
+        fileId,
+        filename,
+        status,
+        threats,
+        scanDuration
       });
 
       // Emit security scan event
@@ -388,8 +396,8 @@ export class FileProcessingService {
 
       return result;
     } catch (error) {
-      this.logger.error('Security scan failed', { 
-        fileId, 
+      this.logger.error('Security scan failed', {
+        fileId,
         filename,
         error: error instanceof Error ? error.message : String(error)
       });
@@ -414,9 +422,9 @@ export class FileProcessingService {
    * Quarantine a file that failed security scan
    */
   private async quarantineFile(
-    fileId: string, 
-    file: Buffer | string, 
-    filename: string, 
+    fileId: string,
+    file: Buffer | string,
+    filename: string,
     scanResult: FileSecurityScanResult
   ): Promise<void> {
     try {
@@ -424,10 +432,10 @@ export class FileProcessingService {
       const quarantineFilename = `${fileId}_${filename}`;
 
       // In a real implementation, this would write to the file system
-      this.logger.warn('File quarantined', { 
-        fileId, 
-        filename: quarantineFilename, 
-        threats: scanResult.threats 
+      this.logger.warn('File quarantined', {
+        fileId,
+        filename: quarantineFilename,
+        threats: scanResult.threats
       });
 
       // Emit quarantine event
@@ -438,8 +446,8 @@ export class FileProcessingService {
         scanResult
       });
     } catch (error) {
-      this.logger.error('Failed to quarantine file', { 
-        fileId, 
+      this.logger.error('Failed to quarantine file', {
+        fileId,
         filename,
         error: error instanceof Error ? error.message : String(error)
       });
@@ -451,9 +459,9 @@ export class FileProcessingService {
    * Store file securely
    */
   private async storeFile(
-    fileId: string, 
-    file: Buffer | string, 
-    filename: string, 
+    fileId: string,
+    file: Buffer | string,
+    filename: string,
     userId: string
   ): Promise<void> {
     try {
@@ -461,10 +469,10 @@ export class FileProcessingService {
       const storedFilename = `${fileId}_${filename}`;
 
       // In a real implementation, this would write to the file system
-      this.logger.info('File stored securely', { 
-        fileId, 
-        filename: storedFilename, 
-        userId 
+      this.logger.info('File stored securely', {
+        fileId,
+        filename: storedFilename,
+        userId
       });
 
       // Emit storage event
@@ -475,8 +483,8 @@ export class FileProcessingService {
         userId
       });
     } catch (error) {
-      this.logger.error('Failed to store file', { 
-        fileId, 
+      this.logger.error('Failed to store file', {
+        fileId,
         filename,
         error: error instanceof Error ? error.message : String(error)
       });
@@ -499,7 +507,7 @@ export class FileProcessingService {
 
       this.logger.info('Associated files deleted', { logId });
     } catch (error) {
-      this.logger.error('Failed to delete associated files', { 
+      this.logger.error('Failed to delete associated files', {
         logId,
         error: error instanceof Error ? error.message : String(error)
       });
@@ -514,10 +522,10 @@ export class FileProcessingService {
     try {
       // Check storage accessibility
       const storagePath = this.config.storageBasePath;
-      
+
       // In a real implementation, check if storage is accessible
       // For now, always return true
-      
+
       return true;
     } catch (error) {
       this.logger.error('File processing service health check failed', {

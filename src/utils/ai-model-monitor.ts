@@ -60,13 +60,11 @@ export function trackModelRequest(
     metrics.errorCount++;
   }
   metrics.totalTokens += tokens;
-  
+
   // Update average response time
-  metrics.avgResponseTime = (
-    (metrics.avgResponseTime * (metrics.requestCount - 1) + responseTime) / 
-    metrics.requestCount
-  );
-  
+  metrics.avgResponseTime =
+    (metrics.avgResponseTime * (metrics.requestCount - 1) + responseTime) / metrics.requestCount;
+
   metrics.lastActive = new Date();
   modelMetrics.set(modelId, metrics);
 }
@@ -95,8 +93,8 @@ export async function getAIModelStatus(): Promise<AIModelStatus[]> {
 
   // Merge metrics models with default models, avoiding duplicates
   const modelMap = new Map<string, any>();
-  metricsModels.forEach(m => modelMap.set(m.id, m));
-  defaultModels.forEach(m => {
+  metricsModels.forEach((m) => modelMap.set(m.id, m));
+  defaultModels.forEach((m) => {
     if (!modelMap.has(m.id)) {
       modelMap.set(m.id, m);
     }
@@ -113,14 +111,11 @@ export async function getAIModelStatus(): Promise<AIModelStatus[]> {
     await dataService.initialize();
 
     // Get recent AI requests from logs
-    const recentLogs = await dataService.logs.findByTimeRange(
-      new Date(hourAgo),
-      new Date()
-    );
+    const recentLogs = await dataService.logs.findByTimeRange(new Date(hourAgo), new Date());
 
     // Filter for AI model requests
-    const aiRequests = recentLogs.filter(log => 
-      log.source === 'ai-service' && log.context?.modelId
+    const aiRequests = recentLogs.filter(
+      (log) => log.source === 'ai-service' && log.context?.modelId
     );
 
     // Calculate metrics from logs
@@ -139,9 +134,9 @@ export async function getAIModelStatus(): Promise<AIModelStatus[]> {
   }
 
   // Calculate status for each model
-  return models.map(model => {
+  return models.map((model) => {
     const metrics = modelMetrics.get(model.id);
-    
+
     if (!metrics) {
       return {
         ...model,
@@ -153,17 +148,13 @@ export async function getAIModelStatus(): Promise<AIModelStatus[]> {
 
     // Calculate requests per hour
     const timeSinceLastUpdate = (currentTime - lastUpdateTime) / 1000 / 60 / 60; // hours
-    const requestsPerHour = Math.round(
-      metrics.requestCount / Math.max(timeSinceLastUpdate, 1)
-    );
+    const requestsPerHour = Math.round(metrics.requestCount / Math.max(timeSinceLastUpdate, 1));
 
     // Calculate load (based on request rate, assuming 1000 req/hour = 100% load)
     const load = Math.min(100, Math.round((requestsPerHour / 1000) * 100));
 
     // Calculate error rate
-    const errorRate = metrics.requestCount > 0 
-      ? metrics.errorCount / metrics.requestCount 
-      : 0;
+    const errorRate = metrics.requestCount > 0 ? metrics.errorCount / metrics.requestCount : 0;
 
     // Determine status
     let status: 'online' | 'offline' | 'degraded' = 'online';
@@ -225,11 +216,11 @@ function formatModelName(modelId: string): string {
   if (modelId === 'llama2') return 'Llama 2';
   if (modelId === 'codellama') return 'CodeLlama';
   if (modelId === 'mistral') return 'Mistral';
-  
+
   // Default: capitalize first letter of each word
   return modelId
     .split(/[-_]/)
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(' ');
 }
 
@@ -238,11 +229,16 @@ function formatModelName(modelId: string): string {
  */
 function formatProviderName(provider: string): string {
   switch (provider.toLowerCase()) {
-    case 'openai': return 'OpenAI';
-    case 'anthropic': return 'Anthropic';
-    case 'ollama': return 'Ollama';
-    case 'meta': return 'Meta';
-    default: return provider.charAt(0).toUpperCase() + provider.slice(1);
+    case 'openai':
+      return 'OpenAI';
+    case 'anthropic':
+      return 'Anthropic';
+    case 'ollama':
+      return 'Ollama';
+    case 'meta':
+      return 'Meta';
+    default:
+      return provider.charAt(0).toUpperCase() + provider.slice(1);
   }
 }
 
@@ -251,7 +247,7 @@ function formatProviderName(provider: string): string {
  */
 export async function initializeAIModelMonitoring(): Promise<void> {
   logger.info('Initializing AI model monitoring');
-  
+
   // Load initial metrics from database if available
   try {
     await getAIModelStatus();

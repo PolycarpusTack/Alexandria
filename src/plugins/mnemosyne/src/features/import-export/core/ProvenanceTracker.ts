@@ -10,8 +10,6 @@ import {
   SyncDirection
 } from '../interfaces';
 import { MnemosyneDocument } from '../../../interfaces';
-import { v4 as uuidv4 } from 'uuid';
-import * as crypto from 'crypto';
 
 export class ProvenanceTracker {
   constructor(private context: PluginContext) {}
@@ -42,13 +40,13 @@ export class ProvenanceTracker {
     ];
 
     const result = await this.context.db.query(query, values);
-    
+
     // Create knowledge graph relationships
     await this.createGraphRelationships(node);
-    
+
     // Emit provenance event
     this.context.events.emit('mnemosyne:provenance:tracked', node);
-    
+
     return this.mapToProvenanceNode(result.rows[0]);
   }
 
@@ -90,20 +88,14 @@ export class ProvenanceTracker {
   /**
    * Update sync status
    */
-  async updateSyncStatus(
-    documentId: string,
-    syncStatus: ProvenanceSyncStatus
-  ): Promise<void> {
+  async updateSyncStatus(documentId: string, syncStatus: ProvenanceSyncStatus): Promise<void> {
     const query = `
       UPDATE mnemosyne_provenance
       SET sync_status = $2, updated_at = CURRENT_TIMESTAMP
       WHERE document_id = $1
     `;
 
-    await this.context.db.query(query, [
-      documentId,
-      JSON.stringify(syncStatus)
-    ]);
+    await this.context.db.query(query, [documentId, JSON.stringify(syncStatus)]);
 
     this.context.events.emit('mnemosyne:provenance:sync-updated', {
       documentId,
@@ -144,16 +136,13 @@ export class ProvenanceTracker {
     query += ` ORDER BY created_at DESC`;
 
     const result = await this.context.db.query(query, params);
-    return result.rows.map(row => this.mapToProvenanceNode(row));
+    return result.rows.map((row) => this.mapToProvenanceNode(row));
   }
 
   /**
    * Get sync candidates
    */
-  async getSyncCandidates(
-    system: string,
-    direction: SyncDirection
-  ): Promise<ProvenanceNode[]> {
+  async getSyncCandidates(system: string, direction: SyncDirection): Promise<ProvenanceNode[]> {
     const query = `
       SELECT p.* FROM mnemosyne_provenance p
       JOIN mnemosyne_documents d ON p.document_id = d.id
@@ -170,7 +159,7 @@ export class ProvenanceTracker {
     `;
 
     const result = await this.context.db.query(query, [system, direction]);
-    return result.rows.map(row => this.mapToProvenanceNode(row));
+    return result.rows.map((row) => this.mapToProvenanceNode(row));
   }
 
   /**
@@ -231,15 +220,18 @@ export class ProvenanceTracker {
     `;
 
     const result = await this.context.db.query(query);
-    
-    const bySystem = result.rows.reduce((acc, row) => {
-      acc[row.system] = {
-        total: parseInt(row.total),
-        synced: parseInt(row.synced),
-        averageAge: Math.round(row.avg_age_seconds)
-      };
-      return acc;
-    }, {} as Record<string, any>);
+
+    const bySystem = result.rows.reduce(
+      (acc, row) => {
+        acc[row.system] = {
+          total: parseInt(row.total),
+          synced: parseInt(row.synced),
+          averageAge: Math.round(row.avg_age_seconds)
+        };
+        return acc;
+      },
+      {} as Record<string, any>
+    );
 
     const totalQuery = `
       SELECT 
@@ -290,10 +282,7 @@ export class ProvenanceTracker {
   // Private methods
 
   private calculateChecksum(content: string): string {
-    return crypto
-      .createHash('sha256')
-      .update(content, 'utf8')
-      .digest('hex');
+    return crypto.createHash('sha256').update(content, 'utf8').digest('hex');
   }
 
   private async detectTransformations(
@@ -305,7 +294,7 @@ export class ProvenanceTracker {
     // Detect wikilink conversions
     const wikilinks = original.match(/\[\[([^\]]+)\]\]/g);
     const mnemosyneLinks = document.content.match(/\[([^\]]+)\]\(mnemosyne:\/\/[^)]+\)/g);
-    
+
     if (wikilinks && mnemosyneLinks) {
       transformations.push({
         type: 'wikilink-conversion',
@@ -383,9 +372,12 @@ interface ImportStatistics {
   total: number;
   systems: number;
   locations: number;
-  bySystem: Record<string, {
-    total: number;
-    synced: number;
-    averageAge: number;
-  }>;
+  bySystem: Record<
+    string,
+    {
+      total: number;
+      synced: number;
+      averageAge: number;
+    }
+  >;
 }

@@ -1,0 +1,71 @@
+/* Storybook styles that import the unified design system */
+@import '../../../src/styles/tokens.css';
+
+/* Base Storybook styling */
+body {
+  font-family: var(--font-sans);
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+  transition: background-color var(--duration-normal) var(--ease-out), 
+              color var(--duration-normal) var(--ease-out);
+}
+
+/* Storybook canvas styling */
+.sb-show-main {
+  background-color: hsl(var(--background));
+  padding: var(--space-4);
+}
+
+/* Story container */
+.sb-story {
+  padding: var(--space-6);
+  background-color: hsl(var(--background));
+  border-radius: var(--radius);
+}
+
+/* Component documentation styling */
+.sbdocs {
+  --sb-primary-color: hsl(var(--primary));
+  --sb-secondary-color: hsl(var(--secondary));
+  background-color: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+.sbdocs h1, .sbdocs h2, .sbdocs h3, .sbdocs h4, .sbdocs h5, .sbdocs h6 {
+  color: hsl(var(--foreground));
+}
+
+.sbdocs code {
+  background-color: hsl(var(--muted));
+  color: hsl(var(--foreground));
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+}
+
+.sbdocs pre {
+  background-color: hsl(var(--muted));
+  border: 1px solid hsl(var(--border));
+  border-radius: var(--radius);
+  padding: var(--space-4);
+  overflow-x: auto;
+}
+
+/* Controls panel styling */
+.sidebar-item {
+  color: hsl(var(--foreground));
+}
+
+/* Dark theme overrides for Storybook UI */
+.dark .sb-bar {
+  background-color: hsl(var(--card));
+  border-color: hsl(var(--border));
+}
+
+.dark .sidebar-item {
+  color: hsl(var(--foreground));
+}
+
+.dark .sidebar-item:hover {
+  background-color: hsl(var(--muted));
+}

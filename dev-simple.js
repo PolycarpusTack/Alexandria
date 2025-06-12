@@ -27,7 +27,7 @@ const args = [
 
 const devProcess = spawn(command, args, {
   stdio: 'inherit',
-  shell: false,
+  shell: true,
   cwd: __dirname
 });
 
@@ -39,7 +39,7 @@ devProcess.on('error', (error) => {
   const npmCommand = isWindows ? 'npm.cmd' : 'npm';
   const npmProcess = spawn(npmCommand, ['run', 'dev:concurrent'], {
     stdio: 'inherit',
-    shell: false,
+    shell: true,
     cwd: __dirname
   });
   

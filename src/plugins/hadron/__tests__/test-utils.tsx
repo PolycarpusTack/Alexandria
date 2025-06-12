@@ -1,7 +1,7 @@
 import React, { ReactElement } from 'react';
-import { render, RenderOptions, RenderResult } from '@testing-library/react';
+import { render, RenderOptions } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
-import { UIContext, type UIContextInterface } from '@ui/ui-context';
+import { UIContext } from '@ui/ui-context';
 
 /**
  * Types for the mocked services

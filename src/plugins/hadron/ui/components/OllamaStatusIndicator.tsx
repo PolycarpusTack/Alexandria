@@ -1,18 +1,16 @@
 import { Button } from '../../../../client/components/ui/button';
-import { useToast } from '../../../../client/components/ui/use-toast'
 
-"use client"
+('use client');
 
-import React, { useEffect, useState, useCallback } from 'react'
-import { StatusIndicator } from '../../../../client/components/ui/status-indicator'
-import { CrashAnalyzerService } from '../../src/services/crash-analyzer-service'
-
+import useEffect, { useEffect, useState, useCallback } from 'react';
+import { StatusIndicator } from '../../../../client/components/ui/status-indicator';
+import { CrashAnalyzerService } from '../../src/services/crash-analyzer-service';
 
 interface OllamaStatusIndicatorProps {
-  crashAnalyzerService: CrashAnalyzerService
-  pollingInterval?: number
-  showDetails?: boolean
-  onRetry?: () => void
+  crashAnalyzerService: CrashAnalyzerService;
+  pollingInterval?: number;
+  showDetails?: boolean;
+  onRetry?: () => void;
 }
 
 /**
@@ -23,156 +21,154 @@ interface OllamaStatusIndicatorProps {
  * - Red: Offline or error
  * - Blue: Loading/checking status
  */
-export function OllamaStatusIndicator({ 
+export function OllamaStatusIndicator({
   crashAnalyzerService,
   pollingInterval = 30000, // Default to checking every 30 seconds
   showDetails = false,
   onRetry
 }: OllamaStatusIndicatorProps) {
-  const [status, setStatus] = useState<"online" | "offline" | "degraded" | "loading">("loading")
-  const [statusMessage, setStatusMessage] = useState<string>("Checking Ollama status...")
-  const [responseTime, setResponseTime] = useState<number | null>(null)
-  const [availableModels, setAvailableModels] = useState<string[]>([])
-  const [isExpanded, setIsExpanded] = useState(false)
-  const [isRetrying, setIsRetrying] = useState(false)
+  const [status, setStatus] = useState<'online' | 'offline' | 'degraded' | 'loading'>('loading');
+  const [statusMessage, setStatusMessage] = useState<string>('Checking Ollama status...');
+  const [responseTime, setResponseTime] = useState<number | null>(null);
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [isRetrying, setIsRetrying] = useState(false);
 
   // Function to check Ollama status
   const checkStatus = useCallback(async () => {
     try {
-      setStatus("loading")
-      setIsRetrying(true)
-      
-      const startTime = Date.now()
-      const llmService = crashAnalyzerService.getLlmService()
-      const isAvailable = await llmService.checkAvailability()
-      const endTime = Date.now()
-      
-      const latency = endTime - startTime
-      setResponseTime(latency)
-      
+      setStatus('loading');
+      setIsRetrying(true);
+
+      const startTime = Date.now();
+      const llmService = crashAnalyzerService.getLlmService();
+      const isAvailable = await llmService.checkAvailability();
+      const endTime = Date.now();
+
+      const latency = endTime - startTime;
+      setResponseTime(latency);
+
       if (isAvailable) {
         // If response time is over 1 second, consider it degraded
         if (latency > 1000) {
-          setStatus("degraded")
-          setStatusMessage(`Ollama is responding slowly (${latency}ms)`)
+          setStatus('degraded');
+          setStatusMessage(`Ollama is responding slowly (${latency}ms)`);
         } else {
-          setStatus("online")
-          setStatusMessage(`Ollama is online and ready (${latency}ms)`)
+          setStatus('online');
+          setStatusMessage(`Ollama is online and ready (${latency}ms)`);
         }
-        
+
         // Get available models if online
         try {
-          const models = await llmService.getAvailableModels()
-          setAvailableModels(models)
+          const models = await llmService.getAvailableModels();
+          setAvailableModels(models);
         } catch (modelError) {
-          console.error('Error fetching available models:', modelError)
+          console.error('Error fetching available models:', modelError);
         }
       } else {
-        setStatus("offline")
-        setStatusMessage("Ollama is unavailable")
-        setAvailableModels([])
+        setStatus('offline');
+        setStatusMessage('Ollama is unavailable');
+        setAvailableModels([]);
       }
     } catch (error) {
-      setStatus("offline")
-      setStatusMessage(`Error connecting to Ollama: ${error instanceof Error ? error.message : String(error)}`)
-      setAvailableModels([])
+      setStatus('offline');
+      setStatusMessage(
+        `Error connecting to Ollama: ${error instanceof Error ? error.message : String(error)}`
+      );
+      setAvailableModels([]);
     } finally {
-      setIsRetrying(false)
+      setIsRetrying(false);
     }
-  }, [crashAnalyzerService])
-  
+  }, [crashAnalyzerService]);
+
   // Handle manual retry
   const handleRetry = () => {
-    checkStatus()
+    checkStatus();
     if (onRetry) {
-      onRetry()
+      onRetry();
     }
-    
-    toast?.({ 
-      title: 'Checking Ollama Connection', 
+
+    toast?.({
+      title: 'Checking Ollama Connection',
       description: 'Attempting to connect to Ollama service...'
-    })
-  }
+    });
+  };
 
   // Check status on component mount and start polling
   useEffect(() => {
     // Initial check
-    checkStatus()
-    
+    checkStatus();
+
     // Set up polling
-    const intervalId = setInterval(checkStatus, pollingInterval)
-    
+    const intervalId = setInterval(checkStatus, pollingInterval);
+
     // Clean up on unmount
-    return () => clearInterval(intervalId)
-  }, [pollingInterval, checkStatus])
+    return () => clearInterval(intervalId);
+  }, [pollingInterval, checkStatus]);
 
   // Toggle details panel
   const toggleDetails = () => {
-    setIsExpanded(!isExpanded)
-  }
-  
+    setIsExpanded(!isExpanded);
+  };
+
   if (!showDetails) {
     // Simple indicator only
     return (
-      <StatusIndicator 
-        state={status} 
+      <StatusIndicator
+        state={status}
         tooltip={statusMessage}
-        label="Ollama"
+        label='Ollama'
         size={10}
-        className="mr-2 cursor-pointer"
+        className='mr-2 cursor-pointer'
         onClick={toggleDetails}
       />
-    )
+    );
   }
-  
+
   // Detailed indicator with expanded panel
   return (
-    <div className="relative">
-      <div 
-        className="flex items-center cursor-pointer" 
-        onClick={toggleDetails}
-      >
-        <StatusIndicator 
-          state={status} 
-          label="Ollama"
-          size={12}
-          className="mr-2"
-        />
-        <span className="text-sm font-medium">
-          {status === "online" ? "Online" : 
-           status === "degraded" ? "Degraded" : 
-           status === "offline" ? "Offline" : "Checking..."}
+    <div className='relative'>
+      <div className='flex items-center cursor-pointer' onClick={toggleDetails}>
+        <StatusIndicator state={status} label='Ollama' size={12} className='mr-2' />
+        <span className='text-sm font-medium'>
+          {status === 'online'
+            ? 'Online'
+            : status === 'degraded'
+              ? 'Degraded'
+              : status === 'offline'
+                ? 'Offline'
+                : 'Checking...'}
         </span>
-        {responseTime !== null && status !== "loading" && (
-          <span className="text-xs ml-2 text-gray-500">
-            {responseTime}ms
-          </span>
+        {responseTime !== null && status !== 'loading' && (
+          <span className='text-xs ml-2 text-gray-500'>{responseTime}ms</span>
         )}
-        <span className="ml-1">{isExpanded ? "▼" : "▶"}</span>
+        <span className='ml-1'>{isExpanded ? '▼' : '▶'}</span>
       </div>
-      
+
       {isExpanded && (
-        <div className="mt-2 p-3 bg-white shadow-md rounded-md border text-sm absolute z-10 w-72">
-          <div className="font-medium mb-1">Ollama Status</div>
-          <div className="text-gray-700">{statusMessage}</div>
-          
-          {status === "online" && availableModels.length > 0 && (
-            <div className="mt-2">
-              <div className="font-medium mb-1">Available Models ({availableModels.length})</div>
-              <div className="max-h-24 overflow-y-auto">
-                <ul className="list-disc list-inside">
+        <div className='mt-2 p-3 bg-white shadow-md rounded-md border text-sm absolute z-10 w-72'>
+          <div className='font-medium mb-1'>Ollama Status</div>
+          <div className='text-gray-700'>{statusMessage}</div>
+
+          {status === 'online' && availableModels.length > 0 && (
+            <div className='mt-2'>
+              <div className='font-medium mb-1'>Available Models ({availableModels.length})</div>
+              <div className='max-h-24 overflow-y-auto'>
+                <ul className='list-disc list-inside'>
                   {availableModels.map((model, index) => (
-                    <li key={index} className="text-xs">{model}</li>
+                    <li key={index} className='text-xs'>
+                      {model}
+                    </li>
                   ))}
                 </ul>
               </div>
             </div>
           )}
-          
-          {status === "offline" && (
-            <div className="mt-2">
-              <div className="font-medium mb-1 text-red-600">Troubleshooting</div>
-              <ul className="list-disc list-inside text-xs">
+
+          {status === 'offline' && (
+            <div className='mt-2'>
+              <div className='font-medium mb-1 text-red-600'>Troubleshooting</div>
+              <ul className='list-disc list-inside text-xs'>
                 <li>Check if Ollama is running locally</li>
                 <li>Verify network connectivity</li>
                 <li>Check for firewall or permission issues</li>
@@ -180,19 +176,14 @@ export function OllamaStatusIndicator({
               </ul>
             </div>
           )}
-          
-          <div className="mt-3 flex justify-end">
-            <Button
-              variant="secondary"
-              size="small"
-              onClick={handleRetry}
-              disabled={isRetrying}
-            >
-              {isRetrying ? "Checking..." : "Retry Connection"}
+
+          <div className='mt-3 flex justify-end'>
+            <Button variant='secondary' size='small' onClick={handleRetry} disabled={isRetrying}>
+              {isRetrying ? 'Checking...' : 'Retry Connection'}
             </Button>
           </div>
         </div>
       )}
     </div>
-  )
+  );
 }

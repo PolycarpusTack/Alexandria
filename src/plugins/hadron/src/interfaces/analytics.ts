@@ -101,26 +101,17 @@ export interface AnalyticsOptions {
 }
 
 export interface IAnalyticsService {
-  getTimeSeriesData(
-    timeRange: TimeRange,
-    options?: AnalyticsOptions
-  ): Promise<TimeSeriesData>;
-  
+  getTimeSeriesData(timeRange: TimeRange, options?: AnalyticsOptions): Promise<TimeSeriesData>;
+
   getRootCauseDistribution(
     timeRange: TimeRange,
     options?: AnalyticsOptions
   ): Promise<RootCauseDistribution>;
-  
-  getModelPerformance(
-    modelName?: string,
-    timeRange?: TimeRange
-  ): Promise<ModelPerformanceData[]>;
-  
-  getSeverityTrends(
-    timeRange: TimeRange,
-    options?: AnalyticsOptions
-  ): Promise<SeverityTrendData>;
-  
+
+  getModelPerformance(modelName?: string, timeRange?: TimeRange): Promise<ModelPerformanceData[]>;
+
+  getSeverityTrends(timeRange: TimeRange, options?: AnalyticsOptions): Promise<SeverityTrendData>;
+
   warmupCache?(): Promise<void>;
 }
 

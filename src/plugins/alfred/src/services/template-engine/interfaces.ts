@@ -1,6 +1,6 @@
 /**
  * Template Engine Interfaces
- * 
+ *
  * Core types and interfaces for the secure template system
  */
 
@@ -14,19 +14,19 @@ export interface TemplateManifest {
   license: string;
   category: string;
   tags: string[];
-  
+
   security: {
     signature?: string;
     checksum: string;
     trustedPublisher?: boolean;
   };
-  
+
   requirements: {
     projectTypes: string[];
     dependencies?: string[];
     minNodeVersion?: string;
   };
-  
+
   variables: VariableSchema[];
   files: TemplateFile[];
   hooks?: TemplateHooks;
@@ -74,7 +74,7 @@ export interface TemplateLimits {
 }
 
 // Safe Domain-Specific Language for Conditions
-export type ConditionExpression = 
+export type ConditionExpression =
   | { type: 'equals'; variable: string; value: any }
   | { type: 'notEquals'; variable: string; value: any }
   | { type: 'contains'; variable: string; value: string }

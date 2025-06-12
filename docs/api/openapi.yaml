@@ -1,0 +1,1146 @@
+openapi: 3.0.3
+info:
+  title: Alexandria Platform API
+  description: |
+    # Alexandria Platform REST API
+    
+    The Alexandria Platform provides a comprehensive API for managing AI-enhanced customer care services, plugins, and system operations.
+    
+    ## API Versioning
+    
+    This API supports versioning through multiple methods:
+    - **Path versioning**: `/api/v1/` or `/api/v2/`
+    - **Header versioning**: `API-Version: v1` or `API-Version: v2`
+    - **Accept header**: `Accept: application/vnd.alexandria.v1+json`
+    - **Query parameter**: `?version=v1`
+    
+    ## Authentication
+    
+    The API uses JWT (JSON Web Token) based authentication:
+    
+    1. **Login**: POST `/api/v1/auth/login` with credentials
+    2. **Token**: Include JWT token in Authorization header: `Authorization: Bearer <token>`
+    3. **Validation**: GET `/api/v1/auth/validate` to check token validity
+    
+    ## Error Handling
+    
+    All API endpoints return consistent error responses:
+    
+    ```json
+    {
+      "success": false,
+      "error": "ERROR_CODE",
+      "message": "Human readable error message",
+      "details": {
+        "field": "validation errors if applicable"
+      },
+      "requestId": "uuid-for-tracking",
+      "timestamp": "2024-12-11T10:30:00Z"
+    }
+    ```
+    
+    ## Rate Limiting
+    
+    API requests are rate limited:
+    - **Default**: 100 requests per minute per IP
+    - **Authenticated**: 1000 requests per minute per user
+    - **Headers**: Rate limit information in response headers
+    
+    ## Webhooks
+    
+    Alexandria Platform supports webhooks for real-time notifications:
+    - Plugin state changes
+    - System health alerts
+    - Security events
+    - Performance metrics
+    
+  version: 0.1.0
+  contact:
+    name: Alexandria Platform Support
+    email: support@alexandria-platform.com
+    url: https://alexandria-platform.com/support
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: https://alexandria-platform.com/terms
+
+servers:
+  - url: https://api.alexandria-platform.com
+    description: Production server
+  - url: https://staging-api.alexandria-platform.com
+    description: Staging server
+  - url: http://localhost:4000
+    description: Development server
+
+security:
+  - BearerAuth: []
+  - ApiKeyAuth: []
+
+paths:
+  # Authentication Endpoints
+  /api/v1/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login
+      description: |
+        Authenticate a user with email and password.
+        Returns a JWT token for subsequent API requests.
+      operationId: loginUser
+      security: []  # No auth required for login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              admin:
+                summary: Admin login
+                value:
+                  email: admin@alexandria.local
+                  password: admin123
+                  rememberMe: false
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+              examples:
+                success:
+                  summary: Successful login
+                  value:
+                    success: true
+                    token: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                    user:
+                      id: "1"
+                      email: admin@alexandria.local
+                      name: Administrator
+                      role: admin
+                      permissions: ["read", "write", "admin"]
+                    expires: "1d"
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalid_credentials:
+                  summary: Invalid credentials
+                  value:
+                    success: false
+                    error: INVALID_CREDENTIALS
+                    message: Invalid email or password
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: User logout
+      description: |
+        Logout the current user and invalidate the JWT token.
+        After logout, the token will no longer be valid for API requests.
+      operationId: logoutUser
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: Logged out successfully
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/auth/validate:
+    get:
+      tags:
+        - Authentication
+      summary: Validate JWT token
+      description: |
+        Check if the provided JWT token is valid and return user information.
+        Use this endpoint to verify token validity before making API requests.
+      operationId: validateToken
+      responses:
+        '200':
+          description: Token is valid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenValidationResponse'
+              examples:
+                valid:
+                  summary: Valid token
+                  value:
+                    valid: true
+                    user:
+                      id: "1"
+                      email: admin@alexandria.local
+                      name: Administrator
+                      role: admin
+        '401':
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                    example: false
+                  error:
+                    type: string
+                    example: INVALID_TOKEN
+                  message:
+                    type: string
+                    example: Token is invalid or expired
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Health Check Endpoints
+  /api/v1/health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      description: |
+        Check the health status of the Alexandria Platform.
+        Returns system status, database connectivity, and service availability.
+      operationId: getHealthStatus
+      security: []  # No auth required for health check
+      responses:
+        '200':
+          description: System is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              examples:
+                healthy:
+                  summary: System healthy
+                  value:
+                    status: healthy
+                    timestamp: "2024-12-11T10:30:00Z"
+                    version: "0.1.0"
+                    uptime: 86400
+                    services:
+                      database: healthy
+                      cache: healthy
+                      ai_service: healthy
+                      plugin_registry: healthy
+        '503':
+          description: System is unhealthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+              examples:
+                unhealthy:
+                  summary: System unhealthy
+                  value:
+                    status: unhealthy
+                    timestamp: "2024-12-11T10:30:00Z"
+                    version: "0.1.0"
+                    uptime: 86400
+                    services:
+                      database: unhealthy
+                      cache: healthy
+                      ai_service: degraded
+                      plugin_registry: healthy
+                    errors:
+                      - "Database connection timeout"
+
+  # System Metrics Endpoints
+  /api/v1/system/metrics:
+    get:
+      tags:
+        - System
+      summary: Get system metrics
+      description: |
+        Retrieve current system performance metrics including CPU, memory, disk usage,
+        and application-specific metrics.
+      operationId: getSystemMetrics
+      parameters:
+        - name: timeframe
+          in: query
+          description: Time frame for metrics (1h, 24h, 7d, 30d)
+          required: false
+          schema:
+            type: string
+            enum: [1h, 24h, 7d, 30d]
+            default: 1h
+        - name: format
+          in: query
+          description: Response format
+          required: false
+          schema:
+            type: string
+            enum: [json, prometheus]
+            default: json
+      responses:
+        '200':
+          description: System metrics retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SystemMetricsResponse'
+            text/plain:
+              schema:
+                type: string
+                description: Prometheus format metrics
+              examples:
+                prometheus:
+                  summary: Prometheus metrics
+                  value: |
+                    # HELP alexandria_cpu_usage_percent CPU usage percentage
+                    # TYPE alexandria_cpu_usage_percent gauge
+                    alexandria_cpu_usage_percent 45.2
+                    
+                    # HELP alexandria_memory_usage_bytes Memory usage in bytes
+                    # TYPE alexandria_memory_usage_bytes gauge
+                    alexandria_memory_usage_bytes 1073741824
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  # Plugin Management Endpoints
+  /api/v1/plugins:
+    get:
+      tags:
+        - Plugins
+      summary: List all plugins
+      description: |
+        Retrieve a list of all installed plugins with their status and metadata.
+        Supports filtering and pagination.
+      operationId: listPlugins
+      parameters:
+        - name: status
+          in: query
+          description: Filter plugins by status
+          required: false
+          schema:
+            type: string
+            enum: [active, inactive, error, installing]
+        - name: category
+          in: query
+          description: Filter plugins by category
+          required: false
+          schema:
+            type: string
+        - name: page
+          in: query
+          description: Page number for pagination
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          description: Number of items per page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Plugins retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PluginListResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags:
+        - Plugins
+      summary: Install a new plugin
+      description: |
+        Install a new plugin from the plugin registry or upload a plugin package.
+        Requires admin permissions.
+      operationId: installPlugin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PluginInstallRequest'
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                pluginFile:
+                  type: string
+                  format: binary
+                  description: Plugin package file (.zip or .tar.gz)
+      responses:
+        '201':
+          description: Plugin installed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PluginResponse'
+        '400':
+          description: Invalid plugin package
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/plugins/{pluginId}:
+    get:
+      tags:
+        - Plugins
+      summary: Get plugin details
+      description: |
+        Retrieve detailed information about a specific plugin including
+        configuration, status, and usage statistics.
+      operationId: getPlugin
+      parameters:
+        - name: pluginId
+          in: path
+          description: Unique plugin identifier
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Plugin details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PluginResponse'
+        '404':
+          description: Plugin not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    put:
+      tags:
+        - Plugins
+      summary: Update plugin configuration
+      description: |
+        Update plugin configuration settings or metadata.
+        Requires admin permissions.
+      operationId: updatePlugin
+      parameters:
+        - name: pluginId
+          in: path
+          description: Unique plugin identifier
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PluginUpdateRequest'
+      responses:
+        '200':
+          description: Plugin updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PluginResponse'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          description: Plugin not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    delete:
+      tags:
+        - Plugins
+      summary: Uninstall plugin
+      description: |
+        Uninstall a plugin and remove all its data.
+        Requires admin permissions.
+      operationId: uninstallPlugin
+      parameters:
+        - name: pluginId
+          in: path
+          description: Unique plugin identifier
+          required: true
+          schema:
+            type: string
+        - name: force
+          in: query
+          description: Force uninstall even if plugin has dependencies
+          required: false
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '204':
+          description: Plugin uninstalled successfully
+        '400':
+          description: Cannot uninstall due to dependencies
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          description: Plugin not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/plugins/{pluginId}/activate:
+    post:
+      tags:
+        - Plugins
+      summary: Activate plugin
+      description: |
+        Activate an installed plugin to make it available for use.
+        Requires admin permissions.
+      operationId: activatePlugin
+      parameters:
+        - name: pluginId
+          in: path
+          description: Unique plugin identifier
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Plugin activated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PluginResponse'
+        '400':
+          description: Plugin cannot be activated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          description: Plugin not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /api/v1/plugins/{pluginId}/deactivate:
+    post:
+      tags:
+        - Plugins
+      summary: Deactivate plugin
+      description: |
+        Deactivate an active plugin to stop it from running.
+        Requires admin permissions.
+      operationId: deactivatePlugin
+      parameters:
+        - name: pluginId
+          in: path
+          description: Unique plugin identifier
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Plugin deactivated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PluginResponse'
+        '400':
+          description: Plugin cannot be deactivated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          description: Plugin not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT token obtained from `/api/v1/auth/login` endpoint.
+        Include in Authorization header: `Authorization: Bearer <token>`
+    
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: |
+        API key for service-to-service communication.
+        Contact support to obtain an API key.
+
+  schemas:
+    # Authentication Schemas
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+          description: User email address
+          example: admin@alexandria.local
+        password:
+          type: string
+          format: password
+          description: User password
+          minLength: 6
+          example: admin123
+        rememberMe:
+          type: boolean
+          description: Whether to extend token expiration
+          default: false
+
+    LoginResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        token:
+          type: string
+          description: JWT token for authentication
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        user:
+          $ref: '#/components/schemas/User'
+        expires:
+          type: string
+          description: Token expiration duration
+          example: "1d"
+
+    TokenValidationResponse:
+      type: object
+      properties:
+        valid:
+          type: boolean
+          description: Whether the token is valid
+        user:
+          $ref: '#/components/schemas/User'
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique user identifier
+          example: "1"
+        email:
+          type: string
+          format: email
+          description: User email address
+          example: admin@alexandria.local
+        name:
+          type: string
+          description: User display name
+          example: Administrator
+        role:
+          type: string
+          description: User role
+          enum: [admin, user, viewer]
+          example: admin
+        permissions:
+          type: array
+          items:
+            type: string
+          description: User permissions
+          example: ["read", "write", "admin"]
+
+    # Health Check Schemas
+    HealthResponse:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [healthy, degraded, unhealthy]
+          description: Overall system health status
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp of health check
+        version:
+          type: string
+          description: Application version
+          example: "0.1.0"
+        uptime:
+          type: integer
+          description: System uptime in seconds
+          example: 86400
+        services:
+          type: object
+          additionalProperties:
+            type: string
+            enum: [healthy, degraded, unhealthy]
+          description: Status of individual services
+          example:
+            database: healthy
+            cache: healthy
+            ai_service: healthy
+            plugin_registry: healthy
+        errors:
+          type: array
+          items:
+            type: string
+          description: List of error messages (if any)
+
+    # System Metrics Schemas
+    SystemMetricsResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp of metrics collection
+        timeframe:
+          type: string
+          description: Time frame for metrics
+          example: "1h"
+        system:
+          $ref: '#/components/schemas/SystemMetrics'
+        application:
+          $ref: '#/components/schemas/ApplicationMetrics'
+
+    SystemMetrics:
+      type: object
+      properties:
+        cpu:
+          type: object
+          properties:
+            usage_percent:
+              type: number
+              format: float
+              minimum: 0
+              maximum: 100
+              description: CPU usage percentage
+              example: 45.2
+            cores:
+              type: integer
+              description: Number of CPU cores
+              example: 4
+        memory:
+          type: object
+          properties:
+            total_bytes:
+              type: integer
+              format: int64
+              description: Total memory in bytes
+              example: 8589934592
+            used_bytes:
+              type: integer
+              format: int64
+              description: Used memory in bytes
+              example: 4294967296
+            usage_percent:
+              type: number
+              format: float
+              minimum: 0
+              maximum: 100
+              description: Memory usage percentage
+              example: 50.0
+        disk:
+          type: object
+          properties:
+            total_bytes:
+              type: integer
+              format: int64
+              description: Total disk space in bytes
+              example: 1099511627776
+            used_bytes:
+              type: integer
+              format: int64
+              description: Used disk space in bytes
+              example: 549755813888
+            usage_percent:
+              type: number
+              format: float
+              minimum: 0
+              maximum: 100
+              description: Disk usage percentage
+              example: 50.0
+
+    ApplicationMetrics:
+      type: object
+      properties:
+        active_users:
+          type: integer
+          description: Number of active users
+          example: 25
+        active_plugins:
+          type: integer
+          description: Number of active plugins
+          example: 5
+        requests_per_minute:
+          type: number
+          format: float
+          description: Average requests per minute
+          example: 150.5
+        response_time_ms:
+          type: number
+          format: float
+          description: Average response time in milliseconds
+          example: 45.2
+        error_rate_percent:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: Error rate percentage
+          example: 0.1
+
+    # Plugin Schemas
+    Plugin:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Unique plugin identifier
+          example: com.alexandria.alfred
+        name:
+          type: string
+          description: Plugin display name
+          example: Alfred AI Assistant
+        version:
+          type: string
+          description: Plugin version
+          example: "1.0.0"
+        description:
+          type: string
+          description: Plugin description
+          example: AI-powered coding assistant
+        status:
+          type: string
+          enum: [active, inactive, error, installing, uninstalling]
+          description: Plugin status
+        category:
+          type: string
+          description: Plugin category
+          example: ai-assistant
+        author:
+          type: object
+          properties:
+            name:
+              type: string
+              example: Alexandria Team
+            email:
+              type: string
+              format: email
+              example: team@alexandria-platform.com
+        permissions:
+          type: array
+          items:
+            type: string
+          description: Required permissions
+          example: ["file:read", "ai:access", "network:http"]
+        configuration:
+          type: object
+          additionalProperties: true
+          description: Plugin configuration
+        installed_at:
+          type: string
+          format: date-time
+          description: Installation timestamp
+        activated_at:
+          type: string
+          format: date-time
+          description: Last activation timestamp
+
+    PluginListResponse:
+      type: object
+      properties:
+        plugins:
+          type: array
+          items:
+            $ref: '#/components/schemas/Plugin'
+        pagination:
+          type: object
+          properties:
+            page:
+              type: integer
+              example: 1
+            limit:
+              type: integer
+              example: 20
+            total:
+              type: integer
+              example: 45
+            pages:
+              type: integer
+              example: 3
+
+    PluginResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: true
+        plugin:
+          $ref: '#/components/schemas/Plugin'
+
+    PluginInstallRequest:
+      type: object
+      required:
+        - source
+      properties:
+        source:
+          type: string
+          description: Plugin source (registry ID or URL)
+          example: com.alexandria.alfred
+        version:
+          type: string
+          description: Specific version to install
+          example: "1.0.0"
+        configuration:
+          type: object
+          additionalProperties: true
+          description: Initial plugin configuration
+
+    PluginUpdateRequest:
+      type: object
+      properties:
+        configuration:
+          type: object
+          additionalProperties: true
+          description: Updated plugin configuration
+        enabled:
+          type: boolean
+          description: Whether plugin should be enabled
+
+    # Error Schemas
+    ErrorResponse:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: string
+          description: Error code
+          example: INVALID_CREDENTIALS
+        message:
+          type: string
+          description: Human-readable error message
+          example: Invalid email or password
+        requestId:
+          type: string
+          format: uuid
+          description: Request ID for tracking
+        timestamp:
+          type: string
+          format: date-time
+          description: Error timestamp
+
+    ValidationErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/ErrorResponse'
+        - type: object
+          properties:
+            details:
+              type: object
+              additionalProperties:
+                type: array
+                items:
+                  type: string
+              description: Field-specific validation errors
+              example:
+                email: ["Email is required", "Email must be valid"]
+                password: ["Password must be at least 6 characters"]
+
+  responses:
+    BadRequestError:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            bad_request:
+              summary: Bad request
+              value:
+                success: false
+                error: BAD_REQUEST
+                message: The request is invalid
+
+    UnauthorizedError:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            no_token:
+              summary: No token provided
+              value:
+                success: false
+                error: NO_TOKEN
+                message: Authentication token is required
+            invalid_token:
+              summary: Invalid token
+              value:
+                success: false
+                error: INVALID_TOKEN
+                message: The provided token is invalid or expired
+
+    ForbiddenError:
+      description: Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            forbidden:
+              summary: Insufficient permissions
+              value:
+                success: false
+                error: FORBIDDEN
+                message: You do not have permission to perform this action
+
+    InternalServerError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            internal_error:
+              summary: Internal server error
+              value:
+                success: false
+                error: INTERNAL_ERROR
+                message: An internal server error occurred
+
+  examples:
+    # Plugin Examples
+    AlfredPlugin:
+      summary: Alfred AI Assistant Plugin
+      value:
+        id: com.alexandria.alfred
+        name: Alfred AI Assistant
+        version: "1.0.0"
+        description: AI-powered coding assistant with project analysis capabilities
+        status: active
+        category: ai-assistant
+        author:
+          name: Alexandria Team
+          email: team@alexandria-platform.com
+        permissions:
+          - "file:read"
+          - "ai:access"
+          - "network:http"
+          - "project:analyze"
+        configuration:
+          model: "gpt-4"
+          temperature: 0.7
+          max_tokens: 2048
+        installed_at: "2024-12-01T10:00:00Z"
+        activated_at: "2024-12-01T10:05:00Z"
+
+    HadronPlugin:
+      summary: Hadron Crash Analyzer Plugin
+      value:
+        id: com.alexandria.hadron
+        name: Hadron Crash Analyzer
+        version: "2.1.0"
+        description: Advanced crash file analysis and debugging tools
+        status: active
+        category: debugging
+        author:
+          name: Alexandria Team
+          email: team@alexandria-platform.com
+        permissions:
+          - "file:read"
+          - "file:write"
+          - "analytics:read"
+          - "analytics:write"
+        configuration:
+          auto_analysis: true
+          retention_days: 30
+          alert_threshold: "high"
+        installed_at: "2024-11-15T14:30:00Z"
+        activated_at: "2024-11-15T14:35:00Z"
+
+tags:
+  - name: Authentication
+    description: User authentication and authorization endpoints
+  - name: Health
+    description: System health monitoring endpoints
+  - name: System
+    description: System metrics and monitoring endpoints
+  - name: Plugins
+    description: Plugin management and configuration endpoints
+
+externalDocs:
+  description: Alexandria Platform Documentation
+  url: https://docs.alexandria-platform.com

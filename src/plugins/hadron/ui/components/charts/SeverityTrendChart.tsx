@@ -36,7 +36,7 @@ export const SeverityTrendChart: React.FC<SeverityTrendChartProps> = ({
       if (!ctx) return;
 
       // Prepare labels
-      const labels = data.trends.map(trend => {
+      const labels = data.trends.map((trend) => {
         const date = new Date(trend.timestamp);
         return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
       });
@@ -53,7 +53,7 @@ export const SeverityTrendChart: React.FC<SeverityTrendChartProps> = ({
       const datasets = [
         {
           label: 'Critical',
-          data: data.trends.map(t => t.distribution.critical),
+          data: data.trends.map((t) => t.distribution.critical),
           backgroundColor: severityColors.critical + '20',
           borderColor: severityColors.critical,
           borderWidth: 2,
@@ -62,7 +62,7 @@ export const SeverityTrendChart: React.FC<SeverityTrendChartProps> = ({
         },
         {
           label: 'High',
-          data: data.trends.map(t => t.distribution.high),
+          data: data.trends.map((t) => t.distribution.high),
           backgroundColor: severityColors.high + '20',
           borderColor: severityColors.high,
           borderWidth: 2,
@@ -71,7 +71,7 @@ export const SeverityTrendChart: React.FC<SeverityTrendChartProps> = ({
         },
         {
           label: 'Medium',
-          data: data.trends.map(t => t.distribution.medium),
+          data: data.trends.map((t) => t.distribution.medium),
           backgroundColor: severityColors.medium + '20',
           borderColor: severityColors.medium,
           borderWidth: 2,
@@ -80,7 +80,7 @@ export const SeverityTrendChart: React.FC<SeverityTrendChartProps> = ({
         },
         {
           label: 'Low',
-          data: data.trends.map(t => t.distribution.low),
+          data: data.trends.map((t) => t.distribution.low),
           backgroundColor: severityColors.low + '20',
           borderColor: severityColors.low,
           borderWidth: 2,
@@ -91,7 +91,7 @@ export const SeverityTrendChart: React.FC<SeverityTrendChartProps> = ({
 
       // Add prediction data if available
       if (showPrediction && data.predictions) {
-        const predictionLabels = data.predictions.map(pred => {
+        const predictionLabels = data.predictions.map((pred) => {
           const date = new Date(pred.timestamp);
           return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
         });
@@ -100,7 +100,7 @@ export const SeverityTrendChart: React.FC<SeverityTrendChartProps> = ({
         labels.push(...predictionLabels);
 
         // Add null values to existing data for prediction range
-        datasets.forEach(dataset => {
+        datasets.forEach((dataset) => {
           dataset.data.push(...new Array(data.predictions!.length).fill(null));
         });
 
@@ -110,7 +110,7 @@ export const SeverityTrendChart: React.FC<SeverityTrendChartProps> = ({
             label: 'Predicted Critical',
             data: [
               ...new Array(data.trends.length).fill(null),
-              ...data.predictions.map(p => p.distribution.critical)
+              ...data.predictions.map((p) => p.distribution.critical)
             ],
             backgroundColor: severityColors.critical + '10',
             borderColor: severityColors.critical,
@@ -124,7 +124,7 @@ export const SeverityTrendChart: React.FC<SeverityTrendChartProps> = ({
             label: 'Predicted High',
             data: [
               ...new Array(data.trends.length).fill(null),
-              ...data.predictions.map(p => p.distribution.high)
+              ...data.predictions.map((p) => p.distribution.high)
             ],
             backgroundColor: severityColors.high + '10',
             borderColor: severityColors.high,
@@ -165,7 +165,7 @@ export const SeverityTrendChart: React.FC<SeverityTrendChartProps> = ({
                 size: 12
               },
               color: isDark ? '#e2e8f0' : '#475569',
-              filter: function(item: any) {
+              filter: function (item: any) {
                 // Hide prediction legends if not showing predictions
                 if (!showPrediction && item.text.includes('Predicted')) {
                   return false;
@@ -183,16 +183,16 @@ export const SeverityTrendChart: React.FC<SeverityTrendChartProps> = ({
             padding: 12,
             cornerRadius: 8,
             callbacks: {
-              label: function(context: any) {
+              label: function (context: any) {
                 let label = context.dataset.label || '';
                 if (label) {
                   label += ': ';
                 }
-                
+
                 const value = context.parsed.y;
                 if (value !== null) {
                   label += value.toLocaleString() + ' issues';
-                  
+
                   // Add percentage
                   const total = context.chart.data.datasets
                     .filter((ds: any) => !ds.label.includes('Predicted'))
@@ -200,39 +200,42 @@ export const SeverityTrendChart: React.FC<SeverityTrendChartProps> = ({
                       const val = ds.data[context.dataIndex];
                       return sum + (val || 0);
                     }, 0);
-                  
+
                   if (total > 0) {
                     const percentage = ((value / total) * 100).toFixed(1);
                     label += ` (${percentage}%)`;
                   }
                 }
-                
+
                 return label;
               }
             }
           },
-          annotation: showPrediction && data.predictions ? {
-            annotations: {
-              predictionLine: {
-                type: 'line',
-                xMin: data.trends.length - 1,
-                xMax: data.trends.length - 1,
-                borderColor: isDark ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)',
-                borderWidth: 2,
-                borderDash: [6, 6],
-                label: {
-                  content: 'Prediction Start',
-                  enabled: true,
-                  position: 'start',
-                  backgroundColor: isDark ? '#1e293b' : '#f8fafc',
-                  color: isDark ? '#e2e8f0' : '#475569',
-                  font: {
-                    size: 11
+          annotation:
+            showPrediction && data.predictions
+              ? {
+                  annotations: {
+                    predictionLine: {
+                      type: 'line',
+                      xMin: data.trends.length - 1,
+                      xMax: data.trends.length - 1,
+                      borderColor: isDark ? 'rgba(255, 255, 255, 0.3)' : 'rgba(0, 0, 0, 0.3)',
+                      borderWidth: 2,
+                      borderDash: [6, 6],
+                      label: {
+                        content: 'Prediction Start',
+                        enabled: true,
+                        position: 'start',
+                        backgroundColor: isDark ? '#1e293b' : '#f8fafc',
+                        color: isDark ? '#e2e8f0' : '#475569',
+                        font: {
+                          size: 11
+                        }
+                      }
+                    }
                   }
                 }
-              }
-            }
-          } : undefined
+              : undefined
         },
         scales: {
           x: {
@@ -263,7 +266,7 @@ export const SeverityTrendChart: React.FC<SeverityTrendChartProps> = ({
               font: {
                 size: 11
               },
-              callback: function(value: any) {
+              callback: function (value: any) {
                 return value.toLocaleString();
               }
             }
@@ -291,9 +294,9 @@ export const SeverityTrendChart: React.FC<SeverityTrendChartProps> = ({
     <div style={{ height }}>
       <canvas ref={chartRef} />
       {data.insights && data.insights.length > 0 && (
-        <div className="mt-4 p-3 bg-muted/50 rounded-lg">
-          <p className="text-sm font-medium mb-1">Key Insight:</p>
-          <p className="text-sm text-muted-foreground">{data.insights[0]}</p>
+        <div className='mt-4 p-3 bg-muted/50 rounded-lg'>
+          <p className='text-sm font-medium mb-1'>Key Insight:</p>
+          <p className='text-sm text-muted-foreground'>{data.insights[0]}</p>
         </div>
       )}
     </div>

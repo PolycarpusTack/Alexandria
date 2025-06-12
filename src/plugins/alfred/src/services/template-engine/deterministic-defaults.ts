@@ -1,6 +1,6 @@
 /**
  * Deterministic Defaults System
- * 
+ *
  * Provides reliable, AI-independent variable defaults based on conventions,
  * patterns, and best practices. Ensures template generation always succeeds
  * even when AI services are unavailable.
@@ -115,10 +115,7 @@ export class DeterministicDefaultsSystem {
   /**
    * Generate deterministic defaults for variables
    */
-  generateDefaults(
-    variables: VariableSchema[],
-    context: DefaultsContext = {}
-  ): DefaultsResult {
+  generateDefaults(variables: VariableSchema[], context: DefaultsContext = {}): DefaultsResult {
     const result: DefaultsResult = {
       variables: {},
       rulesApplied: [],
@@ -139,7 +136,7 @@ export class DeterministicDefaultsSystem {
     for (const schema of variables) {
       try {
         const defaultValue = this.generateVariableDefault(schema, enrichedContext);
-        
+
         if (defaultValue.value !== undefined) {
           result.variables[schema.name] = defaultValue.value;
           result.rulesApplied.push({
@@ -159,14 +156,16 @@ export class DeterministicDefaultsSystem {
           result.warnings.push(`No specific rule matched for ${schema.name}, using type default`);
         }
       } catch (error) {
-        this.logger.warn('Failed to generate default for variable', { 
-          variable: schema.name, 
-          error 
+        this.logger.warn('Failed to generate default for variable', {
+          variable: schema.name,
+          error
         });
-        
+
         const fallback = this.getBasicTypeDefault(schema);
         result.variables[schema.name] = fallback;
-        result.warnings.push(`Error generating default for ${schema.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        result.warnings.push(
+          `Error generating default for ${schema.name}: ${error instanceof Error ? error.message : 'Unknown error'}`
+        );
         result.confidence *= 0.9; // Reduce confidence for each error
       }
     }
@@ -202,10 +201,10 @@ export class DeterministicDefaultsSystem {
             return { value, rule: rule.description };
           }
         } catch (error) {
-          this.logger.debug('Rule failed to generate value', { 
-            rule: rule.description, 
-            variable: schema.name, 
-            error 
+          this.logger.debug('Rule failed to generate value', {
+            rule: rule.description,
+            variable: schema.name,
+            error
           });
         }
       }
@@ -220,9 +219,9 @@ export class DeterministicDefaultsSystem {
   private initializeDefaultRules(): void {
     // Project name rules
     this.addRule({
-      matcher: (schema, context) => 
-        (/name/i).test(schema.name) && 
-        !(/(class|component|function)/i).test(schema.name) &&
+      matcher: (schema, context) =>
+        /name/i.test(schema.name) &&
+        !/(class|component|function)/i.test(schema.name) &&
         schema.type === 'string',
       generator: (schema, context) => {
         if (context.projectName) return context.projectName;
@@ -235,11 +234,11 @@ export class DeterministicDefaultsSystem {
 
     // Component/Class name rules
     this.addRule({
-      matcher: (schema, context) => 
-        (/(component|class|interface|type)name/i).test(schema.name) &&
-        schema.type === 'string',
+      matcher: (schema, context) =>
+        /(component|class|interface|type)name/i.test(schema.name) && schema.type === 'string',
       generator: (schema, context) => {
-        const baseName = context.projectName || 
+        const baseName =
+          context.projectName ||
           (context.projectPath ? path.basename(context.projectPath) : 'Component');
         return this.toPascalCase(baseName);
       },
@@ -249,7 +248,7 @@ export class DeterministicDefaultsSystem {
 
     // Author rules
     this.addRule({
-      matcher: (schema) => (/(author|creator|maintainer)/i).test(schema.name),
+      matcher: (schema) => /(author|creator|maintainer)/i.test(schema.name),
       generator: () => 'Your Name',
       priority: 80,
       description: 'author-default'
@@ -257,7 +256,7 @@ export class DeterministicDefaultsSystem {
 
     // Email rules
     this.addRule({
-      matcher: (schema) => (/email/i).test(schema.name),
+      matcher: (schema) => /email/i.test(schema.name),
       generator: () => 'your.email@example.com',
       priority: 80,
       description: 'email-default'
@@ -265,7 +264,7 @@ export class DeterministicDefaultsSystem {
 
     // Version rules
     this.addRule({
-      matcher: (schema) => (/version/i).test(schema.name) && schema.type === 'string',
+      matcher: (schema) => /version/i.test(schema.name) && schema.type === 'string',
       generator: () => '1.0.0',
       priority: 70,
       description: 'version-semver'
@@ -273,8 +272,7 @@ export class DeterministicDefaultsSystem {
 
     // Description rules
     this.addRule({
-      matcher: (schema, context) => 
-        (/description/i).test(schema.name) && schema.type === 'string',
+      matcher: (schema, context) => /description/i.test(schema.name) && schema.type === 'string',
       generator: (schema, context) => {
         const projectName = context.projectName || 'project';
         const type = context.templateCategory || 'component';
@@ -286,7 +284,7 @@ export class DeterministicDefaultsSystem {
 
     // License rules
     this.addRule({
-      matcher: (schema) => (/license/i).test(schema.name),
+      matcher: (schema) => /license/i.test(schema.name),
       generator: (schema) => {
         if (schema.validation?.options) {
           return schema.validation.options.includes('MIT') ? 'MIT' : schema.validation.options[0];
@@ -299,15 +297,15 @@ export class DeterministicDefaultsSystem {
 
     // Path rules
     this.addRule({
-      matcher: (schema) => (/path/i).test(schema.name) && schema.type === 'string',
+      matcher: (schema) => /path/i.test(schema.name) && schema.type === 'string',
       generator: (schema, context) => {
         const varName = schema.name.toLowerCase();
-        if ((/src|source/i).test(varName)) return 'src';
-        if ((/test/i).test(varName)) return 'tests';
-        if ((/(doc|readme)/i).test(varName)) return 'docs';
-        if ((/(config|setting)/i).test(varName)) return 'config';
-        if ((/(asset|static)/i).test(varName)) return 'assets';
-        if ((/(build|dist|out)/i).test(varName)) return 'dist';
+        if (/src|source/i.test(varName)) return 'src';
+        if (/test/i.test(varName)) return 'tests';
+        if (/(doc|readme)/i.test(varName)) return 'docs';
+        if (/(config|setting)/i.test(varName)) return 'config';
+        if (/(asset|static)/i.test(varName)) return 'assets';
+        if (/(build|dist|out)/i.test(varName)) return 'dist';
         return './';
       },
       priority: 60,
@@ -319,20 +317,20 @@ export class DeterministicDefaultsSystem {
       matcher: (schema) => schema.type === 'boolean',
       generator: (schema, context) => {
         const varName = schema.name.toLowerCase();
-        
+
         // Enable modern development practices by default
-        if ((/(typescript|types|ts)/i).test(varName)) return true;
-        if ((/(test|spec|testing)/i).test(varName)) return true;
-        if ((/(lint|eslint|prettier)/i).test(varName)) return true;
-        if ((/(git|vcs|version)/i).test(varName)) return true;
-        if ((/(css|style|styling)/i).test(varName)) return true;
-        if ((/(doc|readme|documentation)/i).test(varName)) return true;
-        
+        if (/(typescript|types|ts)/i.test(varName)) return true;
+        if (/(test|spec|testing)/i.test(varName)) return true;
+        if (/(lint|eslint|prettier)/i.test(varName)) return true;
+        if (/(git|vcs|version)/i.test(varName)) return true;
+        if (/(css|style|styling)/i.test(varName)) return true;
+        if (/(doc|readme|documentation)/i.test(varName)) return true;
+
         // Conservative defaults for optional features
-        if ((/(docker|container)/i).test(varName)) return false;
-        if ((/(deploy|ci|cd)/i).test(varName)) return false;
-        if ((/(strict|enforce)/i).test(varName)) return true;
-        
+        if (/(docker|container)/i.test(varName)) return false;
+        if (/(deploy|ci|cd)/i.test(varName)) return false;
+        if (/(strict|enforce)/i.test(varName)) return true;
+
         return false; // Safe default
       },
       priority: 50,
@@ -341,8 +339,7 @@ export class DeterministicDefaultsSystem {
 
     // Language-specific rules
     this.addRule({
-      matcher: (schema, context) => 
-        (/language/i).test(schema.name) && context.language,
+      matcher: (schema, context) => /language/i.test(schema.name) && context.language,
       generator: (schema, context) => context.language,
       priority: 80,
       description: 'language-context'
@@ -350,8 +347,7 @@ export class DeterministicDefaultsSystem {
 
     // Framework-specific rules
     this.addRule({
-      matcher: (schema, context) => 
-        (/framework/i).test(schema.name) && context.framework,
+      matcher: (schema, context) => /framework/i.test(schema.name) && context.framework,
       generator: (schema, context) => context.framework,
       priority: 80,
       description: 'framework-context'
@@ -359,10 +355,12 @@ export class DeterministicDefaultsSystem {
 
     // Package manager rules
     this.addRule({
-      matcher: (schema, context) => 
-        (/(package.*manager|pm)/i).test(schema.name) && context.language,
+      matcher: (schema, context) => /(package.*manager|pm)/i.test(schema.name) && context.language,
       generator: (schema, context) => {
-        const managers = this.industryDefaults.packageManagers[context.language as keyof typeof this.industryDefaults.packageManagers];
+        const managers =
+          this.industryDefaults.packageManagers[
+            context.language as keyof typeof this.industryDefaults.packageManagers
+          ];
         return managers ? managers[0] : 'npm';
       },
       priority: 70,
@@ -371,25 +369,39 @@ export class DeterministicDefaultsSystem {
 
     // File extension rules
     this.addRule({
-      matcher: (schema, context) => 
-        (/extension/i).test(schema.name) && schema.type === 'string',
+      matcher: (schema, context) => /extension/i.test(schema.name) && schema.type === 'string',
       generator: (schema, context) => {
-        if (context.framework && this.industryDefaults.frameworks[context.framework as keyof typeof this.industryDefaults.frameworks]) {
-          const frameworkDefaults = this.industryDefaults.frameworks[context.framework as keyof typeof this.industryDefaults.frameworks];
-          if ((/(component|comp)/i).test(schema.name)) return frameworkDefaults.componentExtension;
-          if ((/test/i).test(schema.name)) return frameworkDefaults.testExtension;
-          if ((/(style|css)/i).test(schema.name)) return frameworkDefaults.styleExtension;
+        if (
+          context.framework &&
+          this.industryDefaults.frameworks[
+            context.framework as keyof typeof this.industryDefaults.frameworks
+          ]
+        ) {
+          const frameworkDefaults =
+            this.industryDefaults.frameworks[
+              context.framework as keyof typeof this.industryDefaults.frameworks
+            ];
+          if (/(component|comp)/i.test(schema.name)) return frameworkDefaults.componentExtension;
+          if (/test/i.test(schema.name)) return frameworkDefaults.testExtension;
+          if (/(style|css)/i.test(schema.name)) return frameworkDefaults.styleExtension;
         }
-        
+
         // Language-based defaults
         switch (context.language) {
-          case 'typescript': return '.ts';
-          case 'javascript': return '.js';
-          case 'python': return '.py';
-          case 'java': return '.java';
-          case 'go': return '.go';
-          case 'rust': return '.rs';
-          default: return '.txt';
+          case 'typescript':
+            return '.ts';
+          case 'javascript':
+            return '.js';
+          case 'python':
+            return '.py';
+          case 'java':
+            return '.java';
+          case 'go':
+            return '.go';
+          case 'rust':
+            return '.rs';
+          default:
+            return '.txt';
         }
       },
       priority: 60,
@@ -398,13 +410,13 @@ export class DeterministicDefaultsSystem {
 
     // Port number rules
     this.addRule({
-      matcher: (schema) => (/port/i).test(schema.name) && schema.type === 'number',
+      matcher: (schema) => /port/i.test(schema.name) && schema.type === 'number',
       generator: (schema, context) => {
         const varName = schema.name.toLowerCase();
-        if ((/dev|development/i).test(varName)) return 3000;
-        if ((/(api|server)/i).test(varName)) return 8080;
-        if ((/(db|database)/i).test(varName)) return 5432;
-        if ((/(redis|cache)/i).test(varName)) return 6379;
+        if (/dev|development/i.test(varName)) return 3000;
+        if (/(api|server)/i.test(varName)) return 8080;
+        if (/(db|database)/i.test(varName)) return 5432;
+        if (/(redis|cache)/i.test(varName)) return 6379;
         return 3000;
       },
       priority: 60,
@@ -413,11 +425,11 @@ export class DeterministicDefaultsSystem {
 
     // URL/Domain rules
     this.addRule({
-      matcher: (schema) => (/(url|domain|host)/i).test(schema.name) && schema.type === 'string',
+      matcher: (schema) => /(url|domain|host)/i.test(schema.name) && schema.type === 'string',
       generator: (schema, context) => {
         const varName = schema.name.toLowerCase();
-        if ((/api/i).test(varName)) return 'https://api.example.com';
-        if ((/(db|database)/i).test(varName)) return 'localhost';
+        if (/api/i.test(varName)) return 'https://api.example.com';
+        if (/(db|database)/i.test(varName)) return 'localhost';
         return 'https://example.com';
       },
       priority: 60,
@@ -426,8 +438,10 @@ export class DeterministicDefaultsSystem {
 
     // Select/Option rules (use first option as default)
     this.addRule({
-      matcher: (schema) => 
-        schema.type === 'select' && schema.validation?.options && schema.validation.options.length > 0,
+      matcher: (schema) =>
+        schema.type === 'select' &&
+        schema.validation?.options &&
+        schema.validation.options.length > 0,
       generator: (schema) => schema.validation!.options![0],
       priority: 90,
       description: 'select-first-option'
@@ -435,8 +449,8 @@ export class DeterministicDefaultsSystem {
 
     // Date/Time rules
     this.addRule({
-      matcher: (schema) => 
-        (/(date|time|created|updated)/i).test(schema.name) && schema.type === 'string',
+      matcher: (schema) =>
+        /(date|time|created|updated)/i.test(schema.name) && schema.type === 'string',
       generator: () => new Date().toISOString().split('T')[0], // YYYY-MM-DD format
       priority: 60,
       description: 'date-current'
@@ -444,8 +458,7 @@ export class DeterministicDefaultsSystem {
 
     // UUID/ID rules
     this.addRule({
-      matcher: (schema) => 
-        (/(id|uuid|guid)/i).test(schema.name) && schema.type === 'string',
+      matcher: (schema) => /(id|uuid|guid)/i.test(schema.name) && schema.type === 'string',
       generator: () => this.generateUUID(),
       priority: 70,
       description: 'uuid-generator'
@@ -456,13 +469,13 @@ export class DeterministicDefaultsSystem {
       matcher: (schema) => schema.type === 'array',
       generator: (schema, context) => {
         const varName = schema.name.toLowerCase();
-        
+
         // Common array patterns
-        if ((/(tag|keyword)/i).test(varName)) return ['tag1', 'tag2'];
-        if ((/(dep|dependencies)/i).test(varName)) return [];
-        if ((/(author|contributor)/i).test(varName)) return ['Your Name'];
-        if ((/(script|command)/i).test(varName)) return ['npm run build'];
-        
+        if (/(tag|keyword)/i.test(varName)) return ['tag1', 'tag2'];
+        if (/(dep|dependencies)/i.test(varName)) return [];
+        if (/(author|contributor)/i.test(varName)) return ['Your Name'];
+        if (/(script|command)/i.test(varName)) return ['npm run build'];
+
         return [];
       },
       priority: 50,
@@ -474,12 +487,12 @@ export class DeterministicDefaultsSystem {
       matcher: (schema) => schema.type === 'object',
       generator: (schema, context) => {
         const varName = schema.name.toLowerCase();
-        
+
         // Common object patterns
-        if ((/(config|setting)/i).test(varName)) return {};
-        if ((/(meta|metadata)/i).test(varName)) return { version: '1.0.0' };
-        if ((/(script|scripts)/i).test(varName)) return { build: 'npm run build' };
-        
+        if (/(config|setting)/i.test(varName)) return {};
+        if (/(meta|metadata)/i.test(varName)) return { version: '1.0.0' };
+        if (/(script|scripts)/i.test(varName)) return { build: 'npm run build' };
+
         return {};
       },
       priority: 50,
@@ -494,7 +507,10 @@ export class DeterministicDefaultsSystem {
    */
   addRule(rule: DefaultRule): void {
     this.rules.push(rule);
-    this.logger.debug('Added default rule', { description: rule.description, priority: rule.priority });
+    this.logger.debug('Added default rule', {
+      description: rule.description,
+      priority: rule.priority
+    });
   }
 
   /**
@@ -552,7 +568,10 @@ export class DeterministicDefaultsSystem {
 
     // Apply naming convention consistency
     if (context.framework) {
-      const frameworkDefaults = this.industryDefaults.frameworks[context.framework as keyof typeof this.industryDefaults.frameworks];
+      const frameworkDefaults =
+        this.industryDefaults.frameworks[
+          context.framework as keyof typeof this.industryDefaults.frameworks
+        ];
       if (frameworkDefaults && variables.componentName) {
         const naming = frameworkDefaults.namingConvention;
         variables.componentName = this.applyNamingConvention(variables.componentName, naming);
@@ -584,7 +603,7 @@ export class DeterministicDefaultsSystem {
   private toPascalCase(str: string): string {
     return str
       .replace(/[-_\s]+(.)/g, (_, char) => char.toUpperCase())
-      .replace(/^./, char => char.toUpperCase());
+      .replace(/^./, (char) => char.toUpperCase());
   }
 
   /**
@@ -593,7 +612,7 @@ export class DeterministicDefaultsSystem {
   private toCamelCase(str: string): string {
     return str
       .replace(/[-_\s]+(.)/g, (_, char) => char.toUpperCase())
-      .replace(/^./, char => char.toLowerCase());
+      .replace(/^./, (char) => char.toLowerCase());
   }
 
   /**
@@ -656,27 +675,27 @@ export class DeterministicDefaultsSystem {
 
       if (schema.validation) {
         const validation = schema.validation;
-        
+
         if (validation.pattern && typeof value === 'string') {
           if (!new RegExp(validation.pattern).test(value)) return false;
         }
-        
+
         if (validation.minLength && typeof value === 'string') {
           if (value.length < validation.minLength) return false;
         }
-        
+
         if (validation.maxLength && typeof value === 'string') {
           if (value.length > validation.maxLength) return false;
         }
-        
+
         if (validation.min && typeof value === 'number') {
           if (value < validation.min) return false;
         }
-        
+
         if (validation.max && typeof value === 'number') {
           if (value > validation.max) return false;
         }
-        
+
         if (validation.options && !validation.options.includes(value)) {
           return false;
         }
@@ -697,7 +716,7 @@ export class DeterministicDefaultsSystem {
     ruleDescriptions: string[];
   } {
     const rulesByPriority: Record<number, number> = {};
-    
+
     for (const rule of this.rules) {
       rulesByPriority[rule.priority] = (rulesByPriority[rule.priority] || 0) + 1;
     }
@@ -705,14 +724,17 @@ export class DeterministicDefaultsSystem {
     return {
       totalRules: this.rules.length,
       rulesByPriority,
-      ruleDescriptions: this.rules.map(r => r.description)
+      ruleDescriptions: this.rules.map((r) => r.description)
     };
   }
 
   /**
    * Test rules against schema
    */
-  testRules(schema: VariableSchema, context: DefaultsContext = {}): Array<{
+  testRules(
+    schema: VariableSchema,
+    context: DefaultsContext = {}
+  ): Array<{
     rule: string;
     matches: boolean;
     value?: any;

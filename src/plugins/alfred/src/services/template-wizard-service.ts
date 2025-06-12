@@ -1,6 +1,6 @@
 /**
  * Template Wizard Service
- * 
+ *
  * Orchestrates template generation by connecting UI components
  * to the backend template engine services
  */
@@ -11,12 +11,11 @@ import { AIService } from '../../../../core/services/ai-service/interfaces';
 import { StorageService } from '../../../../core/services/storage/interfaces';
 import { TemplateEngine } from './template-engine/template-engine';
 import { TemplateDiscoveryService } from './template-discovery';
-import { ContextAwareVariableResolver } from './template-engine/variable-resolver';
-import { 
-  TemplateManifest, 
-  VariableMap, 
+import {
+  TemplateManifest,
+  VariableMap,
   GenerationResult,
-  FileConflict 
+  FileConflict
 } from './template-engine/interfaces';
 import * as path from 'path';
 import * as fs from 'fs/promises';
@@ -85,12 +84,12 @@ export class TemplateWizardService {
     const startTime = Date.now();
     const generationId = `gen-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
     const abortController = new AbortController();
-    
+
     // Link external abort signal if provided
     if (options.signal) {
       options.signal.addEventListener('abort', () => abortController.abort());
     }
-    
+
     this.activeGenerations.set(generationId, abortController);
 
     const result: WizardGenerationResult = {
@@ -183,14 +182,14 @@ export class TemplateWizardService {
           // Check for conflicts
           const fullPath = path.join(options.targetPath, file.path);
           const exists = await this.fileExists(fullPath);
-          
+
           if (exists) {
             const conflict = await this.handleFileConflict(
               fullPath,
               file.content,
               options.handleConflicts || 'prompt'
             );
-            
+
             if (conflict) {
               result.conflicts.push(conflict);
               if (options.handleConflicts === 'skip') {
@@ -203,15 +202,14 @@ export class TemplateWizardService {
           await this.writeFile(fullPath, file.content);
           result.filesGenerated.push(file.path);
           completedFiles++;
-
         } catch (error) {
           result.errors.push({
             file: file.path,
             error: error as Error
           });
-          this.logger.error('Failed to write file', { 
-            file: file.path, 
-            error 
+          this.logger.error('Failed to write file', {
+            file: file.path,
+            error
           });
         }
       }
@@ -235,13 +233,12 @@ export class TemplateWizardService {
       });
 
       // Emit completion event
-      this.eventBus.publish('template:generated', {
+      this.eventBus.publish('alfred:template:generated', {
         templateId: options.templateId,
         targetPath: options.targetPath,
         filesGenerated: result.filesGenerated.length,
         duration: result.duration
       });
-
     } catch (error) {
       this.reportProgress(options.onProgress, {
         phase: 'error',
@@ -256,10 +253,10 @@ export class TemplateWizardService {
         file: 'general',
         error: error as Error
       });
-      
-      this.logger.error('Template generation failed', { 
+
+      this.logger.error('Template generation failed', {
         templateId: options.templateId,
-        error 
+        error
       });
     } finally {
       this.activeGenerations.delete(generationId);
@@ -280,12 +277,12 @@ export class TemplateWizardService {
     }
 
     try {
-      const projectContext = projectPath ? 
-        await this.discoveryService.analyzeProject(projectPath) : 
-        undefined;
+      const projectContext = projectPath
+        ? await this.discoveryService.analyzeProject(projectPath)
+        : undefined;
 
       const prompt = this.buildSuggestionPrompt(template, projectContext);
-      
+
       const response = await this.aiService.complete(prompt, {
         model: 'default',
         maxTokens: 500,
@@ -294,7 +291,6 @@ export class TemplateWizardService {
 
       // Parse AI response into variable suggestions
       return this.parseAISuggestions(response.text, template.variables || []);
-
     } catch (error) {
       this.logger.warn('Failed to get AI suggestions', { error });
       return {};
@@ -320,7 +316,7 @@ export class TemplateWizardService {
     for (const file of template.files || []) {
       // Resolve path with variables
       const resolvedPath = this.resolvePathVariables(file.path, variables);
-      
+
       // Add directories
       const dir = path.dirname(resolvedPath);
       if (dir !== '.' && !directories.has(dir)) {
@@ -370,7 +366,7 @@ export class TemplateWizardService {
     enableAI?: boolean
   ): Promise<VariableMap> {
     const projectContext = await this.discoveryService.analyzeProject(projectPath);
-    
+
     const resolutionResult = await this.variableResolver.resolveVariables(
       template.variables || [],
       {
@@ -399,7 +395,7 @@ export class TemplateWizardService {
   ): Promise<FileConflict | null> {
     try {
       const existingContent = await fs.readFile(filePath, 'utf-8');
-      
+
       const conflict: FileConflict = {
         filePath,
         existingContent,
@@ -455,23 +451,20 @@ export class TemplateWizardService {
     if (callback) {
       callback(progress);
     }
-    
-    this.eventBus.publish('template:generation-progress', progress);
+
+    this.eventBus.publish('alfred:template:generation:progress', progress);
   }
 
   /**
    * Build AI suggestion prompt
    */
-  private buildSuggestionPrompt(
-    template: TemplateManifest,
-    projectContext?: any
-  ): string {
+  private buildSuggestionPrompt(template: TemplateManifest, projectContext?: any): string {
     const parts = [
       `Generate variable suggestions for the "${template.name}" template.`,
       '',
       'Template Description: ' + template.description,
       'Category: ' + template.category,
-      ''   
+      ''
     ];
 
     if (projectContext) {
@@ -486,7 +479,7 @@ export class TemplateWizardService {
 
     parts.push(
       'Variables to suggest values for:',
-      ...template.variables?.map(v => `- ${v.name}: ${v.description}`) || [],
+      ...(template.variables?.map((v) => `- ${v.name}: ${v.description}`) || []),
       '',
       'Provide practical, contextually appropriate suggestions.'
     );
@@ -499,7 +492,7 @@ export class TemplateWizardService {
    */
   private parseAISuggestions(aiResponse: string, variables: any[]): VariableMap {
     const suggestions: VariableMap = {};
-    
+
     // Simple parsing - in production would be more sophisticated
     for (const variable of variables) {
       const regex = new RegExp(`${variable.name}[:\s]+([^\n]+)`, 'i');

@@ -1,6 +1,6 @@
 /**
  * Template Wizard Component
- * 
+ *
  * Interactive project scaffolding wizard based on original Alfred's template system
  */
 
@@ -10,7 +10,6 @@ import { Button } from '../../../../client/components/ui/button';
 import { Input } from '../../../../client/components/ui/input';
 import { Label } from '../../../../client/components/ui/label';
 import { Select } from '../../../../client/components/ui/select';
-import { Textarea } from '../../../../client/components/ui/textarea';
 import { Card } from '../../../../client/components/ui/card';
 import { Progress } from '../../../../client/components/ui/progress';
 import { Badge } from '../../../../client/components/ui/badge';
@@ -65,10 +64,27 @@ export interface WizardStep {
   description: string;
 }
 
-interface TemplateWizardProps {
-  open: boolean;
-  onClose: () => void;
-  onComplete: (template: ProjectTemplate, variables: Record<string, any>) => void;
+// Additional types required by the task specification
+export interface TemplateResult {
+  template: ProjectTemplate;
+  variables: Record<string, any>;
+  files: TemplateFile[];
+  success: boolean;
+  error?: string;
+}
+
+export interface TemplateVariables {
+  [key: string]: any;
+}
+
+export interface TemplateWizardProps {
+  open?: boolean;
+  onClose?: () => void;
+  templateId?: string;
+  onComplete: (result: TemplateResult) => void;
+  onCancel?: () => void;
+  initialValues?: TemplateVariables;
+  readonly?: boolean;
   templates?: ProjectTemplate[];
 }
 
@@ -89,7 +105,8 @@ const defaultTemplates: ProjectTemplate[] = [
         required: true,
         validation: (value) => {
           if (!value) return 'Project name is required';
-          if (!/^[a-z0-9-]+$/.test(value)) return 'Use lowercase letters, numbers, and hyphens only';
+          if (!/^[a-z0-9-]+$/.test(value))
+            return 'Use lowercase letters, numbers, and hyphens only';
           return null;
         }
       },
@@ -217,9 +234,13 @@ const wizardSteps: WizardStep[] = [
 ];
 
 export const TemplateWizard: React.FC<TemplateWizardProps> = ({
-  open,
+  open = false,
   onClose,
+  templateId,
   onComplete,
+  onCancel,
+  initialValues,
+  readonly = false,
   templates = defaultTemplates
 }) => {
   const [currentStep, setCurrentStep] = useState(0);
@@ -241,7 +262,7 @@ export const TemplateWizard: React.FC<TemplateWizardProps> = ({
   useEffect(() => {
     if (selectedTemplate) {
       const initialVars: Record<string, any> = {};
-      selectedTemplate.variables.forEach(v => {
+      selectedTemplate.variables.forEach((v) => {
         if (v.default !== undefined) {
           initialVars[v.name] = v.default;
         }
@@ -254,17 +275,17 @@ export const TemplateWizard: React.FC<TemplateWizardProps> = ({
     if (currentStep === 0) {
       return selectedTemplate !== null;
     }
-    
+
     if (currentStep === 1 && selectedTemplate) {
       const newErrors: Record<string, string> = {};
       let isValid = true;
-      
-      selectedTemplate.variables.forEach(variable => {
+
+      selectedTemplate.variables.forEach((variable) => {
         if (variable.required && !variables[variable.name]) {
           newErrors[variable.name] = `${variable.label} is required`;
           isValid = false;
         }
-        
+
         if (variable.validation && variables[variable.name]) {
           const error = variable.validation(variables[variable.name]);
           if (error) {
@@ -273,11 +294,11 @@ export const TemplateWizard: React.FC<TemplateWizardProps> = ({
           }
         }
       });
-      
+
       setErrors(newErrors);
       return isValid;
     }
-    
+
     return true;
   };
 
@@ -288,7 +309,13 @@ export const TemplateWizard: React.FC<TemplateWizardProps> = ({
       } else {
         // Complete wizard
         if (selectedTemplate) {
-          onComplete(selectedTemplate, variables);
+          const result: TemplateResult = {
+            template: selectedTemplate,
+            variables,
+            files: selectedTemplate.files,
+            success: true
+          };
+          onComplete(result);
         }
       }
     }
@@ -311,39 +338,35 @@ export const TemplateWizard: React.FC<TemplateWizardProps> = ({
     };
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {templates.map(template => {
+      <div className='grid grid-cols-1 md:grid-cols-2 gap-4'>
+        {templates.map((template) => {
           const Icon = template.icon || categoryIcons[template.category];
           return (
             <Card
               key={template.id}
               className={`cursor-pointer transition-all ${
-                selectedTemplate?.id === template.id 
-                  ? 'ring-2 ring-primary' 
-                  : 'hover:shadow-lg'
+                selectedTemplate?.id === template.id ? 'ring-2 ring-primary' : 'hover:shadow-lg'
               }`}
               onClick={() => setSelectedTemplate(template)}
             >
-              <div className="p-6">
-                <div className="flex items-start gap-4">
-                  <div className="p-3 bg-primary/10 rounded-lg">
-                    <Icon className="h-6 w-6 text-primary" />
+              <div className='p-6'>
+                <div className='flex items-start gap-4'>
+                  <div className='p-3 bg-primary/10 rounded-lg'>
+                    <Icon className='h-6 w-6 text-primary' />
                   </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-lg">{template.name}</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {template.description}
-                    </p>
-                    <div className="flex flex-wrap gap-2 mt-3">
-                      {template.technologies.map(tech => (
-                        <Badge key={tech} variant="secondary" className="text-xs">
+                  <div className='flex-1'>
+                    <h3 className='font-semibold text-lg'>{template.name}</h3>
+                    <p className='text-sm text-muted-foreground mt-1'>{template.description}</p>
+                    <div className='flex flex-wrap gap-2 mt-3'>
+                      {template.technologies.map((tech) => (
+                        <Badge key={tech} variant='secondary' className='text-xs'>
                           {tech}
                         </Badge>
                       ))}
                     </div>
                   </div>
                   {selectedTemplate?.id === template.id && (
-                    <CheckCircle className="h-5 w-5 text-primary" />
+                    <CheckCircle className='h-5 w-5 text-primary' />
                   )}
                 </div>
               </div>
@@ -358,43 +381,47 @@ export const TemplateWizard: React.FC<TemplateWizardProps> = ({
     if (!selectedTemplate) return null;
 
     return (
-      <div className="space-y-6">
-        {selectedTemplate.variables.map(variable => (
-          <div key={variable.name} className="space-y-2">
+      <div className='space-y-6'>
+        {selectedTemplate.variables.map((variable) => (
+          <div key={variable.name} className='space-y-2'>
             <Label htmlFor={variable.name}>
               {variable.label}
-              {variable.required && <span className="text-red-500 ml-1">*</span>}
+              {variable.required && <span className='text-red-500 ml-1'>*</span>}
             </Label>
-            
+
             {variable.description && (
-              <p className="text-sm text-muted-foreground">{variable.description}</p>
+              <p className='text-sm text-muted-foreground'>{variable.description}</p>
             )}
-            
+
             {variable.type === 'text' && (
               <Input
                 id={variable.name}
                 value={variables[variable.name] || ''}
-                onChange={(e) => setVariables({
-                  ...variables,
-                  [variable.name]: e.target.value
-                })}
+                onChange={(e) =>
+                  setVariables({
+                    ...variables,
+                    [variable.name]: e.target.value
+                  })
+                }
                 className={errors[variable.name] ? 'border-red-500' : ''}
               />
             )}
-            
+
             {variable.type === 'select' && (
               <Select
                 value={variables[variable.name] || ''}
-                onValueChange={(value) => setVariables({
-                  ...variables,
-                  [variable.name]: value
-                })}
+                onValueChange={(value) =>
+                  setVariables({
+                    ...variables,
+                    [variable.name]: value
+                  })
+                }
               >
                 <Select.Trigger className={errors[variable.name] ? 'border-red-500' : ''}>
-                  <Select.Value placeholder="Select an option" />
+                  <Select.Value placeholder='Select an option' />
                 </Select.Trigger>
                 <Select.Content>
-                  {variable.options?.map(option => (
+                  {variable.options?.map((option) => (
                     <Select.Item key={option.value} value={option.value}>
                       {option.label}
                     </Select.Item>
@@ -402,27 +429,29 @@ export const TemplateWizard: React.FC<TemplateWizardProps> = ({
                 </Select.Content>
               </Select>
             )}
-            
+
             {variable.type === 'boolean' && (
-              <div className="flex items-center space-x-2">
+              <div className='flex items-center space-x-2'>
                 <input
-                  type="checkbox"
+                  type='checkbox'
                   id={variable.name}
                   checked={variables[variable.name] || false}
-                  onChange={(e) => setVariables({
-                    ...variables,
-                    [variable.name]: e.target.checked
-                  })}
-                  className="h-4 w-4"
+                  onChange={(e) =>
+                    setVariables({
+                      ...variables,
+                      [variable.name]: e.target.checked
+                    })
+                  }
+                  className='h-4 w-4'
                 />
-                <Label htmlFor={variable.name} className="cursor-pointer">
+                <Label htmlFor={variable.name} className='cursor-pointer'>
                   Enable {variable.label}
                 </Label>
               </div>
             )}
-            
+
             {errors[variable.name] && (
-              <p className="text-sm text-red-500">{errors[variable.name]}</p>
+              <p className='text-sm text-red-500'>{errors[variable.name]}</p>
             )}
           </div>
         ))}
@@ -434,33 +463,31 @@ export const TemplateWizard: React.FC<TemplateWizardProps> = ({
     if (!selectedTemplate) return null;
 
     return (
-      <div className="space-y-6">
+      <div className='space-y-6'>
         <div>
-          <h3 className="font-semibold mb-2">Selected Template</h3>
-          <Card className="p-4">
-            <div className="flex items-center gap-3">
-              <selectedTemplate.icon className="h-5 w-5 text-primary" />
+          <h3 className='font-semibold mb-2'>Selected Template</h3>
+          <Card className='p-4'>
+            <div className='flex items-center gap-3'>
+              <selectedTemplate.icon className='h-5 w-5 text-primary' />
               <div>
-                <p className="font-medium">{selectedTemplate.name}</p>
-                <p className="text-sm text-muted-foreground">
-                  {selectedTemplate.description}
-                </p>
+                <p className='font-medium'>{selectedTemplate.name}</p>
+                <p className='text-sm text-muted-foreground'>{selectedTemplate.description}</p>
               </div>
             </div>
           </Card>
         </div>
-        
+
         <div>
-          <h3 className="font-semibold mb-2">Configuration</h3>
-          <Card className="p-4 space-y-2">
-            {selectedTemplate.variables.map(variable => {
+          <h3 className='font-semibold mb-2'>Configuration</h3>
+          <Card className='p-4 space-y-2'>
+            {selectedTemplate.variables.map((variable) => {
               const value = variables[variable.name];
               if (value === undefined || value === '') return null;
-              
+
               return (
-                <div key={variable.name} className="flex justify-between">
-                  <span className="text-muted-foreground">{variable.label}:</span>
-                  <span className="font-medium">
+                <div key={variable.name} className='flex justify-between'>
+                  <span className='text-muted-foreground'>{variable.label}:</span>
+                  <span className='font-medium'>
                     {typeof value === 'boolean' ? (value ? 'Yes' : 'No') : value}
                   </span>
                 </div>
@@ -468,10 +495,10 @@ export const TemplateWizard: React.FC<TemplateWizardProps> = ({
             })}
           </Card>
         </div>
-        
-        <div className="flex items-center gap-2 p-4 bg-primary/10 rounded-lg">
-          <Wand2 className="h-5 w-5 text-primary" />
-          <p className="text-sm">
+
+        <div className='flex items-center gap-2 p-4 bg-primary/10 rounded-lg'>
+          <Wand2 className='h-5 w-5 text-primary' />
+          <p className='text-sm'>
             Ready to create your project! Click "Create Project" to generate the files.
           </p>
         </div>
@@ -484,17 +511,17 @@ export const TemplateWizard: React.FC<TemplateWizardProps> = ({
 
   return (
     <DialogCompound open={open} onOpenChange={onClose}>
-      <DialogCompound.Content className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+      <DialogCompound.Content className='max-w-4xl max-h-[80vh] overflow-hidden flex flex-col'>
         <DialogCompound.Header>
-          <DialogCompound.Title className="flex items-center gap-2">
-            <Wand2 className="h-5 w-5" />
+          <DialogCompound.Title className='flex items-center gap-2'>
+            <Wand2 className='h-5 w-5' />
             Project Template Wizard
           </DialogCompound.Title>
         </DialogCompound.Header>
-        
-        <div className="px-6 py-2">
-          <Progress value={progress} className="h-2" />
-          <div className="flex justify-between mt-2">
+
+        <div className='px-6 py-2'>
+          <Progress value={progress} className='h-2' />
+          <div className='flex justify-between mt-2'>
             {wizardSteps.map((step, index) => (
               <div
                 key={step.id}
@@ -507,43 +534,39 @@ export const TemplateWizard: React.FC<TemplateWizardProps> = ({
             ))}
           </div>
         </div>
-        
-        <div className="flex-1 overflow-y-auto px-6 py-4">
-          <div className="mb-6">
-            <h2 className="text-xl font-semibold">{currentStepData.title}</h2>
-            <p className="text-muted-foreground">{currentStepData.description}</p>
+
+        <div className='flex-1 overflow-y-auto px-6 py-4'>
+          <div className='mb-6'>
+            <h2 className='text-xl font-semibold'>{currentStepData.title}</h2>
+            <p className='text-muted-foreground'>{currentStepData.description}</p>
           </div>
-          
+
           {currentStep === 0 && renderTemplateSelection()}
           {currentStep === 1 && renderConfiguration()}
           {currentStep === 2 && renderReview()}
         </div>
-        
-        <DialogCompound.Footer className="px-6 py-4 border-t">
-          <div className="flex justify-between w-full">
-            <Button
-              variant="outline"
-              onClick={handleBack}
-              disabled={currentStep === 0}
-            >
-              <ChevronLeft className="h-4 w-4 mr-2" />
+
+        <DialogCompound.Footer className='px-6 py-4 border-t'>
+          <div className='flex justify-between w-full'>
+            <Button variant='outline' onClick={handleBack} disabled={currentStep === 0}>
+              <ChevronLeft className='h-4 w-4 mr-2' />
               Back
             </Button>
-            
-            <div className="flex gap-2">
-              <Button variant="outline" onClick={onClose}>
+
+            <div className='flex gap-2'>
+              <Button variant='outline' onClick={onClose}>
                 Cancel
               </Button>
               <Button onClick={handleNext}>
                 {currentStep === wizardSteps.length - 1 ? (
                   <>
                     Create Project
-                    <CheckCircle className="h-4 w-4 ml-2" />
+                    <CheckCircle className='h-4 w-4 ml-2' />
                   </>
                 ) : (
                   <>
                     Next
-                    <ChevronRight className="h-4 w-4 ml-2" />
+                    <ChevronRight className='h-4 w-4 ml-2' />
                   </>
                 )}
               </Button>

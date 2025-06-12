@@ -54,10 +54,12 @@ describe('MLService', () => {
       })
     } as any;
 
-    (AnomalyDetector as jest.MockedClass<typeof AnomalyDetector>)
-      .mockImplementation(() => mockAnomalyDetector);
-    (NLPProcessor as jest.MockedClass<typeof NLPProcessor>)
-      .mockImplementation(() => mockNLPProcessor);
+    (AnomalyDetector as jest.MockedClass<typeof AnomalyDetector>).mockImplementation(
+      () => mockAnomalyDetector
+    );
+    (NLPProcessor as jest.MockedClass<typeof NLPProcessor>).mockImplementation(
+      () => mockNLPProcessor
+    );
 
     mlService = new MLService(mockMLClient, mockLogger);
   });
@@ -203,7 +205,7 @@ describe('MLService', () => {
       expect(mockAnomalyDetector.detectBatchAnomalies).toHaveBeenCalledWith(mockLogs);
       expect(insights).toHaveLength(2); // Anomaly and pattern insights
 
-      const anomalyInsight = insights.find(i => i.type === 'anomaly');
+      const anomalyInsight = insights.find((i) => i.type === 'anomaly');
       expect(anomalyInsight).toBeDefined();
       expect(anomalyInsight?.severity).toBe('warning');
       expect(anomalyInsight?.affectedLogs).toContain('test-1');
@@ -242,9 +244,7 @@ describe('MLService', () => {
       const query = 'invalid query';
       mockNLPProcessor.processQuery.mockRejectedValue(new Error('NLP failed'));
 
-      await expect(
-        mlService.processNaturalLanguageQuery(query)
-      ).rejects.toThrow('NLP failed');
+      await expect(mlService.processNaturalLanguageQuery(query)).rejects.toThrow('NLP failed');
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         'Failed to process natural language query',

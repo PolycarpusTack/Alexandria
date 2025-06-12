@@ -1,6 +1,6 @@
 /**
  * Streaming Service for Alfred
- * 
+ *
  * Handles streaming AI responses for real-time code generation and chat
  */
 
@@ -57,10 +57,10 @@ export class StreamingService extends EventEmitter {
         }
 
         fullResponse += chunk;
-        
+
         // Emit chunk event
         this.emit('chunk', { streamId, chunk, type: 'chat' });
-        
+
         // Call callback if provided
         if (options.onChunk) {
           options.onChunk(chunk);
@@ -69,23 +69,22 @@ export class StreamingService extends EventEmitter {
 
       // Emit complete event
       this.emit('complete', { streamId, fullResponse, type: 'chat' });
-      
+
       // Call complete callback
       if (options.onComplete) {
         options.onComplete(fullResponse);
       }
-
     } catch (error) {
       this.logger.error('Chat streaming failed', { error, streamId });
-      
+
       // Emit error event
       this.emit('error', { streamId, error, type: 'chat' });
-      
+
       // Call error callback
       if (options.onError) {
         options.onError(error as Error);
       }
-      
+
       throw error;
     } finally {
       this.activeStreams.delete(streamId);
@@ -95,10 +94,7 @@ export class StreamingService extends EventEmitter {
   /**
    * Stream code generation
    */
-  async streamCode(
-    prompt: string,
-    options: CodeStreamingOptions
-  ): Promise<void> {
+  async streamCode(prompt: string, options: CodeStreamingOptions): Promise<void> {
     const streamId = `code-${options.sessionId}-${Date.now()}`;
     const abortController = new AbortController();
     this.activeStreams.set(streamId, abortController);
@@ -119,28 +115,28 @@ export class StreamingService extends EventEmitter {
         }
 
         fullCode += chunk;
-        
+
         // Detect code blocks for better formatting
         if (chunk.includes('```')) {
           inCodeBlock = !inCodeBlock;
           if (!inCodeBlock && codeBlockBuffer) {
             // Emit the complete code block
-            this.emit('codeBlock', { 
-              streamId, 
-              code: codeBlockBuffer, 
-              language: options.language || 'typescript' 
+            this.emit('codeBlock', {
+              streamId,
+              code: codeBlockBuffer,
+              language: options.language || 'typescript'
             });
             codeBlockBuffer = '';
           }
         }
-        
+
         if (inCodeBlock) {
           codeBlockBuffer += chunk;
         }
-        
+
         // Emit chunk event
         this.emit('chunk', { streamId, chunk, type: 'code' });
-        
+
         // Call callback if provided
         if (options.onChunk) {
           options.onChunk(chunk);
@@ -149,23 +145,22 @@ export class StreamingService extends EventEmitter {
 
       // Emit complete event
       this.emit('complete', { streamId, fullResponse: fullCode, type: 'code' });
-      
+
       // Call complete callback
       if (options.onComplete) {
         options.onComplete(fullCode);
       }
-
     } catch (error) {
       this.logger.error('Code streaming failed', { error, streamId });
-      
+
       // Emit error event
       this.emit('error', { streamId, error, type: 'code' });
-      
+
       // Call error callback
       if (options.onError) {
         options.onError(error as Error);
       }
-      
+
       throw error;
     } finally {
       this.activeStreams.delete(streamId);

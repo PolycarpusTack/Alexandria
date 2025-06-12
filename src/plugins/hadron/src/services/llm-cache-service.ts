@@ -39,7 +39,7 @@ export class LLMCacheService {
   private readonly DEFAULT_TTL = 24 * 60 * 60 * 1000; // 24 hours
   private readonly MAX_PROMPT_LENGTH = 10000; // Don't cache extremely long prompts
   private readonly MIN_CONFIDENCE = 0.7; // Only cache high-confidence responses
-  
+
   // Cache metrics
   private metrics: ICacheMetrics = {
     totalRequests: 0,
@@ -76,12 +76,9 @@ export class LLMCacheService {
       model,
       context: context ? this.normalizeContext(context) : undefined
     };
-    
-    const hash = crypto
-      .createHash('sha256')
-      .update(JSON.stringify(dataToHash))
-      .digest('hex');
-    
+
+    const hash = crypto.createHash('sha256').update(JSON.stringify(dataToHash)).digest('hex');
+
     return `${this.CACHE_PREFIX}${hash}`;
   }
 
@@ -90,16 +87,16 @@ export class LLMCacheService {
    */
   private normalizeContext(context: Record<string, any>): Record<string, any> {
     const normalized: Record<string, any> = {};
-    
+
     // Only include cache-relevant context keys
     const relevantKeys = ['language', 'framework', 'analysisType', 'severity'];
-    
+
     for (const key of relevantKeys) {
       if (context[key] !== undefined) {
         normalized[key] = context[key];
       }
     }
-    
+
     return normalized;
   }
 
@@ -110,25 +107,25 @@ export class LLMCacheService {
     if (!this.config.enableCaching) {
       return false;
     }
-    
+
     // Don't cache extremely long prompts
     if (prompt.length > this.MAX_PROMPT_LENGTH) {
       logger.debug('Skipping cache for long prompt', { length: prompt.length });
       return false;
     }
-    
+
     // Don't cache low-confidence responses
     if (confidence !== undefined && confidence < this.MIN_CONFIDENCE) {
       logger.debug('Skipping cache for low confidence response', { confidence });
       return false;
     }
-    
+
     // Don't cache prompts with sensitive information patterns
     if (this.containsSensitiveInfo(prompt)) {
       logger.debug('Skipping cache for prompt with sensitive information');
       return false;
     }
-    
+
     return true;
   }
 
@@ -144,18 +141,18 @@ export class LLMCacheService {
       /private[_\s]*key/i,
       /access[_\s]*key/i,
       /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b/, // Email addresses
-      /\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/, // Credit card numbers
+      /\b\d{4}[\s-]?\d{4}[\s-]?\d{4}[\s-]?\d{4}\b/ // Credit card numbers
     ];
-    
-    return sensitivePatterns.some(pattern => pattern.test(prompt));
+
+    return sensitivePatterns.some((pattern) => pattern.test(prompt));
   }
 
   /**
    * Get cached LLM response
    */
   async getCachedResponse(
-    prompt: string, 
-    model: string, 
+    prompt: string,
+    model: string,
     context?: Record<string, any>
   ): Promise<ICachedLLMResponse | null> {
     if (!this.config.enableCaching) {
@@ -163,28 +160,28 @@ export class LLMCacheService {
     }
 
     this.metrics.totalRequests++;
-    
+
     try {
       const cacheKey = this.generateCacheKey(prompt, model, context);
       const cached = await this.cacheService.get<ICachedLLMResponse>(cacheKey);
-      
+
       if (cached) {
         this.metrics.cacheHits++;
-        
+
         // Update token savings metrics
         if (cached.tokenUsage) {
           this.metrics.totalTokensSaved += cached.tokenUsage.totalTokens;
         }
         this.metrics.totalTimeSaved += cached.inferenceTime;
-        
+
         this.updateHitRate();
-        
-        logger.info('Cache hit for LLM response', { 
-          model, 
+
+        logger.info('Cache hit for LLM response', {
+          model,
           promptLength: prompt.length,
           cacheAge: Date.now() - cached.timestamp.getTime()
         });
-        
+
         return cached;
       } else {
         this.metrics.cacheMisses++;
@@ -226,7 +223,7 @@ export class LLMCacheService {
     try {
       const cacheKey = this.generateCacheKey(prompt, model, options.context);
       const promptHash = crypto.createHash('md5').update(prompt).digest('hex');
-      
+
       const cachedResponse: ICachedLLMResponse = {
         response,
         model,
@@ -237,13 +234,13 @@ export class LLMCacheService {
         confidence: options.confidence,
         metadata: options.metadata
       };
-      
+
       const ttl = options.ttl || this.DEFAULT_TTL;
-      
+
       await this.cacheService.set(cacheKey, cachedResponse, ttl);
-      
-      logger.debug('Cached LLM response', { 
-        model, 
+
+      logger.debug('Cached LLM response', {
+        model,
         promptLength: prompt.length,
         confidence: options.confidence,
         ttl
@@ -311,11 +308,11 @@ export class LLMCacheService {
     };
   }> {
     const cacheSize = await this.getCacheSize();
-    
+
     // Rough cost estimation (varies by provider)
     const estimatedCostPerToken = 0.00002; // $0.00002 per token (rough estimate)
     const estimatedCostSaving = this.metrics.totalTokensSaved * estimatedCostPerToken;
-    
+
     return {
       metrics: this.getMetrics(),
       cacheSize,
@@ -344,24 +341,26 @@ export class LLMCacheService {
   /**
    * Warm up cache with common queries
    */
-  async warmUpCache(commonQueries: Array<{
-    prompt: string;
-    model: string;
-    context?: Record<string, any>;
-  }>): Promise<void> {
+  async warmUpCache(
+    commonQueries: Array<{
+      prompt: string;
+      model: string;
+      context?: Record<string, any>;
+    }>
+  ): Promise<void> {
     logger.info('Starting cache warm-up', { queryCount: commonQueries.length });
-    
+
     for (const query of commonQueries) {
       // Check if already cached
       const cached = await this.getCachedResponse(query.prompt, query.model, query.context);
       if (!cached) {
-        logger.debug('Cache miss during warm-up', { 
-          model: query.model, 
-          promptLength: query.prompt.length 
+        logger.debug('Cache miss during warm-up', {
+          model: query.model,
+          promptLength: query.prompt.length
         });
       }
     }
-    
+
     logger.info('Cache warm-up completed');
   }
 

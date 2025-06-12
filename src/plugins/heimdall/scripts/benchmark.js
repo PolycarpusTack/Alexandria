@@ -39,7 +39,7 @@ class Benchmark {
     console.log(`Iterations: ${iterations}`);
 
     const startTime = performance.now();
-    
+
     for (let i = 0; i < iterations; i++) {
       const iterStart = performance.now();
       await fn(i);
@@ -127,7 +127,7 @@ async function runBenchmarks() {
   for (const batchSize of batchSizes) {
     const batchBench = new Benchmark(`Batch Log Ingestion (${batchSize} logs)`);
     await batchBench.run(async (i) => {
-      const logs = Array.from({ length: batchSize }, (_, j) => 
+      const logs = Array.from({ length: batchSize }, (_, j) =>
         createMockLog(i * batchSize + j)
       );
       await Promise.all([
@@ -162,11 +162,11 @@ async function runBenchmarks() {
   // 6. Memory usage test
   console.log('\n=== Memory Usage Test ===');
   const initialMemory = process.memoryUsage();
-  
-  const largeBatch = Array.from({ length: 10000 }, (_, i) => createMockLog(i));
-  
+
+  const _largeBatch = Array.from({ length: 10000 }, (_, i) => createMockLog(i));
+
   const afterCreation = process.memoryUsage();
-  console.log(`Memory after creating 10,000 logs:`);
+  console.log('Memory after creating 10,000 logs:');
   console.log(`  Heap Used: ${((afterCreation.heapUsed - initialMemory.heapUsed) / 1024 / 1024).toFixed(2)} MB`);
   console.log(`  RSS: ${((afterCreation.rss - initialMemory.rss) / 1024 / 1024).toFixed(2)} MB`);
 

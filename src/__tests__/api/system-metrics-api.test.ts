@@ -1,6 +1,6 @@
 /**
  * System Metrics API Test Suite
- * 
+ *
  * Comprehensive tests for the System Metrics API including:
  * - System health endpoints
  * - Performance metrics collection
@@ -39,7 +39,7 @@ describe('System Metrics API', () => {
     id: 'user-123',
     username: 'testuser',
     roles: ['admin'],
-    permissions: ['system:read', 'metrics:read'],
+    permissions: ['system:read', 'metrics:read']
   };
 
   const mockMetrics = {
@@ -48,21 +48,21 @@ describe('System Metrics API', () => {
       memoryUsage: 68.1,
       diskUsage: 32.5,
       uptime: 86400000,
-      loadAverage: [1.2, 1.1, 1.0],
+      loadAverage: [1.2, 1.1, 1.0]
     },
     application: {
       activeConnections: 150,
       requestsPerSecond: 25.5,
       responseTime: 120,
       errorRate: 0.02,
-      activePlugins: 8,
+      activePlugins: 8
     },
     database: {
       connectionPool: 15,
       activeQueries: 3,
       queryResponseTime: 45,
-      cacheHitRate: 0.92,
-    },
+      cacheHitRate: 0.92
+    }
   };
 
   beforeEach(() => {
@@ -76,7 +76,7 @@ describe('System Metrics API', () => {
       warn: jest.fn(),
       error: jest.fn(),
       debug: jest.fn(),
-      child: jest.fn().mockReturnThis(),
+      child: jest.fn().mockReturnThis()
     } as any;
 
     mockDataService = {
@@ -84,18 +84,18 @@ describe('System Metrics API', () => {
         create: jest.fn(),
         findByDateRange: jest.fn(),
         getLatest: jest.fn(),
-        getAggregated: jest.fn(),
-      },
+        getAggregated: jest.fn()
+      }
     } as any;
 
     mockAuthService = {
       validateToken: jest.fn(),
-      getUserFromToken: jest.fn(),
+      getUserFromToken: jest.fn()
     } as any;
 
     mockAuthzService = {
       hasPermission: jest.fn(),
-      hasAnyPermission: jest.fn(),
+      hasAnyPermission: jest.fn()
     } as any;
 
     // Setup API routes
@@ -103,7 +103,7 @@ describe('System Metrics API', () => {
       logger: mockLogger,
       dataService: mockDataService,
       authService: mockAuthService,
-      authzService: mockAuthzService,
+      authzService: mockAuthzService
     });
 
     app.use('/api/metrics', metricsAPI);
@@ -111,7 +111,7 @@ describe('System Metrics API', () => {
     // Default auth setup
     mockAuthService.validateToken.mockResolvedValue({
       userId: mockUser.id,
-      username: mockUser.username,
+      username: mockUser.username
     });
     mockAuthService.getUserFromToken.mockResolvedValue(mockUser);
     mockAuthzService.hasPermission.mockReturnValue({ granted: true });
@@ -134,8 +134,8 @@ describe('System Metrics API', () => {
           database: 'healthy',
           cache: 'healthy',
           storage: 'healthy',
-          plugins: 'healthy',
-        },
+          plugins: 'healthy'
+        }
       });
     });
 
@@ -180,7 +180,7 @@ describe('System Metrics API', () => {
         heapTotal: 80 * 1024 * 1024,
         heapUsed: 60 * 1024 * 1024,
         external: 5 * 1024 * 1024,
-        arrayBuffers: 2 * 1024 * 1024,
+        arrayBuffers: 2 * 1024 * 1024
       });
     });
 
@@ -197,17 +197,17 @@ describe('System Metrics API', () => {
           memory: expect.objectContaining({
             used: expect.any(Number),
             total: expect.any(Number),
-            percentage: expect.any(Number),
+            percentage: expect.any(Number)
           }),
           disk: expect.any(Object),
-          uptime: expect.any(Number),
+          uptime: expect.any(Number)
         }),
         application: expect.objectContaining({
           heap: expect.any(Object),
           connections: expect.any(Number),
-          requests: expect.any(Object),
+          requests: expect.any(Object)
         }),
-        database: expect.any(Object),
+        database: expect.any(Object)
       });
     });
 
@@ -250,9 +250,9 @@ describe('System Metrics API', () => {
           ...mockMetrics,
           system: {
             ...mockMetrics.system,
-            cpuUsage: 40 + i * 2,
-          },
-        },
+            cpuUsage: 40 + i * 2
+          }
+        }
       }));
 
       mockDataService.metrics.findByDateRange.mockResolvedValue(historicalData);
@@ -270,17 +270,17 @@ describe('System Metrics API', () => {
         data: expect.arrayContaining([
           expect.objectContaining({
             timestamp: expect.any(String),
-            data: expect.any(Object),
-          }),
+            data: expect.any(Object)
+          })
         ]),
-        aggregation: 'raw',
+        aggregation: 'raw'
       });
 
       expect(mockDataService.metrics.findByDateRange).toHaveBeenCalledWith(
         expect.any(Date),
         expect.any(Date),
         expect.objectContaining({
-          interval: '1m',
+          interval: '1m'
         })
       );
     });
@@ -295,7 +295,7 @@ describe('System Metrics API', () => {
         expect.any(Date),
         expect.any(Date),
         expect.objectContaining({
-          interval: '5m',
+          interval: '5m'
         })
       );
     });
@@ -306,8 +306,8 @@ describe('System Metrics API', () => {
           timestamp: new Date(),
           avg_cpu: 45.2,
           max_cpu: 67.1,
-          min_cpu: 23.4,
-        },
+          min_cpu: 23.4
+        }
       ]);
 
       await request(app)
@@ -341,14 +341,14 @@ describe('System Metrics API', () => {
         value: 89.5,
         tags: {
           pluginId: 'test-plugin',
-          version: '1.0.0',
+          version: '1.0.0'
         },
-        timestamp: new Date().toISOString(),
+        timestamp: new Date().toISOString()
       };
 
       mockDataService.metrics.create.mockResolvedValue({
         id: 'custom-metric-123',
-        ...customMetrics,
+        ...customMetrics
       });
 
       const response = await request(app)
@@ -359,7 +359,7 @@ describe('System Metrics API', () => {
 
       expect(response.body).toEqual({
         id: 'custom-metric-123',
-        ...customMetrics,
+        ...customMetrics
       });
 
       expect(mockDataService.metrics.create).toHaveBeenCalledWith(
@@ -372,7 +372,7 @@ describe('System Metrics API', () => {
         category: 'plugin',
         // Missing required 'name' field
         value: 'not-a-number',
-        tags: 'invalid-tags',
+        tags: 'invalid-tags'
       };
 
       await request(app)
@@ -384,7 +384,7 @@ describe('System Metrics API', () => {
 
     it('should require metrics:write permission', async () => {
       mockAuthzService.hasPermission.mockImplementation((user, permission) => ({
-        granted: permission !== 'metrics:write',
+        granted: permission !== 'metrics:write'
       }));
 
       await request(app)
@@ -393,7 +393,7 @@ describe('System Metrics API', () => {
         .send({
           category: 'test',
           name: 'test-metric',
-          value: 100,
+          value: 100
         })
         .expect(403);
     });
@@ -410,7 +410,7 @@ describe('System Metrics API', () => {
         value: 85.2,
         status: 'active',
         createdAt: new Date(),
-        message: 'CPU usage is above 80%',
+        message: 'CPU usage is above 80%'
       },
       {
         id: 'alert-2',
@@ -419,8 +419,8 @@ describe('System Metrics API', () => {
         status: 'resolved',
         createdAt: new Date(Date.now() - 3600000),
         resolvedAt: new Date(Date.now() - 1800000),
-        message: 'Error rate anomaly detected',
-      },
+        message: 'Error rate anomaly detected'
+      }
     ];
 
     beforeEach(() => {
@@ -439,12 +439,12 @@ describe('System Metrics API', () => {
             id: expect.any(String),
             type: expect.any(String),
             metric: expect.any(String),
-            status: expect.any(String),
-          }),
+            status: expect.any(String)
+          })
         ]),
         total: expect.any(Number),
         active: expect.any(Number),
-        resolved: expect.any(Number),
+        resolved: expect.any(Number)
       });
     });
 
@@ -458,7 +458,7 @@ describe('System Metrics API', () => {
         expect.any(Date),
         expect.any(Date),
         expect.objectContaining({
-          status: 'active',
+          status: 'active'
         })
       );
     });
@@ -473,7 +473,7 @@ describe('System Metrics API', () => {
         expect.any(Date),
         expect.any(Date),
         expect.objectContaining({
-          metric: 'system.cpu',
+          metric: 'system.cpu'
         })
       );
     });
@@ -486,7 +486,7 @@ describe('System Metrics API', () => {
         id: alertId,
         status: 'acknowledged',
         acknowledgedBy: mockUser.id,
-        acknowledgedAt: new Date(),
+        acknowledgedAt: new Date()
       });
 
       const response = await request(app)
@@ -494,7 +494,7 @@ describe('System Metrics API', () => {
         .set('Authorization', 'Bearer valid-token')
         .send({
           action: 'acknowledge',
-          comment: 'Investigating the issue',
+          comment: 'Investigating the issue'
         })
         .expect(200);
 
@@ -504,7 +504,7 @@ describe('System Metrics API', () => {
         expect.objectContaining({
           status: 'acknowledged',
           acknowledgedBy: mockUser.id,
-          comment: 'Investigating the issue',
+          comment: 'Investigating the issue'
         })
       );
     });
@@ -515,7 +515,7 @@ describe('System Metrics API', () => {
         id: alertId,
         status: 'resolved',
         resolvedBy: mockUser.id,
-        resolvedAt: new Date(),
+        resolvedAt: new Date()
       });
 
       await request(app)
@@ -523,7 +523,7 @@ describe('System Metrics API', () => {
         .set('Authorization', 'Bearer valid-token')
         .send({
           action: 'resolve',
-          resolution: 'Fixed by restarting service',
+          resolution: 'Fixed by restarting service'
         })
         .expect(200);
     });
@@ -533,14 +533,14 @@ describe('System Metrics API', () => {
         .put('/api/metrics/alerts/alert-123')
         .set('Authorization', 'Bearer valid-token')
         .send({
-          action: 'invalid-action',
+          action: 'invalid-action'
         })
         .expect(400);
     });
 
     it('should require metrics:write permission', async () => {
       mockAuthzService.hasPermission.mockImplementation((user, permission) => ({
-        granted: permission !== 'metrics:write',
+        granted: permission !== 'metrics:write'
       }));
 
       await request(app)
@@ -560,12 +560,12 @@ describe('System Metrics API', () => {
         send: jest.fn(),
         close: jest.fn(),
         readyState: 1, // OPEN
-        on: jest.fn(),
+        on: jest.fn()
       };
 
       mockServer = {
         clients: new Set([mockWebSocket]),
-        on: jest.fn(),
+        on: jest.fn()
       };
     });
 
@@ -578,7 +578,7 @@ describe('System Metrics API', () => {
             done();
           });
           return { unsubscribe: jest.fn() };
-        },
+        }
       };
 
       // Test WebSocket message handling
@@ -589,9 +589,7 @@ describe('System Metrics API', () => {
       mockWebSocket.readyState = 3; // CLOSED
 
       // Simulate error
-      const errorHandler = mockWebSocket.on.mock.calls.find(
-        call => call[0] === 'error'
-      )?.[1];
+      const errorHandler = mockWebSocket.on.mock.calls.find((call) => call[0] === 'error')?.[1];
 
       if (errorHandler) {
         errorHandler(new Error('Connection lost'));
@@ -604,16 +602,16 @@ describe('System Metrics API', () => {
     });
 
     it('should authenticate WebSocket connections', () => {
-      const messageHandler = mockWebSocket.on.mock.calls.find(
-        call => call[0] === 'message'
-      )?.[1];
+      const messageHandler = mockWebSocket.on.mock.calls.find((call) => call[0] === 'message')?.[1];
 
       if (messageHandler) {
         // Test authentication message
-        messageHandler(JSON.stringify({
-          type: 'auth',
-          token: 'valid-token',
-        }));
+        messageHandler(
+          JSON.stringify({
+            type: 'auth',
+            token: 'valid-token'
+          })
+        );
       }
 
       expect(mockAuthService.validateToken).toHaveBeenCalledWith('valid-token');
@@ -624,14 +622,12 @@ describe('System Metrics API', () => {
     it('should enforce rate limits', async () => {
       // Make multiple requests rapidly
       const requests = Array.from({ length: 100 }, () =>
-        request(app)
-          .get('/api/metrics/current')
-          .set('Authorization', 'Bearer valid-token')
+        request(app).get('/api/metrics/current').set('Authorization', 'Bearer valid-token')
       );
 
       const responses = await Promise.allSettled(requests);
       const rateLimited = responses.filter(
-        r => r.status === 'fulfilled' && r.value.status === 429
+        (r) => r.status === 'fulfilled' && r.value.status === 429
       );
 
       expect(rateLimited.length).toBeGreaterThan(0);
@@ -640,19 +636,16 @@ describe('System Metrics API', () => {
     it('should have different limits for different endpoints', async () => {
       // Test that POST endpoints have stricter limits
       const postRequests = Array.from({ length: 20 }, () =>
-        request(app)
-          .post('/api/metrics/custom')
-          .set('Authorization', 'Bearer valid-token')
-          .send({
-            category: 'test',
-            name: 'test-metric',
-            value: 100,
-          })
+        request(app).post('/api/metrics/custom').set('Authorization', 'Bearer valid-token').send({
+          category: 'test',
+          name: 'test-metric',
+          value: 100
+        })
       );
 
       const responses = await Promise.allSettled(postRequests);
       const rateLimited = responses.filter(
-        r => r.status === 'fulfilled' && r.value.status === 429
+        (r) => r.status === 'fulfilled' && r.value.status === 429
       );
 
       // POST should be rate limited more aggressively
@@ -662,9 +655,7 @@ describe('System Metrics API', () => {
 
   describe('Error Handling', () => {
     it('should handle database errors gracefully', async () => {
-      mockDataService.metrics.getLatest.mockRejectedValue(
-        new Error('Database connection failed')
-      );
+      mockDataService.metrics.getLatest.mockRejectedValue(new Error('Database connection failed'));
 
       const response = await request(app)
         .get('/api/metrics/current')
@@ -674,7 +665,7 @@ describe('System Metrics API', () => {
       expect(response.body).toEqual({
         error: 'Internal server error',
         message: 'Unable to retrieve metrics',
-        code: 'METRICS_UNAVAILABLE',
+        code: 'METRICS_UNAVAILABLE'
       });
 
       expect(mockLogger.error).toHaveBeenCalledWith(
@@ -692,15 +683,11 @@ describe('System Metrics API', () => {
     });
 
     it('should handle missing authorization header', async () => {
-      await request(app)
-        .get('/api/metrics/current')
-        .expect(401);
+      await request(app).get('/api/metrics/current').expect(401);
     });
 
     it('should handle expired tokens', async () => {
-      mockAuthService.validateToken.mockRejectedValue(
-        new Error('Token expired')
-      );
+      mockAuthService.validateToken.mockRejectedValue(new Error('Token expired'));
 
       await request(app)
         .get('/api/metrics/current')
@@ -725,7 +712,7 @@ describe('System Metrics API', () => {
           category: '', // Empty string not allowed
           name: null, // Null not allowed
           value: 'not-a-number', // Must be number
-          tags: 'invalid', // Must be object
+          tags: 'invalid' // Must be object
         })
         .expect(400);
     });
@@ -736,13 +723,13 @@ describe('System Metrics API', () => {
         name: '<script>alert("xss")</script>',
         value: 100,
         tags: {
-          description: 'Normal & <script>malicious</script> content',
-        },
+          description: 'Normal & <script>malicious</script> content'
+        }
       };
 
       mockDataService.metrics.create.mockResolvedValue({
         id: 'metric-123',
-        ...maliciousInput,
+        ...maliciousInput
       });
 
       const response = await request(app)
@@ -760,15 +747,13 @@ describe('System Metrics API', () => {
   describe('Performance', () => {
     it('should handle concurrent requests efficiently', async () => {
       const startTime = Date.now();
-      
+
       const requests = Array.from({ length: 50 }, () =>
-        request(app)
-          .get('/api/metrics/current')
-          .set('Authorization', 'Bearer valid-token')
+        request(app).get('/api/metrics/current').set('Authorization', 'Bearer valid-token')
       );
 
       await Promise.all(requests);
-      
+
       const duration = Date.now() - startTime;
       expect(duration).toBeLessThan(5000); // Should complete in < 5 seconds
     });
@@ -794,7 +779,7 @@ describe('System Metrics API', () => {
       const largeDataset = Array.from({ length: 10000 }, (_, i) => ({
         id: `metric-${i}`,
         timestamp: new Date(Date.now() - i * 1000),
-        data: mockMetrics,
+        data: mockMetrics
       }));
 
       mockDataService.metrics.findByDateRange.mockResolvedValue(largeDataset);

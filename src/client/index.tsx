@@ -1,12 +1,11 @@
 /**
  * Client Application entry point for the Alexandria Platform
- * 
+ *
  * This file bootstraps the React client application for the platform.
  */
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { BrowserRouter as Router } from 'react-router-dom';
 import App from './App';
 import { UIRegistryImpl, UIContextProvider } from './components/ui';
 import { ThemeProvider } from './components/theme-provider';
@@ -32,7 +31,7 @@ if (!root) {
 // Render the app
 ReactDOM.createRoot(root).render(
   <React.StrictMode>
-    <ThemeProvider defaultTheme="system">
+    <ThemeProvider defaultTheme='system'>
       <StyledThemeProvider>
         <Router>
           <UIContextProvider uiRegistry={uiRegistry}>
@@ -43,4 +42,3 @@ ReactDOM.createRoot(root).render(
     </ThemeProvider>
   </React.StrictMode>
 );
-

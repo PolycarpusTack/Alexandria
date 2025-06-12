@@ -1,6 +1,6 @@
 /**
  * Logging Service Test Suite
- * 
+ *
  * Comprehensive tests for the LoggingService including:
  * - Log levels and filtering
  * - Context enrichment
@@ -29,13 +29,13 @@ jest.mock('winston', () => ({
     simple: jest.fn(),
     colorize: jest.fn(),
     printf: jest.fn(),
-    metadata: jest.fn(),
+    metadata: jest.fn()
   },
   transports: {
     Console: jest.fn(),
     File: jest.fn(),
-    Http: jest.fn(),
-  },
+    Http: jest.fn()
+  }
 }));
 
 describe('LoggingService', () => {
@@ -51,10 +51,10 @@ describe('LoggingService', () => {
     fileOptions: {
       filename: 'logs/test.log',
       maxSize: '10m',
-      maxFiles: 5,
+      maxFiles: 5
     },
     enableStructuredLogging: true,
-    enableMetrics: true,
+    enableMetrics: true
   };
 
   beforeEach(() => {
@@ -73,7 +73,7 @@ describe('LoggingService', () => {
       clear: jest.fn(),
       close: jest.fn(),
       on: jest.fn(),
-      transports: [],
+      transports: []
     };
 
     (winston.createLogger as jest.Mock).mockReturnValue(mockWinstonLogger);
@@ -84,14 +84,14 @@ describe('LoggingService', () => {
         create: jest.fn().mockResolvedValue({ id: 'log-123' }),
         findByDateRange: jest.fn().mockResolvedValue([]),
         findBySeverity: jest.fn().mockResolvedValue([]),
-        search: jest.fn().mockResolvedValue([]),
-      },
+        search: jest.fn().mockResolvedValue([])
+      }
     } as any;
 
     // Create mock event bus
     mockEventBus = {
       publish: jest.fn().mockResolvedValue({ deliveredToCount: 1, errors: [] }),
-      subscribe: jest.fn().mockReturnValue({ id: 'sub-123', unsubscribe: jest.fn() }),
+      subscribe: jest.fn().mockReturnValue({ id: 'sub-123', unsubscribe: jest.fn() })
     } as any;
 
     // Create logging service
@@ -113,7 +113,7 @@ describe('LoggingService', () => {
         expect.objectContaining({
           level: 'info',
           format: expect.anything(),
-          transports: expect.any(Array),
+          transports: expect.any(Array)
         })
       );
     });
@@ -131,7 +131,7 @@ describe('LoggingService', () => {
         expect.objectContaining({
           filename: 'logs/test.log',
           maxsize: 10 * 1024 * 1024, // 10MB
-          maxFiles: 5,
+          maxFiles: 5
         })
       );
     });
@@ -144,7 +144,7 @@ describe('LoggingService', () => {
 
     it('should throw error if initialized twice', async () => {
       await loggingService.initialize();
-      
+
       await expect(loggingService.initialize()).rejects.toThrow(
         'Logging service is already initialized'
       );
@@ -169,7 +169,7 @@ describe('LoggingService', () => {
     it('should log error messages', () => {
       const error = new Error('Test error');
       const context = { operation: 'test' };
-      
+
       loggingService.error('Test error message', error, context);
 
       expect(mockWinstonLogger.error).toHaveBeenCalledWith(
@@ -178,8 +178,8 @@ describe('LoggingService', () => {
           ...context,
           error: expect.objectContaining({
             message: 'Test error',
-            stack: expect.any(String),
-          }),
+            stack: expect.any(String)
+          })
         })
       );
     });
@@ -216,8 +216,8 @@ describe('LoggingService', () => {
         context: {
           userId: 'user-123',
           action: 'login',
-          ip: '192.168.1.1',
-        },
+          ip: '192.168.1.1'
+        }
       });
 
       loggingService.log(structuredLog);
@@ -231,27 +231,27 @@ describe('LoggingService', () => {
           context: expect.objectContaining({
             userId: 'user-123',
             action: 'login',
-            ip: '192.168.1.1',
-          }),
+            ip: '192.168.1.1'
+          })
         })
       );
     });
 
     it('should include correlation ID in structured logs', () => {
       const correlationId = 'req-456';
-      
+
       const structuredLog = loggingService.createStructuredLog({
         level: 'info',
         message: 'API request',
         correlationId,
-        context: { endpoint: '/api/users' },
+        context: { endpoint: '/api/users' }
       });
 
       loggingService.log(structuredLog);
 
       expect(mockWinstonLogger.log).toHaveBeenCalledWith(
         expect.objectContaining({
-          correlationId,
+          correlationId
         })
       );
     });
@@ -260,7 +260,7 @@ describe('LoggingService', () => {
       expect(() => {
         loggingService.createStructuredLog({
           level: 'invalid' as any,
-          message: 'Test',
+          message: 'Test'
         });
       }).toThrow('Invalid log level');
     });
@@ -274,7 +274,7 @@ describe('LoggingService', () => {
     it('should create child logger with context', () => {
       const childLogger = loggingService.child({
         requestId: 'req-789',
-        service: 'api',
+        service: 'api'
       });
 
       childLogger.info('Child logger message');
@@ -283,18 +283,18 @@ describe('LoggingService', () => {
         'Child logger message',
         expect.objectContaining({
           requestId: 'req-789',
-          service: 'api',
+          service: 'api'
         })
       );
     });
 
     it('should merge contexts in child loggers', () => {
       const childLogger = loggingService.child({
-        service: 'api',
+        service: 'api'
       });
 
       const grandchildLogger = childLogger.child({
-        module: 'auth',
+        module: 'auth'
       });
 
       grandchildLogger.info('Nested context');
@@ -303,7 +303,7 @@ describe('LoggingService', () => {
         'Nested context',
         expect.objectContaining({
           service: 'api',
-          module: 'auth',
+          module: 'auth'
         })
       );
     });
@@ -311,7 +311,7 @@ describe('LoggingService', () => {
     it('should add global context', () => {
       loggingService.addGlobalContext({
         environment: 'test',
-        version: '1.0.0',
+        version: '1.0.0'
       });
 
       loggingService.info('With global context');
@@ -320,7 +320,7 @@ describe('LoggingService', () => {
         'With global context',
         expect.objectContaining({
           environment: 'test',
-          version: '1.0.0',
+          version: '1.0.0'
         })
       );
     });
@@ -333,10 +333,10 @@ describe('LoggingService', () => {
 
     it('should measure operation performance', async () => {
       const operation = await loggingService.startOperation('database-query');
-      
+
       // Simulate some work
-      await new Promise(resolve => setTimeout(resolve, 50));
-      
+      await new Promise((resolve) => setTimeout(resolve, 50));
+
       operation.end({ rowCount: 100 });
 
       expect(mockWinstonLogger.info).toHaveBeenCalledWith(
@@ -344,14 +344,14 @@ describe('LoggingService', () => {
         expect.objectContaining({
           operation: 'database-query',
           duration: expect.any(Number),
-          metadata: { rowCount: 100 },
+          metadata: { rowCount: 100 }
         })
       );
     });
 
     it('should handle operation failures', async () => {
       const operation = await loggingService.startOperation('api-call');
-      
+
       const error = new Error('Connection failed');
       operation.fail(error);
 
@@ -361,8 +361,8 @@ describe('LoggingService', () => {
           operation: 'api-call',
           duration: expect.any(Number),
           error: expect.objectContaining({
-            message: 'Connection failed',
-          }),
+            message: 'Connection failed'
+          })
         })
       );
     });
@@ -370,7 +370,7 @@ describe('LoggingService', () => {
     it('should track concurrent operations', async () => {
       const op1 = await loggingService.startOperation('op1');
       const op2 = await loggingService.startOperation('op2');
-      
+
       op2.end();
       op1.end();
 
@@ -395,23 +395,23 @@ describe('LoggingService', () => {
       const configWithDb = {
         ...testConfig,
         persistToDatabase: true,
-        dbPersistenceLevel: 'warn' as const,
+        dbPersistenceLevel: 'warn' as const
       };
-      
+
       const serviceWithDb = new LoggingService(configWithDb, mockDataService, mockEventBus);
       await serviceWithDb.initialize();
 
       serviceWithDb.warn('Database warning', { code: 'DB001' });
 
       // Wait for async persistence
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       expect(mockDataService.logs.create).toHaveBeenCalledWith(
         expect.objectContaining({
           level: 'warn',
           message: 'Database warning',
           context: expect.objectContaining({ code: 'DB001' }),
-          timestamp: expect.any(Date),
+          timestamp: expect.any(Date)
         })
       );
 
@@ -422,9 +422,9 @@ describe('LoggingService', () => {
       const configWithDb = {
         ...testConfig,
         persistToDatabase: true,
-        dbPersistenceLevel: 'error' as const,
+        dbPersistenceLevel: 'error' as const
       };
-      
+
       const serviceWithDb = new LoggingService(configWithDb, mockDataService, mockEventBus);
       await serviceWithDb.initialize();
 
@@ -432,7 +432,7 @@ describe('LoggingService', () => {
       serviceWithDb.warn('Warning message');
 
       // Wait for potential async operations
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       expect(mockDataService.logs.create).not.toHaveBeenCalled();
 
@@ -444,16 +444,16 @@ describe('LoggingService', () => {
 
       const configWithDb = {
         ...testConfig,
-        persistToDatabase: true,
+        persistToDatabase: true
       };
-      
+
       const serviceWithDb = new LoggingService(configWithDb, mockDataService, mockEventBus);
       await serviceWithDb.initialize();
 
       serviceWithDb.error('Critical error');
 
       // Wait for async persistence
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       // Should not throw, just log the persistence error
       expect(mockWinstonLogger.error).toHaveBeenCalledWith(
@@ -473,14 +473,14 @@ describe('LoggingService', () => {
     it('should publish critical logs as events', async () => {
       loggingService.error('System critical error', new Error('Out of memory'));
 
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       expect(mockEventBus.publish).toHaveBeenCalledWith(
         'logs.error',
         expect.objectContaining({
           level: 'error',
           message: 'System critical error',
-          error: expect.any(Object),
+          error: expect.any(Object)
         })
       );
     });
@@ -489,17 +489,17 @@ describe('LoggingService', () => {
       loggingService.warn('Unauthorized access attempt', {
         category: 'security',
         ip: '10.0.0.1',
-        userId: 'user-123',
+        userId: 'user-123'
       });
 
-      await new Promise(resolve => setTimeout(resolve, 10));
+      await new Promise((resolve) => setTimeout(resolve, 10));
 
       expect(mockEventBus.publish).toHaveBeenCalledWith(
         'logs.security',
         expect.objectContaining({
           level: 'warn',
           message: 'Unauthorized access attempt',
-          category: 'security',
+          category: 'security'
         })
       );
     });
@@ -513,9 +513,9 @@ describe('LoggingService', () => {
     it('should filter logs by level', () => {
       const configWithDebug = {
         ...testConfig,
-        level: 'debug' as const,
+        level: 'debug' as const
       };
-      
+
       const debugService = new LoggingService(configWithDebug, mockDataService, mockEventBus);
       debugService.initialize();
 
@@ -524,7 +524,7 @@ describe('LoggingService', () => {
       // These should be logged
       debugService.warn('Warning');
       debugService.error('Error');
-      
+
       // These should be filtered
       debugService.info('Info');
       debugService.debug('Debug');
@@ -540,18 +540,18 @@ describe('LoggingService', () => {
     it('should query logs from database', async () => {
       const mockLogs = [
         { id: '1', message: 'Log 1', timestamp: new Date() },
-        { id: '2', message: 'Log 2', timestamp: new Date() },
+        { id: '2', message: 'Log 2', timestamp: new Date() }
       ];
-      
+
       mockDataService.logs.findByDateRange.mockResolvedValue(mockLogs);
 
       const startDate = new Date('2024-01-01');
       const endDate = new Date('2024-01-31');
-      
+
       const logs = await loggingService.queryLogs({
         startDate,
         endDate,
-        level: 'error',
+        level: 'error'
       });
 
       expect(mockDataService.logs.findByDateRange).toHaveBeenCalledWith(
@@ -564,14 +564,14 @@ describe('LoggingService', () => {
 
     it('should search logs by pattern', async () => {
       const mockSearchResults = [
-        { id: '1', message: 'Error in authentication', timestamp: new Date() },
+        { id: '1', message: 'Error in authentication', timestamp: new Date() }
       ];
-      
+
       mockDataService.logs.search.mockResolvedValue(mockSearchResults);
 
       const results = await loggingService.searchLogs('authentication', {
         level: 'error',
-        limit: 10,
+        limit: 10
       });
 
       expect(mockDataService.logs.search).toHaveBeenCalledWith(
@@ -592,7 +592,7 @@ describe('LoggingService', () => {
         host: 'logs.example.com',
         port: 443,
         path: '/logs',
-        ssl: true,
+        ssl: true
       });
 
       expect(winston.transports.Http).toHaveBeenCalledWith(
@@ -600,7 +600,7 @@ describe('LoggingService', () => {
           host: 'logs.example.com',
           port: 443,
           path: '/logs',
-          ssl: true,
+          ssl: true
         })
       );
       expect(mockWinstonLogger.add).toHaveBeenCalled();
@@ -636,7 +636,7 @@ describe('LoggingService', () => {
 
     it('should handle very large context objects', () => {
       const largeContext = {
-        data: new Array(1000).fill('x'.repeat(1000)),
+        data: new Array(1000).fill('x'.repeat(1000))
       };
 
       loggingService.info('Large context test', largeContext);
@@ -678,11 +678,11 @@ describe('LoggingService', () => {
 
     it('should track log rate', async () => {
       const start = Date.now();
-      
+
       // Log some messages
       for (let i = 0; i < 10; i++) {
         loggingService.info(`Message ${i}`);
-        await new Promise(resolve => setTimeout(resolve, 10));
+        await new Promise((resolve) => setTimeout(resolve, 10));
       }
 
       const metrics = loggingService.getMetrics();
@@ -704,7 +704,7 @@ describe('LoggingService', () => {
         error: 0,
         warn: 0,
         info: 0,
-        debug: 0,
+        debug: 0
       });
     });
   });
@@ -712,7 +712,7 @@ describe('LoggingService', () => {
   describe('Shutdown', () => {
     it('should close winston logger on shutdown', async () => {
       await loggingService.initialize();
-      
+
       await loggingService.shutdown();
 
       expect(mockWinstonLogger.close).toHaveBeenCalled();
@@ -725,7 +725,7 @@ describe('LoggingService', () => {
 
     it('should flush pending logs on shutdown', async () => {
       await loggingService.initialize();
-      
+
       // Add some logs
       loggingService.info('Final log 1');
       loggingService.info('Final log 2');

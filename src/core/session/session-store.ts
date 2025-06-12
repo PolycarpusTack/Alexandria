@@ -1,6 +1,6 @@
 /**
  * Session Store for Alexandria Platform
- * 
+ *
  * Provides secure session management with support for multiple storage backends.
  */
 
@@ -67,7 +67,9 @@ export abstract class SessionStore {
   /**
    * Create a new session
    */
-  abstract create(data: Omit<SessionData, 'id' | 'createdAt' | 'lastActivity' | 'expiresAt'>): Promise<SessionData>;
+  abstract create(
+    data: Omit<SessionData, 'id' | 'createdAt' | 'lastActivity' | 'expiresAt'>
+  ): Promise<SessionData>;
 
   /**
    * Get a session by ID
@@ -131,16 +133,19 @@ export class MemorySessionStore extends SessionStore {
 
   constructor(options?: SessionStoreOptions) {
     super(options);
-    
+
     // Start cleanup interval
-    this.cleanupInterval = setInterval(() => {
-      this.cleanup().catch(err => 
-        this.logger.error('Session cleanup failed', { error: err })
-      );
-    }, 5 * 60 * 1000); // Every 5 minutes
+    this.cleanupInterval = setInterval(
+      () => {
+        this.cleanup().catch((err) => this.logger.error('Session cleanup failed', { error: err }));
+      },
+      5 * 60 * 1000
+    ); // Every 5 minutes
   }
 
-  async create(data: Omit<SessionData, 'id' | 'createdAt' | 'lastActivity' | 'expiresAt'>): Promise<SessionData> {
+  async create(
+    data: Omit<SessionData, 'id' | 'createdAt' | 'lastActivity' | 'expiresAt'>
+  ): Promise<SessionData> {
     const now = new Date();
     const session: SessionData = {
       ...data,
@@ -155,10 +160,10 @@ export class MemorySessionStore extends SessionStore {
     if (userSessionIds.size >= this.options.maxSessions) {
       // Remove oldest session
       const oldestSession = Array.from(userSessionIds)
-        .map(id => this.sessions.get(id))
-        .filter(s => s)
+        .map((id) => this.sessions.get(id))
+        .filter((s) => s)
         .sort((a, b) => a!.lastActivity.getTime() - b!.lastActivity.getTime())[0];
-      
+
       if (oldestSession) {
         await this.destroy(oldestSession.id);
       }
@@ -166,16 +171,16 @@ export class MemorySessionStore extends SessionStore {
 
     // Store session
     this.sessions.set(session.id, session);
-    
+
     // Update user sessions index
     if (!this.userSessions.has(data.userId)) {
       this.userSessions.set(data.userId, new Set());
     }
     this.userSessions.get(data.userId)!.add(session.id);
 
-    this.logger.debug('Session created', { 
-      sessionId: session.id, 
-      userId: data.userId 
+    this.logger.debug('Session created', {
+      sessionId: session.id,
+      userId: data.userId
     });
 
     return session;
@@ -183,7 +188,7 @@ export class MemorySessionStore extends SessionStore {
 
   async get(sessionId: string): Promise<SessionData | null> {
     const session = this.sessions.get(sessionId);
-    
+
     if (!session) {
       return null;
     }
@@ -199,7 +204,7 @@ export class MemorySessionStore extends SessionStore {
 
   async touch(sessionId: string): Promise<void> {
     const session = await this.get(sessionId);
-    
+
     if (!session) {
       return;
     }
@@ -217,7 +222,7 @@ export class MemorySessionStore extends SessionStore {
 
   async destroy(sessionId: string): Promise<void> {
     const session = this.sessions.get(sessionId);
-    
+
     if (!session) {
       return;
     }
@@ -229,7 +234,7 @@ export class MemorySessionStore extends SessionStore {
     const userSessionIds = this.userSessions.get(session.userId);
     if (userSessionIds) {
       userSessionIds.delete(sessionId);
-      
+
       if (userSessionIds.size === 0) {
         this.userSessions.delete(session.userId);
       }
@@ -240,13 +245,13 @@ export class MemorySessionStore extends SessionStore {
 
   async destroyAll(userId: string): Promise<number> {
     const userSessionIds = this.userSessions.get(userId);
-    
+
     if (!userSessionIds) {
       return 0;
     }
 
     const count = userSessionIds.size;
-    
+
     for (const sessionId of userSessionIds) {
       this.sessions.delete(sessionId);
     }
@@ -260,7 +265,7 @@ export class MemorySessionStore extends SessionStore {
 
   async getUserSessions(userId: string): Promise<SessionData[]> {
     const userSessionIds = this.userSessions.get(userId);
-    
+
     if (!userSessionIds) {
       return [];
     }
@@ -270,7 +275,7 @@ export class MemorySessionStore extends SessionStore {
 
     for (const sessionId of userSessionIds) {
       const session = this.sessions.get(sessionId);
-      
+
       if (session && session.expiresAt > now) {
         sessions.push(session);
       }
@@ -368,7 +373,7 @@ export class MemorySessionStore extends SessionStore {
       this.sessions.delete(sessionId);
     }
     this.userSessions.delete(userId);
-    
+
     return count;
   }
 }
@@ -385,7 +390,7 @@ export class DatabaseSessionStore extends SessionStore {
     options?: SessionStoreOptions
   ) {
     super(options);
-    
+
     // Use cache for performance
     this.cache = new CacheService({
       ttl: 5 * 60 * 1000, // 5 minutes
@@ -393,14 +398,17 @@ export class DatabaseSessionStore extends SessionStore {
     });
 
     // Start cleanup interval
-    this.cleanupInterval = setInterval(() => {
-      this.cleanup().catch(err => 
-        this.logger.error('Session cleanup failed', { error: err })
-      );
-    }, 30 * 60 * 1000); // Every 30 minutes
+    this.cleanupInterval = setInterval(
+      () => {
+        this.cleanup().catch((err) => this.logger.error('Session cleanup failed', { error: err }));
+      },
+      30 * 60 * 1000
+    ); // Every 30 minutes
   }
 
-  async create(data: Omit<SessionData, 'id' | 'createdAt' | 'lastActivity' | 'expiresAt'>): Promise<SessionData> {
+  async create(
+    data: Omit<SessionData, 'id' | 'createdAt' | 'lastActivity' | 'expiresAt'>
+  ): Promise<SessionData> {
     const now = new Date();
     const session: SessionData = {
       ...data,
@@ -414,9 +422,10 @@ export class DatabaseSessionStore extends SessionStore {
     const userSessions = await this.getUserSessions(data.userId);
     if (userSessions.length >= this.options.maxSessions) {
       // Remove oldest session
-      const oldestSession = userSessions
-        .sort((a, b) => a.lastActivity.getTime() - b.lastActivity.getTime())[0];
-      
+      const oldestSession = userSessions.sort(
+        (a, b) => a.lastActivity.getTime() - b.lastActivity.getTime()
+      )[0];
+
       if (oldestSession) {
         await this.destroy(oldestSession.id);
       }
@@ -428,9 +437,9 @@ export class DatabaseSessionStore extends SessionStore {
     // Cache the session
     this.cache.set(session.id, session, this.options.ttl);
 
-    this.logger.debug('Session created', { 
-      sessionId: session.id, 
-      userId: data.userId 
+    this.logger.debug('Session created', {
+      sessionId: session.id,
+      userId: data.userId
     });
 
     return session;
@@ -439,11 +448,11 @@ export class DatabaseSessionStore extends SessionStore {
   async get(sessionId: string): Promise<SessionData | null> {
     // Check cache first
     let session = this.cache.get<SessionData>(sessionId);
-    
+
     if (!session) {
       // Load from database
       session = await this.loadSession(sessionId);
-      
+
       if (session) {
         // Cache it
         this.cache.set(sessionId, session, 5 * 60 * 1000); // 5 minutes
@@ -465,7 +474,7 @@ export class DatabaseSessionStore extends SessionStore {
 
   async touch(sessionId: string): Promise<void> {
     const session = await this.get(sessionId);
-    
+
     if (!session) {
       return;
     }

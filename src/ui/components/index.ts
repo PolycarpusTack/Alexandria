@@ -1,11 +1,11 @@
 /**
  * UI Components barrel file
- * 
+ *
  * This file exports all UI components from a single point to simplify imports.
- * Instead of importing from individual files, components can be imported from 
+ * Instead of importing from individual files, components can be imported from
  * this central location.
- * 
- * Example: 
+ *
+ * Example:
  * import { Button, Card } from '@ui/components';
  */
 import React from 'react';
@@ -20,7 +20,7 @@ export { Card } from './card';
 export { Input } from './input';
 export { Modal } from './modal';
 export { UIShell } from './ui-shell';
-export { 
+export {
   Dialog,
   DialogTrigger,
   DialogContent,
@@ -97,10 +97,10 @@ export interface SpinnerProps {
   className?: string;
 }
 
-export const Spinner: React.FC<SpinnerProps> = ({ 
-  size = 'medium', 
+export const Spinner: React.FC<SpinnerProps> = ({
+  size = 'medium',
   color = 'currentColor',
-  className = '' 
+  className = ''
 }) => {
   // This would be the actual Spinner implementation
   // For now, it's a placeholder that will be properly implemented later
@@ -114,11 +114,7 @@ export interface ProgressProps {
   className?: string;
 }
 
-export const Progress: React.FC<ProgressProps> = ({
-  value,
-  max = 100,
-  className = ''
-}) => {
+export const Progress: React.FC<ProgressProps> = ({ value, max = 100, className = '' }) => {
   // This would be the actual Progress implementation
   // For now, it's a placeholder
   return null;
@@ -135,7 +131,7 @@ export interface SelectProps extends React.SelectHTMLAttributes<HTMLSelectElemen
 
 // Create the Select component with nested components to support different usage patterns
 const SelectComponent: React.FC<SelectProps> & {
-  Item: React.FC<{ value: string; children: React.ReactNode }>
+  Item: React.FC<{ value: string; children: React.ReactNode }>;
 } = Object.assign(
   // Main component
   (props: SelectProps) => {
@@ -159,27 +155,45 @@ export interface TextAreaProps extends React.TextareaHTMLAttributes<HTMLTextArea
   ref?: React.Ref<HTMLTextAreaElement>;
 }
 
-export const TextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>(
-  (props, ref) => {
-    // This would be the actual TextArea implementation
-    // For now, it's a placeholder
-    return null;
-  }
-);
+export const TextArea = React.forwardRef<HTMLTextAreaElement, TextAreaProps>((props, ref) => {
+  // This would be the actual TextArea implementation
+  // For now, it's a placeholder
+  return null;
+});
 
 // Badge component
 export interface BadgeProps {
   children: React.ReactNode;
-  variant?: 'default' | 'success' | 'warning' | 'destructive' | 'secondary' | 'primary' | 'outline' | 'info';
+  variant?:
+    | 'default'
+    | 'success'
+    | 'warning'
+    | 'destructive'
+    | 'secondary'
+    | 'primary'
+    | 'outline'
+    | 'info';
   // Include color property to support plugins that use it
-  color?: 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'danger' | 'info' | 
-          'red' | 'green' | 'blue' | 'yellow' | 'purple' | 'gray';
+  color?:
+    | 'default'
+    | 'primary'
+    | 'secondary'
+    | 'success'
+    | 'warning'
+    | 'danger'
+    | 'info'
+    | 'red'
+    | 'green'
+    | 'blue'
+    | 'yellow'
+    | 'purple'
+    | 'gray';
   className?: string;
 }
 
-export const Badge: React.FC<BadgeProps> = ({ 
-  children, 
-  variant = 'default', 
+export const Badge: React.FC<BadgeProps> = ({
+  children,
+  variant = 'default',
   color,
   className = ''
 }) => {
@@ -195,11 +209,7 @@ export interface AlertProps {
   className?: string;
 }
 
-export const Alert: React.FC<AlertProps> = ({
-  children,
-  variant = 'default',
-  className = ''
-}) => {
+export const Alert: React.FC<AlertProps> = ({ children, variant = 'default', className = '' }) => {
   // This would be the actual Alert implementation
   // For now, it's a placeholder
   return null;
@@ -210,10 +220,7 @@ export interface AlertTitleProps {
   className?: string;
 }
 
-export const AlertTitle: React.FC<AlertTitleProps> = ({
-  children,
-  className = ''
-}) => {
+export const AlertTitle: React.FC<AlertTitleProps> = ({ children, className = '' }) => {
   // This would be the actual AlertTitle implementation
   // For now, it's a placeholder
   return null;
@@ -224,10 +231,7 @@ export interface AlertDescriptionProps {
   className?: string;
 }
 
-export const AlertDescription: React.FC<AlertDescriptionProps> = ({
-  children,
-  className = ''
-}) => {
+export const AlertDescription: React.FC<AlertDescriptionProps> = ({ children, className = '' }) => {
   // This would be the actual AlertDescription implementation
   // For now, it's a placeholder
   return null;

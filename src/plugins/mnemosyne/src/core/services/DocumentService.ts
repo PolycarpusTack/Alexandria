@@ -1,6 +1,6 @@
 /**
  * Mnemosyne Document Service
- * 
+ *
  * Enterprise-grade document management service with version control,
  * collaboration, full-text search, and knowledge graph integration
  */
@@ -56,7 +56,7 @@ export interface DocumentChange {
 
 /**
  * Document Service
- * 
+ *
  * Comprehensive document management with advanced features
  * including version control, collaboration, and analytics
  */
@@ -114,7 +114,6 @@ export class DocumentService implements MnemosyneService {
 
       this.status = ServiceStatus.INITIALIZED;
       this.logger.info('Document Service initialized successfully');
-
     } catch (error) {
       this.status = ServiceStatus.ERROR;
       this.logger.error('Failed to initialize Document Service', { error });
@@ -139,7 +138,6 @@ export class DocumentService implements MnemosyneService {
 
       this.status = ServiceStatus.ACTIVE;
       this.logger.info('Document Service activated successfully');
-
     } catch (error) {
       this.status = ServiceStatus.ERROR;
       this.logger.error('Failed to activate Document Service', { error });
@@ -165,7 +163,6 @@ export class DocumentService implements MnemosyneService {
 
       this.status = ServiceStatus.INACTIVE;
       this.logger.info('Document Service shut down successfully');
-
     } catch (error) {
       this.status = ServiceStatus.ERROR;
       this.logger.error('Error shutting down Document Service', { error });
@@ -193,7 +190,7 @@ export class DocumentService implements MnemosyneService {
   public async getMetrics(): Promise<ServiceMetrics> {
     const documentCount = await this.getDocumentCount();
     const activeCollaborationCount = this.collaborationSessions.size;
-    
+
     this.metrics.customMetrics = {
       ...this.metrics.customMetrics,
       documentCount,
@@ -211,7 +208,7 @@ export class DocumentService implements MnemosyneService {
    * Create a new document
    */
   public async createDocument(
-    documentData: Partial<Document>, 
+    documentData: Partial<Document>,
     options: DocumentCreateOptions = {}
   ): Promise<Document> {
     const startTime = Date.now();
@@ -250,7 +247,13 @@ export class DocumentService implements MnemosyneService {
       const document = this.mapDbRowToDocument(result[0]);
 
       // Create initial version
-      await this.createDocumentVersion(document.id, document.content, [], document.author, 'Initial version');
+      await this.createDocumentVersion(
+        document.id,
+        document.content,
+        [],
+        document.author,
+        'Initial version'
+      );
 
       // Auto-create knowledge node if requested
       if (options.createKnowledgeNode && options.autoIndex !== false) {
@@ -267,7 +270,6 @@ export class DocumentService implements MnemosyneService {
       this.logger.debug(`Created document: ${document.id}`);
 
       return document;
-
     } catch (error) {
       this.updateMetrics(startTime, false);
       this.logger.error('Failed to create document', { error, documentData });
@@ -316,7 +318,6 @@ export class DocumentService implements MnemosyneService {
 
       this.updateMetrics(startTime, true);
       return document;
-
     } catch (error) {
       this.updateMetrics(startTime, false);
       this.logger.error('Failed to get document', { error, documentId });
@@ -328,7 +329,7 @@ export class DocumentService implements MnemosyneService {
    * Update existing document
    */
   public async updateDocument(
-    documentId: string, 
+    documentId: string,
     updates: Partial<Document>,
     userId = 'system',
     comment?: string
@@ -403,7 +404,7 @@ export class DocumentService implements MnemosyneService {
         await this.createDocumentVersion(
           documentId,
           updates.content,
-          changes.map(c => c.description || `${c.type} changed`),
+          changes.map((c) => c.description || `${c.type} changed`),
           userId,
           comment
         );
@@ -423,7 +424,6 @@ export class DocumentService implements MnemosyneService {
       this.logger.debug(`Updated document: ${documentId}`);
 
       return document;
-
     } catch (error) {
       this.updateMetrics(startTime, false);
       this.logger.error('Failed to update document', { error, documentId, updates });
@@ -456,8 +456,9 @@ export class DocumentService implements MnemosyneService {
       this.documentCache.delete(documentId);
 
       // End any active collaboration sessions
-      const activeSessions = Array.from(this.collaborationSessions.values())
-        .filter(session => session.documentId === documentId && !session.endTime);
+      const activeSessions = Array.from(this.collaborationSessions.values()).filter(
+        (session) => session.documentId === documentId && !session.endTime
+      );
 
       for (const session of activeSessions) {
         await this.endCollaborationSession(session.id);
@@ -470,7 +471,6 @@ export class DocumentService implements MnemosyneService {
       this.logger.debug(`Deleted document: ${documentId}`);
 
       return true;
-
     } catch (error) {
       this.updateMetrics(startTime, false);
       this.logger.error('Failed to delete document', { error, documentId });
@@ -508,13 +508,13 @@ export class DocumentService implements MnemosyneService {
       }
 
       const results = await this.dataService.query(sqlQuery, params);
-      const documents = results.map(row => this.mapDbRowToDocument(row));
+      const documents = results.map((row) => this.mapDbRowToDocument(row));
 
       // Record search query for analytics
       await this.recordSearchQuery(query, documents.length);
 
       const searchResult: SearchResult = {
-        documents: documents.map(doc => ({
+        documents: documents.map((doc) => ({
           document: doc,
           score: 1.0, // Would be calculated based on search relevance
           highlights: {} // Would be populated with highlighting
@@ -530,7 +530,6 @@ export class DocumentService implements MnemosyneService {
 
       this.updateMetrics(startTime, true);
       return searchResult;
-
     } catch (error) {
       this.updateMetrics(startTime, false);
       this.logger.error('Failed to search documents', { error, query });
@@ -567,11 +566,10 @@ export class DocumentService implements MnemosyneService {
       `;
 
       const results = await this.dataService.query(documentsQuery, [limit, offset]);
-      const documents = results.map(row => this.mapDbRowToDocument(row));
+      const documents = results.map((row) => this.mapDbRowToDocument(row));
 
       this.updateMetrics(startTime, true);
       return { documents, total };
-
     } catch (error) {
       this.updateMetrics(startTime, false);
       this.logger.error('Failed to get documents', { error, filters });
@@ -592,7 +590,7 @@ export class DocumentService implements MnemosyneService {
     `;
 
     const results = await this.dataService.query(query, [documentId]);
-    return results.map(row => this.mapDbRowToDocumentVersion(row));
+    return results.map((row) => this.mapDbRowToDocumentVersion(row));
   }
 
   /**
@@ -632,7 +630,6 @@ export class DocumentService implements MnemosyneService {
       this.logger.debug(`Restored document ${documentId} to version ${version}`);
 
       return document;
-
     } catch (error) {
       this.updateMetrics(startTime, false);
       this.logger.error('Failed to restore document version', { error, documentId, version });
@@ -650,7 +647,7 @@ export class DocumentService implements MnemosyneService {
     userId: string
   ): Promise<DocumentCollaborationSession> {
     const sessionId = this.generateSessionId();
-    
+
     const session: DocumentCollaborationSession = {
       id: sessionId,
       documentId,
@@ -673,7 +670,7 @@ export class DocumentService implements MnemosyneService {
     userId: string
   ): Promise<DocumentCollaborationSession> {
     const session = this.collaborationSessions.get(sessionId);
-    
+
     if (!session) {
       throw new Error(`Collaboration session ${sessionId} not found`);
     }
@@ -691,16 +688,16 @@ export class DocumentService implements MnemosyneService {
    */
   public async endCollaborationSession(sessionId: string): Promise<void> {
     const session = this.collaborationSessions.get(sessionId);
-    
+
     if (session) {
       session.endTime = new Date();
-      
+
       // Persist session data
       await this.saveCollaborationSession(session);
-      
+
       // Remove from active sessions
       this.collaborationSessions.delete(sessionId);
-      
+
       this.logger.debug(`Ended collaboration session: ${sessionId}`);
     }
   }
@@ -731,12 +728,14 @@ export class DocumentService implements MnemosyneService {
       ]);
 
       // Update document view count
-      await this.dataService.query(`
+      await this.dataService.query(
+        `
         UPDATE mnemosyne_documents 
         SET view_count = view_count + 1, last_accessed = NOW()
         WHERE id = $1;
-      `, [documentId]);
-
+      `,
+        [documentId]
+      );
     } catch (error) {
       this.logger.error('Failed to record document view', { error, documentId });
     }
@@ -801,7 +800,7 @@ export class DocumentService implements MnemosyneService {
     `;
 
     const results = await this.dataService.query(query);
-    
+
     for (const row of results) {
       const document = this.mapDbRowToDocument(row);
       this.documentCache.set(document.id, document);
@@ -950,7 +949,10 @@ export class DocumentService implements MnemosyneService {
       });
     }
 
-    if (updates.tags !== undefined && JSON.stringify(updates.tags) !== JSON.stringify(current.tags)) {
+    if (
+      updates.tags !== undefined &&
+      JSON.stringify(updates.tags) !== JSON.stringify(current.tags)
+    ) {
       changes.push({
         id: this.generateChangeId(),
         type: 'tags',
@@ -965,7 +967,11 @@ export class DocumentService implements MnemosyneService {
     return changes;
   }
 
-  private async recordChanges(documentId: string, changes: DocumentChange[], userId: string): Promise<void> {
+  private async recordChanges(
+    documentId: string,
+    changes: DocumentChange[],
+    userId: string
+  ): Promise<void> {
     if (changes.length === 0) return;
 
     const existingChanges = this.changeHistory.get(documentId) || [];
@@ -980,9 +986,11 @@ export class DocumentService implements MnemosyneService {
   }
 
   private buildFullTextSearchQuery(query: SearchQuery, options: DocumentSearchOptions): string {
-    const selectClause = options.includeContent ? '*' : 'id, title, description, tags, created, modified, author';
+    const selectClause = options.includeContent
+      ? '*'
+      : 'id, title, description, tags, created, modified, author';
     const deletedClause = options.includeDeleted ? '' : 'AND deleted_at IS NULL';
-    
+
     return `
       SELECT ${selectClause}
       FROM mnemosyne_documents 
@@ -1012,7 +1020,7 @@ export class DocumentService implements MnemosyneService {
       conditions.push(`category = '${filters.category}'`);
     }
     if (filters.tags && Array.isArray(filters.tags)) {
-      conditions.push(`tags && ARRAY[${filters.tags.map(tag => `'${tag}'`).join(',')}]`);
+      conditions.push(`tags && ARRAY[${filters.tags.map((tag) => `'${tag}'`).join(',')}]`);
     }
 
     return conditions.length > 1 ? conditions.join(' AND ') : conditions[0];
@@ -1037,7 +1045,11 @@ export class DocumentService implements MnemosyneService {
     }
   }
 
-  private async emitDocumentEvent(eventType: string, document: Document, metadata?: any): Promise<void> {
+  private async emitDocumentEvent(
+    eventType: string,
+    document: Document,
+    metadata?: any
+  ): Promise<void> {
     this.eventBus.emit(`mnemosyne:${eventType}`, {
       documentId: document.id,
       title: document.title,
@@ -1049,14 +1061,14 @@ export class DocumentService implements MnemosyneService {
 
   private updateMetrics(startTime: number, success: boolean): void {
     const responseTime = Date.now() - startTime;
-    
+
     this.metrics.requestCount++;
     if (!success) {
       this.metrics.errorCount++;
     }
-    
-    this.metrics.avgResponseTime = 
-      (this.metrics.avgResponseTime * (this.metrics.requestCount - 1) + responseTime) / 
+
+    this.metrics.avgResponseTime =
+      (this.metrics.avgResponseTime * (this.metrics.requestCount - 1) + responseTime) /
       this.metrics.requestCount;
   }
 
@@ -1067,7 +1079,9 @@ export class DocumentService implements MnemosyneService {
   }
 
   private async getDocumentCount(): Promise<number> {
-    const result = await this.dataService.query('SELECT COUNT(*) as count FROM mnemosyne_active_documents');
+    const result = await this.dataService.query(
+      'SELECT COUNT(*) as count FROM mnemosyne_active_documents'
+    );
     return parseInt(result[0].count);
   }
 
@@ -1085,7 +1099,7 @@ export class DocumentService implements MnemosyneService {
     if (this.documentCache.size > this.maxCacheSize) {
       const entriesToRemove = this.documentCache.size - this.maxCacheSize;
       const keys = Array.from(this.documentCache.keys()).slice(0, entriesToRemove);
-      
+
       for (const key of keys) {
         this.documentCache.delete(key);
       }

@@ -1,6 +1,6 @@
 /**
  * Performance Monitor Service
- * 
+ *
  * Collects and tracks performance metrics for the log visualization plugin
  */
 
@@ -51,7 +51,7 @@ export class PerformanceMonitor extends EventEmitter {
   private readonly maxMetricsHistory = 10000;
   private readonly maxLatencyHistory = 1000;
   private metricsCollectionInterval?: NodeJS.Timeout;
-  
+
   constructor(
     private logger: Logger,
     private eventBus: EventBus
@@ -91,7 +91,12 @@ export class PerformanceMonitor extends EventEmitter {
   /**
    * Record a performance metric
    */
-  recordMetric(name: string, value: number, unit: 'ms' | 'bytes' | 'count' | 'rate', tags?: Record<string, string>): void {
+  recordMetric(
+    name: string,
+    value: number,
+    unit: 'ms' | 'bytes' | 'count' | 'rate',
+    tags?: Record<string, string>
+  ): void {
     const metric: PerformanceMetric = {
       name,
       value,
@@ -184,7 +189,7 @@ export class PerformanceMonitor extends EventEmitter {
   getStats(): PerformanceStats {
     const now = new Date();
     const oneMinuteAgo = new Date(now.getTime() - 60000);
-    const recentMetrics = this.metrics.filter(m => m.timestamp >= oneMinuteAgo);
+    const recentMetrics = this.metrics.filter((m) => m.timestamp >= oneMinuteAgo);
 
     return {
       queryLatency: this.calculateLatencyStats(),
@@ -199,7 +204,7 @@ export class PerformanceMonitor extends EventEmitter {
    * Get metrics for a specific time range
    */
   getMetrics(startTime: Date, endTime: Date, metricName?: string): PerformanceMetric[] {
-    return this.metrics.filter(metric => {
+    return this.metrics.filter((metric) => {
       const inTimeRange = metric.timestamp >= startTime && metric.timestamp <= endTime;
       const matchesName = !metricName || metric.name === metricName;
       return inTimeRange && matchesName;
@@ -211,8 +216,8 @@ export class PerformanceMonitor extends EventEmitter {
    */
   clearOldMetrics(olderThan: Date): void {
     const initialCount = this.metrics.length;
-    this.metrics = this.metrics.filter(metric => metric.timestamp >= olderThan);
-    
+    this.metrics = this.metrics.filter((metric) => metric.timestamp >= olderThan);
+
     const removedCount = initialCount - this.metrics.length;
     if (removedCount > 0) {
       this.logger.debug('Cleared old performance metrics', {
@@ -245,17 +250,18 @@ export class PerformanceMonitor extends EventEmitter {
       });
 
       // Publish metrics event
-      this.eventBus.publish('log-visualization:metrics-collected', {
-        timestamp: new Date(),
-        memoryUsage,
-        cpuUsage: cpuPercent
-      }).catch(error => {
-        this.logger.warn('Failed to publish metrics event', {
-          component: 'PerformanceMonitor',
-          error: error instanceof Error ? error.message : String(error)
+      this.eventBus
+        .publish('log-visualization:metrics-collected', {
+          timestamp: new Date(),
+          memoryUsage,
+          cpuUsage: cpuPercent
+        })
+        .catch((error) => {
+          this.logger.warn('Failed to publish metrics event', {
+            component: 'PerformanceMonitor',
+            error: error instanceof Error ? error.message : String(error)
+          });
         });
-      });
-
     } catch (error) {
       this.logger.error('Failed to collect system metrics', {
         component: 'PerformanceMonitor',
@@ -276,10 +282,10 @@ export class PerformanceMonitor extends EventEmitter {
     const min = sorted[0];
     const max = sorted[sorted.length - 1];
     const avg = sorted.reduce((sum, val) => sum + val, 0) / sorted.length;
-    
+
     const p95Index = Math.floor(sorted.length * 0.95);
     const p99Index = Math.floor(sorted.length * 0.99);
-    
+
     return {
       min,
       max,
@@ -292,14 +298,16 @@ export class PerformanceMonitor extends EventEmitter {
   /**
    * Calculate throughput statistics
    */
-  private calculateThroughputStats(recentMetrics: PerformanceMetric[]): PerformanceStats['queryThroughput'] {
-    const queryMetrics = recentMetrics.filter(m => m.name === 'query.latency');
+  private calculateThroughputStats(
+    recentMetrics: PerformanceMetric[]
+  ): PerformanceStats['queryThroughput'] {
+    const queryMetrics = recentMetrics.filter((m) => m.name === 'query.latency');
     const queriesPerMinute = queryMetrics.length;
-    
+
     const resultCounts = queryMetrics
-      .map(m => parseInt(m.tags?.resultCount || '0'))
-      .filter(count => !isNaN(count));
-    
+      .map((m) => parseInt(m.tags?.resultCount || '0'))
+      .filter((count) => !isNaN(count));
+
     const totalResults = resultCounts.reduce((sum, count) => sum + count, 0);
     const resultsPerSecond = totalResults / 60; // Convert to per second
 
@@ -346,9 +354,9 @@ export class PerformanceMonitor extends EventEmitter {
    * Get the latest value for a specific metric
    */
   private getLatestMetricValue(metricName: string): number | undefined {
-    const metrics = this.metrics.filter(m => m.name === metricName);
+    const metrics = this.metrics.filter((m) => m.name === metricName);
     if (metrics.length === 0) return undefined;
-    
+
     return metrics[metrics.length - 1].value;
   }
 

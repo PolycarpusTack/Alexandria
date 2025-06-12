@@ -1,0 +1,164 @@
+# Snyk (https://snyk.io) policy file for Alexandria Platform
+# 
+# This file configures security vulnerability scanning and management
+
+# Global settings
+version: v1.0.0
+
+# Language settings
+language-settings:
+  javascript:
+    ignoreDevDependencies: false
+  
+# Patch configuration
+patch: {}
+
+# Ignore vulnerabilities
+ignore:
+  # Prototype pollution vulnerabilities in development dependencies
+  # These are typically not exploitable in Node.js backend environments
+  'SNYK-JS-LODASH-450202':
+    - '*':
+        reason: Low risk in server environment
+        expires: '2025-12-31T23:59:59.999Z'
+  
+  # High severity vulnerabilities that require manual review
+  # Template for future ignores:
+  # 'SNYK-VULNERABILITY-ID':
+  #   - 'dependency-path':
+  #       reason: Explanation of why this is acceptable
+  #       expires: 'YYYY-MM-DDTHH:mm:ss.sssZ'
+
+# Exclude paths from scanning
+exclude:
+  global:
+    - 'node_modules/'
+    - 'dist/'
+    - 'build/'
+    - 'coverage/'
+    - 'garbage/'
+    - 'logs/'
+    - '**/*.d.ts'
+    - '**/*.test.ts'
+    - '**/*.test.tsx'
+    - '**/*.spec.ts'
+    - '**/*.spec.tsx'
+    - '__mocks__/'
+    - '__tests__/'
+
+# Severity thresholds
+# high: Only report high and critical vulnerabilities
+# medium: Report medium, high, and critical vulnerabilities
+# low: Report all vulnerabilities
+severity-threshold: medium
+
+# License policy
+license-policy:
+  ignore:
+    # Common permissive licenses that are acceptable
+    - 'MIT'
+    - 'Apache-2.0'
+    - 'BSD-2-Clause'
+    - 'BSD-3-Clause'
+    - 'ISC'
+  
+  # Licenses to flag for review
+  warn:
+    - 'GPL-2.0'
+    - 'GPL-3.0'
+    - 'LGPL-2.1'
+    - 'LGPL-3.0'
+  
+  # Licenses to reject
+  deny:
+    - 'AGPL-1.0'
+    - 'AGPL-3.0'
+
+# Custom rules for Alexandria Platform
+alexandria-rules:
+  # Require security reviews for:
+  security-review-required:
+    - Authentication modules
+    - Data encryption/decryption
+    - File upload handlers
+    - Database query builders
+    - External API integrations
+    - Plugin system components
+  
+  # Sensitive data handling
+  sensitive-data:
+    - API keys and tokens
+    - User credentials
+    - Personal identifiable information (PII)
+    - Database connection strings
+    - Encryption keys
+  
+  # Network security
+  network-security:
+    - HTTPS enforcement
+    - CORS configuration
+    - Rate limiting
+    - Input validation
+    - SQL injection prevention
+
+# Monitoring configuration
+monitoring:
+  # Weekly vulnerability scans
+  schedule: '0 9 * * 1'  # Every Monday at 9 AM
+  
+  # Auto-fix minor vulnerabilities
+  auto-remediation:
+    enabled: true
+    # Only auto-fix patch versions to avoid breaking changes
+    patch-only: true
+    # Create PRs for auto-fixes
+    create-pr: true
+  
+  # Notifications
+  notifications:
+    # Slack webhook for high/critical vulnerabilities
+    slack:
+      enabled: false
+      webhook-url: ''
+    
+    # Email notifications
+    email:
+      enabled: true
+      recipients:
+        - 'security@alexandria-platform.com'
+    
+    # GitHub issues for tracking
+    github-issues:
+      enabled: true
+      labels:
+        - 'security'
+        - 'vulnerability'
+
+# Project metadata
+project:
+  name: 'Alexandria Platform'
+  type: 'Node.js'
+  environment: 'production'
+  description: 'Modular AI-enhanced Customer Care & Services Platform'
+  
+# Integration settings
+integrations:
+  ci-cd:
+    # Fail builds on high/critical vulnerabilities
+    fail-on: 'high'
+    
+    # Generate reports
+    reports:
+      json: true
+      html: true
+      sarif: true
+  
+  ide:
+    # VS Code extension settings
+    vscode:
+      enabled: true
+      auto-scan: true
+    
+    # JetBrains settings
+    jetbrains:
+      enabled: true

@@ -33,6 +33,9 @@ module.exports = {
       statements: 80
     }
   },
+  coverageDirectory: 'coverage',
+  coverageReporters: ['text', 'lcov', 'html'],
+  testResultsProcessor: 'jest-sonar-reporter',
   transform: {
     '^.+\\.tsx?$': ['ts-jest', {
       tsconfig: 'tsconfig.json',

@@ -1,18 +1,18 @@
 /**
  * Comprehensive Template Manifest Validator
- * 
+ *
  * Validates template manifests against schema with security checks,
  * dependency validation, and best practice enforcement
  */
 
 import { Logger } from '../../../../../utils/logger';
-import { 
-  TemplateManifest, 
-  VariableSchema, 
-  TemplateFile, 
-  TemplateHooks, 
+import {
+  TemplateManifest,
+  VariableSchema,
+  TemplateFile,
+  TemplateHooks,
   TemplateLimits,
-  ValidationResult, 
+  ValidationResult,
   ValidationError,
   ConditionExpression
 } from './interfaces';
@@ -78,11 +78,11 @@ export class TemplateManifestValidator {
   private securityPatterns = {
     // Dangerous path patterns
     dangerousPaths: [
-      /\.\.[\/\\]/,                    // Path traversal
-      /^[\/\\]/,                       // Absolute paths
-      /[<>:"|?*]/,                     // Invalid filename characters
+      /\.\.[\/\\]/, // Path traversal
+      /^[\/\\]/, // Absolute paths
+      /[<>:"|?*]/, // Invalid filename characters
       /(con|prn|aux|nul|com[1-9]|lpt[1-9])/i, // Windows reserved names
-      /\.(exe|bat|cmd|com|pif|scr|vbs|js)$/i   // Executable extensions
+      /\.(exe|bat|cmd|com|pif|scr|vbs|js)$/i // Executable extensions
     ],
 
     // Suspicious variable names
@@ -90,8 +90,8 @@ export class TemplateManifestValidator {
       /password|passwd|secret|key|token/i,
       /admin|root|superuser/i,
       /exec|eval|function|script/i,
-      /\$\{.*\}/,                     // Template injection patterns
-      /#\{.*\}/                       // Ruby-style interpolation
+      /\$\{.*\}/, // Template injection patterns
+      /#\{.*\}/ // Ruby-style interpolation
     ],
 
     // Hook code patterns to flag
@@ -115,10 +115,16 @@ export class TemplateManifestValidator {
   // Best practice recommendations
   private bestPractices = {
     recommendedFields: [
-      'description', 'author', 'license', 'version', 'tags',
-      'requirements.projectTypes', 'limits.maxFiles', 'security.checksum'
+      'description',
+      'author',
+      'license',
+      'version',
+      'tags',
+      'requirements.projectTypes',
+      'limits.maxFiles',
+      'security.checksum'
     ],
-    
+
     maxRecommendations: {
       variables: 50,
       files: 100,
@@ -129,8 +135,21 @@ export class TemplateManifestValidator {
     securityRequirements: {
       basic: ['security.checksum'],
       standard: ['security.checksum', 'limits.maxFiles', 'limits.allowedPaths'],
-      strict: ['security.checksum', 'security.signature', 'limits.maxFiles', 'limits.allowedPaths', 'limits.maxTotalSize'],
-      paranoid: ['security.checksum', 'security.signature', 'security.trustedPublisher', 'limits.maxFiles', 'limits.allowedPaths', 'limits.maxTotalSize']
+      strict: [
+        'security.checksum',
+        'security.signature',
+        'limits.maxFiles',
+        'limits.allowedPaths',
+        'limits.maxTotalSize'
+      ],
+      paranoid: [
+        'security.checksum',
+        'security.signature',
+        'security.trustedPublisher',
+        'limits.maxFiles',
+        'limits.allowedPaths',
+        'limits.maxTotalSize'
+      ]
     }
   };
 
@@ -141,7 +160,7 @@ export class TemplateManifestValidator {
   ) {
     this.logger = logger;
     this.conditionEvaluator = conditionEvaluator;
-    
+
     this.options = {
       strictMode: options.strictMode ?? false,
       allowExperimentalFeatures: options.allowExperimentalFeatures ?? false,
@@ -238,7 +257,6 @@ export class TemplateManifestValidator {
       });
 
       return report;
-
     } catch (error) {
       report.errors.push({
         code: 'VALIDATION_FAILED',
@@ -253,7 +271,10 @@ export class TemplateManifestValidator {
   /**
    * Validate schema version compatibility
    */
-  private validateSchemaVersion(manifest: TemplateManifest, report: ManifestValidationReport): void {
+  private validateSchemaVersion(
+    manifest: TemplateManifest,
+    report: ManifestValidationReport
+  ): void {
     if (!manifest.schemaVersion) {
       report.errors.push({
         code: 'MISSING_SCHEMA_VERSION',
@@ -275,7 +296,9 @@ export class TemplateManifestValidator {
 
     // Check for deprecated features
     if (manifest.schemaVersion === '1.0.0') {
-      report.compatibility.deprecatedFeatures.push('Schema v1.0.0 is deprecated, please upgrade to v2.0.0');
+      report.compatibility.deprecatedFeatures.push(
+        'Schema v1.0.0 is deprecated, please upgrade to v2.0.0'
+      );
       report.warnings.push('Schema v1.0.0 support will be removed in future versions');
     }
 
@@ -283,7 +306,10 @@ export class TemplateManifestValidator {
     switch (manifest.schemaVersion) {
       case '2.0.0':
         report.compatibility.supportedFeatures.push(
-          'enhanced-security', 'conditional-files', 'variable-dependencies', 'hooks'
+          'enhanced-security',
+          'conditional-files',
+          'variable-dependencies',
+          'hooks'
         );
         break;
       case '1.0.0':
@@ -295,7 +321,10 @@ export class TemplateManifestValidator {
   /**
    * Validate required fields
    */
-  private validateRequiredFields(manifest: TemplateManifest, report: ManifestValidationReport): void {
+  private validateRequiredFields(
+    manifest: TemplateManifest,
+    report: ManifestValidationReport
+  ): void {
     for (const field of this.options.requiredFields) {
       const value = this.getNestedValue(manifest, field);
       if (value === undefined || value === null || value === '') {
@@ -339,8 +368,13 @@ export class TemplateManifestValidator {
     }
 
     // Description validation
-    if (manifest.description && manifest.description.length > this.bestPractices.maxRecommendations.descriptionLength) {
-      report.warnings.push(`Description is longer than recommended (>${this.bestPractices.maxRecommendations.descriptionLength} characters)`);
+    if (
+      manifest.description &&
+      manifest.description.length > this.bestPractices.maxRecommendations.descriptionLength
+    ) {
+      report.warnings.push(
+        `Description is longer than recommended (>${this.bestPractices.maxRecommendations.descriptionLength} characters)`
+      );
     }
 
     // Tags validation
@@ -358,7 +392,14 @@ export class TemplateManifestValidator {
 
     // License validation
     const validLicenses = [
-      'MIT', 'Apache-2.0', 'GPL-3.0', 'BSD-3-Clause', 'ISC', 'GPL-2.0', 'LGPL-3.0', 'MPL-2.0'
+      'MIT',
+      'Apache-2.0',
+      'GPL-3.0',
+      'BSD-3-Clause',
+      'ISC',
+      'GPL-2.0',
+      'LGPL-3.0',
+      'MPL-2.0'
     ];
     if (manifest.license && !validLicenses.includes(manifest.license)) {
       report.warnings.push(`License "${manifest.license}" is not a common SPDX identifier`);
@@ -368,7 +409,10 @@ export class TemplateManifestValidator {
   /**
    * Validate security configuration
    */
-  private async validateSecurity(manifest: TemplateManifest, report: ManifestValidationReport): Promise<void> {
+  private async validateSecurity(
+    manifest: TemplateManifest,
+    report: ManifestValidationReport
+  ): Promise<void> {
     if (!manifest.security) {
       report.errors.push({
         code: 'MISSING_SECURITY',
@@ -379,14 +423,15 @@ export class TemplateManifestValidator {
       return;
     }
 
-    const requiredSecurityFields = this.bestPractices.securityRequirements[this.options.securityLevel];
-    
+    const requiredSecurityFields =
+      this.bestPractices.securityRequirements[this.options.securityLevel];
+
     for (const field of requiredSecurityFields) {
       const value = this.getNestedValue(manifest, field);
       if (value === undefined || value === null || value === '') {
         const severity = this.options.strictMode ? 'error' : 'warning';
         const message = `Security field required for ${this.options.securityLevel} level: ${field}`;
-        
+
         if (severity === 'error') {
           report.errors.push({
             code: 'MISSING_SECURITY_FIELD',
@@ -437,7 +482,7 @@ export class TemplateManifestValidator {
     }
 
     const variableNames = new Set<string>();
-    
+
     for (let i = 0; i < variables.length; i++) {
       const variable = variables[i];
       const fieldPrefix = `variables[${i}]`;
@@ -516,8 +561,10 @@ export class TemplateManifestValidator {
       // Dependencies validation
       if (variable.dependencies) {
         for (const dep of variable.dependencies) {
-          if (!variableNames.has(dep) && !variables.some(v => v.name === dep)) {
-            report.warnings.push(`Variable "${variable.name}" depends on undefined variable: ${dep}`);
+          if (!variableNames.has(dep) && !variables.some((v) => v.name === dep)) {
+            report.warnings.push(
+              `Variable "${variable.name}" depends on undefined variable: ${dep}`
+            );
           }
         }
       }
@@ -528,8 +575,8 @@ export class TemplateManifestValidator {
    * Validate variable validation rules
    */
   private validateVariableValidation(
-    variable: VariableSchema, 
-    fieldPrefix: string, 
+    variable: VariableSchema,
+    fieldPrefix: string,
     report: ManifestValidationReport
   ): void {
     const validation = variable.validation!;
@@ -673,7 +720,7 @@ export class TemplateManifestValidator {
     if (!hooks) return;
 
     const hookNames = ['beforeGenerate', 'afterGenerate', 'onConflict'] as const;
-    
+
     for (const hookName of hookNames) {
       const hookCode = hooks[hookName];
       if (hookCode) {
@@ -692,7 +739,9 @@ export class TemplateManifestValidator {
 
         // Length validation
         if (hookCode.length > 10000) {
-          report.warnings.push(`Hook code is very long (${hookCode.length} characters): ${hookName}`);
+          report.warnings.push(
+            `Hook code is very long (${hookCode.length} characters): ${hookName}`
+          );
         }
       }
     }
@@ -701,7 +750,10 @@ export class TemplateManifestValidator {
   /**
    * Validate template limits
    */
-  private validateLimits(limits: TemplateLimits | undefined, report: ManifestValidationReport): void {
+  private validateLimits(
+    limits: TemplateLimits | undefined,
+    report: ManifestValidationReport
+  ): void {
     if (!limits) {
       if (this.options.strictMode) {
         report.errors.push({
@@ -725,7 +777,9 @@ export class TemplateManifestValidator {
     }
 
     if (limits.maxFiles > 10000) {
-      report.warnings.push(`maxFiles is very high (${limits.maxFiles}), may cause performance issues`);
+      report.warnings.push(
+        `maxFiles is very high (${limits.maxFiles}), may cause performance issues`
+      );
     }
 
     // Total size validation
@@ -745,7 +799,7 @@ export class TemplateManifestValidator {
     if (limits.allowedPaths) {
       for (let i = 0; i < limits.allowedPaths.length; i++) {
         const allowedPath = limits.allowedPaths[i];
-        
+
         // Check for dangerous paths
         if (allowedPath.includes('..') || allowedPath.startsWith('/')) {
           report.security.threats.push(`Dangerous allowed path: ${allowedPath}`);
@@ -769,8 +823,23 @@ export class TemplateManifestValidator {
     // Project types validation
     if (manifest.requirements.projectTypes) {
       const validProjectTypes = [
-        'javascript', 'typescript', 'python', 'java', 'go', 'rust', 'php', 'ruby', 'csharp',
-        'node', 'react', 'vue', 'angular', 'express', 'django', 'spring', 'laravel'
+        'javascript',
+        'typescript',
+        'python',
+        'java',
+        'go',
+        'rust',
+        'php',
+        'ruby',
+        'csharp',
+        'node',
+        'react',
+        'vue',
+        'angular',
+        'express',
+        'django',
+        'spring',
+        'laravel'
       ];
 
       for (const projectType of manifest.requirements.projectTypes) {
@@ -797,7 +866,7 @@ export class TemplateManifestValidator {
       for (const dep of manifest.requirements.dependencies) {
         // Check for known vulnerable packages
         const vulnerablePackages = ['lodash@<4.17.12', 'moment@<2.29.2'];
-        if (vulnerablePackages.some(vuln => dep.includes(vuln.split('@')[0]))) {
+        if (vulnerablePackages.some((vuln) => dep.includes(vuln.split('@')[0]))) {
           report.warnings.push(`Dependency may be vulnerable: ${dep}`);
         }
       }
@@ -819,8 +888,9 @@ export class TemplateManifestValidator {
     if (hasHooks) renderTime += 500; // Hook overhead
 
     // Complex conditions increase render time
-    const conditionCount = (manifest.variables || []).filter(v => v.condition).length +
-                          (manifest.files || []).filter(f => f.condition).length;
+    const conditionCount =
+      (manifest.variables || []).filter((v) => v.condition).length +
+      (manifest.files || []).filter((f) => f.condition).length;
     renderTime += conditionCount * 10;
 
     report.performance.estimatedRenderTime = renderTime;
@@ -860,8 +930,9 @@ export class TemplateManifestValidator {
     if (fileCount > 50) maintainability -= 10;
 
     // Condition complexity
-    const conditionCount = (manifest.variables || []).filter(v => v.condition).length +
-                          (manifest.files || []).filter(f => f.condition).length;
+    const conditionCount =
+      (manifest.variables || []).filter((v) => v.condition).length +
+      (manifest.files || []).filter((f) => f.condition).length;
     complexity += conditionCount * 2;
     if (conditionCount > 10) maintainability -= 15;
 
@@ -904,7 +975,9 @@ export class TemplateManifestValidator {
       if (value !== undefined && value !== null && value !== '') {
         score++;
       } else {
-        report.security.recommendations.push(`Consider adding ${field} for better template quality`);
+        report.security.recommendations.push(
+          `Consider adding ${field} for better template quality`
+        );
       }
     }
 
@@ -931,7 +1004,10 @@ export class TemplateManifestValidator {
   /**
    * Analyze security threats
    */
-  private analyzeSecurityThreats(manifest: TemplateManifest, report: ManifestValidationReport): void {
+  private analyzeSecurityThreats(
+    manifest: TemplateManifest,
+    report: ManifestValidationReport
+  ): void {
     // Check for missing security measures
     if (!manifest.security?.checksum) {
       report.security.threats.push('Missing integrity checksum');
@@ -958,11 +1034,13 @@ export class TemplateManifestValidator {
     }
 
     // Template injection risks
-    const hasUserInput = manifest.variables?.some(v => 
-      v.type === 'string' && !v.validation?.pattern
+    const hasUserInput = manifest.variables?.some(
+      (v) => v.type === 'string' && !v.validation?.pattern
     );
     if (hasUserInput) {
-      report.security.recommendations.push('Consider adding validation patterns for string variables');
+      report.security.recommendations.push(
+        'Consider adding validation patterns for string variables'
+      );
     }
   }
 
@@ -977,7 +1055,7 @@ export class TemplateManifestValidator {
    * Create validated manifest with metadata
    */
   createValidatedManifest(
-    manifest: TemplateManifest, 
+    manifest: TemplateManifest,
     report: ManifestValidationReport
   ): ValidatedManifest {
     return {

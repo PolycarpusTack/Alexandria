@@ -1,6 +1,6 @@
 /**
  * Mnemosyne API Controller
- * 
+ *
  * Comprehensive REST API controller providing all Mnemosyne plugin functionality
  * with enterprise-grade error handling, validation, and documentation
  */
@@ -8,9 +8,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { Logger } from '@alexandria/plugin-interface';
 import { MnemosyneCore } from '../core/MnemosyneCore';
-import { 
-  Document, 
-  KnowledgeNode, 
+import {
+  Document,
+  KnowledgeNode,
   KnowledgeRelationship,
   SearchQuery,
   GraphQuery,
@@ -49,7 +49,7 @@ export interface ValidationError {
 
 /**
  * Main API Controller for Mnemosyne Plugin
- * 
+ *
  * Provides comprehensive REST API endpoints for all plugin functionality
  * including documents, knowledge graph, search, templates, and analytics
  */
@@ -88,7 +88,7 @@ export class MnemosyneAPIController {
 
       // Validate pagination parameters
       const pagination = this.validatePagination({ page: Number(page), limit: Number(limit) });
-      
+
       // Build filters
       const filters: Record<string, any> = {};
       if (status) filters.status = status;
@@ -113,13 +113,12 @@ export class MnemosyneAPIController {
           }))
         };
 
-        const searchResult = await this.core.getDocumentService().searchDocuments(
-          searchQuery,
-          { sortBy: sortBy as any, sortOrder: sortOrder as any }
-        );
+        const searchResult = await this.core
+          .getDocumentService()
+          .searchDocuments(searchQuery, { sortBy: sortBy as any, sortOrder: sortOrder as any });
 
         result = {
-          documents: searchResult.documents.map(hit => hit.document),
+          documents: searchResult.documents.map((hit) => hit.document),
           total: searchResult.metadata.total,
           page: pagination.page,
           limit: pagination.limit,
@@ -127,11 +126,9 @@ export class MnemosyneAPIController {
         };
       } else {
         // Use regular document listing
-        const { documents, total } = await this.core.getDocumentService().getDocuments(
-          filters,
-          pagination.limit,
-          offset
-        );
+        const { documents, total } = await this.core
+          .getDocumentService()
+          .getDocuments(filters, pagination.limit, offset);
 
         result = {
           documents,
@@ -144,7 +141,6 @@ export class MnemosyneAPIController {
 
       const response = this.createSuccessResponse(result, requestId, startTime);
       res.json(response);
-
     } catch (error) {
       const response = this.createErrorResponse(error, requestId, startTime);
       res.status(response.error?.code === 'VALIDATION_ERROR' ? 400 : 500).json(response);
@@ -167,15 +163,14 @@ export class MnemosyneAPIController {
         throw new Error('Document ID is required');
       }
 
-      const document = await this.core.getDocumentService().getDocument(
-        id, 
-        Boolean(includeVersions)
-      );
+      const document = await this.core
+        .getDocumentService()
+        .getDocument(id, Boolean(includeVersions));
 
       if (!document) {
         const response = this.createErrorResponse(
-          new Error('Document not found'), 
-          requestId, 
+          new Error('Document not found'),
+          requestId,
           startTime,
           'NOT_FOUND'
         );
@@ -190,7 +185,7 @@ export class MnemosyneAPIController {
           SELECT id FROM mnemosyne_active_nodes 
           WHERE document_id = $1 LIMIT 1
         `;
-        
+
         const nodeResult = await this.core.getDataService().query(nodeQuery, [id]);
         if (nodeResult.length > 0) {
           const relationships = await knowledgeGraphService.getNodeRelationships(nodeResult[0].id);
@@ -200,7 +195,6 @@ export class MnemosyneAPIController {
 
       const response = this.createSuccessResponse(document, requestId, startTime);
       res.json(response);
-
     } catch (error) {
       const response = this.createErrorResponse(error, requestId, startTime);
       res.status(500).json(response);
@@ -211,7 +205,11 @@ export class MnemosyneAPIController {
    * POST /api/mnemosyne/documents
    * Create new document
    */
-  public createDocument = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public createDocument = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     const startTime = Date.now();
     const requestId = this.generateRequestId();
 
@@ -243,7 +241,6 @@ export class MnemosyneAPIController {
 
       const response = this.createSuccessResponse(document, requestId, startTime);
       res.status(201).json(response);
-
     } catch (error) {
       const response = this.createErrorResponse(error, requestId, startTime);
       res.status(500).json(response);
@@ -254,7 +251,11 @@ export class MnemosyneAPIController {
    * PUT /api/mnemosyne/documents/:id
    * Update existing document
    */
-  public updateDocument = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public updateDocument = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     const startTime = Date.now();
     const requestId = this.generateRequestId();
 
@@ -275,16 +276,12 @@ export class MnemosyneAPIController {
         return;
       }
 
-      const document = await this.core.getDocumentService().updateDocument(
-        id,
-        updates,
-        userId as string,
-        comment as string
-      );
+      const document = await this.core
+        .getDocumentService()
+        .updateDocument(id, updates, userId as string, comment as string);
 
       const response = this.createSuccessResponse(document, requestId, startTime);
       res.json(response);
-
     } catch (error) {
       const response = this.createErrorResponse(error, requestId, startTime);
       res.status(error.message.includes('not found') ? 404 : 500).json(response);
@@ -295,7 +292,11 @@ export class MnemosyneAPIController {
    * DELETE /api/mnemosyne/documents/:id
    * Delete document (soft delete)
    */
-  public deleteDocument = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public deleteDocument = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     const startTime = Date.now();
     const requestId = this.generateRequestId();
 
@@ -322,7 +323,6 @@ export class MnemosyneAPIController {
 
       const response = this.createSuccessResponse({ deleted: true }, requestId, startTime);
       res.json(response);
-
     } catch (error) {
       const response = this.createErrorResponse(error, requestId, startTime);
       res.status(500).json(response);
@@ -374,7 +374,7 @@ export class MnemosyneAPIController {
       params.push(Number(limit), Number(offset));
 
       const results = await this.core.getDataService().query(query, params);
-      const nodes = results.map(row => this.mapDbRowToNode(row));
+      const nodes = results.map((row) => this.mapDbRowToNode(row));
 
       // Load relationships if requested
       if (includeRelationships) {
@@ -386,7 +386,6 @@ export class MnemosyneAPIController {
 
       const response = this.createSuccessResponse({ nodes }, requestId, startTime);
       res.json(response);
-
     } catch (error) {
       const response = this.createErrorResponse(error, requestId, startTime);
       res.status(500).json(response);
@@ -416,7 +415,6 @@ export class MnemosyneAPIController {
 
       const response = this.createSuccessResponse(node, requestId, startTime);
       res.status(201).json(response);
-
     } catch (error) {
       const response = this.createErrorResponse(error, requestId, startTime);
       res.status(500).json(response);
@@ -427,7 +425,11 @@ export class MnemosyneAPIController {
    * POST /api/mnemosyne/knowledge-graph/relationships
    * Create new relationship
    */
-  public createRelationship = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public createRelationship = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     const startTime = Date.now();
     const requestId = this.generateRequestId();
 
@@ -442,11 +444,12 @@ export class MnemosyneAPIController {
         return;
       }
 
-      const relationship = await this.core.getKnowledgeGraphService().createRelationship(relationshipData);
+      const relationship = await this.core
+        .getKnowledgeGraphService()
+        .createRelationship(relationshipData);
 
       const response = this.createSuccessResponse(relationship, requestId, startTime);
       res.status(201).json(response);
-
     } catch (error) {
       const response = this.createErrorResponse(error, requestId, startTime);
       res.status(500).json(response);
@@ -476,7 +479,6 @@ export class MnemosyneAPIController {
 
       const response = this.createSuccessResponse(result, requestId, startTime);
       res.json(response);
-
     } catch (error) {
       const response = this.createErrorResponse(error, requestId, startTime);
       res.status(500).json(response);
@@ -487,7 +489,11 @@ export class MnemosyneAPIController {
    * GET /api/mnemosyne/knowledge-graph/analytics
    * Get graph analytics and statistics
    */
-  public getGraphAnalytics = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public getGraphAnalytics = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     const startTime = Date.now();
     const requestId = this.generateRequestId();
 
@@ -496,7 +502,6 @@ export class MnemosyneAPIController {
 
       const response = this.createSuccessResponse(analytics, requestId, startTime);
       res.json(response);
-
     } catch (error) {
       const response = this.createErrorResponse(error, requestId, startTime);
       res.status(500).json(response);
@@ -507,21 +512,23 @@ export class MnemosyneAPIController {
    * GET /api/mnemosyne/knowledge-graph/visualization
    * Get graph visualization data
    */
-  public getVisualization = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public getVisualization = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     const startTime = Date.now();
     const requestId = this.generateRequestId();
 
     try {
       const { nodeLimit = 100, algorithm = 'force-directed' } = req.query;
 
-      const visualization = await this.core.getKnowledgeGraphService().getVisualizationData(
-        Number(nodeLimit),
-        algorithm as string
-      );
+      const visualization = await this.core
+        .getKnowledgeGraphService()
+        .getVisualizationData(Number(nodeLimit), algorithm as string);
 
       const response = this.createSuccessResponse(visualization, requestId, startTime);
       res.json(response);
-
     } catch (error) {
       const response = this.createErrorResponse(error, requestId, startTime);
       res.status(500).json(response);
@@ -550,15 +557,12 @@ export class MnemosyneAPIController {
         return;
       }
 
-      const result = await this.core.getSearchService().search(
-        searchQuery,
-        userId as string,
-        Boolean(personalize)
-      );
+      const result = await this.core
+        .getSearchService()
+        .search(searchQuery, userId as string, Boolean(personalize));
 
       const response = this.createSuccessResponse(result, requestId, startTime);
       res.json(response);
-
     } catch (error) {
       const response = this.createErrorResponse(error, requestId, startTime);
       res.status(500).json(response);
@@ -569,7 +573,11 @@ export class MnemosyneAPIController {
    * GET /api/mnemosyne/search/suggestions
    * Get search suggestions for auto-complete
    */
-  public getSearchSuggestions = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public getSearchSuggestions = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     const startTime = Date.now();
     const requestId = this.generateRequestId();
 
@@ -587,15 +595,12 @@ export class MnemosyneAPIController {
         return;
       }
 
-      const suggestions = await this.core.getSearchService().getSearchSuggestions(
-        query,
-        userId as string,
-        Number(limit)
-      );
+      const suggestions = await this.core
+        .getSearchService()
+        .getSearchSuggestions(query, userId as string, Number(limit));
 
       const response = this.createSuccessResponse({ suggestions }, requestId, startTime);
       res.json(response);
-
     } catch (error) {
       const response = this.createErrorResponse(error, requestId, startTime);
       res.status(500).json(response);
@@ -608,7 +613,11 @@ export class MnemosyneAPIController {
    * POST /api/mnemosyne/algorithms/analyze
    * Execute graph algorithm analysis
    */
-  public executeAnalysis = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+  public executeAnalysis = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ): Promise<void> => {
     const startTime = Date.now();
     const requestId = this.generateRequestId();
 
@@ -627,7 +636,6 @@ export class MnemosyneAPIController {
 
       const response = this.createSuccessResponse(result, requestId, startTime);
       res.json(response);
-
     } catch (error) {
       const response = this.createErrorResponse(error, requestId, startTime);
       res.status(500).json(response);
@@ -649,14 +657,13 @@ export class MnemosyneAPIController {
 
       const templates = await this.core.getTemplateService().getTemplates({
         category: category as string,
-        tags: tags ? (Array.isArray(tags) ? tags : [tags]) as string[] : undefined,
+        tags: tags ? ((Array.isArray(tags) ? tags : [tags]) as string[]) : undefined,
         limit: Number(limit),
         offset: Number(offset)
       });
 
       const response = this.createSuccessResponse(templates, requestId, startTime);
       res.json(response);
-
     } catch (error) {
       const response = this.createErrorResponse(error, requestId, startTime);
       res.status(500).json(response);
@@ -678,7 +685,6 @@ export class MnemosyneAPIController {
 
       const response = this.createSuccessResponse(health, requestId, startTime);
       res.json(response);
-
     } catch (error) {
       const response = this.createErrorResponse(error, requestId, startTime);
       res.status(500).json(response);
@@ -698,7 +704,6 @@ export class MnemosyneAPIController {
 
       const response = this.createSuccessResponse(metrics, requestId, startTime);
       res.json(response);
-
     } catch (error) {
       const response = this.createErrorResponse(error, requestId, startTime);
       res.status(500).json(response);
@@ -725,15 +730,15 @@ export class MnemosyneAPIController {
   }
 
   private createErrorResponse(
-    error: Error, 
-    requestId: string, 
-    startTime: number, 
+    error: Error,
+    requestId: string,
+    startTime: number,
     code = 'INTERNAL_ERROR'
   ): APIResponse {
-    this.logger.error('API request failed', { 
-      error: error.message, 
-      requestId, 
-      code 
+    this.logger.error('API request failed', {
+      error: error.message,
+      requestId,
+      code
     });
 
     return {
@@ -753,8 +758,8 @@ export class MnemosyneAPIController {
   }
 
   private createValidationErrorResponse(
-    validationErrors: ValidationError[], 
-    requestId: string, 
+    validationErrors: ValidationError[],
+    requestId: string,
     startTime: number
   ): APIResponse {
     return {
@@ -833,7 +838,10 @@ export class MnemosyneAPIController {
       errors.push({ field: 'title', message: 'Title is required and must be a non-empty string' });
     }
 
-    if (data.weight !== undefined && (typeof data.weight !== 'number' || data.weight < 0 || data.weight > 10)) {
+    if (
+      data.weight !== undefined &&
+      (typeof data.weight !== 'number' || data.weight < 0 || data.weight > 10)
+    ) {
       errors.push({ field: 'weight', message: 'Weight must be a number between 0 and 10' });
     }
 
@@ -855,7 +863,10 @@ export class MnemosyneAPIController {
       errors.push({ field: 'targetId', message: 'Source and target IDs cannot be the same' });
     }
 
-    if (data.strength !== undefined && (typeof data.strength !== 'number' || data.strength < 0 || data.strength > 10)) {
+    if (
+      data.strength !== undefined &&
+      (typeof data.strength !== 'number' || data.strength < 0 || data.strength > 10)
+    ) {
       errors.push({ field: 'strength', message: 'Strength must be a number between 0 and 10' });
     }
 
@@ -871,7 +882,10 @@ export class MnemosyneAPIController {
 
     const validTypes = ['traversal', 'search', 'pattern', 'similarity'];
     if (query.type && !validTypes.includes(query.type)) {
-      errors.push({ field: 'type', message: `Query type must be one of: ${validTypes.join(', ')}` });
+      errors.push({
+        field: 'type',
+        message: `Query type must be one of: ${validTypes.join(', ')}`
+      });
     }
 
     return errors;
@@ -881,7 +895,10 @@ export class MnemosyneAPIController {
     const errors: ValidationError[] = [];
 
     if (!query.query || typeof query.query !== 'string' || query.query.trim().length === 0) {
-      errors.push({ field: 'query', message: 'Search query is required and must be a non-empty string' });
+      errors.push({
+        field: 'query',
+        message: 'Search query is required and must be a non-empty string'
+      });
     }
 
     if (!query.type || typeof query.type !== 'string') {
@@ -899,11 +916,20 @@ export class MnemosyneAPIController {
     }
 
     const validAlgorithms = [
-      'centrality', 'community', 'path-analysis', 'influence', 
-      'trend-analysis', 'similarity-clustering', 'anomaly-detection', 'prediction'
+      'centrality',
+      'community',
+      'path-analysis',
+      'influence',
+      'trend-analysis',
+      'similarity-clustering',
+      'anomaly-detection',
+      'prediction'
     ];
     if (request.algorithm && !validAlgorithms.includes(request.algorithm)) {
-      errors.push({ field: 'algorithm', message: `Algorithm must be one of: ${validAlgorithms.join(', ')}` });
+      errors.push({
+        field: 'algorithm',
+        message: `Algorithm must be one of: ${validAlgorithms.join(', ')}`
+      });
     }
 
     return errors;

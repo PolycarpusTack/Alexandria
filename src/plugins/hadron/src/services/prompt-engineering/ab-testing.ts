@@ -1,10 +1,8 @@
 /**
  * A/B Testing System for Prompt Effectiveness
- * 
+ *
  * Manages experiments to compare prompt variations
  */
-
-import { v4 as uuidv4 } from 'uuid';
 
 export interface ABTestExperiment {
   id: string;
@@ -55,7 +53,7 @@ export interface ExperimentResults {
 export class ABTestingSystem {
   private static experiments: Map<string, ABTestExperiment> = new Map();
   private static activeExperiments: Set<string> = new Set();
-  
+
   /**
    * Create a new A/B test experiment
    */
@@ -82,7 +80,7 @@ export class ABTestingSystem {
       name: config.name,
       description: config.description,
       status: 'draft',
-      variants: config.variants.map(v => ({
+      variants: config.variants.map((v) => ({
         id: uuidv4(),
         name: v.name,
         promptVersionId: v.promptVersionId,
@@ -198,7 +196,7 @@ export class ABTestingSystem {
     const experiment = this.experiments.get(experimentId);
     if (!experiment) return;
 
-    const variant = experiment.variants.find(v => v.id === variantId);
+    const variant = experiment.variants.find((v) => v.id === variantId);
     if (!variant) return;
 
     // Update variant metrics
@@ -208,27 +206,28 @@ export class ABTestingSystem {
 
     // Update success rate
     if (result.success) {
-      metrics.successRate = 
+      metrics.successRate =
         (metrics.successRate * (metrics.sampleSize - 1) + 1) / metrics.sampleSize;
     } else {
-      metrics.successRate = 
-        (metrics.successRate * (metrics.sampleSize - 1)) / metrics.sampleSize;
+      metrics.successRate = (metrics.successRate * (metrics.sampleSize - 1)) / metrics.sampleSize;
       metrics.errorRate = 1 - metrics.successRate;
     }
 
     // Update confidence
-    metrics.avgConfidence = 
+    metrics.avgConfidence =
       (metrics.avgConfidence * (metrics.sampleSize - 1) + result.confidence) / metrics.sampleSize;
 
     // Update inference time
-    metrics.avgInferenceTime = 
-      (metrics.avgInferenceTime * (metrics.sampleSize - 1) + result.inferenceTime) / metrics.sampleSize;
+    metrics.avgInferenceTime =
+      (metrics.avgInferenceTime * (metrics.sampleSize - 1) + result.inferenceTime) /
+      metrics.sampleSize;
 
     // Update user satisfaction
     if (result.userFeedback) {
       const satisfactionScore = result.userFeedback === 'helpful' ? 1 : 0;
-      metrics.userSatisfaction = 
-        ((metrics.userSatisfaction || 0) * (metrics.sampleSize - 1) + satisfactionScore) / metrics.sampleSize;
+      metrics.userSatisfaction =
+        ((metrics.userSatisfaction || 0) * (metrics.sampleSize - 1) + satisfactionScore) /
+        metrics.sampleSize;
     }
 
     // Update conversions
@@ -273,7 +272,7 @@ export class ABTestingSystem {
 
       // Calculate composite score based on success metrics
       const score = this.calculateVariantScore(variant, experiment.successMetrics);
-      
+
       if (score > bestScore) {
         bestScore = score;
         bestVariant = variant;
@@ -294,9 +293,12 @@ export class ABTestingSystem {
 
     // Calculate improvement over control (first variant)
     const control = experiment.variants[0];
-    const improvementPercentage = control.metrics.successRate > 0
-      ? ((bestVariant.metrics.successRate - control.metrics.successRate) / control.metrics.successRate) * 100
-      : 0;
+    const improvementPercentage =
+      control.metrics.successRate > 0
+        ? ((bestVariant.metrics.successRate - control.metrics.successRate) /
+            control.metrics.successRate) *
+          100
+        : 0;
 
     experiment.results = {
       winner: bestVariant.id,
@@ -324,16 +326,15 @@ export class ABTestingSystem {
           break;
         case 'inferenceTime':
           // Lower is better, normalize to 0-1 range
-          const normalizedTime = Math.max(0, 1 - (metrics.avgInferenceTime / 30000));
+          const normalizedTime = Math.max(0, 1 - metrics.avgInferenceTime / 30000);
           score += normalizedTime * 20; // Weight: 20%
           break;
         case 'userSatisfaction':
           score += (metrics.userSatisfaction || 0) * 15; // Weight: 15%
           break;
         case 'conversions':
-          const conversionRate = metrics.sampleSize > 0 
-            ? (metrics.conversions || 0) / metrics.sampleSize 
-            : 0;
+          const conversionRate =
+            metrics.sampleSize > 0 ? (metrics.conversions || 0) / metrics.sampleSize : 0;
           score += conversionRate * 10; // Weight: 10%
           break;
       }
@@ -346,13 +347,13 @@ export class ABTestingSystem {
    * Calculate statistical significance using Chi-square test
    */
   private static calculateStatisticalSignificance(
-    experiment: ABTestExperiment, 
+    experiment: ABTestExperiment,
     winner: ABTestVariant
   ): number {
     // Simplified significance calculation
     // In production, use proper statistical tests
     const control = experiment.variants[0];
-    
+
     if (control.id === winner.id) {
       return 100; // Control won, 100% confidence
     }
@@ -363,17 +364,17 @@ export class ABTestingSystem {
     const p2 = winner.metrics.successRate;
 
     // Pooled proportion
-    const p = ((n1 * p1) + (n2 * p2)) / (n1 + n2);
-    
+    const p = (n1 * p1 + n2 * p2) / (n1 + n2);
+
     // Standard error
-    const se = Math.sqrt(p * (1 - p) * ((1/n1) + (1/n2)));
-    
+    const se = Math.sqrt(p * (1 - p) * (1 / n1 + 1 / n2));
+
     // Z-score
     const z = Math.abs(p2 - p1) / se;
-    
+
     // Convert to confidence percentage (simplified)
     const confidence = Math.min(99.9, z * 20);
-    
+
     return confidence;
   }
 
@@ -383,9 +384,8 @@ export class ABTestingSystem {
   private static generateAnalysis(experiment: ABTestExperiment, winner: ABTestVariant): string {
     const control = experiment.variants[0];
     const improvement = winner.metrics.successRate - control.metrics.successRate;
-    const relativeImprovement = control.metrics.successRate > 0 
-      ? (improvement / control.metrics.successRate) * 100 
-      : 0;
+    const relativeImprovement =
+      control.metrics.successRate > 0 ? (improvement / control.metrics.successRate) * 100 : 0;
 
     return `Variant "${winner.name}" performed best with:
 - Success rate: ${(winner.metrics.successRate * 100).toFixed(1)}%
@@ -401,14 +401,15 @@ This represents a ${relativeImprovement.toFixed(1)}% improvement over the contro
    */
   private static gatherRawData(experiment: ABTestExperiment): Record<string, any> {
     return {
-      variants: experiment.variants.map(v => ({
+      variants: experiment.variants.map((v) => ({
         id: v.id,
         name: v.name,
         metrics: v.metrics
       })),
-      duration: experiment.endDate && experiment.startDate 
-        ? experiment.endDate.getTime() - experiment.startDate.getTime() 
-        : 0,
+      duration:
+        experiment.endDate && experiment.startDate
+          ? experiment.endDate.getTime() - experiment.startDate.getTime()
+          : 0,
       totalSampleSize: experiment.currentSampleSize
     };
   }
@@ -418,7 +419,7 @@ This represents a ${relativeImprovement.toFixed(1)}% improvement over the contro
    */
   static getActiveExperiments(): ABTestExperiment[] {
     return Array.from(this.activeExperiments)
-      .map(id => this.experiments.get(id))
+      .map((id) => this.experiments.get(id))
       .filter((exp): exp is ABTestExperiment => exp !== undefined);
   }
 

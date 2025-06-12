@@ -15,47 +15,31 @@
     "resolveJsonModule": true,
     "declaration": true,
     "sourceMap": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
     "jsx": "react",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
     "baseUrl": "./",
     "paths": {
-      "@/*": [
-        "src/*"
-      ],
-      "@core/*": [
-        "src/core/*"
-      ],
-      "@utils/*": [
-        "src/utils/*"
-      ],
-      "@plugins/*": [
-        "src/plugins/*"
-      ],
-      "@tools/*": [
-        "tools/*"
-      ],
-      "@crash-analyzer/*": [
-        "src/plugins/crash-analyzer/*"
-      ],
-      "@log-viz/*": [
-        "src/plugins/log-visualization/*"
-      ],
-      "../../../../utils/*": [
-        "src/utils/*"
-      ],
-      "../../../../core/*": [
-        "src/core/*"
-      ],
-      "../../../utils/*": [
-        "src/utils/*"
-      ],
-      "../../../core/*": [
-        "src/core/*"
-      ],
-      "../../../../tools/*": [
-        "tools/*"
-      ]
+      "@/*": ["src/*"],
+      "@core/*": ["src/core/*"],
+      "@utils/*": ["src/utils/*"],
+      "@plugins/*": ["src/plugins/*"],
+      "@tools/*": ["tools/*"],
+      "@types/*": ["src/types/*"],
+      "@alfred/*": ["src/plugins/alfred/src/*"],
+      "@hadron/*": ["src/plugins/hadron/src/*"],
+      "@heimdall/*": ["src/plugins/heimdall/src/*"],
+      "@mnemosyne/*": ["src/plugins/mnemosyne/src/*"],
+      "@crash-analyzer/*": ["src/plugins/crash-analyzer/*"],
+      "@log-viz/*": ["src/plugins/log-visualization/*"],
+      "@alexandria/shared": ["alexandria-platform/packages/shared/src/index.ts"],
+      "@alexandria/shared/*": ["alexandria-platform/packages/shared/src/*"],
+      "@alexandria/ui-components": ["alexandria-platform/packages/ui-components/src/index.ts"],
+      "@alexandria/ui-components/*": ["alexandria-platform/packages/ui-components/src/*"]
     },
     "typeRoots": [
       "./node_modules/@types",
@@ -72,7 +56,8 @@
     "src/index.ts",
     "tools/**/*",
     "src/types/**/*",
-    "src/plugins/alfred/src/**/*.ts"
+    "src/plugins/alfred/src/**/*.ts",
+    "packages/shared/src/types/**/*.d.ts"
   ],
   "exclude": [
     "node_modules",

@@ -4,7 +4,12 @@
 
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react';
-import { ErrorBoundary, withErrorBoundary, RouteErrorBoundary, PluginErrorBoundary } from '../ErrorBoundary';
+import {
+  ErrorBoundary,
+  withErrorBoundary,
+  RouteErrorBoundary,
+  PluginErrorBoundary
+} from '../ErrorBoundary';
 
 // Mock the logger
 jest.mock('../../utils/client-logger', () => ({
@@ -79,10 +84,10 @@ describe('ErrorBoundary', () => {
       );
 
       expect(screen.getByText('Error details')).toBeInTheDocument();
-      
+
       // Click to expand details
       fireEvent.click(screen.getByText('Error details'));
-      
+
       expect(screen.getByText(/Test error/)).toBeInTheDocument();
 
       process.env.NODE_ENV = originalEnv;
@@ -107,7 +112,7 @@ describe('ErrorBoundary', () => {
   describe('Custom Error Handling', () => {
     it('should call onError callback', () => {
       const onError = jest.fn();
-      
+
       render(
         <ErrorBoundary onError={onError}>
           <ThrowError />
@@ -122,7 +127,7 @@ describe('ErrorBoundary', () => {
 
     it('should display custom fallback', () => {
       const customFallback = <div>Custom error message</div>;
-      
+
       render(
         <ErrorBoundary fallback={customFallback}>
           <ThrowError />
@@ -180,7 +185,7 @@ describe('ErrorBoundary', () => {
     it('should reset when resetOnPropsChange is true and children change', () => {
       const { rerender } = render(
         <ErrorBoundary resetOnPropsChange>
-          <ThrowError key="1" />
+          <ThrowError key='1' />
         </ErrorBoundary>
       );
 
@@ -189,7 +194,7 @@ describe('ErrorBoundary', () => {
       // Change children
       rerender(
         <ErrorBoundary resetOnPropsChange>
-          <ThrowError key="2" shouldThrow={false} />
+          <ThrowError key='2' shouldThrow={false} />
         </ErrorBoundary>
       );
 
@@ -235,7 +240,7 @@ describe('ErrorBoundary', () => {
 
     it('PluginErrorBoundary should show plugin error UI', () => {
       render(
-        <PluginErrorBoundary pluginName="TestPlugin">
+        <PluginErrorBoundary pluginName='TestPlugin'>
           <ThrowError />
         </PluginErrorBoundary>
       );
@@ -263,12 +268,10 @@ describe('ErrorBoundary', () => {
     });
 
     it('should pass props to wrapped component', () => {
-      const TestComponent: React.FC<{ message: string }> = ({ message }) => (
-        <div>{message}</div>
-      );
+      const TestComponent: React.FC<{ message: string }> = ({ message }) => <div>{message}</div>;
       const WrappedComponent = withErrorBoundary(TestComponent);
 
-      render(<WrappedComponent message="Hello World" />);
+      render(<WrappedComponent message='Hello World' />);
 
       expect(screen.getByText('Hello World')).toBeInTheDocument();
     });
@@ -291,7 +294,11 @@ describe('ErrorBoundary', () => {
         </ErrorBoundary>
       );
 
-      expect(screen.getByText(/This component encountered an error but the rest of the application should continue working/)).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          /This component encountered an error but the rest of the application should continue working/
+        )
+      ).toBeInTheDocument();
     });
 
     it('should show general message when isolate is false', () => {

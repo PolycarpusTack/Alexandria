@@ -1,6 +1,6 @@
 /**
  * Authentication Service Test Suite
- * 
+ *
  * Comprehensive tests for JwtAuthenticationService covering:
  * - User authentication flow
  * - Token validation and refresh
@@ -41,7 +41,7 @@ describe('JwtAuthenticationService', () => {
       info: jest.fn(),
       warn: jest.fn(),
       error: jest.fn(),
-      debug: jest.fn(),
+      debug: jest.fn()
     } as any;
 
     // Create mock user
@@ -54,8 +54,8 @@ describe('JwtAuthenticationService', () => {
       isActive: true,
       metadata: {
         passwordHash: 'hashed-password-123',
-        registeredAt: new Date(),
-      },
+        registeredAt: new Date()
+      }
     };
 
     // Create mock data service
@@ -65,13 +65,13 @@ describe('JwtAuthenticationService', () => {
         findByEmail: jest.fn(),
         findById: jest.fn(),
         create: jest.fn(),
-        update: jest.fn(),
-      },
+        update: jest.fn()
+      }
     } as any;
 
     authService = new JwtAuthenticationService(mockLogger, mockDataService, {
       jwtSecret: JWT_SECRET,
-      tokenExpiration: TOKEN_EXPIRATION,
+      tokenExpiration: TOKEN_EXPIRATION
     });
   });
 
@@ -87,7 +87,7 @@ describe('JwtAuthenticationService', () => {
     it('should throw error for missing JWT secret', () => {
       expect(() => {
         new JwtAuthenticationService(mockLogger, mockDataService, {
-          jwtSecret: '',
+          jwtSecret: ''
         });
       }).toThrow('JWT secret is required and must be provided in options');
     });
@@ -95,7 +95,7 @@ describe('JwtAuthenticationService', () => {
     it('should throw error for short JWT secret', () => {
       expect(() => {
         new JwtAuthenticationService(mockLogger, mockDataService, {
-          jwtSecret: 'short',
+          jwtSecret: 'short'
         });
       }).toThrow('JWT secret must be at least 32 characters long for security');
     });
@@ -103,7 +103,7 @@ describe('JwtAuthenticationService', () => {
     it('should throw error for weak JWT secret', () => {
       expect(() => {
         new JwtAuthenticationService(mockLogger, mockDataService, {
-          jwtSecret: 'alexandria-dev-secret',
+          jwtSecret: 'alexandria-dev-secret'
         });
       }).toThrow('JWT secret appears to be a weak or default value');
     });
@@ -113,7 +113,7 @@ describe('JwtAuthenticationService', () => {
       process.env.NODE_ENV = 'production';
 
       new JwtAuthenticationService(mockLogger, mockDataService, {
-        jwtSecret: 'simple-secret-without-complexity-test',
+        jwtSecret: 'simple-secret-without-complexity-test'
       });
 
       expect(mockLogger.warn).toHaveBeenCalledWith(
@@ -126,7 +126,7 @@ describe('JwtAuthenticationService', () => {
 
     it('should initialize successfully', async () => {
       await authService.initialize();
-      
+
       expect(mockLogger.info).toHaveBeenCalledWith(
         'Initializing authentication service',
         expect.any(Object)
@@ -139,7 +139,7 @@ describe('JwtAuthenticationService', () => {
 
     it('should throw error if initialized twice', async () => {
       await authService.initialize();
-      
+
       await expect(authService.initialize()).rejects.toThrow(
         'Authentication service is already initialized'
       );
@@ -158,21 +158,21 @@ describe('JwtAuthenticationService', () => {
 
       const result = await authService.authenticate({
         username: 'testuser',
-        password: 'password123',
+        password: 'password123'
       });
 
       expect(result).toEqual({
         user: mockUser,
         token: 'mock-jwt-token',
         refreshToken: expect.any(String),
-        expiresIn: TOKEN_EXPIRATION,
+        expiresIn: TOKEN_EXPIRATION
       });
 
       expect(mockLogger.info).toHaveBeenCalledWith(
         'User authenticated successfully',
         expect.objectContaining({
           username: 'testuser',
-          userId: 'user-123',
+          userId: 'user-123'
         })
       );
     });
@@ -183,7 +183,7 @@ describe('JwtAuthenticationService', () => {
       await expect(
         authService.authenticate({
           username: 'nonexistent',
-          password: 'password123',
+          password: 'password123'
         })
       ).rejects.toThrow('Invalid username or password');
 
@@ -200,7 +200,7 @@ describe('JwtAuthenticationService', () => {
       await expect(
         authService.authenticate({
           username: 'testuser',
-          password: 'password123',
+          password: 'password123'
         })
       ).rejects.toThrow('User account is inactive');
     });
@@ -212,7 +212,7 @@ describe('JwtAuthenticationService', () => {
       await expect(
         authService.authenticate({
           username: 'testuser',
-          password: 'wrongpassword',
+          password: 'wrongpassword'
         })
       ).rejects.toThrow('Invalid credentials');
     });
@@ -224,7 +224,7 @@ describe('JwtAuthenticationService', () => {
       await expect(
         authService.authenticate({
           username: 'testuser',
-          password: 'password123',
+          password: 'password123'
         })
       ).rejects.toThrow('Invalid credentials');
 
@@ -242,7 +242,7 @@ describe('JwtAuthenticationService', () => {
       roles: ['user'],
       permissions: ['read'],
       iat: Math.floor(Date.now() / 1000),
-      exp: Math.floor(Date.now() / 1000) + 3600,
+      exp: Math.floor(Date.now() / 1000) + 3600
     };
 
     it('should validate valid token', async () => {
@@ -259,26 +259,19 @@ describe('JwtAuthenticationService', () => {
         throw new Error('Invalid token');
       });
 
-      await expect(
-        authService.validateToken('invalid-token')
-      ).rejects.toThrow('Invalid token');
+      await expect(authService.validateToken('invalid-token')).rejects.toThrow('Invalid token');
 
-      expect(mockLogger.debug).toHaveBeenCalledWith(
-        'Token validation failed',
-        expect.any(Object)
-      );
+      expect(mockLogger.debug).toHaveBeenCalledWith('Token validation failed', expect.any(Object));
     });
 
     it('should reject expired token', async () => {
       const expiredPayload = {
         ...mockPayload,
-        exp: Math.floor(Date.now() / 1000) - 3600, // 1 hour ago
+        exp: Math.floor(Date.now() / 1000) - 3600 // 1 hour ago
       };
       (jwt.verify as jest.Mock).mockReturnValue(expiredPayload);
 
-      await expect(
-        authService.validateToken('expired-token')
-      ).rejects.toThrow('Invalid token');
+      await expect(authService.validateToken('expired-token')).rejects.toThrow('Invalid token');
     });
   });
 
@@ -296,7 +289,7 @@ describe('JwtAuthenticationService', () => {
 
       const authResult = await authService.authenticate({
         username: 'testuser',
-        password: 'password123',
+        password: 'password123'
       });
 
       // Now refresh the token
@@ -306,7 +299,7 @@ describe('JwtAuthenticationService', () => {
         user: mockUser,
         token: 'new-mock-jwt-token',
         refreshToken: expect.any(String),
-        expiresIn: TOKEN_EXPIRATION,
+        expiresIn: TOKEN_EXPIRATION
       });
 
       expect(mockLogger.info).toHaveBeenCalledWith(
@@ -316,9 +309,9 @@ describe('JwtAuthenticationService', () => {
     });
 
     it('should reject invalid refresh token', async () => {
-      await expect(
-        authService.refreshToken('invalid-refresh-token')
-      ).rejects.toThrow('Invalid refresh token');
+      await expect(authService.refreshToken('invalid-refresh-token')).rejects.toThrow(
+        'Invalid refresh token'
+      );
     });
 
     it('should reject refresh token for inactive user', async () => {
@@ -328,16 +321,16 @@ describe('JwtAuthenticationService', () => {
 
       const authResult = await authService.authenticate({
         username: 'testuser',
-        password: 'password123',
+        password: 'password123'
       });
 
       // Make user inactive
       const inactiveUser = { ...mockUser, isActive: false };
       (mockDataService.users.findById as jest.Mock).mockResolvedValue(inactiveUser);
 
-      await expect(
-        authService.refreshToken(authResult.refreshToken)
-      ).rejects.toThrow('User account is inactive');
+      await expect(authService.refreshToken(authResult.refreshToken)).rejects.toThrow(
+        'User account is inactive'
+      );
     });
   });
 
@@ -351,18 +344,14 @@ describe('JwtAuthenticationService', () => {
     it('should change password successfully', async () => {
       (mockDataService.users.findById as jest.Mock).mockResolvedValue(mockUser);
 
-      const result = await authService.changePassword(
-        'user-123',
-        'oldpassword',
-        'newpassword'
-      );
+      const result = await authService.changePassword('user-123', 'oldpassword', 'newpassword');
 
       expect(result).toBe(true);
       expect(mockDataService.users.update).toHaveBeenCalledWith('user-123', {
         metadata: expect.objectContaining({
           passwordHash: 'new-hashed-password',
-          passwordChangedAt: expect.any(Date),
-        }),
+          passwordChangedAt: expect.any(Date)
+        })
       });
 
       expect(mockLogger.info).toHaveBeenCalledWith(
@@ -389,8 +378,8 @@ describe('JwtAuthenticationService', () => {
       expect(mockDataService.users.update).toHaveBeenCalledWith('user-123', {
         metadata: expect.objectContaining({
           passwordHash: 'new-hashed-password',
-          passwordResetAt: expect.any(Date),
-        }),
+          passwordResetAt: expect.any(Date)
+        })
       });
 
       expect(mockLogger.info).toHaveBeenCalledWith(
@@ -414,7 +403,7 @@ describe('JwtAuthenticationService', () => {
       const result = await authService.registerUser({
         username: 'newuser',
         email: 'new@example.com',
-        password: 'password123',
+        password: 'password123'
       });
 
       expect(result).toEqual(mockUser);
@@ -426,8 +415,8 @@ describe('JwtAuthenticationService', () => {
         isActive: true,
         metadata: {
           passwordHash: 'hashed-password',
-          registeredAt: expect.any(Date),
-        },
+          registeredAt: expect.any(Date)
+        }
       });
 
       expect(mockLogger.info).toHaveBeenCalledWith(
@@ -443,7 +432,7 @@ describe('JwtAuthenticationService', () => {
         authService.registerUser({
           username: 'testuser',
           email: 'new@example.com',
-          password: 'password123',
+          password: 'password123'
         })
       ).rejects.toThrow('Username already exists');
     });
@@ -456,7 +445,7 @@ describe('JwtAuthenticationService', () => {
         authService.registerUser({
           username: 'newuser',
           email: 'test@example.com',
-          password: 'password123',
+          password: 'password123'
         })
       ).rejects.toThrow('Email already exists');
     });
@@ -466,7 +455,7 @@ describe('JwtAuthenticationService', () => {
     it('should invalidate valid token', async () => {
       const mockPayload = {
         userId: 'user-123',
-        username: 'testuser',
+        username: 'testuser'
       };
       (jwt.verify as jest.Mock).mockReturnValue(mockPayload);
 
@@ -477,7 +466,7 @@ describe('JwtAuthenticationService', () => {
         'User logged out',
         expect.objectContaining({
           userId: 'user-123',
-          username: 'testuser',
+          username: 'testuser'
         })
       );
     });
@@ -529,10 +518,10 @@ describe('JwtAuthenticationService', () => {
 
     it('should set up automatic refresh token cleanup', async () => {
       const setIntervalSpy = jest.spyOn(global, 'setInterval');
-      
+
       // Create new instance to capture interval setup
       const newAuthService = new JwtAuthenticationService(mockLogger, mockDataService, {
-        jwtSecret: JWT_SECRET,
+        jwtSecret: JWT_SECRET
       });
       await newAuthService.initialize();
 
@@ -553,14 +542,14 @@ describe('JwtAuthenticationService', () => {
       for (let i = 0; i < 5; i++) {
         const result = await authService.authenticate({
           username: 'testuser',
-          password: 'password123',
+          password: 'password123'
         });
         tokens.push(result.refreshToken);
       }
 
       // Get access to private refresh tokens map
       const refreshTokensMap = (authService as any).refreshTokens;
-      
+
       // Manually expire some tokens
       let count = 0;
       for (const [token, data] of refreshTokensMap.entries()) {
@@ -606,18 +595,20 @@ describe('JwtAuthenticationService', () => {
       (jwt.sign as jest.Mock).mockReturnValue('mock-jwt-token');
 
       // Attempt multiple concurrent authentications
-      const promises = Array(10).fill(null).map(() =>
-        authService.authenticate({
-          username: 'testuser',
-          password: 'password123',
-        })
-      );
+      const promises = Array(10)
+        .fill(null)
+        .map(() =>
+          authService.authenticate({
+            username: 'testuser',
+            password: 'password123'
+          })
+        );
 
       const results = await Promise.all(promises);
 
       // All should succeed
       expect(results).toHaveLength(10);
-      results.forEach(result => {
+      results.forEach((result) => {
         expect(result).toHaveProperty('token');
         expect(result).toHaveProperty('refreshToken');
       });
@@ -632,19 +623,19 @@ describe('JwtAuthenticationService', () => {
 
       const authResult = await authService.authenticate({
         username: 'testuser',
-        password: 'password123',
+        password: 'password123'
       });
 
       // Attempt to use the same refresh token multiple times concurrently
-      const refreshPromises = Array(5).fill(null).map(() =>
-        authService.refreshToken(authResult.refreshToken)
-      );
+      const refreshPromises = Array(5)
+        .fill(null)
+        .map(() => authService.refreshToken(authResult.refreshToken));
 
       const results = await Promise.allSettled(refreshPromises);
 
       // Only the first should succeed, others should fail
-      const successes = results.filter(r => r.status === 'fulfilled');
-      const failures = results.filter(r => r.status === 'rejected');
+      const successes = results.filter((r) => r.status === 'fulfilled');
+      const failures = results.filter((r) => r.status === 'rejected');
 
       expect(successes.length).toBeGreaterThanOrEqual(1);
       expect(failures.length).toBeGreaterThanOrEqual(1);
@@ -658,21 +649,19 @@ describe('JwtAuthenticationService', () => {
       await expect(
         authService.authenticate({
           username: 'testuser',
-          password: 'password123',
+          password: 'password123'
         })
       ).rejects.toThrow('Database connection lost');
     });
 
     it('should handle bcrypt errors', async () => {
       (mockDataService.users.findByUsername as jest.Mock).mockResolvedValue(mockUser);
-      (bcrypt.compare as jest.Mock).mockRejectedValue(
-        new Error('bcrypt processing error')
-      );
+      (bcrypt.compare as jest.Mock).mockRejectedValue(new Error('bcrypt processing error'));
 
       await expect(
         authService.authenticate({
           username: 'testuser',
-          password: 'password123',
+          password: 'password123'
         })
       ).rejects.toThrow('bcrypt processing error');
     });
@@ -687,7 +676,7 @@ describe('JwtAuthenticationService', () => {
       await expect(
         authService.authenticate({
           username: 'testuser',
-          password: 'password123',
+          password: 'password123'
         })
       ).rejects.toThrow('JWT signing failed');
     });
@@ -705,7 +694,7 @@ describe('JwtAuthenticationService', () => {
       await expect(
         authService.authenticate({
           username: 'testuser',
-          password: 'super-secret-password',
+          password: 'super-secret-password'
         })
       ).rejects.toThrow();
 
@@ -714,10 +703,10 @@ describe('JwtAuthenticationService', () => {
         ...mockLogger.info.mock.calls,
         ...mockLogger.warn.mock.calls,
         ...mockLogger.error.mock.calls,
-        ...mockLogger.debug.mock.calls,
+        ...mockLogger.debug.mock.calls
       ];
 
-      allLogCalls.forEach(call => {
+      allLogCalls.forEach((call) => {
         const logContent = JSON.stringify(call);
         expect(logContent).not.toContain('super-secret-password');
         expect(logContent).not.toContain('hashed-password');
@@ -731,7 +720,7 @@ describe('JwtAuthenticationService', () => {
 
       await authService.authenticate({
         username: 'testuser',
-        password: 'password123',
+        password: 'password123'
       });
 
       expect(bcrypt.compare).toHaveBeenCalled();
@@ -743,11 +732,11 @@ describe('JwtAuthenticationService', () => {
       (jwt.sign as jest.Mock).mockReturnValue('mock-jwt-token');
 
       const tokens = new Set();
-      
+
       for (let i = 0; i < 10; i++) {
         const result = await authService.authenticate({
           username: 'testuser',
-          password: 'password123',
+          password: 'password123'
         });
         tokens.add(result.refreshToken);
       }
@@ -760,18 +749,18 @@ describe('JwtAuthenticationService', () => {
       // Already tested in constructor tests, but worth emphasizing
       expect(() => {
         new JwtAuthenticationService(mockLogger, mockDataService, {
-          jwtSecret: 'short',
+          jwtSecret: 'short'
         });
       }).toThrow('JWT secret must be at least 32 characters long');
     });
 
     it('should not accept default/weak secrets', () => {
       const weakSecrets = ['secret', 'password', 'changeme', 'alexandria-dev-secret'];
-      
-      weakSecrets.forEach(weak => {
+
+      weakSecrets.forEach((weak) => {
         expect(() => {
           new JwtAuthenticationService(mockLogger, mockDataService, {
-            jwtSecret: weak,
+            jwtSecret: weak
           });
         }).toThrow('JWT secret appears to be a weak or default value');
       });
@@ -789,12 +778,12 @@ describe('JwtAuthenticationService', () => {
       (jwt.sign as jest.Mock).mockReturnValue('mock-jwt-token');
 
       const startTime = Date.now();
-      
+
       // Create many refresh tokens
       for (let i = 0; i < 100; i++) {
         await authService.authenticate({
           username: 'testuser',
-          password: 'password123',
+          password: 'password123'
         });
       }
 
@@ -812,11 +801,11 @@ describe('JwtAuthenticationService', () => {
     it('should not leak memory with expired tokens', async () => {
       // Create tokens and immediately expire them
       const refreshTokensMap = (authService as any).refreshTokens;
-      
+
       for (let i = 0; i < 50; i++) {
         refreshTokensMap.set(`token-${i}`, {
           userId: `user-${i}`,
-          expiresAt: new Date(Date.now() - 1000), // Already expired
+          expiresAt: new Date(Date.now() - 1000) // Already expired
         });
       }
 
@@ -838,11 +827,11 @@ describe('JwtAuthenticationService', () => {
     it('should use generic error messages for security', async () => {
       // User not found
       (mockDataService.users.findByUsername as jest.Mock).mockResolvedValue(null);
-      
+
       await expect(
         authService.authenticate({
           username: 'nonexistent',
-          password: 'password123',
+          password: 'password123'
         })
       ).rejects.toThrow('Invalid username or password');
 
@@ -853,7 +842,7 @@ describe('JwtAuthenticationService', () => {
       await expect(
         authService.authenticate({
           username: 'testuser',
-          password: 'wrongpassword',
+          password: 'wrongpassword'
         })
       ).rejects.toThrow('Invalid credentials');
 
@@ -869,7 +858,7 @@ describe('JwtAuthenticationService', () => {
       await expect(
         authService.authenticate({
           username: 'testuser',
-          password: 'password123',
+          password: 'password123'
         })
       ).rejects.toThrow('User account is inactive');
     });
@@ -890,7 +879,7 @@ describe('JwtAuthenticationService', () => {
       const newUser = await authService.registerUser({
         username: 'lifecycle-user',
         email: 'lifecycle@example.com',
-        password: 'initial-password',
+        password: 'initial-password'
       });
 
       expect(newUser).toBeDefined();
@@ -902,7 +891,7 @@ describe('JwtAuthenticationService', () => {
 
       const authResult = await authService.authenticate({
         username: 'lifecycle-user',
-        password: 'initial-password',
+        password: 'initial-password'
       });
 
       expect(authResult.token).toBe('lifecycle-token');
@@ -911,7 +900,7 @@ describe('JwtAuthenticationService', () => {
       (jwt.verify as jest.Mock).mockReturnValue({
         userId: newUser.id,
         username: newUser.username,
-        exp: Math.floor(Date.now() / 1000) + 3600,
+        exp: Math.floor(Date.now() / 1000) + 3600
       });
 
       const tokenPayload = await authService.validateToken(authResult.token);

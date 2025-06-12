@@ -1,6 +1,6 @@
 /**
  * Secure Condition Evaluator
- * 
+ *
  * Evaluates template conditions using a safe AST-based approach
  * No eval() or Function() - prevents code injection attacks
  */
@@ -11,7 +11,7 @@ import { ConditionExpression, VariableMap, ValidationResult, ValidationError } f
 export class SecureConditionEvaluator {
   private logger: Logger;
   private readonly maxDepth = 10; // Prevent deep recursion attacks
-  
+
   constructor(logger: Logger) {
     this.logger = logger;
   }
@@ -20,7 +20,7 @@ export class SecureConditionEvaluator {
    * Evaluate a condition expression safely
    */
   evaluateCondition(
-    condition: ConditionExpression | string, 
+    condition: ConditionExpression | string,
     variables: VariableMap,
     depth = 0
   ): boolean {
@@ -47,7 +47,7 @@ export class SecureConditionEvaluator {
   private parseStringCondition(conditionStr: string): ConditionExpression {
     // Sanitize input
     const sanitized = conditionStr.trim();
-    
+
     if (!sanitized) {
       return { type: 'equals', variable: 'true', value: true };
     }
@@ -64,7 +64,10 @@ export class SecureConditionEvaluator {
     try {
       return this.parseConditionPattern(sanitized);
     } catch (error) {
-      this.logger.warn('Failed to parse condition, defaulting to false', { condition: conditionStr, error });
+      this.logger.warn('Failed to parse condition, defaulting to false', {
+        condition: conditionStr,
+        error
+      });
       return { type: 'equals', variable: 'false', value: false };
     }
   }
@@ -80,7 +83,7 @@ export class SecureConditionEvaluator {
 
     // Parse equality operators
     if (condition.includes(' === ')) {
-      const [left, right] = condition.split(' === ').map(s => s.trim());
+      const [left, right] = condition.split(' === ').map((s) => s.trim());
       return {
         type: 'equals',
         variable: this.parseVariable(left),
@@ -89,7 +92,7 @@ export class SecureConditionEvaluator {
     }
 
     if (condition.includes(' !== ')) {
-      const [left, right] = condition.split(' !== ').map(s => s.trim());
+      const [left, right] = condition.split(' !== ').map((s) => s.trim());
       return {
         type: 'notEquals',
         variable: this.parseVariable(left),
@@ -150,12 +153,12 @@ export class SecureConditionEvaluator {
       /__proto__/,
       /constructor/,
       /prototype/,
-      /\.\./,  // Path traversal
-      /\/\//,  // Comments that could hide code
-      /\/\*/,  // Block comments
+      /\.\./, // Path traversal
+      /\/\//, // Comments that could hide code
+      /\/\*/ // Block comments
     ];
 
-    return dangerousPatterns.some(pattern => pattern.test(condition));
+    return dangerousPatterns.some((pattern) => pattern.test(condition));
   }
 
   /**
@@ -163,7 +166,7 @@ export class SecureConditionEvaluator {
    */
   private parseVariable(varStr: string): string {
     const variable = varStr.trim();
-    
+
     // Validate variable name (alphanumeric + underscore only)
     if (!/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(variable)) {
       throw new Error(`Invalid variable name: ${variable}`);
@@ -187,8 +190,10 @@ export class SecureConditionEvaluator {
     if (value === 'undefined') return undefined;
 
     // Quoted strings
-    if ((value.startsWith('"') && value.endsWith('"')) ||
-        (value.startsWith("'") && value.endsWith("'"))) {
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
       return value.slice(1, -1);
     }
 
@@ -208,39 +213,39 @@ export class SecureConditionEvaluator {
     switch (node.type) {
       case 'equals':
         return this.getVariableValue(node.variable, variables) === node.value;
-        
+
       case 'notEquals':
         return this.getVariableValue(node.variable, variables) !== node.value;
-        
+
       case 'contains':
         const containsValue = this.getVariableValue(node.variable, variables);
         return typeof containsValue === 'string' && containsValue.includes(node.value);
-        
+
       case 'startsWith':
         const startsValue = this.getVariableValue(node.variable, variables);
         return typeof startsValue === 'string' && startsValue.startsWith(node.value);
-        
+
       case 'endsWith':
         const endsValue = this.getVariableValue(node.variable, variables);
         return typeof endsValue === 'string' && endsValue.endsWith(node.value);
-        
+
       case 'greater':
         const greaterValue = this.getVariableValue(node.variable, variables);
         return typeof greaterValue === 'number' && greaterValue > node.value;
-        
+
       case 'less':
         const lessValue = this.getVariableValue(node.variable, variables);
         return typeof lessValue === 'number' && lessValue < node.value;
-        
+
       case 'and':
-        return node.conditions.every(cond => this.evaluateAST(cond, variables, depth));
-        
+        return node.conditions.every((cond) => this.evaluateAST(cond, variables, depth));
+
       case 'or':
-        return node.conditions.some(cond => this.evaluateAST(cond, variables, depth));
-        
+        return node.conditions.some((cond) => this.evaluateAST(cond, variables, depth));
+
       case 'not':
         return !this.evaluateAST(node.condition, variables, depth);
-        
+
       default:
         this.logger.warn('Unknown condition type', { type: (node as any).type });
         return false;
@@ -268,13 +273,10 @@ export class SecureConditionEvaluator {
 
     try {
       // Convert string to AST if needed
-      const ast = typeof condition === 'string' 
-        ? this.parseStringCondition(condition)
-        : condition;
+      const ast = typeof condition === 'string' ? this.parseStringCondition(condition) : condition;
 
       // Validate AST structure
       this.validateAST(ast, errors, warnings);
-
     } catch (error) {
       errors.push({
         code: 'PARSE_ERROR',
@@ -294,8 +296,8 @@ export class SecureConditionEvaluator {
    * Validate AST structure recursively
    */
   private validateAST(
-    node: ConditionExpression, 
-    errors: ValidationError[], 
+    node: ConditionExpression,
+    errors: ValidationError[],
     warnings: string[],
     depth = 0
   ): void {
@@ -318,7 +320,7 @@ export class SecureConditionEvaluator {
       case 'less':
         this.validateVariableReference(node.variable, errors);
         break;
-        
+
       case 'and':
       case 'or':
         if (!Array.isArray(node.conditions) || node.conditions.length === 0) {
@@ -328,12 +330,10 @@ export class SecureConditionEvaluator {
             severity: 'error'
           });
         } else {
-          node.conditions.forEach(cond => 
-            this.validateAST(cond, errors, warnings, depth + 1)
-          );
+          node.conditions.forEach((cond) => this.validateAST(cond, errors, warnings, depth + 1));
         }
         break;
-        
+
       case 'not':
         if (!node.condition) {
           errors.push({
@@ -345,7 +345,7 @@ export class SecureConditionEvaluator {
           this.validateAST(node.condition, errors, warnings, depth + 1);
         }
         break;
-        
+
       default:
         errors.push({
           code: 'UNKNOWN_TYPE',

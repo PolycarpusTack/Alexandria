@@ -9,7 +9,6 @@ import { createLogger } from '../../../core/services/logging-service';
 import { authMiddleware } from '../../../core/security/auth-middleware';
 import { validateRequest } from '../../../core/middleware/validation-middleware';
 import { AlertRule, AlertEvent } from '../interfaces/alerts';
-import { IRequestUser } from '../types/llm-types';
 
 const logger = createLogger({ serviceName: 'AlertsAPI' });
 const router = Router();
@@ -24,7 +23,7 @@ router.get('/active', async (req, res) => {
   try {
     const alertManager = container.resolve(AlertManager);
     const alerts = alertManager.getActiveAlerts();
-    
+
     res.json({
       success: true,
       alerts,
@@ -46,16 +45,16 @@ router.get('/history', async (req, res) => {
   try {
     const alertManager = container.resolve(AlertManager);
     const { limit = 100, severity, startTime, endTime } = req.query;
-    
+
     const options = {
       limit: parseInt(limit as string),
       severity: severity as 'critical' | 'warning' | 'info',
       startTime: startTime ? new Date(startTime as string) : undefined,
       endTime: endTime ? new Date(endTime as string) : undefined
     };
-    
+
     const alerts = alertManager.getAlertHistory(options);
-    
+
     res.json({
       success: true,
       alerts,
@@ -77,7 +76,7 @@ router.get('/rules', async (req, res) => {
   try {
     const alertManager = container.resolve(AlertManager);
     const rules = Array.from(alertManager['rules'].values()); // Access private property
-    
+
     res.json({
       success: true,
       rules,
@@ -95,7 +94,8 @@ router.get('/rules', async (req, res) => {
 /**
  * Create alert rule
  */
-router.post('/rules', 
+router.post(
+  '/rules',
   validateRequest({
     body: {
       name: { required: true, type: 'string' },
@@ -114,9 +114,9 @@ router.post('/rules',
         enabled: true,
         ...req.body
       };
-      
+
       alertManager.registerRule(rule);
-      
+
       res.json({
         success: true,
         rule
@@ -138,9 +138,9 @@ router.put('/rules/:ruleId', async (req, res) => {
   try {
     const alertManager = container.resolve(AlertManager);
     const { ruleId } = req.params;
-    
+
     alertManager.updateRule(ruleId, req.body);
-    
+
     res.json({
       success: true,
       message: 'Rule updated successfully'
@@ -161,9 +161,9 @@ router.delete('/rules/:ruleId', async (req, res) => {
   try {
     const alertManager = container.resolve(AlertManager);
     const { ruleId } = req.params;
-    
+
     alertManager.deleteRule(ruleId);
-    
+
     res.json({
       success: true,
       message: 'Rule deleted successfully'
@@ -185,9 +185,9 @@ router.post('/:alertId/acknowledge', async (req, res) => {
     const alertManager = container.resolve(AlertManager);
     const { alertId } = req.params;
     const { acknowledgedBy } = req.body;
-    
+
     alertManager.acknowledgeAlert(alertId, acknowledgedBy || req.user?.username || 'system');
-    
+
     res.json({
       success: true,
       message: 'Alert acknowledged successfully'
@@ -209,13 +209,9 @@ router.post('/:alertId/resolve', async (req, res) => {
     const alertManager = container.resolve(AlertManager);
     const { alertId } = req.params;
     const { resolvedBy, resolution } = req.body;
-    
-    alertManager.resolveAlert(
-      alertId,
-      resolvedBy || req.user?.username || 'system',
-      resolution
-    );
-    
+
+    alertManager.resolveAlert(alertId, resolvedBy || req.user?.username || 'system', resolution);
+
     res.json({
       success: true,
       message: 'Alert resolved successfully'
@@ -237,32 +233,35 @@ router.get('/metrics', async (req, res) => {
     const alertManager = container.resolve(AlertManager);
     const activeAlerts = alertManager.getActiveAlerts();
     const history = alertManager.getAlertHistory({ limit: 1000 });
-    
+
     // Calculate metrics
     const now = new Date();
     const todayStart = new Date(now.setHours(0, 0, 0, 0));
     const hourAgo = new Date(now.getTime() - 60 * 60 * 1000);
-    
+
     const metrics = {
       totalAlerts: history.length,
       activeAlerts: activeAlerts.length,
-      acknowledgedAlerts: activeAlerts.filter(a => a.acknowledged).length,
-      resolvedAlerts: history.filter(a => 
-        a.resolved && a.resolvedAt && new Date(a.resolvedAt) >= todayStart
+      acknowledgedAlerts: activeAlerts.filter((a) => a.acknowledged).length,
+      resolvedAlerts: history.filter(
+        (a) => a.resolved && a.resolvedAt && new Date(a.resolvedAt) >= todayStart
       ).length,
-      alertsByRule: history.reduce((acc, alert) => {
-        acc[alert.ruleId] = (acc[alert.ruleId] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>),
+      alertsByRule: history.reduce(
+        (acc, alert) => {
+          acc[alert.ruleId] = (acc[alert.ruleId] || 0) + 1;
+          return acc;
+        },
+        {} as Record<string, number>
+      ),
       alertsBySeverity: {
-        critical: history.filter(a => a.severity === 'critical').length,
-        warning: history.filter(a => a.severity === 'warning').length,
-        info: history.filter(a => a.severity === 'info').length
+        critical: history.filter((a) => a.severity === 'critical').length,
+        warning: history.filter((a) => a.severity === 'warning').length,
+        info: history.filter((a) => a.severity === 'info').length
       },
       averageResolutionTime: calculateAverageResolutionTime(history),
-      alertsPerHour: history.filter(a => new Date(a.timestamp) >= hourAgo).length
+      alertsPerHour: history.filter((a) => new Date(a.timestamp) >= hourAgo).length
     };
-    
+
     res.json({
       success: true,
       metrics
@@ -283,7 +282,7 @@ router.post('/check', async (req, res) => {
   try {
     const alertManager = container.resolve(AlertManager);
     await alertManager.checkAlerts();
-    
+
     res.json({
       success: true,
       message: 'Alert check triggered successfully'
@@ -299,14 +298,15 @@ router.post('/check', async (req, res) => {
 
 // Helper function to calculate average resolution time
 function calculateAverageResolutionTime(alerts: AlertEvent[]): number {
-  const resolvedAlerts = alerts.filter(a => a.resolved && a.resolvedAt);
+  const resolvedAlerts = alerts.filter((a) => a.resolved && a.resolvedAt);
   if (resolvedAlerts.length === 0) return 0;
-  
+
   const totalTime = resolvedAlerts.reduce((sum, alert) => {
-    const resolutionTime = new Date(alert.resolvedAt).getTime() - new Date(alert.timestamp).getTime();
+    const resolutionTime =
+      new Date(alert.resolvedAt).getTime() - new Date(alert.timestamp).getTime();
     return sum + resolutionTime;
   }, 0);
-  
+
   return Math.round(totalTime / resolvedAlerts.length / 1000); // Return in seconds
 }
 

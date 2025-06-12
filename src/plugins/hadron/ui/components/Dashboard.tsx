@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Card, 
+import {
+  Card,
   CardContent,
   CardDescription,
   CardHeader,
@@ -9,12 +9,12 @@ import {
 } from '../../../../client/components/ui/card';
 import { Button } from '../../../../client/components/ui/button';
 import { Input } from '../../../../client/components/ui/input';
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue 
+  SelectValue
 } from '../../../../client/components/ui/select';
 import { useToast } from '../../../../client/components/ui/use-toast';
 // UI context import removed - using proper component imports
@@ -28,46 +28,49 @@ interface DashboardProps {
   crashAnalyzerService: any;
 }
 
-
-const EmptyState = ({ title, description, icon: Icon, action }: { 
-  title: string; 
-  description?: string; 
+const EmptyState = ({
+  title,
+  description,
+  icon: Icon,
+  action
+}: {
+  title: string;
+  description?: string;
   icon?: any;
   action?: React.ReactNode;
 }) => (
-  <div className="flex flex-col items-center justify-center py-12 text-center">
-    {Icon && <Icon className="h-12 w-12 text-muted-foreground mb-4" />}
-    <h3 className="text-lg font-medium mb-2">{title}</h3>
-    {description && <p className="text-sm text-muted-foreground mb-4">{description}</p>}
+  <div className='flex flex-col items-center justify-center py-12 text-center'>
+    {Icon && <Icon className='h-12 w-12 text-muted-foreground mb-4' />}
+    <h3 className='text-lg font-medium mb-2'>{title}</h3>
+    {description && <p className='text-sm text-muted-foreground mb-4'>{description}</p>}
     {action}
   </div>
 );
 
-
-const Pagination = ({ 
-  currentPage, 
-  totalPages, 
-  onPageChange 
-}: { 
-  currentPage: number; 
-  totalPages: number; 
+const Pagination = ({
+  currentPage,
+  totalPages,
+  onPageChange
+}: {
+  currentPage: number;
+  totalPages: number;
   onPageChange: (page: number) => void;
 }) => (
-  <div className="flex items-center justify-center gap-2 mt-4">
+  <div className='flex items-center justify-center gap-2 mt-4'>
     <Button
-      variant="outline"
-      size="sm"
+      variant='outline'
+      size='sm'
       onClick={() => onPageChange(currentPage - 1)}
       disabled={currentPage === 1}
     >
       Previous
     </Button>
-    <span className="text-sm text-muted-foreground">
+    <span className='text-sm text-muted-foreground'>
       Page {currentPage} of {totalPages}
     </span>
     <Button
-      variant="outline"
-      size="sm"
+      variant='outline'
+      size='sm'
       onClick={() => onPageChange(currentPage + 1)}
       disabled={currentPage === totalPages}
     >
@@ -89,9 +92,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ crashAnalyzerService }) =>
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [refreshing, setRefreshing] = useState(false);
   const navigate = useNavigate();
-  
+
   const { toast } = useToast();
-  
+
   // Handle UI context safely - it might not be available when loaded as a plugin
   let showModal: ((modalId: string, props?: any) => void) | undefined;
   try {
@@ -101,24 +104,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ crashAnalyzerService }) =>
     // UI context not available - we'll handle modals differently
     console.warn('UI context not available in Hadron Dashboard, using fallback modal handling');
   }
-  
+
   useEffect(() => {
     loadCrashLogs();
   }, []);
-  
+
   // Filter and sort logs whenever search term, sort criteria, or all logs change
   useEffect(() => {
     filterAndSortLogs();
   }, [searchTerm, sortBy, sortDirection, allCrashLogs, currentPage, itemsPerPage]);
-  
+
   // Apply filtering and sorting to the logs
   const filterAndSortLogs = useCallback(() => {
     let filtered = [...allCrashLogs];
-    
+
     // Apply search filter if there is a search term
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(log => {
+      filtered = filtered.filter((log) => {
         return (
           log.title.toLowerCase().includes(term) ||
           (log.metadata.platform && log.metadata.platform.toLowerCase().includes(term)) ||
@@ -126,7 +129,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ crashAnalyzerService }) =>
         );
       });
     }
-    
+
     // Apply sorting
     filtered = filtered.sort((a, b) => {
       if (sortBy === 'date') {
@@ -148,14 +151,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ crashAnalyzerService }) =>
       }
       return 0;
     });
-    
+
     // Apply pagination
     const startIndex = (currentPage - 1) * itemsPerPage;
     const paginatedLogs = filtered.slice(startIndex, startIndex + itemsPerPage);
-    
+
     setCrashLogs(paginatedLogs);
   }, [allCrashLogs, searchTerm, sortBy, sortDirection, currentPage, itemsPerPage]);
-  
+
   const loadCrashLogs = async () => {
     try {
       setLoading(true);
@@ -174,29 +177,29 @@ export const Dashboard: React.FC<DashboardProps> = ({ crashAnalyzerService }) =>
       setRefreshing(false);
     }
   };
-  
+
   // Handle refresh button click
   const handleRefresh = () => {
     loadCrashLogs();
   };
-  
+
   // Handle page change
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
   };
-  
+
   // Handle items per page change
   const handleItemsPerPageChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setItemsPerPage(Number(e.target.value));
     setCurrentPage(1); // Reset to first page when changing items per page
   };
-  
+
   // Handle search input change
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
     setCurrentPage(1); // Reset to first page when searching
   };
-  
+
   // Handle sort change
   const handleSortChange = (newSortBy: 'date' | 'platform' | 'status') => {
     if (sortBy === newSortBy) {
@@ -208,7 +211,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ crashAnalyzerService }) =>
       setSortDirection('desc');
     }
   };
-  
+
   const handleUploadClick = () => {
     if (showModal) {
       showModal('crash-analyzer-upload', {
@@ -225,11 +228,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ crashAnalyzerService }) =>
       navigate('/crash-analyzer/upload');
     }
   };
-  
+
   const handleLogClick = (logId: string) => {
     navigate(`/crash-analyzer/logs/${logId}`);
   };
-  
+
   const handleDeleteLog = async (logId: string) => {
     if (window.confirm('Are you sure you want to delete this crash log?')) {
       try {
@@ -241,165 +244,167 @@ export const Dashboard: React.FC<DashboardProps> = ({ crashAnalyzerService }) =>
       }
     }
   };
-  
+
   if (loading && !refreshing) {
     return (
-      <div className="flex items-center justify-center h-full">
-        <Loader2 className="animate-spin" size="large" />
+      <div className='flex items-center justify-center h-full'>
+        <Loader2 className='animate-spin' size='large' />
       </div>
     );
   }
-  
+
   return (
-    <HadronEnhancedLayout activeView="dashboard">
-      <div className="p-4">
-        <div className="flex flex-col space-y-4 mb-6">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center">
-              <h1 className="text-2xl font-bold flex items-center gap-2">
+    <HadronEnhancedLayout activeView='dashboard'>
+      <div className='p-4'>
+        <div className='flex flex-col space-y-4 mb-6'>
+          <div className='flex justify-between items-center'>
+            <div className='flex items-center'>
+              <h1 className='text-2xl font-bold flex items-center gap-2'>
                 <span className={hadronTheme.classes.accent}>⚡</span>
                 Crash Analyzer
               </h1>
-            {lastUpdated && (
-              <div className="ml-4 text-sm text-gray-500">
-                Last updated: {lastUpdated.toLocaleTimeString()}
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="ml-1" 
-                  onClick={handleRefresh}
-                  disabled={refreshing}
-                >
-                  {refreshing ? <Loader2 className="animate-spin" size="small" /> : '↻'}
-                </Button>
-              </div>
-            )}
-          </div>
-          <div className="flex gap-2">
-            {/* Show code snippet button only if the service has that capability */}
-            {'analyzeCodeSnippet' in crashAnalyzerService && showModal && (
-              <Button
-                variant="secondary"
-                onClick={() => showModal('crash-analyzer-code-snippet-upload', {
-                  sessionId: 'current-session', // This would be dynamic in a real implementation
-                  onUploadComplete: (snippetId: string) => {
-                    navigate(`/crash-analyzer/snippets/${snippetId}`);
-                  }
-                })}
-              >
-                Analyze Code Snippet
-              </Button>
-            )}
-            <Button variant="primary" onClick={handleUploadClick}>
-              Upload Crash Log
-            </Button>
-          </div>
-        </div>
-        
-        <div className="flex items-center space-x-4">
-          <div className="flex-grow">
-            <Input
-              placeholder="Search by title, platform, or version..."
-              value={searchTerm}
-              onChange={handleSearchChange}
-              className="w-full"
-            />
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Button 
-              variant="secondary" 
-              size="small" 
-              onClick={() => handleSortChange('date')}
-              className={sortBy === 'date' ? 'bg-blue-100' : ''}
-            >
-              Date {sortBy === 'date' && (sortDirection === 'asc' ? '↑' : '↓')}
-            </Button>
-            
-            <Button 
-              variant="secondary" 
-              size="small" 
-              onClick={() => handleSortChange('platform')}
-              className={sortBy === 'platform' ? 'bg-blue-100' : ''}
-            >
-              Platform {sortBy === 'platform' && (sortDirection === 'asc' ? '↑' : '↓')}
-            </Button>
-            
-            <Button 
-              variant="secondary" 
-              size="small" 
-              onClick={() => handleSortChange('status')}
-              className={sortBy === 'status' ? 'bg-blue-100' : ''}
-            >
-              Status {sortBy === 'status' && (sortDirection === 'asc' ? '↑' : '↓')}
-            </Button>
-          </div>
-        </div>
-      </div>
-      
-      {error && (
-        <Card className="mb-4 bg-red-50 border-red-200">
-          <p className="text-red-600">{error}</p>
-        </Card>
-      )}
-      
-      <StatsSummary crashLogs={crashLogs} />
-      
-      <Card className="mt-6">
-        <h2 className="text-xl font-semibold mb-4">Recent Crash Logs</h2>
-        
-        {allCrashLogs.length === 0 ? (
-          <EmptyState
-            title="No crash logs found"
-            description="Upload your first crash log to get started with AI-powered analysis."
-            actions={<Button onClick={handleUploadClick}>Upload Crash Log</Button>}
-          />
-        ) : crashLogs.length === 0 && searchTerm ? (
-          <EmptyState
-            title="No matching crash logs"
-            description={`No crash logs match the search term "${searchTerm}".`}
-            actions={<Button onClick={() => setSearchTerm('')}>Clear Search</Button>}
-          />
-        ) : (
-          <>
-            <CrashLogList
-              crashLogs={crashLogs}
-              onLogClick={handleLogClick}
-              onDeleteLog={handleDeleteLog}
-            />
-            
-            <div className="mt-4 flex justify-between items-center">
-              <div className="text-sm text-gray-500">
-                Showing {crashLogs.length} of {allCrashLogs.length} crash logs
-              </div>
-              
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center space-x-2">
-                  <span className="text-sm">Items per page:</span>
-                  <Select 
-                    value={itemsPerPage.toString()} 
-                    onChange={handleItemsPerPageChange}
-                    className="w-16"
+              {lastUpdated && (
+                <div className='ml-4 text-sm text-gray-500'>
+                  Last updated: {lastUpdated.toLocaleTimeString()}
+                  <Button
+                    variant='ghost'
+                    size='icon'
+                    className='ml-1'
+                    onClick={handleRefresh}
+                    disabled={refreshing}
                   >
-                    <option value="5">5</option>
-                    <option value="10">10</option>
-                    <option value="25">25</option>
-                    <option value="50">50</option>
-                  </Select>
+                    {refreshing ? <Loader2 className='animate-spin' size='small' /> : '↻'}
+                  </Button>
                 </div>
-                
-                <Pagination
-                  page={currentPage}
-                  total={allCrashLogs.length}
-                  pageSize={itemsPerPage}
-                  onChange={handlePageChange}
-                />
-              </div>
+              )}
             </div>
-          </>
+            <div className='flex gap-2'>
+              {/* Show code snippet button only if the service has that capability */}
+              {'analyzeCodeSnippet' in crashAnalyzerService && showModal && (
+                <Button
+                  variant='secondary'
+                  onClick={() =>
+                    showModal('crash-analyzer-code-snippet-upload', {
+                      sessionId: 'current-session', // This would be dynamic in a real implementation
+                      onUploadComplete: (snippetId: string) => {
+                        navigate(`/crash-analyzer/snippets/${snippetId}`);
+                      }
+                    })
+                  }
+                >
+                  Analyze Code Snippet
+                </Button>
+              )}
+              <Button variant='primary' onClick={handleUploadClick}>
+                Upload Crash Log
+              </Button>
+            </div>
+          </div>
+
+          <div className='flex items-center space-x-4'>
+            <div className='flex-grow'>
+              <Input
+                placeholder='Search by title, platform, or version...'
+                value={searchTerm}
+                onChange={handleSearchChange}
+                className='w-full'
+              />
+            </div>
+
+            <div className='flex items-center space-x-2'>
+              <Button
+                variant='secondary'
+                size='small'
+                onClick={() => handleSortChange('date')}
+                className={sortBy === 'date' ? 'bg-blue-100' : ''}
+              >
+                Date {sortBy === 'date' && (sortDirection === 'asc' ? '↑' : '↓')}
+              </Button>
+
+              <Button
+                variant='secondary'
+                size='small'
+                onClick={() => handleSortChange('platform')}
+                className={sortBy === 'platform' ? 'bg-blue-100' : ''}
+              >
+                Platform {sortBy === 'platform' && (sortDirection === 'asc' ? '↑' : '↓')}
+              </Button>
+
+              <Button
+                variant='secondary'
+                size='small'
+                onClick={() => handleSortChange('status')}
+                className={sortBy === 'status' ? 'bg-blue-100' : ''}
+              >
+                Status {sortBy === 'status' && (sortDirection === 'asc' ? '↑' : '↓')}
+              </Button>
+            </div>
+          </div>
+        </div>
+
+        {error && (
+          <Card className='mb-4 bg-red-50 border-red-200'>
+            <p className='text-red-600'>{error}</p>
+          </Card>
         )}
-      </Card>
-    </div>
+
+        <StatsSummary crashLogs={crashLogs} />
+
+        <Card className='mt-6'>
+          <h2 className='text-xl font-semibold mb-4'>Recent Crash Logs</h2>
+
+          {allCrashLogs.length === 0 ? (
+            <EmptyState
+              title='No crash logs found'
+              description='Upload your first crash log to get started with AI-powered analysis.'
+              actions={<Button onClick={handleUploadClick}>Upload Crash Log</Button>}
+            />
+          ) : crashLogs.length === 0 && searchTerm ? (
+            <EmptyState
+              title='No matching crash logs'
+              description={`No crash logs match the search term "${searchTerm}".`}
+              actions={<Button onClick={() => setSearchTerm('')}>Clear Search</Button>}
+            />
+          ) : (
+            <>
+              <CrashLogList
+                crashLogs={crashLogs}
+                onLogClick={handleLogClick}
+                onDeleteLog={handleDeleteLog}
+              />
+
+              <div className='mt-4 flex justify-between items-center'>
+                <div className='text-sm text-gray-500'>
+                  Showing {crashLogs.length} of {allCrashLogs.length} crash logs
+                </div>
+
+                <div className='flex items-center space-x-4'>
+                  <div className='flex items-center space-x-2'>
+                    <span className='text-sm'>Items per page:</span>
+                    <Select
+                      value={itemsPerPage.toString()}
+                      onChange={handleItemsPerPageChange}
+                      className='w-16'
+                    >
+                      <option value='5'>5</option>
+                      <option value='10'>10</option>
+                      <option value='25'>25</option>
+                      <option value='50'>50</option>
+                    </Select>
+                  </div>
+
+                  <Pagination
+                    page={currentPage}
+                    total={allCrashLogs.length}
+                    pageSize={itemsPerPage}
+                    onChange={handlePageChange}
+                  />
+                </div>
+              </div>
+            </>
+          )}
+        </Card>
+      </div>
     </HadronEnhancedLayout>
   );
 };

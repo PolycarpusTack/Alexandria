@@ -1,7 +1,6 @@
 import { PluginContext } from '../../../../../core/plugin-registry/interfaces';
 import { Snippet, SnippetCategory, TemplateVariable } from './interfaces';
 import { TemplateEngine } from './TemplateEngine';
-import { v4 as uuidv4 } from 'uuid';
 
 export class SnippetManager {
   private templateEngine: TemplateEngine;
@@ -13,7 +12,9 @@ export class SnippetManager {
   /**
    * Create a new snippet
    */
-  async create(snippetData: Omit<Snippet, 'id' | 'createdAt' | 'updatedAt' | 'usageCount'>): Promise<Snippet> {
+  async create(
+    snippetData: Omit<Snippet, 'id' | 'createdAt' | 'updatedAt' | 'usageCount'>
+  ): Promise<Snippet> {
     const snippet: Snippet = {
       ...snippetData,
       id: uuidv4(),
@@ -47,13 +48,13 @@ export class SnippetManager {
     ];
 
     const result = await this.context.db.query(query, values);
-    
+
     // Update category count
     await this.updateCategoryCount(snippet.category);
-    
+
     // Emit creation event
     this.context.events.emit('mnemosyne:snippet:created', snippet);
-    
+
     return this.mapToSnippet(result.rows[0]);
   }
 
@@ -103,16 +104,16 @@ export class SnippetManager {
     ];
 
     const result = await this.context.db.query(query, values);
-    
+
     // Update category count if category changed
     if (updates.category && updates.category !== existing.category) {
       await this.updateCategoryCount(existing.category);
       await this.updateCategoryCount(updates.category);
     }
-    
+
     // Emit update event
     this.context.events.emit('mnemosyne:snippet:updated', updated);
-    
+
     return this.mapToSnippet(result.rows[0]);
   }
 
@@ -127,10 +128,10 @@ export class SnippetManager {
 
     const query = `DELETE FROM mnemosyne_snippets WHERE id = $1`;
     await this.context.db.query(query, [id]);
-    
+
     // Update category count
     await this.updateCategoryCount(snippet.category);
-    
+
     // Emit deletion event
     this.context.events.emit('mnemosyne:snippet:deleted', { id });
   }
@@ -138,12 +139,15 @@ export class SnippetManager {
   /**
    * Search snippets
    */
-  async search(query: string, filters?: {
-    category?: string;
-    language?: string;
-    tags?: string[];
-    isPublic?: boolean;
-  }): Promise<Snippet[]> {
+  async search(
+    query: string,
+    filters?: {
+      category?: string;
+      language?: string;
+      tags?: string[];
+      isPublic?: boolean;
+    }
+  ): Promise<Snippet[]> {
     let sql = `
       SELECT * FROM mnemosyne_snippets
       WHERE 1=1
@@ -179,7 +183,7 @@ export class SnippetManager {
     sql += ` ORDER BY usage_count DESC, updated_at DESC LIMIT 50`;
 
     const result = await this.context.db.query(sql, params);
-    return result.rows.map(row => this.mapToSnippet(row));
+    return result.rows.map((row) => this.mapToSnippet(row));
   }
 
   /**
@@ -206,7 +210,7 @@ export class SnippetManager {
       ORDER BY updated_at DESC
     `;
     const result = await this.context.db.query(query, [userId]);
-    return result.rows.map(row => this.mapToSnippet(row));
+    return result.rows.map((row) => this.mapToSnippet(row));
   }
 
   /**
@@ -220,7 +224,7 @@ export class SnippetManager {
       LIMIT $1
     `;
     const result = await this.context.db.query(query, [limit]);
-    return result.rows.map(row => this.mapToSnippet(row));
+    return result.rows.map((row) => this.mapToSnippet(row));
   }
 
   /**
@@ -252,10 +256,10 @@ export class SnippetManager {
       GROUP BY category
       ORDER BY snippet_count DESC, category ASC
     `;
-    
+
     const result = await this.context.db.query(query);
-    
-    return result.rows.map(row => ({
+
+    return result.rows.map((row) => ({
       id: row.name.toLowerCase().replace(/\s+/g, '-'),
       name: row.name,
       description: `${row.snippet_count} snippets`,
@@ -266,7 +270,9 @@ export class SnippetManager {
   /**
    * Create snippet category
    */
-  async createCategory(category: Omit<SnippetCategory, 'id' | 'snippetCount'>): Promise<SnippetCategory> {
+  async createCategory(
+    category: Omit<SnippetCategory, 'id' | 'snippetCount'>
+  ): Promise<SnippetCategory> {
     // Categories are created implicitly when snippets are added
     // This method could be used for explicit category management
     return {
@@ -309,7 +315,7 @@ export class SnippetManager {
 
     // Remove duplicates and limit results
     const unique = suggestions.reduce((acc, current) => {
-      if (!acc.find(item => item.id === current.id)) {
+      if (!acc.find((item) => item.id === current.id)) {
         acc.push(current);
       }
       return acc;
@@ -350,13 +356,11 @@ export class SnippetManager {
 
     for (const [name, snippet] of Object.entries(snippetsJson)) {
       const snippetData = snippet as any;
-      
+
       try {
         const newSnippet = await this.create({
           name,
-          content: Array.isArray(snippetData.body) 
-            ? snippetData.body.join('\n') 
-            : snippetData.body,
+          content: Array.isArray(snippetData.body) ? snippetData.body.join('\n') : snippetData.body,
           description: snippetData.description || '',
           category: 'imported',
           tags: ['vscode', 'imported'],
@@ -365,7 +369,7 @@ export class SnippetManager {
           createdBy: userId,
           isPublic: false
         });
-        
+
         imported.push(newSnippet);
       } catch (error) {
         this.context.logger.warn('Failed to import snippet', { name, error });
@@ -379,9 +383,7 @@ export class SnippetManager {
    * Export snippets
    */
   async export(snippetIds: string[], format: 'json' | 'vscode'): Promise<any> {
-    const snippets = await Promise.all(
-      snippetIds.map(id => this.getById(id))
-    );
+    const snippets = await Promise.all(snippetIds.map((id) => this.getById(id)));
 
     const validSnippets = snippets.filter(Boolean) as Snippet[];
 
@@ -445,15 +447,15 @@ export class SnippetManager {
   private extractVariablesFromVSCodeSnippet(body: string | string[]): TemplateVariable[] {
     const content = Array.isArray(body) ? body.join('\n') : body;
     const variables: TemplateVariable[] = [];
-    
+
     // VS Code uses $1, $2, ${1:default}, ${name:default} syntax
     const regex = /\$\{?(\d+|[a-zA-Z_][a-zA-Z0-9_]*):?([^}]*)\}?/g;
     let match;
 
     while ((match = regex.exec(content)) !== null) {
       const [, name, defaultValue] = match;
-      
-      if (!variables.find(v => v.name === name)) {
+
+      if (!variables.find((v) => v.name === name)) {
         variables.push({
           name,
           type: 'string',

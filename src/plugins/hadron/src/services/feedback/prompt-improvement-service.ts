@@ -1,11 +1,10 @@
 /**
  * Prompt Improvement Service
- * 
+ *
  * Uses feedback data to automatically improve prompts over time
  */
 
 import { FeedbackService, AnalysisFeedback } from './feedback-service';
-import { PromptManager } from '../prompt-engineering/prompt-manager';
 import { PromptVersioning } from '../prompt-engineering/prompt-versioning';
 import { ABTestingSystem } from '../prompt-engineering/ab-testing';
 import { Logger } from '@utils/logger';
@@ -54,7 +53,7 @@ export class PromptImprovementService {
     try {
       // Get feedback statistics
       const stats = await this.feedbackService.getFeedbackStats();
-      
+
       if (stats.totalFeedback < this.config.minFeedbackForImprovement) {
         this.logger.info('Insufficient feedback for improvement analysis', {
           currentFeedback: stats.totalFeedback,
@@ -74,14 +73,14 @@ export class PromptImprovementService {
 
       for (const promptId of activePrompts) {
         const performance = await this.analyzePromptPerformance(promptId);
-        
+
         if (performance.avgRating < this.config.improvementThreshold * 5) {
           const suggestion = await this.generateImprovementSuggestion(
             promptId,
             performance,
             patterns
           );
-          
+
           if (suggestion) {
             suggestions.push(suggestion);
           }
@@ -106,7 +105,7 @@ export class PromptImprovementService {
       try {
         // Create improved version
         const improvedPrompt = await this.createImprovedPrompt(suggestion);
-        
+
         // Set up A/B test
         const experiment = await this.setupExperiment(
           suggestion.promptId,
@@ -172,7 +171,7 @@ export class PromptImprovementService {
 
     // Analyze common failure patterns
     const lowRatedFeedback = await this.getLowRatedFeedbackForPrompt(promptId);
-    
+
     // Check for specific issues
     const issues = this.analyzeCommonIssues(lowRatedFeedback);
 
@@ -212,9 +211,7 @@ export class PromptImprovementService {
   /**
    * Create an improved prompt based on suggestions
    */
-  private async createImprovedPrompt(
-    suggestion: ImprovementSuggestion
-  ): Promise<any> {
+  private async createImprovedPrompt(suggestion: ImprovementSuggestion): Promise<any> {
     const currentPrompt = PromptVersioning.getActiveVersion(suggestion.promptId);
     if (!currentPrompt) {
       throw new Error(`No active version found for prompt ${suggestion.promptId}`);
@@ -228,18 +225,14 @@ export class PromptImprovementService {
     }
 
     // Create new version
-    const newVersion = PromptVersioning.createVersion(
-      suggestion.promptId,
-      improvedContent,
-      {
-        description: `Automated improvement based on feedback: ${suggestion.suggestedChanges.join(', ')}`,
-        metadata: {
-          baseVersion: currentPrompt.id,
-          suggestedImprovements: suggestion.suggestedChanges,
-          expectedImprovement: suggestion.expectedImprovement
-        }
+    const newVersion = PromptVersioning.createVersion(suggestion.promptId, improvedContent, {
+      description: `Automated improvement based on feedback: ${suggestion.suggestedChanges.join(', ')}`,
+      metadata: {
+        baseVersion: currentPrompt.id,
+        suggestedImprovements: suggestion.suggestedChanges,
+        expectedImprovement: suggestion.expectedImprovement
       }
-    );
+    });
 
     return newVersion;
   }
@@ -262,7 +255,10 @@ export class PromptImprovementService {
         );
 
       case 'Improve output format specification':
-        return content + '\n\nEnsure your response strictly follows the JSON format without any additional text or markdown formatting.';
+        return (
+          content +
+          '\n\nEnsure your response strictly follows the JSON format without any additional text or markdown formatting.'
+        );
 
       case 'Add relevant examples to guide analysis':
         // This would be handled by the few-shot example system
@@ -313,7 +309,7 @@ export class PromptImprovementService {
    */
   private async applyWinningVariant(experiment: any, results: any): Promise<void> {
     const winningVariant = experiment.variants.find((v: any) => v.id === results.winner);
-    
+
     if (!winningVariant) {
       throw new Error('Winning variant not found');
     }
@@ -382,10 +378,10 @@ export class PromptImprovementService {
     };
 
     // Analyze feedback comments for patterns
-    feedback.forEach(f => {
+    feedback.forEach((f) => {
       if (f.comments) {
         const comment = f.comments.toLowerCase();
-        
+
         if (comment.includes('context') || comment.includes('environment')) {
           issues.missingContext++;
         }
@@ -426,25 +422,28 @@ export class PromptImprovementService {
    * Schedule periodic improvement analysis
    */
   startPeriodicImprovement(intervalHours: number = 24): void {
-    setInterval(async () => {
-      try {
-        this.logger.info('Running periodic prompt improvement analysis');
-        
-        // Analyze and suggest improvements
-        const suggestions = await this.analyzeAndSuggestImprovements();
-        
-        if (suggestions.length > 0) {
-          this.logger.info(`Found ${suggestions.length} improvement opportunities`);
-          
-          // Implement improvements with auto-approval
-          await this.implementImprovements(suggestions, true);
-        }
+    setInterval(
+      async () => {
+        try {
+          this.logger.info('Running periodic prompt improvement analysis');
 
-        // Monitor ongoing experiments
-        await this.monitorAndApplyImprovements();
-      } catch (error) {
-        this.logger.error('Error in periodic improvement:', error);
-      }
-    }, intervalHours * 60 * 60 * 1000);
+          // Analyze and suggest improvements
+          const suggestions = await this.analyzeAndSuggestImprovements();
+
+          if (suggestions.length > 0) {
+            this.logger.info(`Found ${suggestions.length} improvement opportunities`);
+
+            // Implement improvements with auto-approval
+            await this.implementImprovements(suggestions, true);
+          }
+
+          // Monitor ongoing experiments
+          await this.monitorAndApplyImprovements();
+        } catch (error) {
+          this.logger.error('Error in periodic improvement:', error);
+        }
+      },
+      intervalHours * 60 * 60 * 1000
+    );
   }
 }

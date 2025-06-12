@@ -24,30 +24,24 @@ export class QueryOptimizer {
     options?: AnalyticsOptions
   ): { primary: string; comparison?: string } {
     const cacheKey = this.getCacheKey('timeseries', timeRange, options);
-    
+
     if (this.queryCache.has(cacheKey)) {
       return JSON.parse(this.queryCache.get(cacheKey)!);
     }
 
     // Determine if we should use materialized view
     const useMaterializedView = this.shouldUseMaterializedView(timeRange);
-    const tableName = useMaterializedView 
-      ? 'crash_analytics_hourly_mv' 
-      : 'crash_logs';
+    const tableName = useMaterializedView ? 'crash_analytics_hourly_mv' : 'crash_logs';
 
     // Build optimized query
-    const baseQuery = this.buildTimeSeriesBaseQuery(
-      tableName,
-      timeRange,
-      options
-    );
+    const baseQuery = this.buildTimeSeriesBaseQuery(tableName, timeRange, options);
 
     // Add index hints if available
     const optimizedQuery = this.addIndexHints(baseQuery, tableName);
 
     const result = {
       primary: optimizedQuery,
-      comparison: options?.includeComparison 
+      comparison: options?.includeComparison
         ? this.buildComparisonQuery(tableName, timeRange, options)
         : undefined
     };
@@ -77,9 +71,7 @@ export class QueryOptimizer {
     // Build SELECT clause
     const selectClauses = [
       ...groupBy,
-      ...aggregations.map(agg => 
-        `${agg.operation}(${agg.field}) AS ${agg.alias}`
-      )
+      ...aggregations.map((agg) => `${agg.operation}(${agg.field}) AS ${agg.alias}`)
     ];
 
     // Build WHERE clause
@@ -117,16 +109,13 @@ export class QueryOptimizer {
   /**
    * Build model performance query
    */
-  buildModelPerformanceQuery(
-    modelName?: string,
-    timeRange?: TimeRange
-  ): string {
+  buildModelPerformanceQuery(modelName?: string, timeRange?: TimeRange): string {
     const conditions = [];
-    
+
     if (modelName) {
       conditions.push(`model_name = '${modelName}'`);
     }
-    
+
     if (timeRange) {
       conditions.push(
         `created_at >= '${timeRange.start.toISOString()}'`,
@@ -158,7 +147,7 @@ export class QueryOptimizer {
    */
   buildSeverityTrendQuery(timeRange: TimeRange): string {
     const interval = this.getOptimalInterval(timeRange);
-    
+
     return `
       WITH time_buckets AS (
         SELECT 
@@ -196,13 +185,13 @@ export class QueryOptimizer {
     timeRange?: TimeRange
   ): string {
     const conditions = [];
-    
+
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
         conditions.push(`${key} = '${value}'`);
       });
     }
-    
+
     if (timeRange) {
       conditions.push(
         `created_at >= '${timeRange.start.toISOString()}'`,
@@ -210,8 +199,8 @@ export class QueryOptimizer {
       );
     }
 
-    const percentileSelects = percentiles.map(p => 
-      `percentile_cont(${p / 100}) WITHIN GROUP (ORDER BY ${field}) as p${p}`
+    const percentileSelects = percentiles.map(
+      (p) => `percentile_cont(${p / 100}) WITHIN GROUP (ORDER BY ${field}) as p${p}`
     );
 
     return `
@@ -224,12 +213,9 @@ export class QueryOptimizer {
   /**
    * Build success metrics query
    */
-  buildSuccessMetricsQuery(
-    modelName: string,
-    timeRange?: TimeRange
-  ): string {
+  buildSuccessMetricsQuery(modelName: string, timeRange?: TimeRange): string {
     const conditions = [`model_name = '${modelName}'`];
-    
+
     if (timeRange) {
       conditions.push(
         `created_at >= '${timeRange.start.toISOString()}'`,
@@ -251,7 +237,7 @@ export class QueryOptimizer {
    */
   analyzeSlowQuery(query: string): void {
     logger.info('Analyzing slow query', { query });
-    
+
     // Check for missing indexes
     const missingIndexes = this.detectMissingIndexes(query);
     if (missingIndexes.length > 0) {
@@ -273,9 +259,8 @@ export class QueryOptimizer {
    * Helper methods
    */
   private shouldUseMaterializedView(timeRange: TimeRange): boolean {
-    const hoursDiff = 
-      (timeRange.end.getTime() - timeRange.start.getTime()) / (1000 * 60 * 60);
-    
+    const hoursDiff = (timeRange.end.getTime() - timeRange.start.getTime()) / (1000 * 60 * 60);
+
     // Use materialized view for queries spanning more than 24 hours
     return hoursDiff > 24;
   }
@@ -304,12 +289,13 @@ export class QueryOptimizer {
         SELECT 
           date_trunc('${interval}', created_at) as timestamp,
           COUNT(*) as count,
-          ${options?.includeMetadata ? 
-            `json_build_object(
+          ${
+            options?.includeMetadata
+              ? `json_build_object(
               'platform', mode() WITHIN GROUP (ORDER BY platform),
               'severity', mode() WITHIN GROUP (ORDER BY severity)
-            ) as metadata` : 
-            'NULL as metadata'
+            ) as metadata`
+              : 'NULL as metadata'
           }
         FROM ${tableName}
         WHERE ${conditions.join(' AND ')}
@@ -345,19 +331,18 @@ export class QueryOptimizer {
 
     return this.buildTimeSeriesBaseQuery(
       tableName,
-      { 
-        start: comparisonStart, 
-        end: comparisonEnd, 
-        granularity: timeRange.granularity 
+      {
+        start: comparisonStart,
+        end: comparisonEnd,
+        granularity: timeRange.granularity
       },
       options
     );
   }
 
   private getOptimalInterval(timeRange: TimeRange): string {
-    const hours = 
-      (timeRange.end.getTime() - timeRange.start.getTime()) / (1000 * 60 * 60);
-    
+    const hours = (timeRange.end.getTime() - timeRange.start.getTime()) / (1000 * 60 * 60);
+
     if (hours <= 24) return 'hour';
     if (hours <= 168) return 'day'; // 7 days
     if (hours <= 720) return 'day'; // 30 days
@@ -384,11 +369,7 @@ export class QueryOptimizer {
     `;
   }
 
-  private getCacheKey(
-    operation: string,
-    timeRange: TimeRange,
-    options?: any
-  ): string {
+  private getCacheKey(operation: string, timeRange: TimeRange, options?: any): string {
     return `${operation}:${timeRange.start.getTime()}-${timeRange.end.getTime()}-${JSON.stringify(options || {})}`;
   }
 
@@ -399,7 +380,7 @@ export class QueryOptimizer {
       'idx_crash_logs_severity',
       'idx_crash_logs_platform'
     ]);
-    
+
     this.indexHints.set('model_performance_logs', [
       'idx_model_perf_created_at',
       'idx_model_perf_model_name'
@@ -408,7 +389,7 @@ export class QueryOptimizer {
 
   private detectMissingIndexes(query: string): string[] {
     const missingIndexes = [];
-    
+
     // Simple heuristic: check for WHERE clauses without corresponding indexes
     const whereMatch = query.match(/WHERE\s+(.+?)(?:GROUP|ORDER|$)/i);
     if (whereMatch) {
@@ -418,7 +399,7 @@ export class QueryOptimizer {
       if (columns) {
         // In real implementation, check against actual database indexes
         // This is simplified
-        columns.forEach(col => {
+        columns.forEach((col) => {
           const colName = col.replace(/\s*=/, '').trim();
           if (!['created_at', 'id'].includes(colName)) {
             missingIndexes.push(colName);
@@ -426,14 +407,16 @@ export class QueryOptimizer {
         });
       }
     }
-    
+
     return missingIndexes;
   }
 
   private detectFullTableScan(query: string): boolean {
     // Simple heuristic: queries without WHERE clause on large tables
-    return !query.includes('WHERE') && 
-           (query.includes('crash_logs') || query.includes('analysis_results'));
+    return (
+      !query.includes('WHERE') &&
+      (query.includes('crash_logs') || query.includes('analysis_results'))
+    );
   }
 
   private detectInefficientJoins(query: string): boolean {

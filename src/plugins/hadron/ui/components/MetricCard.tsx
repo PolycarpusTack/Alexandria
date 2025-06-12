@@ -3,7 +3,7 @@ import React from 'react';
 import { TrendingUp, TrendingDown, ArrowRight } from 'lucide-react';
 import { cn } from '../../../../client/lib/utils';
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../../client/components/ui/card'
+import { Card, CardContent } from '../../../../client/components/ui/card';
 interface MetricCardProps {
   title: string;
   value: string | number;
@@ -49,45 +49,36 @@ export const MetricCard: React.FC<MetricCardProps> = ({
       )}
       onClick={onClick}
     >
-      <CardContent className="p-6">
-        <div className="flex items-start justify-between mb-4">
-          <div
-            className={cn(
-              'p-3 rounded-lg',
-              colorClasses[color]
-            )}
-          >
-            {icon}
-          </div>
+      <CardContent className='p-6'>
+        <div className='flex items-start justify-between mb-4'>
+          <div className={cn('p-3 rounded-lg', colorClasses[color])}>{icon}</div>
           {trend && (
-            <div className={cn(
-              'flex items-center gap-1 text-sm font-medium',
-              trendColorClasses[trend.direction]
-            )}>
+            <div
+              className={cn(
+                'flex items-center gap-1 text-sm font-medium',
+                trendColorClasses[trend.direction]
+              )}
+            >
               {trend.direction === 'up' ? (
-                <TrendingUp className="h-4 w-4" />
+                <TrendingUp className='h-4 w-4' />
               ) : (
-                <TrendingDown className="h-4 w-4" />
+                <TrendingDown className='h-4 w-4' />
               )}
               <span>{Math.abs(trend.value)}%</span>
             </div>
           )}
         </div>
 
-        <div className="space-y-1">
-          <p className="text-2xl font-bold">{value}</p>
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          {subtitle && (
-            <p className="text-xs text-muted-foreground">{subtitle}</p>
-          )}
-          {trend?.label && (
-            <p className="text-xs text-muted-foreground">{trend.label}</p>
-          )}
+        <div className='space-y-1'>
+          <p className='text-2xl font-bold'>{value}</p>
+          <p className='text-sm font-medium text-muted-foreground'>{title}</p>
+          {subtitle && <p className='text-xs text-muted-foreground'>{subtitle}</p>}
+          {trend?.label && <p className='text-xs text-muted-foreground'>{trend.label}</p>}
         </div>
 
         {onClick && (
-          <div className="absolute bottom-2 right-2">
-            <ArrowRight className="h-4 w-4 text-muted-foreground" />
+          <div className='absolute bottom-2 right-2'>
+            <ArrowRight className='h-4 w-4 text-muted-foreground' />
           </div>
         )}
       </CardContent>

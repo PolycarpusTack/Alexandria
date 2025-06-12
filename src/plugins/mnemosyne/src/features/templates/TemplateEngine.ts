@@ -18,10 +18,7 @@ export class TemplateEngine {
   /**
    * Render a template with the given context
    */
-  async render(
-    template: MnemosyneTemplate,
-    options: TemplateRenderOptions
-  ): Promise<string> {
+  async render(template: MnemosyneTemplate, options: TemplateRenderOptions): Promise<string> {
     try {
       // Validate required variables
       if (options.strict) {
@@ -96,7 +93,7 @@ export class TemplateEngine {
     // Check for common issues
     const openBraces = (content.match(/\{\{/g) || []).length;
     const closeBraces = (content.match(/\}\}/g) || []).length;
-    
+
     if (openBraces !== closeBraces) {
       errors.push('Mismatched handlebars braces');
     }
@@ -161,7 +158,7 @@ export class TemplateEngine {
       return new this.handlebars.SafeString(`[[${title}${alias ? `|${alias}` : ''}]]`);
     });
 
-    this.handlebars.registerHelper('backlink', function(this: any, documentId: string) {
+    this.handlebars.registerHelper('backlink', function (this: any, documentId: string) {
       // This would be populated by the context enhancement
       const backlinks = this.mnemosyne?.backlinks || [];
       return backlinks.filter((link: any) => link.targetId === documentId);
@@ -181,13 +178,13 @@ export class TemplateEngine {
     this.handlebars.registerHelper('add', (a: number, b: number) => a + b);
     this.handlebars.registerHelper('subtract', (a: number, b: number) => a - b);
     this.handlebars.registerHelper('multiply', (a: number, b: number) => a * b);
-    this.handlebars.registerHelper('divide', (a: number, b: number) => b !== 0 ? a / b : 0);
+    this.handlebars.registerHelper('divide', (a: number, b: number) => (b !== 0 ? a / b : 0));
 
     // UUID generation
     this.handlebars.registerHelper('uuid', () => {
-      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        const r = Math.random() * 16 | 0;
-        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+      return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        const r = (Math.random() * 16) | 0;
+        const v = c === 'x' ? r : (r & 0x3) | 0x8;
         return v.toString(16);
       });
     });
@@ -242,19 +239,14 @@ export class TemplateEngine {
   /**
    * Validate that all required variables are provided
    */
-  private validateRequiredVariables(
-    template: MnemosyneTemplate,
-    context: TemplateContext
-  ): void {
-    const requiredVars = template.variables.filter(v => v.required);
-    const missingVars = requiredVars.filter(v => 
-      !(v.name in context.variables) && !v.defaultValue
+  private validateRequiredVariables(template: MnemosyneTemplate, context: TemplateContext): void {
+    const requiredVars = template.variables.filter((v) => v.required);
+    const missingVars = requiredVars.filter(
+      (v) => !(v.name in context.variables) && !v.defaultValue
     );
 
     if (missingVars.length > 0) {
-      throw new Error(
-        `Missing required variables: ${missingVars.map(v => v.name).join(', ')}`
-      );
+      throw new Error(`Missing required variables: ${missingVars.map((v) => v.name).join(', ')}`);
     }
   }
 
@@ -264,7 +256,7 @@ export class TemplateEngine {
   private async resolveRelationships(relationships: any[]): Promise<any[]> {
     // This would query the knowledge graph
     // For now, return mock data
-    return relationships.map(rel => ({
+    return relationships.map((rel) => ({
       id: rel.targetId,
       title: rel.targetTitle,
       type: rel.type,
@@ -322,7 +314,7 @@ export class TemplateEngine {
 
       // Store usage data
       await this.context.storage.set(`template_usage_${Date.now()}`, usage);
-      
+
       // Emit event for analytics
       this.context.events.emit('mnemosyne:template:used', usage);
     } catch (error) {
@@ -336,10 +328,32 @@ export class TemplateEngine {
    */
   private isHelper(name: string): boolean {
     const helpers = [
-      'if', 'unless', 'each', 'with', 'lookup', 'eq', 'ne', 'gt', 'lt',
-      'formatDate', 'now', 'uppercase', 'lowercase', 'capitalize',
-      'join', 'length', 'wikilink', 'backlink', 'code', 'inline',
-      'add', 'subtract', 'multiply', 'divide', 'uuid', 'progress'
+      'if',
+      'unless',
+      'each',
+      'with',
+      'lookup',
+      'eq',
+      'ne',
+      'gt',
+      'lt',
+      'formatDate',
+      'now',
+      'uppercase',
+      'lowercase',
+      'capitalize',
+      'join',
+      'length',
+      'wikilink',
+      'backlink',
+      'code',
+      'inline',
+      'add',
+      'subtract',
+      'multiply',
+      'divide',
+      'uuid',
+      'progress'
     ];
     return helpers.includes(name);
   }

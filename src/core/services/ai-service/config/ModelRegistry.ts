@@ -1,6 +1,6 @@
 /**
  * Dynamic Model Registry
- * 
+ *
  * Automatically detects Ollama models and manages API model configurations
  */
 
@@ -8,12 +8,7 @@ import { EventEmitter } from 'events';
 import * as axios from 'axios';
 import { Logger } from '../../../../utils/logger';
 import { ConfigManager } from './ConfigManager';
-import { 
-  DetectedModel, 
-  ModelProvider, 
-  APIModelConfig,
-  ModelRegistryEvents 
-} from './types';
+import { DetectedModel, ModelProvider, APIModelConfig, ModelRegistryEvents } from './types';
 
 export class ModelRegistry extends EventEmitter {
   private configManager: ConfigManager;
@@ -27,7 +22,7 @@ export class ModelRegistry extends EventEmitter {
     this.configManager = configManager;
     this.logger = logger;
     this.detectedModels = new Map();
-    
+
     // Initialize Ollama client
     this.ollamaClient = axios.default.create({
       baseURL: process.env.OLLAMA_HOST || 'http://localhost:11434',
@@ -35,19 +30,18 @@ export class ModelRegistry extends EventEmitter {
     });
   }
 
-
   /**
    * Initialize the registry and start detection
    */
   async initialize(): Promise<void> {
     this.logger.info('Initializing model registry');
-    
+
     // Load configuration
     await this.configManager.loadConfig();
-    
+
     // Start detection
     await this.detectAllModels();
-    
+
     // Set up periodic checks
     this.startPeriodicDetection();
   }
@@ -57,25 +51,23 @@ export class ModelRegistry extends EventEmitter {
    */
   async detectAllModels(): Promise<Map<string, DetectedModel>> {
     this.logger.info('Detecting available AI models');
-    
+
     // Clear existing models
     this.detectedModels.clear();
-    
+
     // Detect Ollama models
     await this.detectOllamaModels();
-    
+
     // Detect API models
     await this.detectAPIModels();
-    
+
     this.logger.info('Model detection complete', {
       totalModels: this.detectedModels.size,
-      availableModels: Array.from(this.detectedModels.values())
-        .filter(m => m.available).length
+      availableModels: Array.from(this.detectedModels.values()).filter((m) => m.available).length
     });
-    
+
     return this.detectedModels;
   }
-
 
   /**
    * Detect Ollama models
@@ -83,7 +75,7 @@ export class ModelRegistry extends EventEmitter {
   private async detectOllamaModels(): Promise<void> {
     try {
       const response = await this.ollamaClient.get('/api/tags');
-      
+
       if (response.data && response.data.models) {
         for (const model of response.data.models) {
           const detectedModel: DetectedModel = {
@@ -93,11 +85,11 @@ export class ModelRegistry extends EventEmitter {
             type: 'local',
             available: true
           };
-          
+
           this.detectedModels.set(detectedModel.id, detectedModel);
           this.emit('model:discovered', { model: detectedModel });
           this.emit('model:available', { modelId: detectedModel.id });
-          
+
           this.logger.info('Ollama model detected', {
             id: detectedModel.id,
             name: model.name,
@@ -105,35 +97,34 @@ export class ModelRegistry extends EventEmitter {
           });
         }
       }
-      
+
       this.emit('provider:connected', { providerId: 'ollama' });
     } catch (error) {
       this.logger.warn('Failed to detect Ollama models', { error });
-      this.emit('provider:disconnected', { 
-        providerId: 'ollama', 
+      this.emit('provider:disconnected', {
+        providerId: 'ollama',
         error: error instanceof Error ? error.message : String(error)
       });
     }
   }
-
 
   /**
    * Detect API models from configuration
    */
   private async detectAPIModels(): Promise<void> {
     const providers = this.configManager.getEnabledProviders();
-    
+
     for (const provider of providers) {
       try {
         // Check provider connectivity
         const isConnected = await this.checkProviderConnectivity(provider);
-        
+
         if (isConnected) {
           this.emit('provider:connected', { providerId: provider.id });
-          
+
           // Add configured models for this provider
           const apiModels = this.configManager.getAPIModels(provider.id);
-          
+
           for (const model of apiModels) {
             const detectedModel: DetectedModel = {
               id: `${provider.id}:${model.model}`,
@@ -143,11 +134,11 @@ export class ModelRegistry extends EventEmitter {
               available: true,
               config: model
             };
-            
+
             this.detectedModels.set(detectedModel.id, detectedModel);
             this.emit('model:discovered', { model: detectedModel });
             this.emit('model:available', { modelId: detectedModel.id });
-            
+
             this.logger.info('API model detected', {
               id: detectedModel.id,
               provider: provider.name,
@@ -157,14 +148,13 @@ export class ModelRegistry extends EventEmitter {
         }
       } catch (error) {
         this.logger.warn(`Failed to connect to ${provider.name}`, { error });
-        this.emit('provider:disconnected', { 
-          providerId: provider.id, 
+        this.emit('provider:disconnected', {
+          providerId: provider.id,
           error: error instanceof Error ? error.message : String(error)
         });
       }
     }
   }
-
 
   /**
    * Check if a provider is accessible
@@ -180,16 +170,16 @@ export class ModelRegistry extends EventEmitter {
           // Check OpenAI connectivity
           const openaiResponse = await axios.default.get(`${provider.endpoint}/models`, {
             headers: {
-              'Authorization': `Bearer ${provider.apiKey}`
+              Authorization: `Bearer ${provider.apiKey}`
             },
             timeout: 5000
           });
           return openaiResponse.status === 200;
-          
+
         case 'anthropic':
           // Anthropic doesn't have a models endpoint, just check auth
           return !!provider.apiKey;
-          
+
         case 'azure':
           // Check Azure OpenAI connectivity
           if (provider.endpoint && provider.apiKey) {
@@ -205,7 +195,7 @@ export class ModelRegistry extends EventEmitter {
             return azureResponse.status === 200;
           }
           return false;
-          
+
         default:
           return false;
       }
@@ -214,14 +204,13 @@ export class ModelRegistry extends EventEmitter {
     }
   }
 
-
   /**
    * Start periodic model detection
    */
   private startPeriodicDetection(): void {
     // Check every 15 minutes
     this.checkInterval = setInterval(() => {
-      this.detectAllModels().catch(error => {
+      this.detectAllModels().catch((error) => {
         this.logger.error('Periodic model detection failed', { error });
       });
     }, 900000); // 15 minutes
@@ -248,7 +237,7 @@ export class ModelRegistry extends EventEmitter {
    * Get available models
    */
   getAvailableModels(): DetectedModel[] {
-    return this.getAllModels().filter(m => m.available);
+    return this.getAllModels().filter((m) => m.available);
   }
 
   /**
@@ -263,7 +252,7 @@ export class ModelRegistry extends EventEmitter {
    */
   getDefaultModel(): DetectedModel | undefined {
     const preferences = this.configManager.getPreferences();
-    
+
     // Check if preferred default exists and is available
     if (preferences.defaultModel) {
       const model = this.getModel(preferences.defaultModel);
@@ -271,7 +260,7 @@ export class ModelRegistry extends EventEmitter {
         return model;
       }
     }
-    
+
     // Otherwise return first available model
     const availableModels = this.getAvailableModels();
     return availableModels[0];
@@ -284,12 +273,12 @@ export class ModelRegistry extends EventEmitter {
     const units = ['B', 'KB', 'MB', 'GB', 'TB'];
     let size = bytes;
     let unitIndex = 0;
-    
+
     while (size >= 1024 && unitIndex < units.length - 1) {
       size /= 1024;
       unitIndex++;
     }
-    
+
     return `${size.toFixed(1)} ${units[unitIndex]}`;
   }
 }

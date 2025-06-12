@@ -1,19 +1,12 @@
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import { 
-  Card, 
-  CardHeader, 
-  CardFooter, 
-  CardTitle, 
-  CardDescription, 
-  CardContent 
-} from '../card';
+import { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent } from '../card';
 
 describe('Card Components', () => {
   describe('Card', () => {
     it('renders with default styles', () => {
-      render(<Card data-testid="card">Card Content</Card>);
-      
+      render(<Card data-testid='card'>Card Content</Card>);
+
       const card = screen.getByTestId('card');
       expect(card).toBeInTheDocument();
       expect(card).toHaveTextContent('Card Content');
@@ -25,8 +18,12 @@ describe('Card Components', () => {
     });
 
     it('accepts and applies additional className', () => {
-      render(<Card className="extra-class" data-testid="card">Card Content</Card>);
-      
+      render(
+        <Card className='extra-class' data-testid='card'>
+          Card Content
+        </Card>
+      );
+
       const card = screen.getByTestId('card');
       expect(card).toHaveClass('extra-class');
       expect(card).toHaveClass('rounded-lg'); // Still has default classes
@@ -34,15 +31,11 @@ describe('Card Components', () => {
 
     it('forwards additional props to the div element', () => {
       render(
-        <Card 
-          data-testid="card"
-          aria-label="Card Example"
-          tabIndex={0}
-        >
+        <Card data-testid='card' aria-label='Card Example' tabIndex={0}>
           Card Content
         </Card>
       );
-      
+
       const card = screen.getByTestId('card');
       expect(card).toHaveAttribute('aria-label', 'Card Example');
       expect(card).toHaveAttribute('tabindex', '0');
@@ -51,8 +44,8 @@ describe('Card Components', () => {
 
   describe('CardHeader', () => {
     it('renders with default styles', () => {
-      render(<CardHeader data-testid="card-header">Header Content</CardHeader>);
-      
+      render(<CardHeader data-testid='card-header'>Header Content</CardHeader>);
+
       const header = screen.getByTestId('card-header');
       expect(header).toBeInTheDocument();
       expect(header).toHaveTextContent('Header Content');
@@ -63,8 +56,12 @@ describe('Card Components', () => {
     });
 
     it('accepts and applies additional className', () => {
-      render(<CardHeader className="extra-class" data-testid="card-header">Header Content</CardHeader>);
-      
+      render(
+        <CardHeader className='extra-class' data-testid='card-header'>
+          Header Content
+        </CardHeader>
+      );
+
       const header = screen.getByTestId('card-header');
       expect(header).toHaveClass('extra-class');
       expect(header).toHaveClass('p-6'); // Still has default classes
@@ -73,8 +70,8 @@ describe('Card Components', () => {
 
   describe('CardTitle', () => {
     it('renders as an h3 with default styles', () => {
-      render(<CardTitle data-testid="card-title">Card Title</CardTitle>);
-      
+      render(<CardTitle data-testid='card-title'>Card Title</CardTitle>);
+
       const title = screen.getByTestId('card-title');
       expect(title).toBeInTheDocument();
       expect(title).toHaveTextContent('Card Title');
@@ -86,8 +83,12 @@ describe('Card Components', () => {
     });
 
     it('accepts and applies additional className', () => {
-      render(<CardTitle className="extra-class" data-testid="card-title">Card Title</CardTitle>);
-      
+      render(
+        <CardTitle className='extra-class' data-testid='card-title'>
+          Card Title
+        </CardTitle>
+      );
+
       const title = screen.getByTestId('card-title');
       expect(title).toHaveClass('extra-class');
       expect(title).toHaveClass('text-2xl'); // Still has default classes
@@ -96,8 +97,8 @@ describe('Card Components', () => {
 
   describe('CardDescription', () => {
     it('renders as a paragraph with default styles', () => {
-      render(<CardDescription data-testid="card-desc">Card Description</CardDescription>);
-      
+      render(<CardDescription data-testid='card-desc'>Card Description</CardDescription>);
+
       const desc = screen.getByTestId('card-desc');
       expect(desc).toBeInTheDocument();
       expect(desc).toHaveTextContent('Card Description');
@@ -107,8 +108,12 @@ describe('Card Components', () => {
     });
 
     it('accepts and applies additional className', () => {
-      render(<CardDescription className="extra-class" data-testid="card-desc">Card Description</CardDescription>);
-      
+      render(
+        <CardDescription className='extra-class' data-testid='card-desc'>
+          Card Description
+        </CardDescription>
+      );
+
       const desc = screen.getByTestId('card-desc');
       expect(desc).toHaveClass('extra-class');
       expect(desc).toHaveClass('text-sm'); // Still has default classes
@@ -117,8 +122,8 @@ describe('Card Components', () => {
 
   describe('CardContent', () => {
     it('renders with default styles', () => {
-      render(<CardContent data-testid="card-content">Content</CardContent>);
-      
+      render(<CardContent data-testid='card-content'>Content</CardContent>);
+
       const content = screen.getByTestId('card-content');
       expect(content).toBeInTheDocument();
       expect(content).toHaveTextContent('Content');
@@ -127,8 +132,12 @@ describe('Card Components', () => {
     });
 
     it('accepts and applies additional className', () => {
-      render(<CardContent className="extra-class" data-testid="card-content">Content</CardContent>);
-      
+      render(
+        <CardContent className='extra-class' data-testid='card-content'>
+          Content
+        </CardContent>
+      );
+
       const content = screen.getByTestId('card-content');
       expect(content).toHaveClass('extra-class');
       expect(content).toHaveClass('p-6'); // Still has default classes
@@ -137,8 +146,8 @@ describe('Card Components', () => {
 
   describe('CardFooter', () => {
     it('renders with default styles', () => {
-      render(<CardFooter data-testid="card-footer">Footer Content</CardFooter>);
-      
+      render(<CardFooter data-testid='card-footer'>Footer Content</CardFooter>);
+
       const footer = screen.getByTestId('card-footer');
       expect(footer).toBeInTheDocument();
       expect(footer).toHaveTextContent('Footer Content');
@@ -149,8 +158,12 @@ describe('Card Components', () => {
     });
 
     it('accepts and applies additional className', () => {
-      render(<CardFooter className="extra-class" data-testid="card-footer">Footer Content</CardFooter>);
-      
+      render(
+        <CardFooter className='extra-class' data-testid='card-footer'>
+          Footer Content
+        </CardFooter>
+      );
+
       const footer = screen.getByTestId('card-footer');
       expect(footer).toHaveClass('extra-class');
       expect(footer).toHaveClass('flex'); // Still has default classes
@@ -159,7 +172,7 @@ describe('Card Components', () => {
 
   it('all components work together to create a complete card', () => {
     render(
-      <Card data-testid="full-card">
+      <Card data-testid='full-card'>
         <CardHeader>
           <CardTitle>Card Title</CardTitle>
           <CardDescription>Card Description</CardDescription>
@@ -168,14 +181,14 @@ describe('Card Components', () => {
         <CardFooter>Card Footer</CardFooter>
       </Card>
     );
-    
+
     const card = screen.getByTestId('full-card');
     expect(card).toBeInTheDocument();
     expect(card).toHaveTextContent('Card Title');
     expect(card).toHaveTextContent('Card Description');
     expect(card).toHaveTextContent('Card Content');
     expect(card).toHaveTextContent('Card Footer');
-    
+
     // Check structure
     expect(card.children[0]).toHaveClass('flex flex-col space-y-1.5 p-6'); // CardHeader
     expect(card.children[0].children[0]).toHaveClass('text-2xl font-semibold'); // CardTitle

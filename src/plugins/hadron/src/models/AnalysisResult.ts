@@ -1,5 +1,4 @@
-import { IAnalysisResult, IRootCause, IEvidence } from './interfaces';
-import { v4 as uuidv4 } from 'uuid';
+import { IAnalysisResult, IRootCause } from './interfaces';
 
 /**
  * AnalysisResult model implementation
@@ -23,7 +22,7 @@ export class AnalysisResult implements IAnalysisResult {
 
   /**
    * Create a new AnalysisResult instance
-   * 
+   *
    * @param data Analysis result data, partial or complete
    */
   constructor(data: Partial<IAnalysisResult>) {
@@ -46,7 +45,7 @@ export class AnalysisResult implements IAnalysisResult {
 
   /**
    * Validate analysis result data
-   * 
+   *
    * @returns true if valid, throws error if invalid
    */
   validate(): boolean {
@@ -58,7 +57,10 @@ export class AnalysisResult implements IAnalysisResult {
       throw new Error('User ID is required');
     }
 
-    if ((!this.fileId || this.fileId.trim() === '') && (!this.snippetId || this.snippetId.trim() === '')) {
+    if (
+      (!this.fileId || this.fileId.trim() === '') &&
+      (!this.snippetId || this.snippetId.trim() === '')
+    ) {
       throw new Error('Either file ID or snippet ID is required');
     }
 
@@ -79,7 +81,7 @@ export class AnalysisResult implements IAnalysisResult {
 
   /**
    * Get the most likely root cause
-   * 
+   *
    * @returns The root cause with highest confidence or undefined
    */
   getMostLikelyRootCause(): IRootCause | undefined {
@@ -92,7 +94,7 @@ export class AnalysisResult implements IAnalysisResult {
 
   /**
    * Convert to JSON object
-   * 
+   *
    * @returns AnalysisResult data as plain object
    */
   toJSON(): Record<string, any> {
@@ -117,7 +119,7 @@ export class AnalysisResult implements IAnalysisResult {
 
   /**
    * Create an AnalysisResult instance from database record
-   * 
+   *
    * @param record Database record
    * @returns AnalysisResult instance
    */
@@ -131,7 +133,9 @@ export class AnalysisResult implements IAnalysisResult {
       primaryError: record.primary_error,
       failingComponent: record.failing_component,
       potentialRootCauses: record.root_causes ? JSON.parse(record.root_causes) : [],
-      troubleshootingSteps: record.troubleshooting_steps ? JSON.parse(record.troubleshooting_steps) : [],
+      troubleshootingSteps: record.troubleshooting_steps
+        ? JSON.parse(record.troubleshooting_steps)
+        : [],
       summary: record.summary,
       llmModel: record.llm_model,
       confidence: record.confidence,

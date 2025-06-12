@@ -7,10 +7,10 @@ import { Logger } from '../../../../../utils/logger';
  */
 export class AnalysisSessionRepository {
   private readonly collectionName = 'hadron_sessions';
-  
+
   /**
    * Create a new analysis session repository
-   * 
+   *
    * @param dataService Data service
    * @param logger Logger instance
    */
@@ -18,7 +18,7 @@ export class AnalysisSessionRepository {
     private dataService: PostgresCollectionService,
     private logger: Logger
   ) {}
-  
+
   /**
    * Initialize the repository
    */
@@ -27,13 +27,13 @@ export class AnalysisSessionRepository {
     await this.dataService.createIndex(this.collectionName, 'userId');
     await this.dataService.createIndex(this.collectionName, 'status');
     await this.dataService.createIndex(this.collectionName, 'createdAt');
-    
+
     this.logger.info('Analysis session repository initialized');
   }
-  
+
   /**
    * Save an analysis session
-   * 
+   *
    * @param session Analysis session to save
    * @returns Saved analysis session
    */
@@ -50,10 +50,10 @@ export class AnalysisSessionRepository {
       throw error;
     }
   }
-  
+
   /**
    * Find an analysis session by ID
-   * 
+   *
    * @param id Analysis session ID
    * @returns Analysis session or null if not found
    */
@@ -69,17 +69,17 @@ export class AnalysisSessionRepository {
       throw error;
     }
   }
-  
+
   /**
    * Find analysis sessions by user
-   * 
+   *
    * @param userId User ID
    * @returns Array of analysis sessions
    */
   async findByUser(userId: string): Promise<AnalysisSession[]> {
     try {
       const records = await this.dataService.find(this.collectionName, { userId });
-      return records.map(record => AnalysisSession.fromRecord(record));
+      return records.map((record) => AnalysisSession.fromRecord(record));
     } catch (error) {
       this.logger.error('Error finding analysis sessions by user', {
         userId,
@@ -88,17 +88,17 @@ export class AnalysisSessionRepository {
       throw error;
     }
   }
-  
+
   /**
    * Find analysis sessions by status
-   * 
+   *
    * @param status Analysis session status
    * @returns Array of analysis sessions
    */
   async findByStatus(status: AnalysisSessionStatus): Promise<AnalysisSession[]> {
     try {
       const records = await this.dataService.find(this.collectionName, { status });
-      return records.map(record => AnalysisSession.fromRecord(record));
+      return records.map((record) => AnalysisSession.fromRecord(record));
     } catch (error) {
       this.logger.error('Error finding analysis sessions by status', {
         status,
@@ -107,16 +107,16 @@ export class AnalysisSessionRepository {
       throw error;
     }
   }
-  
+
   /**
    * Find all analysis sessions
-   * 
+   *
    * @returns Array of all analysis sessions
    */
   async findAll(): Promise<AnalysisSession[]> {
     try {
       const records = await this.dataService.find(this.collectionName, {});
-      return records.map(record => AnalysisSession.fromRecord(record));
+      return records.map((record) => AnalysisSession.fromRecord(record));
     } catch (error) {
       this.logger.error('Error finding all analysis sessions', {
         error: error instanceof Error ? error.message : String(error)
@@ -124,10 +124,10 @@ export class AnalysisSessionRepository {
       throw error;
     }
   }
-  
+
   /**
    * Update analysis session status
-   * 
+   *
    * @param id Analysis session ID
    * @param status New status
    * @returns Updated analysis session or null if not found
@@ -138,7 +138,7 @@ export class AnalysisSessionRepository {
       if (!session) {
         return null;
       }
-      
+
       session.updateStatus(status);
       return this.save(session);
     } catch (error) {
@@ -150,10 +150,10 @@ export class AnalysisSessionRepository {
       throw error;
     }
   }
-  
+
   /**
    * Delete an analysis session
-   * 
+   *
    * @param id Analysis session ID
    * @returns True if the analysis session was deleted
    */
@@ -168,26 +168,30 @@ export class AnalysisSessionRepository {
       throw error;
     }
   }
-  
+
   /**
    * Find latest analysis sessions for a user with pagination
-   * 
+   *
    * @param userId User ID
    * @param limit Maximum number of sessions to return
    * @param offset Number of sessions to skip
    * @returns Array of analysis sessions
    */
-  async findLatestByUser(userId: string, limit: number = 10, offset: number = 0): Promise<AnalysisSession[]> {
+  async findLatestByUser(
+    userId: string,
+    limit: number = 10,
+    offset: number = 0
+  ): Promise<AnalysisSession[]> {
     try {
       // This is a limitation of the current repository pattern
       // In a real implementation, you would add sorting and pagination to the find method
       const allSessions = await this.findByUser(userId);
-      
+
       // Sort by created date descending
-      const sortedSessions = allSessions.sort((a, b) => 
-        b.createdAt.getTime() - a.createdAt.getTime()
+      const sortedSessions = allSessions.sort(
+        (a, b) => b.createdAt.getTime() - a.createdAt.getTime()
       );
-      
+
       // Apply pagination
       return sortedSessions.slice(offset, offset + limit);
     } catch (error) {

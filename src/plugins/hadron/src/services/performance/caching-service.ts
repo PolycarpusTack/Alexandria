@@ -1,6 +1,6 @@
 /**
  * Caching Service for Crash Analyzer
- * 
+ *
  * Provides intelligent caching for LLM analysis results,
  * parsed crash data, and frequently accessed resources
  */
@@ -59,10 +59,10 @@ export class CachingService {
     config?: Partial<CacheConfig>
   ) {
     this.config = { ...this.defaultConfig, ...config };
-    
+
     // Start cleanup interval
     this.startCleanupTimer();
-    
+
     // Load persisted cache if enabled
     if (this.config.enablePersistence && this.dataService) {
       this.loadPersistedCache();
@@ -74,26 +74,26 @@ export class CachingService {
    */
   async get<T>(key: string): Promise<T | null> {
     const entry = this.cache.get(key);
-    
+
     if (!entry) {
       this.stats.misses++;
       return null;
     }
-    
+
     // Check if expired
     if (entry.expiresAt < new Date()) {
       this.cache.delete(key);
       this.stats.misses++;
       return null;
     }
-    
+
     // Update access statistics
     entry.hits++;
     entry.lastAccessed = new Date();
     this.stats.hits++;
-    
+
     this.logger.debug('Cache hit', { key, hits: entry.hits });
-    
+
     return entry.value as T;
   }
 
@@ -103,7 +103,7 @@ export class CachingService {
   async set<T>(key: string, value: T, ttl?: number): Promise<void> {
     const cacheTtl = ttl || this.config.ttl;
     const now = new Date();
-    
+
     const entry: CacheEntry<T> = {
       key,
       value,
@@ -113,19 +113,19 @@ export class CachingService {
       lastAccessed: now,
       size: this.calculateSize(value)
     };
-    
+
     // Check cache size limits
     if (this.cache.size >= this.config.maxSize) {
       this.evictLeastRecentlyUsed();
     }
-    
+
     this.cache.set(key, entry);
-    
+
     // Persist if enabled
     if (this.config.enablePersistence && this.dataService) {
       await this.persistEntry(entry);
     }
-    
+
     this.logger.debug('Cache set', { key, size: entry.size, expiresAt: entry.expiresAt });
   }
 
@@ -134,11 +134,11 @@ export class CachingService {
    */
   async delete(key: string): Promise<boolean> {
     const deleted = this.cache.delete(key);
-    
+
     if (deleted && this.config.enablePersistence && this.dataService) {
       await this.dataService.delete('cache_entries', { key });
     }
-    
+
     return deleted;
   }
 
@@ -148,31 +148,27 @@ export class CachingService {
   async clear(): Promise<void> {
     this.cache.clear();
     this.stats = { hits: 0, misses: 0, evictions: 0 };
-    
+
     if (this.config.enablePersistence && this.dataService) {
       await this.dataService.delete('cache_entries', {});
     }
-    
+
     this.logger.info('Cache cleared');
   }
 
   /**
    * Get or set pattern
    */
-  async getOrSet<T>(
-    key: string,
-    factory: () => Promise<T>,
-    ttl?: number
-  ): Promise<T> {
+  async getOrSet<T>(key: string, factory: () => Promise<T>, ttl?: number): Promise<T> {
     const cached = await this.get<T>(key);
-    
+
     if (cached !== null) {
       return cached;
     }
-    
+
     const value = await factory();
     await this.set(key, value, ttl);
-    
+
     return value;
   }
 
@@ -208,14 +204,10 @@ export class CachingService {
   /**
    * Cache parsed crash data
    */
-  async cacheParsedData(
-    rawContent: string,
-    metadata: any,
-    parsedData: any
-  ): Promise<string> {
+  async cacheParsedData(rawContent: string, metadata: any, parsedData: any): Promise<string> {
     const contentHash = this.hashContent(rawContent);
     const cacheKey = `parsed:${contentHash}:${this.hashContent(JSON.stringify(metadata))}`;
-    
+
     await this.set(cacheKey, parsedData, this.config.ttl * 24); // Cache parsed data longer
     return cacheKey;
   }
@@ -225,7 +217,7 @@ export class CachingService {
    */
   getStats(): CacheStats {
     const totalRequests = this.stats.hits + this.stats.misses;
-    
+
     return {
       totalEntries: this.cache.size,
       hitRate: totalRequests > 0 ? this.stats.hits / totalRequests : 0,
@@ -261,13 +253,8 @@ export class CachingService {
   }): string {
     // Create deterministic hash of inputs
     const crashHash = this.hashContent(JSON.stringify(input.crashData));
-    const parts = [
-      'analysis',
-      crashHash,
-      input.model,
-      input.promptVersion || 'default'
-    ];
-    
+    const parts = ['analysis', crashHash, input.model, input.promptVersion || 'default'];
+
     return parts.join(':');
   }
 
@@ -277,7 +264,7 @@ export class CachingService {
 
   private calculateSize(value: any): number {
     if (value === null || value === undefined) return 0;
-    
+
     try {
       const json = JSON.stringify(value);
       return Buffer.byteLength(json, 'utf8');
@@ -288,52 +275,55 @@ export class CachingService {
 
   private calculateTotalMemoryUsage(): number {
     let total = 0;
-    
+
     for (const entry of this.cache.values()) {
       total += entry.size || 0;
     }
-    
+
     return total;
   }
 
   private evictLeastRecentlyUsed(): void {
     let lruKey: string | null = null;
     let lruTime = new Date();
-    
+
     for (const [key, entry] of this.cache.entries()) {
       if (entry.lastAccessed < lruTime) {
         lruTime = entry.lastAccessed;
         lruKey = key;
       }
     }
-    
+
     if (lruKey) {
       this.cache.delete(lruKey);
       this.stats.evictions++;
-      
+
       this.logger.debug('Evicted LRU cache entry', { key: lruKey });
     }
   }
 
   private startCleanupTimer(): void {
     // Clean expired entries every 5 minutes
-    setInterval(() => {
-      this.cleanupExpiredEntries();
-    }, 5 * 60 * 1000);
+    setInterval(
+      () => {
+        this.cleanupExpiredEntries();
+      },
+      5 * 60 * 1000
+    );
   }
 
   private cleanupExpiredEntries(): void {
     const now = new Date();
     const expired: string[] = [];
-    
+
     for (const [key, entry] of this.cache.entries()) {
       if (entry.expiresAt < now) {
         expired.push(key);
       }
     }
-    
-    expired.forEach(key => this.cache.delete(key));
-    
+
+    expired.forEach((key) => this.cache.delete(key));
+
     if (expired.length > 0) {
       this.logger.debug('Cleaned up expired cache entries', { count: expired.length });
     }
@@ -342,11 +332,11 @@ export class CachingService {
   private async loadPersistedCache(): Promise<void> {
     try {
       if (!this.dataService) return;
-      
+
       const entries = await this.dataService.find('cache_entries', {
         expiresAt: { $gt: new Date() }
       });
-      
+
       for (const entry of entries) {
         this.cache.set(entry.key, {
           key: entry.key,
@@ -358,7 +348,7 @@ export class CachingService {
           size: entry.size
         });
       }
-      
+
       this.logger.info('Loaded persisted cache entries', { count: entries.length });
     } catch (error) {
       this.logger.error('Failed to load persisted cache:', error);
@@ -368,7 +358,7 @@ export class CachingService {
   private async persistEntry<T>(entry: CacheEntry<T>): Promise<void> {
     try {
       if (!this.dataService) return;
-      
+
       await this.dataService.create('cache_entries', {
         key: entry.key,
         value: entry.value,
@@ -386,9 +376,11 @@ export class CachingService {
   /**
    * Warm up cache with frequently accessed data
    */
-  async warmUp(entries: Array<{ key: string; factory: () => Promise<any>; ttl?: number }>): Promise<void> {
+  async warmUp(
+    entries: Array<{ key: string; factory: () => Promise<any>; ttl?: number }>
+  ): Promise<void> {
     this.logger.info('Starting cache warm-up', { count: entries.length });
-    
+
     const promises = entries.map(async (entry) => {
       try {
         const value = await entry.factory();
@@ -397,7 +389,7 @@ export class CachingService {
         this.logger.warn('Failed to warm up cache entry', { key: entry.key, error });
       }
     });
-    
+
     await Promise.all(promises);
     this.logger.info('Cache warm-up completed');
   }

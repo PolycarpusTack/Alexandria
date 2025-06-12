@@ -1,16 +1,13 @@
 /**
  * Mnemosyne Configuration Management
- * 
+ *
  * Enterprise-grade configuration system with validation, type safety,
  * environment-specific overrides, and hot reloading capabilities
  */
 
-import { 
-  ValidationError,
-  ConfigurationError 
-} from '@alexandria/core/errors';
+import { ValidationError, ConfigurationError } from '@alexandria/core/errors';
 
-import { 
+import {
   PluginConfigurationSchema,
   KnowledgeBaseConfig,
   TemplateConfig,
@@ -158,12 +155,7 @@ const DEFAULT_CONFIG: MnemosyneConfigSchema = {
     suggestionEngine: true,
     variableValidation: true,
     templateInheritance: true,
-    defaultTemplates: [
-      'document',
-      'meeting-notes',
-      'technical-spec',
-      'user-guide'
-    ]
+    defaultTemplates: ['document', 'meeting-notes', 'technical-spec', 'user-guide']
   },
 
   importExport: {
@@ -185,7 +177,7 @@ const DEFAULT_CONFIG: MnemosyneConfigSchema = {
     theme: 'auto',
     animations: true,
     shortcuts: {
-      'search': 'cmd+k',
+      search: 'cmd+k',
       'new-document': 'cmd+n',
       'graph-view': 'cmd+g',
       'template-panel': 'cmd+t'
@@ -332,7 +324,7 @@ const VALIDATION_SCHEMA: Record<string, ValidationRule> = {
 
 /**
  * Mnemosyne Configuration Manager
- * 
+ *
  * Handles configuration loading, validation, merging, and hot reloading
  * with comprehensive error handling and type safety
  */
@@ -362,10 +354,10 @@ export class MnemosyneConfiguration {
    */
   public async validate(): Promise<void> {
     this.validationErrors = [];
-    
+
     try {
       this.validateSchema(this.config);
-      
+
       if (this.validationErrors.length > 0) {
         throw new ValidationError(
           `Configuration validation failed: ${this.validationErrors.join(', ')}`,
@@ -375,15 +367,13 @@ export class MnemosyneConfiguration {
 
       // Additional business logic validation
       await this.validateBusinessRules();
-
     } catch (error) {
       if (error instanceof ValidationError) {
         throw error;
       }
-      throw new ConfigurationError(
-        `Configuration validation error: ${error.message}`,
-        { originalError: error }
-      );
+      throw new ConfigurationError(`Configuration validation error: ${error.message}`, {
+        originalError: error
+      });
     }
   }
 
@@ -414,12 +404,12 @@ export class MnemosyneConfiguration {
    */
   public getSafeConfig(): Partial<MnemosyneConfigSchema> {
     const safe = { ...this.config };
-    
+
     // Remove sensitive fields
     if (safe.integrations?.alfred?.apiKey) {
       safe.integrations.alfred.apiKey = '***';
     }
-    
+
     return safe;
   }
 
@@ -451,11 +441,11 @@ export class MnemosyneConfiguration {
    */
   public async update(updates: Partial<MnemosyneConfigSchema>): Promise<void> {
     const newConfig = this.mergeConfigurations(this.config, updates);
-    
+
     // Validate new configuration
     const oldConfig = this.config;
     this.config = newConfig;
-    
+
     try {
       await this.validate();
       this.notifyWatchers();
@@ -547,10 +537,7 @@ export class MnemosyneConfiguration {
       };
     }
 
-    this.environmentOverrides = this.mergeConfigurations(
-      this.environmentOverrides,
-      envOverrides
-    );
+    this.environmentOverrides = this.mergeConfigurations(this.environmentOverrides, envOverrides);
   }
 
   private applyEnvironmentOverrides(): void {
@@ -562,20 +549,17 @@ export class MnemosyneConfiguration {
     override: Partial<MnemosyneConfigSchema>
   ): MnemosyneConfigSchema {
     const result = { ...base };
-    
+
     for (const [key, value] of Object.entries(override)) {
       if (value !== undefined) {
         if (typeof value === 'object' && !Array.isArray(value) && value !== null) {
-          result[key] = this.mergeConfigurations(
-            result[key] || {} as any,
-            value
-          );
+          result[key] = this.mergeConfigurations(result[key] || ({} as any), value);
         } else {
           result[key] = value;
         }
       }
     }
-    
+
     return result;
   }
 
@@ -602,16 +586,14 @@ export class MnemosyneConfiguration {
       }
 
       // Range validation
-      if (rule.min !== undefined && (typeof value === 'number' && value < rule.min)) {
+      if (rule.min !== undefined && typeof value === 'number' && value < rule.min) {
         this.validationErrors.push(
           `Field '${fullPath}' must be at least ${rule.min}, got ${value}`
         );
       }
 
-      if (rule.max !== undefined && (typeof value === 'number' && value > rule.max)) {
-        this.validationErrors.push(
-          `Field '${fullPath}' must be at most ${rule.max}, got ${value}`
-        );
+      if (rule.max !== undefined && typeof value === 'number' && value > rule.max) {
+        this.validationErrors.push(`Field '${fullPath}' must be at most ${rule.max}, got ${value}`);
       }
 
       // Enum validation
@@ -623,9 +605,7 @@ export class MnemosyneConfiguration {
 
       // Pattern validation
       if (rule.pattern && typeof value === 'string' && !rule.pattern.test(value)) {
-        this.validationErrors.push(
-          `Field '${fullPath}' does not match required pattern`
-        );
+        this.validationErrors.push(`Field '${fullPath}' does not match required pattern`);
       }
 
       // Custom validator
@@ -665,7 +645,9 @@ export class MnemosyneConfiguration {
 
     // Validate performance limits
     if (this.config.performance.limits.maxGraphNodes > 50000) {
-      this.validationErrors.push('Maximum graph nodes should not exceed 50,000 for performance reasons');
+      this.validationErrors.push(
+        'Maximum graph nodes should not exceed 50,000 for performance reasons'
+      );
     }
 
     // Validate security settings in production
@@ -673,7 +655,7 @@ export class MnemosyneConfiguration {
       if (!this.config.security.encryption.enabled) {
         this.validationErrors.push('Encryption must be enabled in production environment');
       }
-      
+
       if (!this.config.security.audit.enabled) {
         this.validationErrors.push('Audit logging must be enabled in production environment');
       }

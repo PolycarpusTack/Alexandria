@@ -31,22 +31,24 @@ export const useChartInteractions = ({
           }
         }
       },
-      zoom: enableZoom ? {
-        zoom: {
-          wheel: {
-            enabled: true,
-          },
-          pinch: {
-            enabled: true
-          },
-          mode: 'x',
-          onZoomComplete: () => setIsZoomed(true)
-        },
-        pan: {
-          enabled: enablePan,
-          mode: 'x',
-        }
-      } : undefined
+      zoom: enableZoom
+        ? {
+            zoom: {
+              wheel: {
+                enabled: true
+              },
+              pinch: {
+                enabled: true
+              },
+              mode: 'x',
+              onZoomComplete: () => setIsZoomed(true)
+            },
+            pan: {
+              enabled: enablePan,
+              mode: 'x'
+            }
+          }
+        : undefined
     },
     onClick: (event: any, elements: any[]) => {
       if (elements.length > 0 && onDrillDown) {
@@ -54,12 +56,12 @@ export const useChartInteractions = ({
         const datasetIndex = element.datasetIndex;
         const index = element.index;
         const chart = chartRef.current;
-        
+
         if (chart) {
           const dataset = chart.data.datasets[datasetIndex];
           const label = chart.data.labels[index];
           const value = dataset.data[index];
-          
+
           onDrillDown({
             label,
             value,
@@ -106,16 +108,18 @@ export const useChartCustomization = () => {
 
   const customizationOptions: Partial<ChartOptions<any>> = {
     plugins: {
-      datalabels: showDataLabels ? {
-        display: true,
-        color: '#666',
-        font: {
-          size: 10
-        },
-        formatter: (value: number) => value.toLocaleString()
-      } : {
-        display: false
-      }
+      datalabels: showDataLabels
+        ? {
+            display: true,
+            color: '#666',
+            font: {
+              size: 10
+            },
+            formatter: (value: number) => value.toLocaleString()
+          }
+        : {
+            display: false
+          }
     },
     scales: {
       x: {

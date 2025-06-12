@@ -1,20 +1,23 @@
 /**
  * Main App component for the Alexandria Platform client
- * 
+ *
  * This component serves as the root component for the client application.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { Route, Routes, Navigate, useNavigate, useLocation } from 'react-router-dom';
-import { useUI} from './components/ui';
+import { useUI } from './components/ui';
 import { ErrorBoundary, RouteErrorBoundary } from './components/ErrorBoundary';
 import { createClientLogger } from './utils/client-logger';
 import { LayoutProvider, DynamicLayout } from './components/layout-selector';
+import { useAuth, useAuthActions, useLayout } from '../store';
+
+// Re-export auth hook for backward compatibility
+export { useAuth } from '../store';
 
 const logger = createClientLogger({ serviceName: 'alexandria-app' });
 
 // Pages
-import Login from './pages/Login';
 import MockupLogin from './pages/MockupLogin';
 import DashboardWrapper from './pages/DashboardWrapper';
 import NotFound from './pages/NotFound';
@@ -27,116 +30,60 @@ import { CrashAnalyzerRoutes } from './pages/crash-analyzer';
 const AlfredApp = React.lazy(() => import('../plugins/alfred/ui/index'));
 const HeimdallRoutes = React.lazy(() => import('./pages/heimdall'));
 
-// Auth context
-interface User {
-  id: string;
-  email: string;
-  name?: string;
-  username?: string;
-  role?: string;
-  avatar?: string;
-}
-
-interface AuthContextType {
-  isAuthenticated: boolean;
-  token: string | null;
-  user: User | null;
-  login: (token: string, user: User) => void;
-  logout: () => void;
-}
-
-const AuthContext = React.createContext<AuthContextType | null>(null);
+// Auth types moved to store
+export type { User } from '../store/auth-store';
 
 // Protected route component
 const ProtectedRoute: React.FC<{ element: React.ReactNode }> = ({ element }) => {
-  const auth = useAuth();
+  const { isAuthenticated } = useAuth();
   const location = useLocation();
-  
-  if (!auth?.isAuthenticated) {
+
+  if (!isAuthenticated) {
     // Redirect to login page, but save the current location
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to='/login' state={{ from: location }} replace />;
   }
-  
+
   return <>{element}</>;
 };
 
-// Auth provider component
-const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
-  const [token, setToken] = useState<string | null>(null);
-  const [user, setUser] = useState<any | null>(null);
+// Auth initialization component
+const AuthInitializer: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { login } = useAuthActions();
   const navigate = useNavigate();
-  
+
   // Check for existing token on mount
   useEffect(() => {
-    const storedToken = localStorage.getItem('auth_token');
-    const storedUser = localStorage.getItem('auth_user');
-    
+    const storedToken = localStorage.getItem('authToken');
+    const storedUser = localStorage.getItem('authUser');
+
     if (storedToken && storedUser) {
       try {
         // Validate and parse stored user data
         const parsedUser = JSON.parse(storedUser);
-        
+
         // Basic validation of user object structure
-        if (parsedUser && typeof parsedUser === 'object' && 
-            typeof parsedUser.id === 'string' && 
-            typeof parsedUser.email === 'string') {
-          
-          setToken(storedToken);
-          setUser(parsedUser);
-          setIsAuthenticated(true);
+        if (
+          parsedUser &&
+          typeof parsedUser === 'object' &&
+          typeof parsedUser.id === 'string' &&
+          typeof parsedUser.email === 'string'
+        ) {
+          login(storedToken, parsedUser);
         } else {
           // Invalid user data, clear storage
-          localStorage.removeItem('auth_token');
-          localStorage.removeItem('auth_user');
+          localStorage.removeItem('authToken');
+          localStorage.removeItem('authUser');
         }
       } catch (error) {
         // Invalid JSON, clear storage
-        localStorage.removeItem('auth_token');
-        localStorage.removeItem('auth_user');
+        localStorage.removeItem('authToken');
+        localStorage.removeItem('authUser');
         console.warn('Invalid user data in localStorage, cleared');
       }
     }
-  }, []);
-  
-  // Login function
-  const login = (newToken: string, newUser: User) => {
-    localStorage.setItem('auth_token', newToken);
-    localStorage.setItem('auth_user', JSON.stringify(newUser));
-    
-    setToken(newToken);
-    setUser(newUser);
-    setIsAuthenticated(true);
-    
-    navigate('/');
-  };
-  
-  // Logout function
-  const logout = () => {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('auth_user');
-    
-    setToken(null);
-    setUser(null);
-    setIsAuthenticated(false);
-    
-    navigate('/login');
-  };
-  
-  const value = {
-    isAuthenticated,
-    token,
-    user,
-    login,
-    logout
-  };
-  
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
+  }, [login]);
 
-// Hook to use the auth context
-export const useAuth = () => {
-  return React.useContext(AuthContext);
+  return <>{children}</>;
 };
 
 /**
@@ -144,7 +91,8 @@ export const useAuth = () => {
  */
 const App: React.FC = () => {
   const { uiRegistry, theme, darkMode, toggleDarkMode } = useUI();
-  
+  const { layoutMode } = useLayout();
+
   return (
     <ErrorBoundary
       onError={(error, errorInfo) => {
@@ -153,164 +101,209 @@ const App: React.FC = () => {
       }}
     >
       <LayoutProvider>
-        <AuthProvider>
+        <AuthInitializer>
           <Routes>
-        <Route path="/login" element={<MockupLogin />} />
-        <Route path="/" element={
-          <ProtectedRoute 
-            element={
-              <DynamicLayout>
-                <DashboardWrapper />
-              </DynamicLayout>
-            } 
-          />
-        } />
-        <Route path="/dashboard" element={
-          <ProtectedRoute 
-            element={
-              <DynamicLayout>
-                <DashboardWrapper />
-              </DynamicLayout>
-            } 
-          />
-        } />
-        {/* Plugin Routes */}
-        <Route path="/alfred/*" element={
-          <ProtectedRoute 
-            element={
-              <DynamicLayout>
-                <RouteErrorBoundary>
-                  <React.Suspense fallback={<div>Loading Alfred...</div>}>
-                    <AlfredApp />
-                  </React.Suspense>
-                </RouteErrorBoundary>
-              </DynamicLayout>
-            } 
-          />
-        } />
-        <Route path="/crash-analyzer/*" element={
-          <ProtectedRoute 
-            element={
-              <DynamicLayout>
-                <RouteErrorBoundary>
-                  <CrashAnalyzerRoutes />
-                </RouteErrorBoundary>
-              </DynamicLayout>
-            } 
-          />
-        } />
-        <Route path="/heimdall/*" element={
-          <ProtectedRoute 
-            element={
-              <DynamicLayout>
-                <RouteErrorBoundary>
-                  <React.Suspense fallback={<div>Loading Heimdall...</div>}>
-                    <HeimdallRoutes />
-                  </React.Suspense>
-                </RouteErrorBoundary>
-              </DynamicLayout>
-            } 
-          />
-        } />
-        <Route path="/llm-models" element={
-          <ProtectedRoute 
-            element={
-              <DynamicLayout>
-                <LLMModels />
-              </DynamicLayout>
-            } 
-          />
-        } />
-        <Route path="/plugins" element={
-          <ProtectedRoute 
-            element={
-              <DynamicLayout>
-                <Plugins />
-              </DynamicLayout>
-            } 
-          />
-        } />
-        <Route path="/ticket-analysis/*" element={
-          <ProtectedRoute 
-            element={
-              <DynamicLayout>
-                <div>Ticket Analysis Plugin Content</div>
-              </DynamicLayout>
-            } 
-          />
-        } />
-        <Route path="/knowledge-base/*" element={
-          <ProtectedRoute 
-            element={
-              <DynamicLayout>
-                <div>Knowledge Base Plugin Content</div>
-              </DynamicLayout>
-            } 
-          />
-        } />
-        
-        {/* Core Framework Routes */}
-        <Route path="/configuration/*" element={
-          <ProtectedRoute 
-            element={
-              <DynamicLayout>
-                <div>Configuration Content</div>
-              </DynamicLayout>
-            } 
-          />
-        } />
-        <Route path="/data-services/*" element={
-          <ProtectedRoute 
-            element={
-              <DynamicLayout>
-                <DashboardWrapper />
-              </DynamicLayout>
-            } 
-          />
-        } />
-        <Route path="/security/*" element={
-          <ProtectedRoute 
-            element={
-              <DynamicLayout>
-                <div>Security Content</div>
-              </DynamicLayout>
-            } 
-          />
-        } />
-        
-        {/* Settings Routes */}
-        <Route path="/settings" element={
-          <ProtectedRoute 
-            element={
-              <DynamicLayout>
-                <Settings />
-              </DynamicLayout>
-            } 
-          />
-        } />
-        <Route path="/user-settings/*" element={
-          <ProtectedRoute 
-            element={
-              <DynamicLayout>
-                <div>User Settings Content</div>
-              </DynamicLayout>
-            } 
-          />
-        } />
-        <Route path="/appearance/*" element={
-          <ProtectedRoute 
-            element={
-              <DynamicLayout>
-                <div>Appearance Settings Content</div>
-              </DynamicLayout>
-            } 
-          />
-        } />
-        
-        {/* Catch-all route */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-        </AuthProvider>
+            <Route path='/login' element={<MockupLogin />} />
+            <Route
+              path='/'
+              element={
+                <ProtectedRoute
+                  element={
+                    <DynamicLayout>
+                      <DashboardWrapper />
+                    </DynamicLayout>
+                  }
+                />
+              }
+            />
+            <Route
+              path='/dashboard'
+              element={
+                <ProtectedRoute
+                  element={
+                    <DynamicLayout>
+                      <DashboardWrapper />
+                    </DynamicLayout>
+                  }
+                />
+              }
+            />
+            {/* Plugin Routes */}
+            <Route
+              path='/alfred/*'
+              element={
+                <ProtectedRoute
+                  element={
+                    <DynamicLayout>
+                      <RouteErrorBoundary>
+                        <React.Suspense fallback={<div>Loading Alfred...</div>}>
+                          <AlfredApp />
+                        </React.Suspense>
+                      </RouteErrorBoundary>
+                    </DynamicLayout>
+                  }
+                />
+              }
+            />
+            <Route
+              path='/crash-analyzer/*'
+              element={
+                <ProtectedRoute
+                  element={
+                    <DynamicLayout>
+                      <RouteErrorBoundary>
+                        <CrashAnalyzerRoutes />
+                      </RouteErrorBoundary>
+                    </DynamicLayout>
+                  }
+                />
+              }
+            />
+            <Route
+              path='/heimdall/*'
+              element={
+                <ProtectedRoute
+                  element={
+                    <DynamicLayout>
+                      <RouteErrorBoundary>
+                        <React.Suspense fallback={<div>Loading Heimdall...</div>}>
+                          <HeimdallRoutes />
+                        </React.Suspense>
+                      </RouteErrorBoundary>
+                    </DynamicLayout>
+                  }
+                />
+              }
+            />
+            <Route
+              path='/llm-models'
+              element={
+                <ProtectedRoute
+                  element={
+                    <DynamicLayout>
+                      <LLMModels />
+                    </DynamicLayout>
+                  }
+                />
+              }
+            />
+            <Route
+              path='/plugins'
+              element={
+                <ProtectedRoute
+                  element={
+                    <DynamicLayout>
+                      <Plugins />
+                    </DynamicLayout>
+                  }
+                />
+              }
+            />
+            <Route
+              path='/ticket-analysis/*'
+              element={
+                <ProtectedRoute
+                  element={
+                    <DynamicLayout>
+                      <div>Ticket Analysis Plugin Content</div>
+                    </DynamicLayout>
+                  }
+                />
+              }
+            />
+            <Route
+              path='/knowledge-base/*'
+              element={
+                <ProtectedRoute
+                  element={
+                    <DynamicLayout>
+                      <div>Knowledge Base Plugin Content</div>
+                    </DynamicLayout>
+                  }
+                />
+              }
+            />
+
+            {/* Core Framework Routes */}
+            <Route
+              path='/configuration/*'
+              element={
+                <ProtectedRoute
+                  element={
+                    <DynamicLayout>
+                      <div>Configuration Content</div>
+                    </DynamicLayout>
+                  }
+                />
+              }
+            />
+            <Route
+              path='/data-services/*'
+              element={
+                <ProtectedRoute
+                  element={
+                    <DynamicLayout>
+                      <DashboardWrapper />
+                    </DynamicLayout>
+                  }
+                />
+              }
+            />
+            <Route
+              path='/security/*'
+              element={
+                <ProtectedRoute
+                  element={
+                    <DynamicLayout>
+                      <div>Security Content</div>
+                    </DynamicLayout>
+                  }
+                />
+              }
+            />
+
+            {/* Settings Routes */}
+            <Route
+              path='/settings'
+              element={
+                <ProtectedRoute
+                  element={
+                    <DynamicLayout>
+                      <Settings />
+                    </DynamicLayout>
+                  }
+                />
+              }
+            />
+            <Route
+              path='/user-settings/*'
+              element={
+                <ProtectedRoute
+                  element={
+                    <DynamicLayout>
+                      <div>User Settings Content</div>
+                    </DynamicLayout>
+                  }
+                />
+              }
+            />
+            <Route
+              path='/appearance/*'
+              element={
+                <ProtectedRoute
+                  element={
+                    <DynamicLayout>
+                      <div>Appearance Settings Content</div>
+                    </DynamicLayout>
+                  }
+                />
+              }
+            />
+
+            {/* Catch-all route */}
+            <Route path='*' element={<NotFound />} />
+          </Routes>
+        </AuthInitializer>
       </LayoutProvider>
     </ErrorBoundary>
   );

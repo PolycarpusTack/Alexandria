@@ -14,10 +14,10 @@ const ChatInterfaceWrapper: React.FC = () => {
 export const AlfredRoutes: React.FC = () => {
   return (
     <Routes>
-      <Route path="/" element={<AlfredDashboard />} />
-      <Route path="/chat/:sessionId?" element={<ChatInterfaceWrapper />} />
-      <Route path="/projects" element={<ProjectExplorer />} />
-      <Route path="/templates" element={<TemplateManager />} />
+      <Route path='/' element={<AlfredDashboard />} />
+      <Route path='/chat/:sessionId?' element={<ChatInterfaceWrapper />} />
+      <Route path='/projects' element={<ProjectExplorer />} />
+      <Route path='/templates' element={<TemplateManager />} />
     </Routes>
   );
 };

@@ -86,8 +86,13 @@ describe('EnhancedCrashAnalyzerService', () => {
       // Setup mock responses
       mockLogParser.parse.mockResolvedValue(sampleCrashLog.parsedData);
       mockLlmService.analyzeLog.mockResolvedValue(sampleCrashLog.analysis!);
-      mockSessionRepository.createSession.mockResolvedValue({ id: 'session-1', status: AnalysisSessionStatus.PENDING });
-      mockSessionRepository.updateSessionStatus.mockImplementation((id, status) => Promise.resolve({ id, status }));
+      mockSessionRepository.createSession.mockResolvedValue({
+        id: 'session-1',
+        status: AnalysisSessionStatus.PENDING
+      });
+      mockSessionRepository.updateSessionStatus.mockImplementation((id, status) =>
+        Promise.resolve({ id, status })
+      );
       mockRepository.saveCrashLog.mockResolvedValue();
       mockRepository.saveAnalysisResult.mockResolvedValue();
 
@@ -133,11 +138,15 @@ describe('EnhancedCrashAnalyzerService', () => {
     it('should handle errors and update session status accordingly', async () => {
       // Setup mock to throw an error
       mockLogParser.parse.mockRejectedValue(new Error('Parsing failed'));
-      mockSessionRepository.createSession.mockResolvedValue({ id: 'session-1', status: AnalysisSessionStatus.PENDING });
+      mockSessionRepository.createSession.mockResolvedValue({
+        id: 'session-1',
+        status: AnalysisSessionStatus.PENDING
+      });
 
       // Execute and catch the error
-      await expect(service.analyzeLog('log-1', 'error content', {}))
-        .rejects.toThrow('Parsing failed');
+      await expect(service.analyzeLog('log-1', 'error content', {})).rejects.toThrow(
+        'Parsing failed'
+      );
 
       // Verify session status was updated to error
       expect(mockSessionRepository.updateSessionStatus).toHaveBeenCalledWith(
@@ -155,18 +164,21 @@ describe('EnhancedCrashAnalyzerService', () => {
     it('should chunk large crash logs using EnterpriseChunker', async () => {
       // Create a large log (over the threshold)
       const largeLog = 'a'.repeat(100000);
-      
+
       // Setup mocks
-      mockSessionRepository.createSession.mockResolvedValue({ id: 'session-1', status: AnalysisSessionStatus.PENDING });
+      mockSessionRepository.createSession.mockResolvedValue({
+        id: 'session-1',
+        status: AnalysisSessionStatus.PENDING
+      });
       mockLogParser.parse.mockResolvedValue(sampleCrashLog.parsedData);
       mockLlmService.analyzeLog.mockResolvedValue(sampleCrashLog.analysis!);
-      
+
       // Execute the method
       await service.analyzeLog('log-1', largeLog, {});
-      
+
       // Verify EnterpriseChunker was instantiated and used
       expect(EnterpriseChunker).toHaveBeenCalledTimes(1);
-      
+
       // Verify the chunker's chunkText method was called
       const chunkerInstance = (EnterpriseChunker as jest.Mock).mock.instances[0];
       expect(chunkerInstance.chunkText).toHaveBeenCalledWith(largeLog);
@@ -176,14 +188,14 @@ describe('EnhancedCrashAnalyzerService', () => {
   describe('analyzeCodeSnippet method', () => {
     it('should analyze a code snippet and return result', async () => {
       // Setup mocks
-      mockSessionRepository.getSessionById.mockResolvedValue({ 
-        id: 'session-1', 
-        status: AnalysisSessionStatus.PENDING 
+      mockSessionRepository.getSessionById.mockResolvedValue({
+        id: 'session-1',
+        status: AnalysisSessionStatus.PENDING
       });
       mockSessionRepository.getSessionArtifactById.mockResolvedValue(sampleCodeSnippet);
       mockLlmService.analyzeCodeSnippet.mockResolvedValue(sampleSnippetAnalysis);
-      mockSessionRepository.addSessionArtifact.mockResolvedValue({ 
-        id: 'analysis-1', 
+      mockSessionRepository.addSessionArtifact.mockResolvedValue({
+        id: 'analysis-1',
         sessionId: 'session-1',
         type: 'code_analysis'
       });
@@ -225,16 +237,17 @@ describe('EnhancedCrashAnalyzerService', () => {
 
     it('should handle errors during code snippet analysis', async () => {
       // Setup mocks to simulate an error
-      mockSessionRepository.getSessionById.mockResolvedValue({ 
-        id: 'session-1', 
-        status: AnalysisSessionStatus.PENDING 
+      mockSessionRepository.getSessionById.mockResolvedValue({
+        id: 'session-1',
+        status: AnalysisSessionStatus.PENDING
       });
       mockSessionRepository.getSessionArtifactById.mockResolvedValue(sampleCodeSnippet);
       mockLlmService.analyzeCodeSnippet.mockRejectedValue(new Error('Analysis failed'));
 
       // Execute and catch the error
-      await expect(service.analyzeCodeSnippet('snippet-1', 'session-1'))
-        .rejects.toThrow('Analysis failed');
+      await expect(service.analyzeCodeSnippet('snippet-1', 'session-1')).rejects.toThrow(
+        'Analysis failed'
+      );
 
       // Verify error was logged
       expect(mockLogger.error).toHaveBeenCalled();
@@ -254,28 +267,30 @@ describe('EnhancedCrashAnalyzerService', () => {
       mockSessionRepository.getSessionById.mockResolvedValue(null);
 
       // Test session not found
-      await expect(service.analyzeCodeSnippet('snippet-1', 'non-existent-session'))
-        .rejects.toThrow('Session not found');
+      await expect(service.analyzeCodeSnippet('snippet-1', 'non-existent-session')).rejects.toThrow(
+        'Session not found'
+      );
 
       // Setup for snippet not found
-      mockSessionRepository.getSessionById.mockResolvedValue({ 
-        id: 'session-1', 
-        status: AnalysisSessionStatus.PENDING 
+      mockSessionRepository.getSessionById.mockResolvedValue({
+        id: 'session-1',
+        status: AnalysisSessionStatus.PENDING
       });
       mockSessionRepository.getSessionArtifactById.mockResolvedValue(null);
 
       // Test snippet not found
-      await expect(service.analyzeCodeSnippet('non-existent-snippet', 'session-1'))
-        .rejects.toThrow('Snippet not found');
+      await expect(service.analyzeCodeSnippet('non-existent-snippet', 'session-1')).rejects.toThrow(
+        'Snippet not found'
+      );
     });
   });
 
   describe('saveCodeSnippet method', () => {
     it('should save a code snippet and return the artifact', async () => {
       // Setup mocks
-      mockSessionRepository.getSessionById.mockResolvedValue({ 
-        id: 'session-1', 
-        status: AnalysisSessionStatus.PENDING 
+      mockSessionRepository.getSessionById.mockResolvedValue({
+        id: 'session-1',
+        status: AnalysisSessionStatus.PENDING
       });
       mockSessionRepository.addSessionArtifact.mockResolvedValue({
         id: 'snippet-1',
@@ -314,9 +329,9 @@ describe('EnhancedCrashAnalyzerService', () => {
 
     it('should create a new session if sessionId is not provided', async () => {
       // Setup mocks
-      mockSessionRepository.createSession.mockResolvedValue({ 
-        id: 'new-session-1', 
-        status: AnalysisSessionStatus.PENDING 
+      mockSessionRepository.createSession.mockResolvedValue({
+        id: 'new-session-1',
+        status: AnalysisSessionStatus.PENDING
       });
       mockSessionRepository.addSessionArtifact.mockResolvedValue({
         id: 'snippet-1',
@@ -349,18 +364,16 @@ describe('EnhancedCrashAnalyzerService', () => {
 
     it('should handle errors during code snippet saving', async () => {
       // Setup mocks to simulate an error
-      mockSessionRepository.getSessionById.mockResolvedValue({ 
-        id: 'session-1', 
-        status: AnalysisSessionStatus.PENDING 
+      mockSessionRepository.getSessionById.mockResolvedValue({
+        id: 'session-1',
+        status: AnalysisSessionStatus.PENDING
       });
       mockSessionRepository.addSessionArtifact.mockRejectedValue(new Error('Save failed'));
 
       // Execute and catch the error
-      await expect(service.saveCodeSnippet(
-        'function test() { return true; }',
-        'javascript',
-        'session-1'
-      )).rejects.toThrow('Save failed');
+      await expect(
+        service.saveCodeSnippet('function test() { return true; }', 'javascript', 'session-1')
+      ).rejects.toThrow('Save failed');
 
       // Verify error was logged
       expect(mockLogger.error).toHaveBeenCalled();
@@ -407,7 +420,7 @@ describe('EnhancedCrashAnalyzerService', () => {
           'metadata.snippetId': 'snippet-1'
         }
       });
-      
+
       expect(result).toHaveLength(1);
       expect(result[0]).toEqual(sampleSnippetAnalysis);
     });

@@ -4,7 +4,7 @@
  */
 
 import { Logger } from '@utils/logger';
-import { 
+import {
   HeimdallLogEntry,
   MLEnrichment,
   MLQueryFeatures,
@@ -14,7 +14,7 @@ import {
 } from '../interfaces';
 import { AnomalyDetector } from './ml-models/anomaly-detector';
 import { NLPProcessor } from './ml-models/nlp-processor';
-import { HyperionResourceManager, ResourceType } from './resource-manager';
+import { HyperionResourceManager } from './resource-manager';
 
 export class MLService {
   private readonly mlClient: any;
@@ -35,17 +35,17 @@ export class MLService {
 
   async initialize(): Promise<void> {
     this.logger.info('Initializing ML service with resource management');
-    
+
     try {
       // Create ML compute resource
       await this.resourceManager.createCacheResource('ml-models', 512); // 512MB for model cache
-      
+
       // Initialize anomaly detector
       await this.anomalyDetector.initialize();
-      
+
       // Initialize NLP processor
       await this.nlpProcessor.initialize();
-      
+
       this.isInitialized = true;
       this.logger.info('ML service initialized successfully');
     } catch (error) {
@@ -58,10 +58,10 @@ export class MLService {
 
   async stop(): Promise<void> {
     this.logger.info('Stopping ML service');
-    
+
     try {
       this.isInitialized = false;
-      
+
       // Wait for pending operations to complete
       const pendingOperations = Array.from(this.processingQueue.values());
       if (pendingOperations.length > 0) {
@@ -70,14 +70,14 @@ export class MLService {
         });
         await Promise.allSettled(pendingOperations);
       }
-      
+
       // Clear processing queue
       this.processingQueue.clear();
-      
+
       // Cleanup ML models
       await this.anomalyDetector.cleanup();
       await this.nlpProcessor.cleanup();
-      
+
       this.logger.info('ML service stopped successfully');
     } catch (error) {
       this.logger.error('Error stopping ML service', {
@@ -99,7 +99,8 @@ export class MLService {
 
     // Check resource limits
     const usage = this.resourceManager.getResourceUsage();
-    if (usage.total.activeQueries >= 20) { // Limit concurrent ML operations
+    if (usage.total.activeQueries >= 20) {
+      // Limit concurrent ML operations
       throw new Error('ML service busy - too many concurrent operations');
     }
 
@@ -119,20 +120,20 @@ export class MLService {
     try {
       // Use the anomaly detector to enrich the log
       const enrichment = await this.anomalyDetector.enrichLog(log);
-      
+
       this.logger.debug('Log enriched with ML', {
         logId: log.id,
         anomalyScore: enrichment.anomalyScore,
         category: enrichment.predictedCategory
       });
-      
+
       return enrichment;
     } catch (error) {
       this.logger.error('Failed to enrich log with ML', {
         logId: log.id,
         error: error instanceof Error ? error.message : String(error)
       });
-      
+
       // Return default enrichment on error
       return {
         anomalyScore: 0,
@@ -145,16 +146,16 @@ export class MLService {
   async detectPatterns(logIds: string[]): Promise<any[]> {
     try {
       this.logger.debug('Detecting patterns for logs', { count: logIds.length });
-      
+
       // For now, return patterns from the pattern detection logic
       // This will be enhanced when we have access to the actual logs
       const patterns = await this.detectPatternsFromIds(logIds);
-      
+
       this.logger.info('Pattern detection completed', {
         logCount: logIds.length,
         patternsFound: patterns.length
       });
-      
+
       return patterns;
     } catch (error) {
       this.logger.error('Failed to detect patterns', {
@@ -167,14 +168,15 @@ export class MLService {
 
   async generateInsights(logs: HeimdallLogEntry[], features: MLQueryFeatures): Promise<Insight[]> {
     const insights: Insight[] = [];
-    
+
     try {
       // 1. Anomaly insights
       if (features.anomalyDetection) {
         const anomalyScores = await this.anomalyDetector.detectBatchAnomalies(logs);
-        const anomalousLogs = Array.from(anomalyScores.entries())
-          .filter(([_, score]) => score > 0.7);
-        
+        const anomalousLogs = Array.from(anomalyScores.entries()).filter(
+          ([_, score]) => score > 0.7
+        );
+
         if (anomalousLogs.length > 0) {
           insights.push({
             type: 'anomaly',
@@ -191,7 +193,7 @@ export class MLService {
           });
         }
       }
-      
+
       // 2. Pattern insights
       const patterns = this.detectPatterns(logs);
       if (patterns.length > 0) {
@@ -200,11 +202,11 @@ export class MLService {
           severity: 'info',
           title: 'Common Patterns Identified',
           description: `Found ${patterns.length} recurring patterns in the logs`,
-          suggestedActions: patterns.slice(0, 3).map(p => `Investigate pattern: ${p}`),
+          suggestedActions: patterns.slice(0, 3).map((p) => `Investigate pattern: ${p}`),
           confidence: 0.75
         });
       }
-      
+
       // 3. Trend insights
       const trend = this.detectTrend(logs);
       if (trend) {
@@ -216,7 +218,7 @@ export class MLService {
           confidence: trend.confidence
         });
       }
-      
+
       // 4. Predictive insights
       if (features.predictive) {
         const prediction = this.generatePrediction(logs);
@@ -236,7 +238,7 @@ export class MLService {
         error: error instanceof Error ? error.message : String(error)
       });
     }
-    
+
     return insights;
   }
 
@@ -252,10 +254,10 @@ export class MLService {
       // Check resource usage
       const usage = this.resourceManager.getResourceUsage();
       const pendingOperations = this.processingQueue.size;
-      
+
       // Check if service is overloaded
       const isOverloaded = pendingOperations > 50 || usage.total.memoryMB > 1500;
-      
+
       return {
         status: isOverloaded ? 'degraded' : 'up',
         details: {
@@ -268,8 +270,8 @@ export class MLService {
     } catch (error) {
       return {
         status: 'down',
-        details: { 
-          error: error instanceof Error ? error.message : String(error) 
+        details: {
+          error: error instanceof Error ? error.message : String(error)
         }
       };
     }
@@ -293,32 +295,31 @@ export class MLService {
   /**
    * Private helper methods
    */
-  
+
   /**
    * Advanced pattern detection from log IDs (when logs aren't directly available)
    */
   private async detectPatternsFromIds(logIds: string[]): Promise<any[]> {
     const patterns: any[] = [];
-    
+
     try {
       // Pattern 1: Temporal clustering patterns
       const temporalPatterns = this.detectTemporalPatterns(logIds);
       patterns.push(...temporalPatterns);
-      
+
       // Pattern 2: ID-based patterns (service correlation)
       const idPatterns = this.detectIdPatterns(logIds);
       patterns.push(...idPatterns);
-      
+
       // Pattern 3: Frequency-based anomalies
       const frequencyPatterns = this.detectFrequencyPatterns(logIds);
       patterns.push(...frequencyPatterns);
-      
     } catch (error) {
       this.logger.error('Error in pattern detection from IDs', {
         error: error instanceof Error ? error.message : String(error)
       });
     }
-    
+
     return patterns;
   }
 
@@ -327,30 +328,29 @@ export class MLService {
    */
   private detectPatterns(logs: HeimdallLogEntry[]): string[] {
     const patterns: string[] = [];
-    
+
     try {
       // 1. Message template patterns
       const messagePatterns = this.detectMessagePatterns(logs);
       patterns.push(...messagePatterns);
-      
+
       // 2. Error cascade patterns
       const errorPatterns = this.detectErrorCascadePatterns(logs);
       patterns.push(...errorPatterns);
-      
+
       // 3. Service interaction patterns
       const servicePatterns = this.detectServiceInteractionPatterns(logs);
       patterns.push(...servicePatterns);
-      
+
       // 4. Performance degradation patterns
       const performancePatterns = this.detectPerformancePatterns(logs);
       patterns.push(...performancePatterns);
-      
     } catch (error) {
       this.logger.error('Error in pattern detection', {
         error: error instanceof Error ? error.message : String(error)
       });
     }
-    
+
     return patterns;
   }
 
@@ -359,37 +359,46 @@ export class MLService {
    */
   private detectMessagePatterns(logs: HeimdallLogEntry[]): string[] {
     const patterns: string[] = [];
-    const messageFrequency = new Map<string, { count: number, examples: string[], severity: string }>();
-    
+    const messageFrequency = new Map<
+      string,
+      { count: number; examples: string[]; severity: string }
+    >();
+
     for (const log of logs) {
       // Advanced pattern normalization
       const pattern = this.normalizeMessage(log.message.raw);
-      
-      const existing = messageFrequency.get(pattern) || { count: 0, examples: [], severity: 'info' };
+
+      const existing = messageFrequency.get(pattern) || {
+        count: 0,
+        examples: [],
+        severity: 'info'
+      };
       existing.count++;
-      
+
       // Store examples and track highest severity
       if (existing.examples.length < 3) {
         existing.examples.push(log.message.raw);
       }
-      
+
       if (this.getSeverityWeight(log.level) > this.getSeverityWeight(existing.severity)) {
         existing.severity = log.level;
       }
-      
+
       messageFrequency.set(pattern, existing);
     }
-    
+
     // Find significant patterns (>3% of logs or high severity)
     const threshold = Math.max(logs.length * 0.03, 3);
-    
+
     for (const [pattern, data] of messageFrequency.entries()) {
       if (data.count >= threshold || this.getSeverityWeight(data.severity) >= 3) {
         const percentage = ((data.count / logs.length) * 100).toFixed(1);
-        patterns.push(`${pattern} [${data.severity.toUpperCase()}] (${data.count} occurrences, ${percentage}%)`);
+        patterns.push(
+          `${pattern} [${data.severity.toUpperCase()}] (${data.count} occurrences, ${percentage}%)`
+        );
       }
     }
-    
+
     return patterns.sort((a, b) => {
       const countA = parseInt(a.match(/\((\d+)/)?.[1] || '0');
       const countB = parseInt(b.match(/\((\d+)/)?.[1] || '0');
@@ -402,23 +411,23 @@ export class MLService {
    */
   private detectErrorCascadePatterns(logs: HeimdallLogEntry[]): string[] {
     const patterns: string[] = [];
-    const errorLogs = logs.filter(log => log.level === 'ERROR' || log.level === 'FATAL');
-    
+    const errorLogs = logs.filter((log) => log.level === 'ERROR' || log.level === 'FATAL');
+
     if (errorLogs.length < 2) return patterns;
-    
+
     // Sort by timestamp
     errorLogs.sort((a, b) => Number(a.timestamp) - Number(b.timestamp));
-    
+
     // Detect cascading errors (errors within 30 seconds of each other)
     const cascadeThreshold = 30 * 1000 * 1000000; // 30 seconds in nanoseconds
     let cascadeStart: HeimdallLogEntry | null = null;
     let cascadeCount = 0;
-    
+
     for (let i = 0; i < errorLogs.length - 1; i++) {
       const current = errorLogs[i];
       const next = errorLogs[i + 1];
       const timeDiff = Number(next.timestamp) - Number(current.timestamp);
-      
+
       if (timeDiff <= cascadeThreshold) {
         if (!cascadeStart) {
           cascadeStart = current;
@@ -428,18 +437,22 @@ export class MLService {
         }
       } else {
         if (cascadeStart && cascadeCount >= 3) {
-          patterns.push(`Error cascade detected: ${cascadeCount} errors in ${cascadeStart.source.service} service starting at ${new Date(Number(cascadeStart.timestamp) / 1000000).toISOString()}`);
+          patterns.push(
+            `Error cascade detected: ${cascadeCount} errors in ${cascadeStart.source.service} service starting at ${new Date(Number(cascadeStart.timestamp) / 1000000).toISOString()}`
+          );
         }
         cascadeStart = null;
         cascadeCount = 0;
       }
     }
-    
+
     // Check final cascade
     if (cascadeStart && cascadeCount >= 3) {
-      patterns.push(`Error cascade detected: ${cascadeCount} errors in ${cascadeStart.source.service} service`);
+      patterns.push(
+        `Error cascade detected: ${cascadeCount} errors in ${cascadeStart.source.service} service`
+      );
     }
-    
+
     return patterns;
   }
 
@@ -449,30 +462,32 @@ export class MLService {
   private detectServiceInteractionPatterns(logs: HeimdallLogEntry[]): string[] {
     const patterns: string[] = [];
     const serviceInteractions = new Map<string, Set<string>>();
-    
+
     // Track service interactions via trace IDs
     for (const log of logs) {
       if (log.trace?.traceId) {
         const service = log.source.service;
         const interactions = serviceInteractions.get(service) || new Set();
-        
+
         // Find other services in the same trace
         const sameTraceServices = logs
-          .filter(l => l.trace?.traceId === log.trace!.traceId && l.source.service !== service)
-          .map(l => l.source.service);
-        
-        sameTraceServices.forEach(s => interactions.add(s));
+          .filter((l) => l.trace?.traceId === log.trace!.traceId && l.source.service !== service)
+          .map((l) => l.source.service);
+
+        sameTraceServices.forEach((s) => interactions.add(s));
         serviceInteractions.set(service, interactions);
       }
     }
-    
+
     // Find significant interaction patterns
     for (const [service, interactions] of serviceInteractions.entries()) {
       if (interactions.size >= 3) {
-        patterns.push(`Service dependency pattern: ${service} interacts with ${Array.from(interactions).join(', ')}`);
+        patterns.push(
+          `Service dependency pattern: ${service} interacts with ${Array.from(interactions).join(', ')}`
+        );
       }
     }
-    
+
     return patterns;
   }
 
@@ -481,13 +496,13 @@ export class MLService {
    */
   private detectPerformancePatterns(logs: HeimdallLogEntry[]): string[] {
     const patterns: string[] = [];
-    const performanceLogs = logs.filter(log => log.metrics?.duration);
-    
+    const performanceLogs = logs.filter((log) => log.metrics?.duration);
+
     if (performanceLogs.length < 10) return patterns;
-    
+
     // Group by service
     const servicePerformance = new Map<string, number[]>();
-    
+
     for (const log of performanceLogs) {
       const service = log.source.service;
       const duration = log.metrics!.duration!;
@@ -495,20 +510,22 @@ export class MLService {
       durations.push(duration);
       servicePerformance.set(service, durations);
     }
-    
+
     // Analyze performance for each service
     for (const [service, durations] of servicePerformance.entries()) {
       if (durations.length >= 5) {
         const sorted = [...durations].sort((a, b) => a - b);
         const median = sorted[Math.floor(sorted.length / 2)];
         const p95 = sorted[Math.floor(sorted.length * 0.95)];
-        
+
         if (p95 > median * 3) {
-          patterns.push(`Performance degradation in ${service}: P95 latency (${p95.toFixed(2)}ms) is ${(p95/median).toFixed(1)}x median (${median.toFixed(2)}ms)`);
+          patterns.push(
+            `Performance degradation in ${service}: P95 latency (${p95.toFixed(2)}ms) is ${(p95 / median).toFixed(1)}x median (${median.toFixed(2)}ms)`
+          );
         }
       }
     }
-    
+
     return patterns;
   }
 
@@ -517,22 +534,22 @@ export class MLService {
    */
   private detectTemporalPatterns(logIds: string[]): any[] {
     const patterns: any[] = [];
-    
+
     // Simple temporal analysis based on ID timestamps (if they contain timestamps)
     const timestamps = logIds
-      .map(id => this.extractTimestampFromId(id))
-      .filter(t => t !== null)
+      .map((id) => this.extractTimestampFromId(id))
+      .filter((t) => t !== null)
       .sort();
-    
+
     if (timestamps.length >= 10) {
       // Detect bursts (many logs in short time periods)
       const burstThreshold = 5000; // 5 seconds
       let burstStart: number | null = null;
       let burstCount = 0;
-      
+
       for (let i = 0; i < timestamps.length - 1; i++) {
         const timeDiff = timestamps[i + 1] - timestamps[i];
-        
+
         if (timeDiff <= burstThreshold) {
           if (!burstStart) {
             burstStart = timestamps[i];
@@ -554,7 +571,7 @@ export class MLService {
         }
       }
     }
-    
+
     return patterns;
   }
 
@@ -563,15 +580,15 @@ export class MLService {
    */
   private detectIdPatterns(logIds: string[]): any[] {
     const patterns: any[] = [];
-    
+
     // Analyze ID prefixes for service patterns
     const prefixCounts = new Map<string, number>();
-    
+
     for (const id of logIds) {
       const prefix = id.split('-')[0]; // Get first part of ID
       prefixCounts.set(prefix, (prefixCounts.get(prefix) || 0) + 1);
     }
-    
+
     // Find dominant services/sources
     const totalIds = logIds.length;
     for (const [prefix, count] of prefixCounts.entries()) {
@@ -585,7 +602,7 @@ export class MLService {
         });
       }
     }
-    
+
     return patterns;
   }
 
@@ -594,7 +611,7 @@ export class MLService {
    */
   private detectFrequencyPatterns(logIds: string[]): any[] {
     const patterns: any[] = [];
-    
+
     // Simple frequency analysis
     if (logIds.length > 1000) {
       patterns.push({
@@ -611,47 +628,49 @@ export class MLService {
         confidence: 0.6
       });
     }
-    
+
     return patterns;
   }
 
   /**
    * Helper methods for pattern detection
    */
-  
+
   private normalizeMessage(message: string): string {
-    return message
-      // Replace numbers with placeholders
-      .replace(/\b\d+\b/g, '{NUMBER}')
-      // Replace UUIDs
-      .replace(/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi, '{UUID}')
-      // Replace IP addresses
-      .replace(/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g, '{IP}')
-      // Replace timestamps
-      .replace(/\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}/g, '{TIMESTAMP}')
-      // Replace URLs
-      .replace(/https?:\/\/[^\s]+/g, '{URL}')
-      // Replace file paths
-      .replace(/\/[^\s]*\.(log|txt|json|xml|csv)/g, '{FILEPATH}')
-      // Replace quoted strings
-      .replace(/"[^"]*"/g, '{STRING}')
-      // Replace parenthetical content with numbers
-      .replace(/\([^)]*\d+[^)]*\)/g, '({DETAILS})')
-      // Normalize whitespace
-      .replace(/\s+/g, ' ')
-      .trim();
+    return (
+      message
+        // Replace numbers with placeholders
+        .replace(/\b\d+\b/g, '{NUMBER}')
+        // Replace UUIDs
+        .replace(/[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}/gi, '{UUID}')
+        // Replace IP addresses
+        .replace(/\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b/g, '{IP}')
+        // Replace timestamps
+        .replace(/\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}/g, '{TIMESTAMP}')
+        // Replace URLs
+        .replace(/https?:\/\/[^\s]+/g, '{URL}')
+        // Replace file paths
+        .replace(/\/[^\s]*\.(log|txt|json|xml|csv)/g, '{FILEPATH}')
+        // Replace quoted strings
+        .replace(/"[^"]*"/g, '{STRING}')
+        // Replace parenthetical content with numbers
+        .replace(/\([^)]*\d+[^)]*\)/g, '({DETAILS})')
+        // Normalize whitespace
+        .replace(/\s+/g, ' ')
+        .trim()
+    );
   }
 
   private getSeverityWeight(level: string): number {
     const weights: Record<string, number> = {
-      'TRACE': 0,
-      'DEBUG': 1,
-      'INFO': 2,
-      'WARN': 3,
-      'WARNING': 3,
-      'ERROR': 4,
-      'FATAL': 5,
-      'CRITICAL': 5
+      TRACE: 0,
+      DEBUG: 1,
+      INFO: 2,
+      WARN: 3,
+      WARNING: 3,
+      ERROR: 4,
+      FATAL: 5,
+      CRITICAL: 5
     };
     return weights[level.toUpperCase()] || 2;
   }
@@ -663,7 +682,7 @@ export class MLService {
     if (timestampMatch) {
       return parseInt(timestampMatch[1]);
     }
-    
+
     // Format 2: uuid-with-timestamp embedded
     const embeddedMatch = id.match(/(\d{13})/);
     if (embeddedMatch) {
@@ -673,34 +692,34 @@ export class MLService {
         return timestamp;
       }
     }
-    
+
     return null;
   }
 
   private detectTrend(logs: HeimdallLogEntry[]): any {
     if (logs.length < 10) return null;
-    
+
     // Group logs by time buckets
     const bucketSize = 5 * 60 * 1000 * 1000000; // 5 minutes in nanoseconds
     const timeBuckets = new Map<number, number>();
-    
+
     for (const log of logs) {
       const bucket = Math.floor(Number(log.timestamp) / bucketSize);
       timeBuckets.set(bucket, (timeBuckets.get(bucket) || 0) + 1);
     }
-    
+
     // Calculate trend
     const buckets = Array.from(timeBuckets.entries()).sort((a, b) => a[0] - b[0]);
     if (buckets.length < 3) return null;
-    
+
     const firstHalf = buckets.slice(0, Math.floor(buckets.length / 2));
     const secondHalf = buckets.slice(Math.floor(buckets.length / 2));
-    
+
     const avgFirst = firstHalf.reduce((sum, [_, count]) => sum + count, 0) / firstHalf.length;
     const avgSecond = secondHalf.reduce((sum, [_, count]) => sum + count, 0) / secondHalf.length;
-    
+
     const changePercent = ((avgSecond - avgFirst) / avgFirst) * 100;
-    
+
     if (Math.abs(changePercent) > 50) {
       return {
         title: changePercent > 0 ? 'Increasing Log Volume' : 'Decreasing Log Volume',
@@ -709,18 +728,16 @@ export class MLService {
         confidence: 0.7
       };
     }
-    
+
     return null;
   }
 
   private generatePrediction(logs: HeimdallLogEntry[]): any {
     // Simple prediction based on recent trends
-    const errorCount = logs.filter(log => 
-      log.level === 'ERROR' || log.level === 'FATAL'
-    ).length;
-    
+    const errorCount = logs.filter((log) => log.level === 'ERROR' || log.level === 'FATAL').length;
+
     const errorRate = errorCount / logs.length;
-    
+
     if (errorRate > 0.1) {
       return {
         description: `Based on current trends, error rate may increase to ${(errorRate * 1.5 * 100).toFixed(1)}% in the next hour`,
@@ -732,7 +749,7 @@ export class MLService {
         confidence: 0.6
       };
     }
-    
+
     return null;
   }
 

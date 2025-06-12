@@ -1,17 +1,17 @@
 /**
  * Security Service implementation for the Alexandria Platform
- * 
+ *
  * This implementation combines all security services into a single service.
  */
 
-import { 
-  SecurityService, 
-  AuthenticationService, 
-  AuthorizationService, 
-  EncryptionService, 
-  AuditService, 
+import {
+  SecurityService,
+  AuthenticationService,
+  AuthorizationService,
+  EncryptionService,
+  AuditService,
   ValidationService,
-  AuditEventType 
+  AuditEventType
 } from './interfaces';
 import { JwtAuthenticationService } from './authentication-service';
 import { RbacAuthorizationService } from './authorization-service';
@@ -30,7 +30,7 @@ export class SecurityServiceImpl implements SecurityService {
   public encryption: EncryptionService;
   public audit: AuditService;
   public validation: ValidationService;
-  
+
   private logger: Logger;
   private isInitialized: boolean = false;
 
@@ -44,30 +44,30 @@ export class SecurityServiceImpl implements SecurityService {
     }
   ) {
     this.logger = logger;
-    
+
     // Validate required security parameters
     if (!options.jwtSecret) {
       throw new Error('JWT secret is required for security service initialization');
     }
-    
+
     if (!options.encryptionKey) {
       throw new Error('Encryption key is required for security service initialization');
     }
-    
+
     // Create individual services
     this.authentication = new JwtAuthenticationService(logger, dataService, {
       jwtSecret: options.jwtSecret,
       tokenExpiration: options.tokenExpiration
     });
-    
+
     this.authorization = new RbacAuthorizationService(logger, dataService);
-    
+
     this.encryption = new CryptoEncryptionService(logger, {
       key: options.encryptionKey
     });
-    
+
     this.audit = new BasicAuditService(logger, dataService);
-    
+
     this.validation = new BasicValidationService(logger);
   }
 
@@ -78,20 +78,20 @@ export class SecurityServiceImpl implements SecurityService {
     if (this.isInitialized) {
       throw new Error('Security service is already initialized');
     }
-    
+
     this.logger.info('Initializing security service', {
       component: 'SecurityService'
     });
-    
+
     // Initialize individual services
     await this.encryption.initialize();
     await this.authentication.initialize();
     await this.authorization.initialize();
     await this.audit.initialize();
     await this.validation.initialize();
-    
+
     this.isInitialized = true;
-    
+
     this.logger.info('Security service initialized successfully', {
       component: 'SecurityService'
     });
@@ -122,7 +122,7 @@ export class SecurityServiceImpl implements SecurityService {
 
     // Validate the action based on security rules
     const securityRules: Record<string, (args: any[]) => void> = {
-      'readFile': (args) => {
+      readFile: (args) => {
         if (!args[0] || typeof args[0] !== 'string') {
           throw new Error('Invalid file path');
         }
@@ -131,7 +131,7 @@ export class SecurityServiceImpl implements SecurityService {
           throw new Error('Path traversal detected');
         }
       },
-      'writeFile': (args) => {
+      writeFile: (args) => {
         if (!args[0] || typeof args[0] !== 'string') {
           throw new Error('Invalid file path');
         }
@@ -140,12 +140,20 @@ export class SecurityServiceImpl implements SecurityService {
           throw new Error('Path traversal detected');
         }
         // Prevent writing to sensitive locations
-        const sensitivePatterns = ['/etc', '/usr', '/bin', '/sbin', '/boot', 'C:\\Windows', 'C:\\Program'];
-        if (sensitivePatterns.some(pattern => args[0].startsWith(pattern))) {
+        const sensitivePatterns = [
+          '/etc',
+          '/usr',
+          '/bin',
+          '/sbin',
+          '/boot',
+          'C:\\Windows',
+          'C:\\Program'
+        ];
+        if (sensitivePatterns.some((pattern) => args[0].startsWith(pattern))) {
           throw new Error('Cannot write to system directories');
         }
       },
-      'makeHttpRequest': (args) => {
+      makeHttpRequest: (args) => {
         if (!args[0] || typeof args[0] !== 'string') {
           throw new Error('Invalid URL');
         }
@@ -160,13 +168,13 @@ export class SecurityServiceImpl implements SecurityService {
           throw new Error('Only HTTP(S) protocols are allowed');
         }
       },
-      'accessDatabase': (args) => {
+      accessDatabase: (args) => {
         // Validate query parameters
         if (args[0] && typeof args[0] === 'string') {
           // Basic SQL injection prevention
           const dangerousPatterns = [';--', '/*', '*/', 'xp_', 'sp_', 'DROP', 'DELETE', 'TRUNCATE'];
           const upperQuery = args[0].toUpperCase();
-          if (dangerousPatterns.some(pattern => upperQuery.includes(pattern))) {
+          if (dangerousPatterns.some((pattern) => upperQuery.includes(pattern))) {
             throw new Error('Potentially dangerous SQL detected');
           }
         }

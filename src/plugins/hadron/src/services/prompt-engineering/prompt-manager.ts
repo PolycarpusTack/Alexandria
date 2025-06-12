@@ -1,6 +1,6 @@
 /**
  * Prompt Manager - Central coordinator for prompt engineering
- * 
+ *
  * Integrates all prompt engineering components
  */
 
@@ -46,15 +46,11 @@ export class PromptManager {
     // Create default prompt versions for each template
     const templates = PromptTemplates.getAllTemplates();
     for (const template of templates) {
-      PromptVersioning.createVersion(
-        template.id,
-        template.template,
-        {
-          description: `Initial version of ${template.name}`,
-          tags: template.crashTypes
-        }
-      );
-      
+      PromptVersioning.createVersion(template.id, template.template, {
+        description: `Initial version of ${template.name}`,
+        tags: template.crashTypes
+      });
+
       // Activate the first version
       const versions = PromptVersioning.getVersionHistory(template.id);
       if (versions.length > 0) {
@@ -108,10 +104,10 @@ export class PromptManager {
 
       // Find best template for crash type
       promptTemplate = PromptTemplates.findBestTemplate(crashData);
-      
+
       if (promptTemplate) {
         metadata.template = promptTemplate;
-        
+
         // Get active version for this template
         promptVersion = PromptVersioning.getActiveVersion(promptTemplate.id);
         if (promptVersion) {
@@ -122,13 +118,9 @@ export class PromptManager {
 
     // Build base prompt
     let prompt = '';
-    
+
     if (promptTemplate && promptVersion) {
-      prompt = PromptTemplates.fillTemplate(
-        promptTemplate, 
-        crashData, 
-        options.additionalContext
-      );
+      prompt = PromptTemplates.fillTemplate(promptTemplate, crashData, options.additionalContext);
     } else {
       // Fallback to generic prompt
       prompt = this.buildGenericPrompt(crashData);
@@ -144,15 +136,14 @@ export class PromptManager {
     }
 
     // Apply chain-of-thought if requested and model supports it
-    if (options.useChainOfThought && 
-        ModelOptimizations.modelSupports(options.modelName, 'supportsChainOfThought')) {
+    if (
+      options.useChainOfThought &&
+      ModelOptimizations.modelSupports(options.modelName, 'supportsChainOfThought')
+    ) {
       const cotTemplate = this.selectChainOfThought(crashData);
       if (cotTemplate) {
         metadata.chainOfThought = cotTemplate;
-        prompt = ChainOfThoughtReasoning.buildReasoningPrompt(
-          cotTemplate.id,
-          crashData
-        );
+        prompt = ChainOfThoughtReasoning.buildReasoningPrompt(cotTemplate.id, crashData);
       }
     }
 
@@ -184,11 +175,7 @@ export class PromptManager {
     if (metadata.variant) {
       const experimentId = this.findExperimentId(metadata.variant.id);
       if (experimentId) {
-        ABTestingSystem.recordResult(
-          experimentId,
-          metadata.variant.id,
-          result
-        );
+        ABTestingSystem.recordResult(experimentId, metadata.variant.id, result);
       }
     }
   }
@@ -200,20 +187,17 @@ export class PromptManager {
     crashData: ParsedCrashData,
     options: PromptGenerationOptions
   ): FewShotExample[] {
-    const maxExamples = options.exampleCount || 
-      ModelOptimizations.getRecommendedExampleCount(options.modelName);
+    const maxExamples =
+      options.exampleCount || ModelOptimizations.getRecommendedExampleCount(options.modelName);
 
     // Get relevant examples
     const errorMessage = crashData.errorMessages[0]?.message || '';
-    const stackTrace = crashData.stackTraces[0]?.frames
-      .map(f => `at ${f.functionName} (${f.fileName}:${f.lineNumber})`)
-      .join('\n') || '';
+    const stackTrace =
+      crashData.stackTraces[0]?.frames
+        .map((f) => `at ${f.functionName} (${f.fileName}:${f.lineNumber})`)
+        .join('\n') || '';
 
-    return FewShotExamples.findRelevantExamples(
-      errorMessage,
-      stackTrace,
-      maxExamples
-    );
+    return FewShotExamples.findRelevantExamples(errorMessage, stackTrace, maxExamples);
   }
 
   /**
@@ -230,7 +214,7 @@ export class PromptManager {
    */
   private static detectErrorType(crashData: ParsedCrashData): string {
     const errorMessage = crashData.errorMessages[0]?.message.toLowerCase() || '';
-    
+
     if (errorMessage.includes('outofmemory') || errorMessage.includes('heap')) {
       return 'OutOfMemoryError';
     }
@@ -243,7 +227,7 @@ export class PromptManager {
     if (errorMessage.includes('timeout') || errorMessage.includes('connection')) {
       return 'ConnectionTimeout';
     }
-    
+
     return 'default';
   }
 
@@ -252,7 +236,7 @@ export class PromptManager {
    */
   private static addExamplesToPrompt(prompt: string, examples: FewShotExample[]): string {
     const examplesText = FewShotExamples.formatExamplesForPrompt(examples);
-    
+
     return `Here are some similar examples to guide your analysis:
 
 ${examplesText}
@@ -266,13 +250,18 @@ ${prompt}`;
    * Build generic fallback prompt
    */
   private static buildGenericPrompt(crashData: ParsedCrashData): string {
-    const errorMessages = crashData.errorMessages.map(e => e.message).join('\n');
-    const stackTraces = crashData.stackTraces.map(st => {
-      const frames = st.frames.map(f => 
-        `  at ${f.functionName || 'unknown'} (${f.fileName || 'unknown'}:${f.lineNumber || '?'})`
-      ).join('\n');
-      return `${st.message || 'Stack Trace'}:\n${frames}`;
-    }).join('\n\n');
+    const errorMessages = crashData.errorMessages.map((e) => e.message).join('\n');
+    const stackTraces = crashData.stackTraces
+      .map((st) => {
+        const frames = st.frames
+          .map(
+            (f) =>
+              `  at ${f.functionName || 'unknown'} (${f.fileName || 'unknown'}:${f.lineNumber || '?'})`
+          )
+          .join('\n');
+        return `${st.message || 'Stack Trace'}:\n${frames}`;
+      })
+      .join('\n\n');
 
     return `Analyze this software crash and provide a structured analysis.
 
@@ -309,7 +298,7 @@ Format your response as JSON with these fields:
   private static findExperimentId(variantId: string): string | null {
     const experiments = ABTestingSystem.getAllExperiments();
     for (const exp of experiments) {
-      if (exp.variants.some(v => v.id === variantId)) {
+      if (exp.variants.some((v) => v.id === variantId)) {
         return exp.id;
       }
     }
@@ -321,17 +310,13 @@ Format your response as JSON with these fields:
    */
   static createTemplate(template: PromptTemplate): void {
     PromptTemplates.registerTemplate(template);
-    
+
     // Create initial version
-    const version = PromptVersioning.createVersion(
-      template.id,
-      template.template,
-      {
-        description: `Initial version of ${template.name}`,
-        tags: template.crashTypes
-      }
-    );
-    
+    const version = PromptVersioning.createVersion(template.id, template.template, {
+      description: `Initial version of ${template.name}`,
+      tags: template.crashTypes
+    });
+
     // Activate it
     PromptVersioning.activateVersion(version.id);
   }
@@ -339,20 +324,12 @@ Format your response as JSON with these fields:
   /**
    * Update a prompt template
    */
-  static updateTemplate(
-    templateId: string, 
-    newContent: string,
-    changelog: string
-  ): PromptVersion {
-    const version = PromptVersioning.createVersion(
-      templateId,
-      newContent,
-      {
-        changelog,
-        description: `Updated: ${changelog}`
-      }
-    );
-    
+  static updateTemplate(templateId: string, newContent: string, changelog: string): PromptVersion {
+    const version = PromptVersioning.createVersion(templateId, newContent, {
+      changelog,
+      description: `Updated: ${changelog}`
+    });
+
     return version;
   }
 
@@ -362,14 +339,14 @@ Format your response as JSON with these fields:
   static getPerformanceReport(templateId: string): any {
     const versions = PromptVersioning.getVersionHistory(templateId);
     const template = PromptTemplates.getTemplate(templateId);
-    
+
     return {
       template: {
         id: templateId,
         name: template?.name,
         crashTypes: template?.crashTypes
       },
-      versions: versions.map(v => ({
+      versions: versions.map((v) => ({
         version: v.version,
         status: v.status,
         metrics: v.metrics,

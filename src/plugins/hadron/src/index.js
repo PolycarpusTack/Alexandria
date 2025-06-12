@@ -18,7 +18,7 @@ class CrashAnalyzerPlugin {
     // Handle case where api is not provided (e.g., during plugin registry initialization)
     if (api && api.log) {
       api.log('info', 'Crash Analyzer plugin activated');
-      
+
       // Register API routes
       if (api.registerRoute) {
         api.registerRoute('/crash-analyzer/analyze', {

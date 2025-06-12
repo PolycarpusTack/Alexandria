@@ -79,25 +79,25 @@ describe('ChatInterface', () => {
   describe('Rendering', () => {
     it('should render loading state initially', () => {
       mockAlfredService.getSession.mockImplementation(() => new Promise(() => {}));
-      
-      render(<ChatInterface sessionId="test-session" />);
-      
+
+      render(<ChatInterface sessionId='test-session' />);
+
       expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
     });
 
     it('should render empty state when session not found', async () => {
       mockAlfredService.getSession.mockResolvedValue(null);
-      
-      render(<ChatInterface sessionId="test-session" />);
-      
+
+      render(<ChatInterface sessionId='test-session' />);
+
       await waitFor(() => {
         expect(screen.getByText('Session not found')).toBeInTheDocument();
       });
     });
 
     it('should render chat interface with messages', async () => {
-      render(<ChatInterface sessionId="test-session" />);
-      
+      render(<ChatInterface sessionId='test-session' />);
+
       await waitFor(() => {
         expect(screen.getByText('Hello')).toBeInTheDocument();
         expect(screen.getByText('Hi there!')).toBeInTheDocument();
@@ -105,8 +105,8 @@ describe('ChatInterface', () => {
     });
 
     it('should display session name in header', async () => {
-      render(<ChatInterface sessionId="test-session" />);
-      
+      render(<ChatInterface sessionId='test-session' />);
+
       await waitFor(() => {
         expect(screen.getByText('Test Session')).toBeInTheDocument();
       });
@@ -125,9 +125,9 @@ describe('ChatInterface', () => {
         },
         analyzedAt: new Date()
       };
-      
-      render(<ChatInterface sessionId="test-session" projectContext={projectContext} />);
-      
+
+      render(<ChatInterface sessionId='test-session' projectContext={projectContext} />);
+
       await waitFor(() => {
         expect(screen.getByText(/Test Project.*node/)).toBeInTheDocument();
       });
@@ -136,8 +136,8 @@ describe('ChatInterface', () => {
 
   describe('Message Display', () => {
     it('should display user messages with correct styling', async () => {
-      render(<ChatInterface sessionId="test-session" />);
-      
+      render(<ChatInterface sessionId='test-session' />);
+
       await waitFor(() => {
         const userMessage = screen.getByText('Hello').closest('.alfred-chat-message');
         expect(userMessage).toHaveClass('user');
@@ -145,8 +145,8 @@ describe('ChatInterface', () => {
     });
 
     it('should display assistant messages with correct styling', async () => {
-      render(<ChatInterface sessionId="test-session" />);
-      
+      render(<ChatInterface sessionId='test-session' />);
+
       await waitFor(() => {
         const assistantMessage = screen.getByText('Hi there!').closest('.alfred-chat-message');
         expect(assistantMessage).toHaveClass('assistant');
@@ -154,8 +154,8 @@ describe('ChatInterface', () => {
     });
 
     it('should display message metadata', async () => {
-      render(<ChatInterface sessionId="test-session" />);
-      
+      render(<ChatInterface sessionId='test-session' />);
+
       await waitFor(() => {
         expect(screen.getByText(/Model: test-model/)).toBeInTheDocument();
         expect(screen.getByText(/Tokens: 10/)).toBeInTheDocument();
@@ -164,8 +164,8 @@ describe('ChatInterface', () => {
     });
 
     it('should display timestamps', async () => {
-      render(<ChatInterface sessionId="test-session" />);
-      
+      render(<ChatInterface sessionId='test-session' />);
+
       await waitFor(() => {
         const timestamps = screen.getAllByText('12:00');
         expect(timestamps).toHaveLength(2);
@@ -176,123 +176,125 @@ describe('ChatInterface', () => {
   describe('User Interactions', () => {
     it('should send message when clicking send button', async () => {
       const user = userEvent.setup();
-      render(<ChatInterface sessionId="test-session" />);
-      
+      render(<ChatInterface sessionId='test-session' />);
+
       await waitFor(() => {
         expect(screen.getByPlaceholderText(/Type your message/)).toBeInTheDocument();
       });
-      
+
       const input = screen.getByPlaceholderText(/Type your message/);
       const sendButton = screen.getByRole('button', { name: /send/i });
-      
+
       await user.type(input, 'Test message');
       await user.click(sendButton);
-      
+
       expect(mockAlfredService.sendMessage).toHaveBeenCalledWith('test-session', 'Test message');
       expect(input).toHaveValue('');
     });
 
     it('should send message when pressing Enter', async () => {
       const user = userEvent.setup();
-      render(<ChatInterface sessionId="test-session" />);
-      
+      render(<ChatInterface sessionId='test-session' />);
+
       await waitFor(() => {
         expect(screen.getByPlaceholderText(/Type your message/)).toBeInTheDocument();
       });
-      
+
       const input = screen.getByPlaceholderText(/Type your message/);
-      
+
       await user.type(input, 'Test message{Enter}');
-      
+
       expect(mockAlfredService.sendMessage).toHaveBeenCalledWith('test-session', 'Test message');
     });
 
     it('should not send empty messages', async () => {
       const user = userEvent.setup();
-      render(<ChatInterface sessionId="test-session" />);
-      
+      render(<ChatInterface sessionId='test-session' />);
+
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /send/i })).toBeInTheDocument();
       });
-      
+
       const sendButton = screen.getByRole('button', { name: /send/i });
-      
+
       await user.click(sendButton);
-      
+
       expect(mockAlfredService.sendMessage).not.toHaveBeenCalled();
     });
 
     it('should show loading state while sending', async () => {
-      mockAlfredService.sendMessage.mockImplementation(() => 
-        new Promise(resolve => setTimeout(resolve, 100))
+      mockAlfredService.sendMessage.mockImplementation(
+        () => new Promise((resolve) => setTimeout(resolve, 100))
       );
-      
+
       const user = userEvent.setup();
-      render(<ChatInterface sessionId="test-session" />);
-      
+      render(<ChatInterface sessionId='test-session' />);
+
       await waitFor(() => {
         expect(screen.getByPlaceholderText(/Type your message/)).toBeInTheDocument();
       });
-      
+
       const input = screen.getByPlaceholderText(/Type your message/);
-      
+
       await user.type(input, 'Test message{Enter}');
-      
+
       expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
     });
 
     it('should copy message content', async () => {
       const user = userEvent.setup();
-      
+
       // Mock clipboard API
       Object.assign(navigator, {
         clipboard: {
           writeText: jest.fn().mockResolvedValue(undefined)
         }
       });
-      
-      render(<ChatInterface sessionId="test-session" />);
-      
+
+      render(<ChatInterface sessionId='test-session' />);
+
       await waitFor(() => {
         expect(screen.getAllByRole('button', { name: /copy/i })).toHaveLength(2);
       });
-      
+
       const copyButtons = screen.getAllByRole('button', { name: /copy/i });
       await user.click(copyButtons[0]);
-      
+
       expect(navigator.clipboard.writeText).toHaveBeenCalledWith('Hello');
-      expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({
-        title: 'Copied to clipboard'
-      }));
+      expect(mockToast).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'Copied to clipboard'
+        })
+      );
     });
 
     it('should download session', async () => {
       const user = userEvent.setup();
-      
+
       // Mock URL and document methods
       const mockCreateObjectURL = jest.fn().mockReturnValue('blob:url');
       const mockRevokeObjectURL = jest.fn();
       const mockClick = jest.fn();
-      
+
       global.URL.createObjectURL = mockCreateObjectURL;
       global.URL.revokeObjectURL = mockRevokeObjectURL;
-      
+
       jest.spyOn(document, 'createElement').mockImplementation((tag) => {
         if (tag === 'a') {
           return { click: mockClick } as any;
         }
         return document.createElement(tag);
       });
-      
-      render(<ChatInterface sessionId="test-session" />);
-      
+
+      render(<ChatInterface sessionId='test-session' />);
+
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /download/i })).toBeInTheDocument();
       });
-      
+
       const downloadButton = screen.getByRole('button', { name: /download/i });
       await user.click(downloadButton);
-      
+
       expect(mockCreateObjectURL).toHaveBeenCalled();
       expect(mockClick).toHaveBeenCalled();
       expect(mockRevokeObjectURL).toHaveBeenCalledWith('blob:url');
@@ -300,23 +302,23 @@ describe('ChatInterface', () => {
 
     it('should refresh session', async () => {
       const user = userEvent.setup();
-      render(<ChatInterface sessionId="test-session" />);
-      
+      render(<ChatInterface sessionId='test-session' />);
+
       await waitFor(() => {
         expect(screen.getByRole('button', { name: /refresh/i })).toBeInTheDocument();
       });
-      
+
       const refreshButton = screen.getByRole('button', { name: /refresh/i });
       await user.click(refreshButton);
-      
+
       expect(mockAlfredService.getSession).toHaveBeenCalledTimes(2);
     });
   });
 
   describe('Quick Actions', () => {
     it('should display quick actions when input is empty', async () => {
-      render(<ChatInterface sessionId="test-session" />);
-      
+      render(<ChatInterface sessionId='test-session' />);
+
       await waitFor(() => {
         expect(screen.getByText('Generate Code')).toBeInTheDocument();
         expect(screen.getByText('Explain Code')).toBeInTheDocument();
@@ -329,30 +331,30 @@ describe('ChatInterface', () => {
 
     it('should populate input when clicking quick action', async () => {
       const user = userEvent.setup();
-      render(<ChatInterface sessionId="test-session" />);
-      
+      render(<ChatInterface sessionId='test-session' />);
+
       await waitFor(() => {
         expect(screen.getByText('Generate Code')).toBeInTheDocument();
       });
-      
+
       const generateButton = screen.getByText('Generate Code');
       await user.click(generateButton);
-      
+
       const input = screen.getByPlaceholderText(/Type your message/);
       expect(input).toHaveValue('Generate code for: ');
     });
 
     it('should hide quick actions when typing', async () => {
       const user = userEvent.setup();
-      render(<ChatInterface sessionId="test-session" />);
-      
+      render(<ChatInterface sessionId='test-session' />);
+
       await waitFor(() => {
         expect(screen.getByText('Generate Code')).toBeInTheDocument();
       });
-      
+
       const input = screen.getByPlaceholderText(/Type your message/);
       await user.type(input, 'Test');
-      
+
       expect(screen.queryByText('Generate Code')).not.toBeInTheDocument();
     });
   });
@@ -360,63 +362,69 @@ describe('ChatInterface', () => {
   describe('Error Handling', () => {
     it('should show error toast on load failure', async () => {
       mockAlfredService.getSession.mockRejectedValue(new Error('Load failed'));
-      
-      render(<ChatInterface sessionId="test-session" />);
-      
+
+      render(<ChatInterface sessionId='test-session' />);
+
       await waitFor(() => {
-        expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({
-          title: 'Error',
-          description: 'Failed to load chat session',
-          variant: 'destructive'
-        }));
+        expect(mockToast).toHaveBeenCalledWith(
+          expect.objectContaining({
+            title: 'Error',
+            description: 'Failed to load chat session',
+            variant: 'destructive'
+          })
+        );
       });
     });
 
     it('should show error message on send failure', async () => {
       mockAlfredService.sendMessage.mockRejectedValue(new Error('Send failed'));
-      
+
       const user = userEvent.setup();
-      render(<ChatInterface sessionId="test-session" />);
-      
+      render(<ChatInterface sessionId='test-session' />);
+
       await waitFor(() => {
         expect(screen.getByPlaceholderText(/Type your message/)).toBeInTheDocument();
       });
-      
+
       const input = screen.getByPlaceholderText(/Type your message/);
       await user.type(input, 'Test message{Enter}');
-      
+
       await waitFor(() => {
-        expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({
-          title: 'Error',
-          description: 'Failed to send message',
-          variant: 'destructive'
-        }));
+        expect(mockToast).toHaveBeenCalledWith(
+          expect.objectContaining({
+            title: 'Error',
+            description: 'Failed to send message',
+            variant: 'destructive'
+          })
+        );
       });
     });
 
     it('should handle clipboard copy failure gracefully', async () => {
       const user = userEvent.setup();
-      
+
       Object.assign(navigator, {
         clipboard: {
           writeText: jest.fn().mockRejectedValue(new Error('Copy failed'))
         }
       });
-      
-      render(<ChatInterface sessionId="test-session" />);
-      
+
+      render(<ChatInterface sessionId='test-session' />);
+
       await waitFor(() => {
         expect(screen.getAllByRole('button', { name: /copy/i })).toHaveLength(2);
       });
-      
+
       const copyButtons = screen.getAllByRole('button', { name: /copy/i });
       await user.click(copyButtons[0]);
-      
-      expect(mockToast).toHaveBeenCalledWith(expect.objectContaining({
-        title: 'Error',
-        description: 'Failed to copy to clipboard',
-        variant: 'destructive'
-      }));
+
+      expect(mockToast).toHaveBeenCalledWith(
+        expect.objectContaining({
+          title: 'Error',
+          description: 'Failed to copy to clipboard',
+          variant: 'destructive'
+        })
+      );
     });
   });
 });

@@ -1,6 +1,6 @@
 /**
  * Enterprise-Grade Elasticsearch Adapter for Log Visualization Plugin
- * 
+ *
  * Provides comprehensive Elasticsearch integration with:
  * - Full client support with connection pooling
  * - Advanced query building and optimization
@@ -12,9 +12,9 @@
 
 import { EventEmitter } from 'events';
 import { BaseLogAdapter } from './base-log-adapter';
-import { 
-  LogSourceConfig, 
-  LogQuery, 
+import {
+  LogSourceConfig,
+  LogQuery,
   LogQueryResult,
   LogFilter,
   LogEntry,
@@ -23,7 +23,6 @@ import {
   LogAdapterCapabilities
 } from '../interfaces';
 import { Logger } from '../../../../utils/logger';
-import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Elasticsearch client interface - compatible with @elastic/elasticsearch
@@ -50,11 +49,14 @@ interface ElasticsearchClient {
   indices: {
     getMapping(params: any): Promise<{
       statusCode: number;
-      body: Record<string, {
-        mappings: {
-          properties: Record<string, any>;
-        };
-      }>;
+      body: Record<
+        string,
+        {
+          mappings: {
+            properties: Record<string, any>;
+          };
+        }
+      >;
     }>;
     exists(params: any): Promise<{ statusCode: number; body: boolean }>;
     create(params: any): Promise<{ statusCode: number; body: any }>;
@@ -83,11 +85,7 @@ class ElasticsearchCircuitBreaker {
   private readonly timeout: number;
   private readonly resetTimeout: number;
 
-  constructor(
-    threshold = 5,
-    timeout = 60000,
-    resetTimeout = 30000
-  ) {
+  constructor(threshold = 5, timeout = 60000, resetTimeout = 30000) {
     this.threshold = threshold;
     this.timeout = timeout;
     this.resetTimeout = resetTimeout;
@@ -116,7 +114,7 @@ class ElasticsearchCircuitBreaker {
   private recordFailure(): void {
     this.failures++;
     this.lastFailureTime = Date.now();
-    
+
     if (this.failures >= this.threshold) {
       this.state = CircuitState.OPEN;
     }
@@ -147,34 +145,38 @@ interface RetryConfig {
  */
 export class ElasticsearchAdapter extends BaseLogAdapter {
   private client: ElasticsearchClient | null = null;
-  private activeStreams: Map<string, { 
-    interval: NodeJS.Timeout; 
-    emitter: EventEmitter;
-    query: LogQuery;
-    lastCheck: Date;
-  }> = new Map();
-  
+  private activeStreams: Map<
+    string,
+    {
+      interval: NodeJS.Timeout;
+      emitter: EventEmitter;
+      query: LogQuery;
+      lastCheck: Date;
+    }
+  > = new Map();
+
   private readonly circuitBreaker: ElasticsearchCircuitBreaker;
   private readonly retryConfig: RetryConfig;
   private config: LogSourceConfig | null = null;
   private isConnectionValid = false;
-  
+
   // Default settings
   private readonly DEFAULT_INDEX = 'logs-*';
   private readonly QUERY_TIMEOUT = 30000;
   private readonly SCROLL_TIMEOUT = '2m';
   private readonly BATCH_SIZE = 1000;
 
-  constructor(logger: Logger, options?: {
-    circuitBreakerThreshold?: number;
-    retryConfig?: Partial<RetryConfig>;
-  }) {
+  constructor(
+    logger: Logger,
+    options?: {
+      circuitBreakerThreshold?: number;
+      retryConfig?: Partial<RetryConfig>;
+    }
+  ) {
     super(logger);
-    
-    this.circuitBreaker = new ElasticsearchCircuitBreaker(
-      options?.circuitBreakerThreshold || 5
-    );
-    
+
+    this.circuitBreaker = new ElasticsearchCircuitBreaker(options?.circuitBreakerThreshold || 5);
+
     this.retryConfig = {
       maxRetries: 3,
       initialDelay: 1000,
@@ -191,7 +193,7 @@ export class ElasticsearchAdapter extends BaseLogAdapter {
     if (config) {
       this.config = config;
     }
-    
+
     if (!this.config) {
       await super.connect();
       return;
@@ -206,32 +208,31 @@ export class ElasticsearchAdapter extends BaseLogAdapter {
 
       // Validate configuration
       this.validateConfiguration(this.config);
-      
+
       // Create and configure client
       this.client = await this.createElasticsearchClient(this.config);
-      
+
       // Test connection
       await this.testConnection();
-      
+
       this.isConnected = true;
       this.isConnectionValid = true;
-      
+
       this.logger.info('Successfully connected to Elasticsearch', {
         component: 'ElasticsearchAdapter',
         url: this.config.url
       });
-      
     } catch (error) {
       this.isConnected = false;
       this.isConnectionValid = false;
-      
+
       this.logger.error('Failed to connect to Elasticsearch', {
         component: 'ElasticsearchAdapter',
         url: this.config?.url,
         error: error instanceof Error ? error.message : String(error),
         stack: error instanceof Error ? error.stack : undefined
       });
-      
+
       throw error;
     }
   }
@@ -241,7 +242,7 @@ export class ElasticsearchAdapter extends BaseLogAdapter {
    */
   async testConnection(config?: LogSourceConfig): Promise<boolean> {
     const testConfig = config || this.config;
-    
+
     if (!testConfig) {
       return super.testConnection();
     }
@@ -296,7 +297,7 @@ export class ElasticsearchAdapter extends BaseLogAdapter {
     try {
       return await this.circuitBreaker.execute(async () => {
         const esQuery = this.buildElasticsearchQuery(query);
-        
+
         this.logger.debug('Executing Elasticsearch query', {
           component: 'ElasticsearchAdapter',
           query: esQuery,
@@ -312,7 +313,7 @@ export class ElasticsearchAdapter extends BaseLogAdapter {
         }
 
         const result = this.mapSearchResponse(response.body, startTime);
-        
+
         this.logger.debug('Elasticsearch query completed', {
           component: 'ElasticsearchAdapter',
           resultCount: result.logs.length,
@@ -357,14 +358,14 @@ export class ElasticsearchAdapter extends BaseLogAdapter {
         };
 
         const result = await this.query(streamQuery);
-        
+
         if (result.logs.length > 0) {
           // Update last check time to latest log timestamp
-          const latestTimestamp = Math.max(...result.logs.map(log => log.timestamp.getTime()));
+          const latestTimestamp = Math.max(...result.logs.map((log) => log.timestamp.getTime()));
           lastCheck = new Date(latestTimestamp + 1);
 
           // Emit new logs
-          result.logs.forEach(log => {
+          result.logs.forEach((log) => {
             try {
               callback(log);
             } catch (error) {
@@ -382,7 +383,7 @@ export class ElasticsearchAdapter extends BaseLogAdapter {
           streamId,
           error: error instanceof Error ? error.message : String(error)
         });
-        
+
         emitter.emit('error', error);
       }
     }, this.config?.refreshInterval || 5000);
@@ -408,7 +409,7 @@ export class ElasticsearchAdapter extends BaseLogAdapter {
         clearInterval(streamInfo.interval);
         streamInfo.emitter.removeAllListeners();
         this.activeStreams.delete(streamId);
-        
+
         this.logger.debug('Stopped Elasticsearch log streaming', {
           component: 'ElasticsearchAdapter',
           streamId
@@ -507,7 +508,7 @@ export class ElasticsearchAdapter extends BaseLogAdapter {
     try {
       // Dynamic import to avoid requiring @elastic/elasticsearch when not needed
       const { Client } = await import('@elastic/elasticsearch');
-      
+
       const clientConfig: any = {
         node: config.url,
         requestTimeout: this.QUERY_TIMEOUT,
@@ -542,7 +543,7 @@ export class ElasticsearchAdapter extends BaseLogAdapter {
         clientConfig.ssl = {
           rejectUnauthorized: config.ssl.verify
         };
-        
+
         if (config.ssl.certPath) {
           clientConfig.ssl.ca = config.ssl.certPath;
         }
@@ -561,13 +562,13 @@ export class ElasticsearchAdapter extends BaseLogAdapter {
 
   private async retryOperation<T>(operation: () => Promise<T>): Promise<T> {
     let lastError: Error;
-    
+
     for (let attempt = 0; attempt <= this.retryConfig.maxRetries; attempt++) {
       try {
         return await operation();
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
-        
+
         if (attempt === this.retryConfig.maxRetries) {
           break;
         }
@@ -586,7 +587,7 @@ export class ElasticsearchAdapter extends BaseLogAdapter {
           error: lastError.message
         });
 
-        await new Promise(resolve => setTimeout(resolve, delay));
+        await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
 
@@ -595,7 +596,7 @@ export class ElasticsearchAdapter extends BaseLogAdapter {
 
   private buildElasticsearchQuery(query: LogQuery): any {
     const indexPattern = this.getIndexPattern();
-    
+
     const esQuery: any = {
       index: indexPattern,
       body: {
@@ -628,7 +629,7 @@ export class ElasticsearchAdapter extends BaseLogAdapter {
       const levelField = this.getLevelField();
       esQuery.body.query.bool.filter.push({
         terms: {
-          [levelField]: query.levels.map(level => level.toLowerCase())
+          [levelField]: query.levels.map((level) => level.toLowerCase())
         }
       });
     }
@@ -646,7 +647,7 @@ export class ElasticsearchAdapter extends BaseLogAdapter {
 
     // Add custom filters
     if (query.filters && query.filters.length > 0) {
-      query.filters.forEach(filter => {
+      query.filters.forEach((filter) => {
         const esFilter = this.buildFilterClause(filter);
         if (esFilter) {
           esQuery.body.query.bool.filter.push(esFilter);
@@ -656,7 +657,7 @@ export class ElasticsearchAdapter extends BaseLogAdapter {
 
     // Add sorting
     if (query.sort && query.sort.length > 0) {
-      query.sort.forEach(sort => {
+      query.sort.forEach((sort) => {
         esQuery.body.sort.push({
           [sort.field]: {
             order: sort.direction === SortDirection.ASC ? 'asc' : 'desc'
@@ -673,21 +674,23 @@ export class ElasticsearchAdapter extends BaseLogAdapter {
     // Add aggregations
     if (query.aggregations && query.aggregations.length > 0) {
       esQuery.body.aggs = {};
-      
+
       query.aggregations.forEach((agg, index) => {
         const aggName = agg.name || `agg_${index}_${agg.type}_${agg.field}`;
-        
+
         switch (agg.type) {
           case 'count':
-            esQuery.body.aggs[aggName] = agg.interval ? {
-              date_histogram: {
-                field: agg.field,
-                fixed_interval: agg.interval,
-                min_doc_count: 0
-              }
-            } : {
-              value_count: { field: agg.field }
-            };
+            esQuery.body.aggs[aggName] = agg.interval
+              ? {
+                  date_histogram: {
+                    field: agg.field,
+                    fixed_interval: agg.interval,
+                    min_doc_count: 0
+                  }
+                }
+              : {
+                  value_count: { field: agg.field }
+                };
             break;
           case 'terms':
             esQuery.body.aggs[aggName] = {
@@ -738,9 +741,17 @@ export class ElasticsearchAdapter extends BaseLogAdapter {
       case 'not_contains':
         return { bool: { must_not: { wildcard: { [filter.field]: `*${filter.value}*` } } } };
       case 'in':
-        return { terms: { [filter.field]: Array.isArray(filter.value) ? filter.value : [filter.value] } };
+        return {
+          terms: { [filter.field]: Array.isArray(filter.value) ? filter.value : [filter.value] }
+        };
       case 'not_in':
-        return { bool: { must_not: { terms: { [filter.field]: Array.isArray(filter.value) ? filter.value : [filter.value] } } } };
+        return {
+          bool: {
+            must_not: {
+              terms: { [filter.field]: Array.isArray(filter.value) ? filter.value : [filter.value] }
+            }
+          }
+        };
       case 'exists':
         return { exists: { field: filter.field } };
       case 'not_exists':
@@ -758,7 +769,7 @@ export class ElasticsearchAdapter extends BaseLogAdapter {
 
   private mapSearchResponse(response: any, startTime: number): LogQueryResult {
     const logs = response.hits.hits.map((hit: any) => this.mapLogEntry(hit));
-    
+
     const result: LogQueryResult = {
       logs,
       total: response.hits.total?.value || response.hits.total || 0,
@@ -852,11 +863,18 @@ export class ElasticsearchAdapter extends BaseLogAdapter {
       fields.message || 'message',
       fields.service || 'service',
       fields.host || 'host',
-      'user_id', 'userId', 'user',
-      'session_id', 'sessionId',
-      'trace_id', 'traceId',
-      'span_id', 'spanId',
-      'tags', 'context', 'ctx'
+      'user_id',
+      'userId',
+      'user',
+      'session_id',
+      'sessionId',
+      'trace_id',
+      'traceId',
+      'span_id',
+      'spanId',
+      'tags',
+      'context',
+      'ctx'
     ]);
 
     for (const [key, value] of Object.entries(source)) {
@@ -870,11 +888,11 @@ export class ElasticsearchAdapter extends BaseLogAdapter {
 
   private extractTags(source: any): string[] {
     const tags: string[] = [];
-    
+
     if (source.tags && Array.isArray(source.tags)) {
       tags.push(...source.tags);
     }
-    
+
     if (source.labels && typeof source.labels === 'object') {
       for (const [key, value] of Object.entries(source.labels)) {
         tags.push(`${key}:${value}`);
@@ -890,7 +908,7 @@ export class ElasticsearchAdapter extends BaseLogAdapter {
     for (const [aggName, aggData] of Object.entries(aggregations)) {
       if (aggData && typeof aggData === 'object') {
         const data = aggData as any;
-        
+
         if (data.buckets) {
           // Terms or date histogram aggregation
           result[aggName] = data.buckets.map((bucket: any) => ({
@@ -924,7 +942,7 @@ export class ElasticsearchAdapter extends BaseLogAdapter {
           component: 'ElasticsearchAdapter',
           indexPattern
         });
-        
+
         // Create a default index for logs
         const defaultIndex = indexPattern.replace('*', new Date().toISOString().split('T')[0]);
         await this.createDefaultIndex(defaultIndex);
@@ -976,26 +994,18 @@ export class ElasticsearchAdapter extends BaseLogAdapter {
 
   private getIndexPattern(config?: LogSourceConfig): string {
     const usedConfig = config || this.config;
-    return usedConfig?.options?.index || 
-           usedConfig?.options?.indexPattern || 
-           this.DEFAULT_INDEX;
+    return usedConfig?.options?.index || usedConfig?.options?.indexPattern || this.DEFAULT_INDEX;
   }
 
   private getTimestampField(): string {
-    return this.config?.fields?.timestamp || 
-           this.config?.mappings?.timestamp || 
-           '@timestamp';
+    return this.config?.fields?.timestamp || this.config?.mappings?.timestamp || '@timestamp';
   }
 
   private getLevelField(): string {
-    return this.config?.fields?.level || 
-           this.config?.mappings?.level || 
-           'level';
+    return this.config?.fields?.level || this.config?.mappings?.level || 'level';
   }
 
   private getMessageField(): string {
-    return this.config?.fields?.message || 
-           this.config?.mappings?.message || 
-           'message';
+    return this.config?.fields?.message || this.config?.mappings?.message || 'message';
   }
 }

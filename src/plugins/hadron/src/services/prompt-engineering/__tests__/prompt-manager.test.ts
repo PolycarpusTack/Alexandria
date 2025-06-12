@@ -20,19 +20,25 @@ describe('PromptManager', () => {
   describe('generatePrompt', () => {
     it('should generate a basic prompt for simple crash', () => {
       const crashData: ParsedCrashData = {
-        errorMessages: [{
-          message: 'NullPointerException at com.app.UserService.getUser',
-          level: 'ERROR',
-          timestamp: new Date()
-        }],
-        stackTraces: [{
-          message: 'NullPointerException',
-          frames: [{
-            functionName: 'getUser',
-            fileName: 'UserService.java',
-            lineNumber: 45
-          }]
-        }],
+        errorMessages: [
+          {
+            message: 'NullPointerException at com.app.UserService.getUser',
+            level: 'ERROR',
+            timestamp: new Date()
+          }
+        ],
+        stackTraces: [
+          {
+            message: 'NullPointerException',
+            frames: [
+              {
+                functionName: 'getUser',
+                fileName: 'UserService.java',
+                lineNumber: 45
+              }
+            ]
+          }
+        ],
         systemInfo: {
           os: 'Linux',
           version: '5.0'
@@ -60,11 +66,13 @@ describe('PromptManager', () => {
 
     it('should include few-shot examples when requested', () => {
       const crashData: ParsedCrashData = {
-        errorMessages: [{
-          message: 'java.lang.OutOfMemoryError: Java heap space',
-          level: 'ERROR',
-          timestamp: new Date()
-        }],
+        errorMessages: [
+          {
+            message: 'java.lang.OutOfMemoryError: Java heap space',
+            level: 'ERROR',
+            timestamp: new Date()
+          }
+        ],
         stackTraces: [],
         systemInfo: {},
         timestamps: [],
@@ -86,11 +94,13 @@ describe('PromptManager', () => {
 
     it('should use chain-of-thought for complex crashes', () => {
       const crashData: ParsedCrashData = {
-        errorMessages: [{
-          message: 'Deadlock detected',
-          level: 'ERROR',
-          timestamp: new Date()
-        }],
+        errorMessages: [
+          {
+            message: 'Deadlock detected',
+            level: 'ERROR',
+            timestamp: new Date()
+          }
+        ],
         stackTraces: Array(5).fill({
           message: 'Thread blocked',
           frames: Array(20).fill({
@@ -122,11 +132,13 @@ describe('PromptManager', () => {
   describe('Template Selection', () => {
     it('should select memory leak template for OOM errors', () => {
       const crashData: ParsedCrashData = {
-        errorMessages: [{
-          message: 'java.lang.OutOfMemoryError: unable to create new native thread',
-          level: 'ERROR',
-          timestamp: new Date()
-        }],
+        errorMessages: [
+          {
+            message: 'java.lang.OutOfMemoryError: unable to create new native thread',
+            level: 'ERROR',
+            timestamp: new Date()
+          }
+        ],
         stackTraces: [],
         systemInfo: {},
         timestamps: [],
@@ -142,11 +154,13 @@ describe('PromptManager', () => {
 
     it('should select deadlock template for concurrency issues', () => {
       const crashData: ParsedCrashData = {
-        errorMessages: [{
-          message: 'Deadlock detected in thread pool',
-          level: 'ERROR',
-          timestamp: new Date()
-        }],
+        errorMessages: [
+          {
+            message: 'Deadlock detected in thread pool',
+            level: 'ERROR',
+            timestamp: new Date()
+          }
+        ],
         stackTraces: [],
         systemInfo: {},
         timestamps: [],
@@ -163,11 +177,13 @@ describe('PromptManager', () => {
 
   describe('Model Optimizations', () => {
     it('should optimize prompts for small models', () => {
-      const longPrompt = 'Step 1: Analyze this\nStep 2: Think about that\n' + 
-        'Follow these steps carefully:\n' + 'x'.repeat(5000);
+      const longPrompt =
+        'Step 1: Analyze this\nStep 2: Think about that\n' +
+        'Follow these steps carefully:\n' +
+        'x'.repeat(5000);
 
       const optimized = ModelOptimizations.optimizePrompt(longPrompt, 'phi:2b');
-      
+
       expect(optimized.length).toBeLessThan(longPrompt.length);
       expect(optimized).not.toContain('Step 1:');
       expect(optimized).toContain('Analyze');
@@ -175,7 +191,7 @@ describe('PromptManager', () => {
 
     it('should get correct parameters for quantized models', () => {
       const params = ModelOptimizations.getModelParameters('llama2:7b-q4');
-      
+
       expect(params.temperature).toBe(0.1);
       expect(params.top_p).toBe(0.9);
       expect(params.repeat_penalty).toBe(1.1);
@@ -189,28 +205,22 @@ describe('PromptManager', () => {
 
   describe('Prompt Versioning', () => {
     it('should create and activate new versions', () => {
-      const version1 = PromptVersioning.createVersion(
-        'test-prompt',
-        'Initial prompt content',
-        { description: 'First version' }
-      );
+      const version1 = PromptVersioning.createVersion('test-prompt', 'Initial prompt content', {
+        description: 'First version'
+      });
 
       expect(version1.version).toBe(1);
       expect(version1.status).toBe('draft');
 
       PromptVersioning.activateVersion(version1.id);
       const active = PromptVersioning.getActiveVersion('test-prompt');
-      
+
       expect(active?.id).toBe(version1.id);
       expect(active?.status).toBe('active');
     });
 
     it('should track metrics correctly', () => {
-      const version = PromptVersioning.createVersion(
-        'test-prompt-metrics',
-        'Test prompt',
-        {}
-      );
+      const version = PromptVersioning.createVersion('test-prompt-metrics', 'Test prompt', {});
 
       // Record multiple results
       PromptVersioning.updateMetrics(version.id, {
@@ -251,7 +261,7 @@ describe('PromptManager', () => {
       });
 
       expect(experiment.status).toBe('draft');
-      
+
       ABTestingSystem.startExperiment(experiment.id);
       const running = ABTestingSystem.getExperiment(experiment.id);
       expect(running?.status).toBe('running');
@@ -268,7 +278,7 @@ describe('PromptManager', () => {
       // Should be roughly 50/50 split
       const counts = Array.from(selections.values());
       expect(counts.length).toBe(2);
-      counts.forEach(count => {
+      counts.forEach((count) => {
         expect(count).toBeGreaterThan(30);
         expect(count).toBeLessThan(70);
       });
@@ -280,7 +290,7 @@ describe('PromptManager', () => {
       // Setup A/B test
       const templateId = 'memory-leak-analysis';
       const versions = PromptVersioning.getVersionHistory(templateId);
-      
+
       if (versions.length >= 1) {
         const newVersion = PromptVersioning.createVersion(
           templateId,
@@ -303,11 +313,13 @@ describe('PromptManager', () => {
 
         // Generate prompts and record results
         const crashData: ParsedCrashData = {
-          errorMessages: [{
-            message: 'java.lang.OutOfMemoryError: Java heap space',
-            level: 'ERROR',
-            timestamp: new Date()
-          }],
+          errorMessages: [
+            {
+              message: 'java.lang.OutOfMemoryError: Java heap space',
+              level: 'ERROR',
+              timestamp: new Date()
+            }
+          ],
           stackTraces: [],
           systemInfo: {},
           timestamps: [],

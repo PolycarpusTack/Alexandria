@@ -1,6 +1,6 @@
 /**
  * Data Service Factory for the Alexandria Platform
- * 
+ *
  * This file provides factory functions to create the appropriate data service
  * based on configuration.
  */
@@ -30,15 +30,15 @@ export interface DataServiceOptions {
 export function createDataService(options: DataServiceOptions = {}, logger: Logger): DataService {
   // Determine type from environment if not specified
   const type = options.type || (isPostgresEnabled() ? 'postgres' : 'in-memory');
-  
+
   switch (type) {
     case 'postgres':
       const pgOptions = options.postgres || getDatabaseConfig();
       return new PostgresDataService(pgOptions, logger);
-    
+
     case 'in-memory':
       return new InMemoryDataService(logger);
-    
+
     default:
       throw new Error(`Unknown data service type: ${type}`);
   }

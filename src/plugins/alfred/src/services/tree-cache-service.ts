@@ -1,6 +1,6 @@
 /**
  * Tree Cache Service
- * 
+ *
  * Caches project structure for improved performance
  * Based on original Alfred's project_tree_cache.py
  */
@@ -98,7 +98,7 @@ export class TreeCacheService {
   async getProjectTree(rootPath: string, forceRefresh = false): Promise<FileNode> {
     // Normalize path
     const normalizedPath = path.resolve(rootPath);
-    
+
     // Check if scan is already in progress
     const existingPromise = this.scanPromises.get(normalizedPath);
     if (existingPromise) {
@@ -107,9 +107,9 @@ export class TreeCacheService {
     }
 
     const cached = this.cache.get(normalizedPath);
-    
+
     if (!forceRefresh && cached && this.isCacheValid(cached)) {
-      this.logger.debug('Returning cached project tree', { 
+      this.logger.debug('Returning cached project tree', {
         path: normalizedPath,
         fileCount: cached.fileCount,
         age: Date.now() - cached.lastUpdated.getTime()
@@ -139,10 +139,10 @@ export class TreeCacheService {
     try {
       // Verify path exists and is accessible
       await fs.access(rootPath);
-      
+
       // Build new tree with improved performance
       const tree = await this.buildProjectTreeOptimized(rootPath);
-      
+
       const cache: ProjectTreeCache = {
         rootPath,
         tree,
@@ -187,11 +187,15 @@ export class TreeCacheService {
   /**
    * Build project tree with optimized performance for large projects
    */
-  private async buildProjectTreeOptimized(dirPath: string, maxDepth = 10, currentDepth = 0): Promise<FileNode> {
+  private async buildProjectTreeOptimized(
+    dirPath: string,
+    maxDepth = 10,
+    currentDepth = 0
+  ): Promise<FileNode> {
     try {
       const stats = await fs.stat(dirPath);
       const name = path.basename(dirPath);
-      
+
       if (!stats.isDirectory()) {
         return {
           name,
@@ -206,9 +210,9 @@ export class TreeCacheService {
 
       // Prevent infinite recursion in deep directory structures
       if (currentDepth >= maxDepth) {
-        this.logger.warn('Maximum depth reached, skipping deeper scan', { 
-          path: dirPath, 
-          depth: currentDepth 
+        this.logger.warn('Maximum depth reached, skipping deeper scan', {
+          path: dirPath,
+          depth: currentDepth
         });
         return {
           name,
@@ -222,7 +226,7 @@ export class TreeCacheService {
 
       const entries = await fs.readdir(dirPath, { withFileTypes: true });
       const children: FileNode[] = [];
-      
+
       // Process files and directories in parallel batches to improve performance
       const batchSize = 50;
       for (let i = 0; i < entries.length; i += batchSize) {
@@ -230,12 +234,12 @@ export class TreeCacheService {
         const batchPromises = batch.map(async (entry) => {
           // Skip excluded patterns
           if (this.shouldExclude(entry.name)) return null;
-          
+
           // Skip hidden files unless specified
           if (!this.options.includeHidden && entry.name.startsWith('.')) return null;
 
           const fullPath = path.join(dirPath, entry.name);
-          
+
           try {
             if (entry.isDirectory()) {
               // Recursively build directory tree
@@ -257,16 +261,16 @@ export class TreeCacheService {
             }
           } catch (error) {
             // Skip files we can't access
-            this.logger.debug('Skipping inaccessible file', { 
-              path: fullPath, 
-              error: error instanceof Error ? error.message : 'Unknown error' 
+            this.logger.debug('Skipping inaccessible file', {
+              path: fullPath,
+              error: error instanceof Error ? error.message : 'Unknown error'
             });
             return null;
           }
         });
 
         const batchResults = await Promise.all(batchPromises);
-        children.push(...batchResults.filter(Boolean) as FileNode[]);
+        children.push(...(batchResults.filter(Boolean) as FileNode[]));
       }
 
       // Sort children: directories first, then alphabetically
@@ -295,15 +299,13 @@ export class TreeCacheService {
    * Check if item should be excluded using enhanced pattern matching
    */
   private shouldExclude(name: string): boolean {
-    return this.options.excludePatterns.some(pattern => {
+    return this.options.excludePatterns.some((pattern) => {
       // Handle glob patterns
       if (pattern.includes('*')) {
-        const regexPattern = pattern
-          .replace(/\./g, '\\.')
-          .replace(/\*/g, '.*');
+        const regexPattern = pattern.replace(/\./g, '\\.').replace(/\*/g, '.*');
         return new RegExp(`^${regexPattern}$`).test(name);
       }
-      
+
       // Exact match or directory prefix
       return name === pattern || name.startsWith(pattern + '/') || name.startsWith(pattern + '\\');
     });
@@ -322,7 +324,7 @@ export class TreeCacheService {
    */
   private countFiles(node: FileNode): number {
     if (node.type === 'file') return 1;
-    
+
     let count = 0;
     if (node.children) {
       for (const child of node.children) {
@@ -337,7 +339,7 @@ export class TreeCacheService {
    */
   private calculateSize(node: FileNode): number {
     if (node.type === 'file') return node.size || 0;
-    
+
     let size = 0;
     if (node.children) {
       for (const child of node.children) {
@@ -438,7 +440,6 @@ export class TreeCacheService {
 
       this.watchHandles.set(rootPath, { watcher, timer: invalidateTimer });
       this.logger.debug('Chokidar file watcher setup', { path: rootPath });
-
     } catch (error) {
       this.logger.warn('Failed to setup chokidar watcher, falling back to polling', { error });
       this.setupFallbackWatcher(rootPath);
@@ -488,17 +489,20 @@ export class TreeCacheService {
 
     try {
       const stats = await fs.stat(rootPath);
-      
+
       // Simple check: if root directory modified time changed
       if (stats.mtime > cached.lastUpdated) {
-        this.logger.debug('Project structure changed (polling), invalidating cache', { 
-          path: rootPath 
+        this.logger.debug('Project structure changed (polling), invalidating cache', {
+          path: rootPath
         });
         this.invalidateCache(rootPath);
       }
     } catch (error) {
       // Directory might have been deleted
-      this.logger.warn('Directory no longer accessible, invalidating cache', { path: rootPath, error });
+      this.logger.warn('Directory no longer accessible, invalidating cache', {
+        path: rootPath,
+        error
+      });
       this.invalidateCache(rootPath);
     }
   }
@@ -552,15 +556,15 @@ export class TreeCacheService {
   clearCache(): void {
     const paths = Array.from(this.cache.keys());
     this.cache.clear();
-    
+
     // Remove all watchers
     for (const [path, handle] of this.watchHandles.entries()) {
       clearInterval(handle);
     }
     this.watchHandles.clear();
 
-    this.logger.info('Cleared all project tree caches', { 
-      count: paths.length 
+    this.logger.info('Cleared all project tree caches', {
+      count: paths.length
     });
   }
 
@@ -593,22 +597,22 @@ export class TreeCacheService {
    * Search for files in cached trees
    */
   searchInCache(
-    pattern: string, 
-    options: { 
-      caseSensitive?: boolean; 
+    pattern: string,
+    options: {
+      caseSensitive?: boolean;
       includeDirectories?: boolean;
       maxResults?: number;
     } = {}
   ): FileNode[] {
     const results: FileNode[] = [];
     const regex = new RegExp(
-      pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 
+      pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'),
       options.caseSensitive ? 'g' : 'gi'
     );
 
     for (const cache of this.cache.values()) {
       this.searchNode(cache.tree, regex, results, options);
-      
+
       if (options.maxResults && results.length >= options.maxResults) {
         break;
       }
@@ -620,16 +624,11 @@ export class TreeCacheService {
   /**
    * Search recursively in a node
    */
-  private searchNode(
-    node: FileNode, 
-    pattern: RegExp, 
-    results: FileNode[], 
-    options: any
-  ): void {
+  private searchNode(node: FileNode, pattern: RegExp, results: FileNode[], options: any): void {
     if (node.name.match(pattern)) {
       if (node.type === 'file' || options.includeDirectories) {
         results.push(node);
-        
+
         if (options.maxResults && results.length >= options.maxResults) {
           return;
         }
@@ -639,7 +638,7 @@ export class TreeCacheService {
     if (node.children) {
       for (const child of node.children) {
         this.searchNode(child, pattern, results, options);
-        
+
         if (options.maxResults && results.length >= options.maxResults) {
           return;
         }

@@ -1,6 +1,6 @@
 /**
  * UI Registry implementation for the Alexandria Platform
- * 
+ *
  * This class manages UI components, routes, and themes for the platform.
  */
 
@@ -28,7 +28,7 @@ export class UIRegistryImpl implements UIRegistry {
 
   constructor(logger: Logger) {
     this.logger = logger;
-    
+
     // Register default theme
     this.registerTheme(defaultTheme);
   }
@@ -45,15 +45,15 @@ export class UIRegistryImpl implements UIRegistry {
         pluginId: component.pluginId
       });
     }
-    
+
     // Set default priority if not provided
     if (component.priority === undefined) {
       component.priority = UIComponentPriority.MEDIUM;
     }
-    
+
     // Store component
     this.components.set(component.id, component);
-    
+
     this.logger.debug(`Registered UI component: ${component.id}`, {
       component: 'UIRegistry',
       componentType: component.type,
@@ -69,7 +69,7 @@ export class UIRegistryImpl implements UIRegistry {
     if (this.components.has(id)) {
       const component = this.components.get(id)!;
       this.components.delete(id);
-      
+
       this.logger.debug(`Unregistered UI component: ${id}`, {
         component: 'UIRegistry',
         componentType: component.type,
@@ -90,7 +90,7 @@ export class UIRegistryImpl implements UIRegistry {
    */
   getComponentsByType(type: UIComponentType): UIComponentDefinition[] {
     return Array.from(this.components.values())
-      .filter(component => component.type === type)
+      .filter((component) => component.type === type)
       .sort((a, b) => (b.priority || 0) - (a.priority || 0));
   }
 
@@ -99,7 +99,7 @@ export class UIRegistryImpl implements UIRegistry {
    */
   getComponentsByPosition(position: UIComponentPosition): UIComponentDefinition[] {
     return Array.from(this.components.values())
-      .filter(component => component.position === position)
+      .filter((component) => component.position === position)
       .sort((a, b) => (b.priority || 0) - (a.priority || 0));
   }
 
@@ -115,10 +115,10 @@ export class UIRegistryImpl implements UIRegistry {
         pluginId: route.pluginId
       });
     }
-    
+
     // Store route
     this.routes.set(route.path, route);
-    
+
     this.logger.debug(`Registered UI route: ${route.path}`, {
       component: 'UIRegistry',
       pluginId: route.pluginId
@@ -132,7 +132,7 @@ export class UIRegistryImpl implements UIRegistry {
     if (this.routes.has(path)) {
       const route = this.routes.get(path)!;
       this.routes.delete(path);
-      
+
       this.logger.debug(`Unregistered UI route: ${path}`, {
         component: 'UIRegistry',
         pluginId: route.pluginId
@@ -158,15 +158,15 @@ export class UIRegistryImpl implements UIRegistry {
         themeId: theme.id
       });
     }
-    
+
     // Store theme
     this.themes.set(theme.id, theme);
-    
+
     this.logger.debug(`Registered UI theme: ${theme.id}`, {
       component: 'UIRegistry',
       themeName: theme.name
     });
-    
+
     // If no active theme, set this as active
     if (this.themes.size === 1) {
       this.activeThemeId = theme.id;
@@ -187,9 +187,9 @@ export class UIRegistryImpl implements UIRegistry {
     if (!this.themes.has(id)) {
       throw new Error(`Theme with ID ${id} does not exist`);
     }
-    
+
     this.activeThemeId = id;
-    
+
     this.logger.debug(`Set active theme: ${id}`, {
       component: 'UIRegistry',
       themeName: this.themes.get(id)!.name

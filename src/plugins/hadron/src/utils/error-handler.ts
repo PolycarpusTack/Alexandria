@@ -427,7 +427,8 @@ export function handleErrors(
         const context: ErrorContext = {
           operationType: `${target.constructor.name}.${propertyName}`,
           metadata: {
-            arguments: args.length > 0 ? args.map((arg, index) => ({ index, type: typeof arg })) : undefined
+            arguments:
+              args.length > 0 ? args.map((arg, index) => ({ index, type: typeof arg })) : undefined
           }
         };
 

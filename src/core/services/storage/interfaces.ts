@@ -1,6 +1,6 @@
 /**
  * Storage Service Interfaces
- * 
+ *
  * Defines the contracts for the enhanced storage service that supports
  * file storage, document indexing, and vector embeddings.
  */
@@ -71,28 +71,34 @@ export interface VectorSearchResult {
 export interface StorageService {
   // Initialization
   initialize?(): Promise<void>;
-  
+
   // File Storage
   uploadFile(file: Buffer, metadata: FileMetadata): Promise<StoredFile>;
   downloadFile(fileId: string): Promise<{ buffer: Buffer; metadata: FileMetadata }>;
   deleteFile(fileId: string): Promise<void>;
   listFiles(filter?: Partial<FileMetadata>): Promise<StoredFile[]>;
   getFileUrl(fileId: string): Promise<string>;
-  
+
   // Document Storage with Full-Text Search
   indexDocument(doc: Document): Promise<Document>;
   updateDocument(id: string, doc: Partial<Document>): Promise<Document>;
   deleteDocument(id: string): Promise<void>;
   getDocument(id: string): Promise<Document | null>;
   searchDocuments(query: string, options?: SearchOptions): Promise<SearchResult[]>;
-  
+
   // Vector Storage for Embeddings
   storeVector(id: string, vector: number[], metadata: VectorMetadata): Promise<void>;
-  storeVectors(vectors: Array<{ id: string; vector: number[]; metadata: VectorMetadata }>): Promise<void>;
-  searchSimilar(vector: number[], limit: number, filter?: Record<string, any>): Promise<VectorSearchResult[]>;
+  storeVectors(
+    vectors: Array<{ id: string; vector: number[]; metadata: VectorMetadata }>
+  ): Promise<void>;
+  searchSimilar(
+    vector: number[],
+    limit: number,
+    filter?: Record<string, any>
+  ): Promise<VectorSearchResult[]>;
   deleteVector(id: string): Promise<void>;
   deleteVectors(filter: Record<string, any>): Promise<number>;
-  
+
   // Utility Methods
   createBackup(path: string): Promise<void>;
   restoreBackup(path: string): Promise<void>;

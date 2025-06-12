@@ -2,11 +2,7 @@ import React from 'react';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Dashboard } from '../../ui/components/Dashboard';
-import { 
-  renderWithProviders, 
-  createMockCrashAnalyzerService, 
-  sampleCrashLog 
-} from '../test-utils';
+import { renderWithProviders, createMockCrashAnalyzerService, sampleCrashLog } from '../test-utils';
 
 describe('Dashboard Component', () => {
   let mockCrashAnalyzerService: ReturnType<typeof createMockCrashAnalyzerService>;
@@ -36,10 +32,9 @@ describe('Dashboard Component', () => {
       return new Promise(() => {}); // Never resolves
     });
 
-    renderWithProviders(
-      <Dashboard crashAnalyzerService={mockCrashAnalyzerService} />,
-      { uiContext: { showModal: mockShowModal } as any }
-    );
+    renderWithProviders(<Dashboard crashAnalyzerService={mockCrashAnalyzerService} />, {
+      uiContext: { showModal: mockShowModal } as any
+    });
 
     expect(screen.getByRole('status')).toBeInTheDocument();
   });
@@ -47,10 +42,9 @@ describe('Dashboard Component', () => {
   it('should display empty state when no crash logs exist', async () => {
     mockCrashAnalyzerService.getAllCrashLogs.mockResolvedValue([]);
 
-    renderWithProviders(
-      <Dashboard crashAnalyzerService={mockCrashAnalyzerService} />,
-      { uiContext: { showModal: mockShowModal } as any }
-    );
+    renderWithProviders(<Dashboard crashAnalyzerService={mockCrashAnalyzerService} />, {
+      uiContext: { showModal: mockShowModal } as any
+    });
 
     await waitFor(() => {
       expect(screen.queryByRole('status')).not.toBeInTheDocument();
@@ -63,10 +57,9 @@ describe('Dashboard Component', () => {
   it('should display crash logs when they exist', async () => {
     mockCrashAnalyzerService.getAllCrashLogs.mockResolvedValue([sampleCrashLog]);
 
-    renderWithProviders(
-      <Dashboard crashAnalyzerService={mockCrashAnalyzerService} />,
-      { uiContext: { showModal: mockShowModal } as any }
-    );
+    renderWithProviders(<Dashboard crashAnalyzerService={mockCrashAnalyzerService} />, {
+      uiContext: { showModal: mockShowModal } as any
+    });
 
     await waitFor(() => {
       expect(screen.queryByRole('status')).not.toBeInTheDocument();
@@ -78,11 +71,10 @@ describe('Dashboard Component', () => {
 
   it('should open upload modal when upload button is clicked', async () => {
     mockCrashAnalyzerService.getAllCrashLogs.mockResolvedValue([]);
-    
-    renderWithProviders(
-      <Dashboard crashAnalyzerService={mockCrashAnalyzerService} />,
-      { uiContext: { showModal: mockShowModal } as any }
-    );
+
+    renderWithProviders(<Dashboard crashAnalyzerService={mockCrashAnalyzerService} />, {
+      uiContext: { showModal: mockShowModal } as any
+    });
 
     await waitFor(() => {
       expect(screen.queryByRole('status')).not.toBeInTheDocument();
@@ -102,11 +94,10 @@ describe('Dashboard Component', () => {
   it('should open code snippet modal when analyze code snippet button is clicked', async () => {
     // Add analyzeCodeSnippet capability to the service
     mockCrashAnalyzerService.analyzeCodeSnippet = jest.fn();
-    
-    renderWithProviders(
-      <Dashboard crashAnalyzerService={mockCrashAnalyzerService} />,
-      { uiContext: { showModal: mockShowModal } as any }
-    );
+
+    renderWithProviders(<Dashboard crashAnalyzerService={mockCrashAnalyzerService} />, {
+      uiContext: { showModal: mockShowModal } as any
+    });
 
     await waitFor(() => {
       expect(screen.queryByRole('status')).not.toBeInTheDocument();
@@ -126,11 +117,10 @@ describe('Dashboard Component', () => {
 
   it('should navigate to log details when a log is clicked', async () => {
     mockCrashAnalyzerService.getAllCrashLogs.mockResolvedValue([sampleCrashLog]);
-    
-    renderWithProviders(
-      <Dashboard crashAnalyzerService={mockCrashAnalyzerService} />,
-      { uiContext: { showModal: mockShowModal } as any }
-    );
+
+    renderWithProviders(<Dashboard crashAnalyzerService={mockCrashAnalyzerService} />, {
+      uiContext: { showModal: mockShowModal } as any
+    });
 
     await waitFor(() => {
       expect(screen.getByText('Test Crash Log')).toBeInTheDocument();
@@ -148,13 +138,12 @@ describe('Dashboard Component', () => {
       { ...sampleCrashLog, id: '2', title: 'Linux Error' },
       { ...sampleCrashLog, id: '3', title: 'Mac Error' }
     ];
-    
+
     mockCrashAnalyzerService.getAllCrashLogs.mockResolvedValue(crashLogs);
-    
-    renderWithProviders(
-      <Dashboard crashAnalyzerService={mockCrashAnalyzerService} />,
-      { uiContext: { showModal: mockShowModal } as any }
-    );
+
+    renderWithProviders(<Dashboard crashAnalyzerService={mockCrashAnalyzerService} />, {
+      uiContext: { showModal: mockShowModal } as any
+    });
 
     await waitFor(() => {
       expect(screen.getAllByText(/Error/).length).toBe(3);
@@ -170,11 +159,10 @@ describe('Dashboard Component', () => {
 
   it('should handle errors when loading crash logs', async () => {
     mockCrashAnalyzerService.getAllCrashLogs.mockRejectedValue(new Error('Failed to load logs'));
-    
-    renderWithProviders(
-      <Dashboard crashAnalyzerService={mockCrashAnalyzerService} />,
-      { uiContext: { showModal: mockShowModal } as any }
-    );
+
+    renderWithProviders(<Dashboard crashAnalyzerService={mockCrashAnalyzerService} />, {
+      uiContext: { showModal: mockShowModal } as any
+    });
 
     await waitFor(() => {
       expect(screen.queryByRole('status')).not.toBeInTheDocument();
@@ -186,15 +174,14 @@ describe('Dashboard Component', () => {
   it('should allow deleting a crash log', async () => {
     mockCrashAnalyzerService.getAllCrashLogs.mockResolvedValue([sampleCrashLog]);
     mockCrashAnalyzerService.deleteCrashLog.mockResolvedValue(true);
-    
+
     // Mock window.confirm
     const originalConfirm = window.confirm;
     window.confirm = jest.fn().mockReturnValue(true);
-    
-    renderWithProviders(
-      <Dashboard crashAnalyzerService={mockCrashAnalyzerService} />,
-      { uiContext: { showModal: mockShowModal } as any }
-    );
+
+    renderWithProviders(<Dashboard crashAnalyzerService={mockCrashAnalyzerService} />, {
+      uiContext: { showModal: mockShowModal } as any
+    });
 
     await waitFor(() => {
       expect(screen.getByText('Test Crash Log')).toBeInTheDocument();
@@ -206,18 +193,17 @@ describe('Dashboard Component', () => {
     expect(window.confirm).toHaveBeenCalled();
     expect(mockCrashAnalyzerService.deleteCrashLog).toHaveBeenCalledWith('test-log-1');
     expect(mockCrashAnalyzerService.getAllCrashLogs).toHaveBeenCalledTimes(2); // Initial load + after delete
-    
+
     // Restore original window.confirm
     window.confirm = originalConfirm;
   });
 
   it('should refresh the crash log list when refresh button is clicked', async () => {
     mockCrashAnalyzerService.getAllCrashLogs.mockResolvedValue([sampleCrashLog]);
-    
-    renderWithProviders(
-      <Dashboard crashAnalyzerService={mockCrashAnalyzerService} />,
-      { uiContext: { showModal: mockShowModal } as any }
-    );
+
+    renderWithProviders(<Dashboard crashAnalyzerService={mockCrashAnalyzerService} />, {
+      uiContext: { showModal: mockShowModal } as any
+    });
 
     await waitFor(() => {
       expect(screen.getByText('Test Crash Log')).toBeInTheDocument();

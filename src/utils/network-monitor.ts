@@ -19,7 +19,7 @@ interface NetworkStats {
 }
 
 interface NetworkMetrics {
-  in: number;  // bytes per second
+  in: number; // bytes per second
   out: number; // bytes per second
   interfaces: NetworkStats[];
 }
@@ -33,13 +33,18 @@ let lastReadTime: number = Date.now();
  */
 async function getNetworkStats(): Promise<NetworkStats[]> {
   const stats: NetworkStats[] = [];
-  
+
   try {
     if (process.platform === 'win32') {
       // Windows: Use netstat or Get-NetAdapterStatistics
-      const { stdout } = await execAsync('wmic path Win32_PerfRawData_Tcpip_NetworkInterface get Name,BytesReceivedPerSec,BytesSentPerSec,PacketsReceivedPerSec,PacketsSentPerSec /format:csv');
-      const lines = stdout.trim().split('\n').filter(line => line.trim());
-      
+      const { stdout } = await execAsync(
+        'wmic path Win32_PerfRawData_Tcpip_NetworkInterface get Name,BytesReceivedPerSec,BytesSentPerSec,PacketsReceivedPerSec,PacketsSentPerSec /format:csv'
+      );
+      const lines = stdout
+        .trim()
+        .split('\n')
+        .filter((line) => line.trim());
+
       // Skip header lines
       for (let i = 2; i < lines.length; i++) {
         const parts = lines[i].split(',');
@@ -62,7 +67,7 @@ async function getNetworkStats(): Promise<NetworkStats[]> {
       const fs = require('fs').promises;
       const data = await fs.readFile('/proc/net/dev', 'utf-8');
       const lines = data.trim().split('\n').slice(2); // Skip headers
-      
+
       for (const line of lines) {
         const parts = line.trim().split(/\s+/);
         if (parts.length >= 10) {
@@ -80,7 +85,7 @@ async function getNetworkStats(): Promise<NetworkStats[]> {
       // macOS: Use netstat
       const { stdout } = await execAsync('netstat -ibn');
       const lines = stdout.trim().split('\n');
-      
+
       for (let i = 1; i < lines.length; i++) {
         const parts = lines[i].trim().split(/\s+/);
         if (parts.length >= 11 && parts[0] !== 'Name') {
@@ -100,7 +105,7 @@ async function getNetworkStats(): Promise<NetworkStats[]> {
       platform: process.platform
     });
   }
-  
+
   return stats;
 }
 
@@ -111,10 +116,10 @@ export async function getNetworkMetrics(): Promise<NetworkMetrics> {
   const currentStats = await getNetworkStats();
   const currentTime = Date.now();
   const timeDiff = (currentTime - lastReadTime) / 1000; // Convert to seconds
-  
+
   let totalIn = 0;
   let totalOut = 0;
-  
+
   // Calculate rates only if we have previous readings
   if (previousStats.size > 0 && timeDiff > 0) {
     for (const stat of currentStats) {
@@ -122,7 +127,7 @@ export async function getNetworkMetrics(): Promise<NetworkMetrics> {
       if (prev) {
         const bytesInDiff = stat.bytesReceived - prev.bytesReceived;
         const bytesOutDiff = stat.bytesSent - prev.bytesSent;
-        
+
         // Only count positive differences (handle counter resets)
         if (bytesInDiff > 0) {
           totalIn += bytesInDiff / timeDiff;
@@ -133,14 +138,14 @@ export async function getNetworkMetrics(): Promise<NetworkMetrics> {
       }
     }
   }
-  
+
   // Update cache
   previousStats.clear();
   for (const stat of currentStats) {
     previousStats.set(stat.interface, stat);
   }
   lastReadTime = currentTime;
-  
+
   return {
     in: Math.round(totalIn),
     out: Math.round(totalOut),
@@ -155,8 +160,7 @@ export function getActiveInterfaces(): number {
   const interfaces = os.networkInterfaces();
   return Object.values(interfaces)
     .flat()
-    .filter(iface => iface && !iface.internal && iface.family === 'IPv4')
-    .length;
+    .filter((iface) => iface && !iface.internal && iface.family === 'IPv4').length;
 }
 
 /**

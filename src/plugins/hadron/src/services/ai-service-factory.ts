@@ -1,6 +1,6 @@
 /**
  * AI Service Factory for Hadron Plugin
- * 
+ *
  * Creates the appropriate AI service based on configuration.
  * Supports both the legacy enhanced LLM service and the new centralized AI adapter.
  */
@@ -32,18 +32,13 @@ export class AIServiceFactory {
    * Create an AI service instance for Hadron
    */
   async createAIService(options: AIServiceFactoryOptions = {}): Promise<ILlmService> {
-    const {
-      preferCentralized = true,
-      ollamaBaseUrl,
-      cacheService,
-      featureFlagService
-    } = options;
+    const { preferCentralized = true, ollamaBaseUrl, cacheService, featureFlagService } = options;
 
     // Check if centralized AI service should be used (default behavior)
     if (preferCentralized) {
       try {
         this.logger.info('Attempting to create centralized AI service for Hadron');
-        
+
         // Create the centralized AI service
         const centralizedAIService = await createDynamicAIService(this.logger, {
           enableCache: true,
@@ -60,15 +55,18 @@ export class AIServiceFactory {
           this.logger.warn('Centralized AI service not available, falling back to legacy service');
         }
       } catch (error) {
-        this.logger.error('Failed to create centralized AI service, falling back to legacy service:', {
-          error: error instanceof Error ? error.message : String(error)
-        });
+        this.logger.error(
+          'Failed to create centralized AI service, falling back to legacy service:',
+          {
+            error: error instanceof Error ? error.message : String(error)
+          }
+        );
       }
     }
 
     // Fallback to legacy enhanced LLM service
     this.logger.info('Creating legacy enhanced LLM service for Hadron');
-    
+
     if (!featureFlagService) {
       throw new Error('FeatureFlagService is required for legacy LLM service');
     }
@@ -110,11 +108,12 @@ export class AIServiceFactory {
     fallbackAvailable: boolean;
   }> {
     const centralizedAvailable = await this.isCentralizedServiceAvailable();
-    
+
     if (centralizedAvailable) {
       return {
         useCentralized: true,
-        reason: 'Centralized AI service is available and provides better resource management and caching',
+        reason:
+          'Centralized AI service is available and provides better resource management and caching',
         fallbackAvailable: true
       };
     } else {

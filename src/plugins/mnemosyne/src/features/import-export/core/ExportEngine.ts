@@ -12,7 +12,6 @@ import {
 } from '../interfaces';
 import { MnemosyneDocument } from '../../../interfaces';
 import { TemplateEngine } from '../../templates/TemplateEngine';
-import { v4 as uuidv4 } from 'uuid';
 
 export class ExportEngine {
   private exporters: Map<ExportFormat, Exporter> = new Map();
@@ -42,9 +41,9 @@ export class ExportEngine {
     try {
       // Start export
       session.start();
-      this.context.events.emit('mnemosyne:export:started', { 
-        sessionId, 
-        format: config.format 
+      this.context.events.emit('mnemosyne:export:started', {
+        sessionId,
+        format: config.format
       });
 
       // Get exporter
@@ -61,11 +60,7 @@ export class ExportEngine {
 
       // Prepare export context
       session.updatePhase('preparing');
-      const context = await this.prepareExportContext(
-        documents,
-        config,
-        session
-      );
+      const context = await this.prepareExportContext(documents, config, session);
 
       // Execute export
       session.updatePhase('exporting');
@@ -73,19 +68,10 @@ export class ExportEngine {
 
       // Post-process if needed
       session.updatePhase('processing');
-      const processed = await this.postProcess(
-        exportData,
-        config.format,
-        config.options
-      );
+      const processed = await this.postProcess(exportData, config.format, config.options);
 
       // Create result
-      const result = this.createExportResult(
-        processed,
-        config.format,
-        documents.length,
-        session
-      );
+      const result = this.createExportResult(processed, config.format, documents.length, session);
 
       // Complete export
       session.complete(result);
@@ -97,7 +83,6 @@ export class ExportEngine {
       });
 
       return result;
-
     } catch (error) {
       session.fail(error);
       this.context.logger.error('Export failed', {
@@ -133,10 +118,7 @@ export class ExportEngine {
   /**
    * Preview export without generating full output
    */
-  async preview(
-    config: ExportConfig,
-    limit: number = 3
-  ): Promise<ExportPreview> {
+  async preview(config: ExportConfig, limit: number = 3): Promise<ExportPreview> {
     const documents = await this.gatherDocuments({
       ...config.selection,
       documentIds: config.selection.documentIds?.slice(0, limit)
@@ -144,7 +126,7 @@ export class ExportEngine {
 
     const exporter = this.getExporter(config.format);
     const context = await this.prepareExportContext(documents, config, null);
-    
+
     return exporter.preview(context);
   }
 
@@ -158,9 +140,7 @@ export class ExportEngine {
     return exporter;
   }
 
-  private async gatherDocuments(
-    selection: ExportSelection
-  ): Promise<MnemosyneDocument[]> {
+  private async gatherDocuments(selection: ExportSelection): Promise<MnemosyneDocument[]> {
     let documents: MnemosyneDocument[] = [];
 
     switch (selection.type) {
@@ -198,10 +178,7 @@ export class ExportEngine {
 
     // Include related documents if requested
     if (selection.includeRelated && selection.relationshipDepth) {
-      documents = await this.includeRelatedDocuments(
-        documents,
-        selection.relationshipDepth
-      );
+      documents = await this.includeRelatedDocuments(documents, selection.relationshipDepth);
     }
 
     return documents;
@@ -218,22 +195,18 @@ export class ExportEngine {
       config,
       metadata: config.metadata || {},
       templateEngine: this.templateEngine,
-      
+
       // Add knowledge graph data
       graph: await this.getKnowledgeGraph(documents),
-      
+
       // Add backlinks if requested
-      backlinks: config.options.includeBacklinks
-        ? await this.getBacklinks(documents)
-        : undefined,
-      
+      backlinks: config.options.includeBacklinks ? await this.getBacklinks(documents) : undefined,
+
       // Add citations
       citations: await this.extractCitations(documents),
-      
+
       // Progress callback
-      onProgress: session
-        ? (progress: number) => session.updateProgress(progress)
-        : undefined
+      onProgress: session ? (progress: number) => session.updateProgress(progress) : undefined
     };
 
     return context;
@@ -249,22 +222,22 @@ export class ExportEngine {
       case 'pdf':
         // PDF-specific processing
         return data;
-        
+
       case 'html':
         // HTML optimization
         if (options.html?.singleFile) {
           return this.bundleHtml(data);
         }
         return data;
-        
+
       case 'static-site':
         // Site bundling
         return this.bundleStaticSite(data);
-        
+
       case 'archive':
         // Archive compression
         return this.createArchive(data, options.archive);
-        
+
       default:
         return data;
     }
@@ -322,7 +295,7 @@ export class ExportEngine {
   private async getKnowledgeGraph(documents: MnemosyneDocument[]): Promise<any> {
     // Extract knowledge graph for documents
     return {
-      nodes: documents.map(d => ({ id: d.id, title: d.title })),
+      nodes: documents.map((d) => ({ id: d.id, title: d.title })),
       edges: []
     };
   }
@@ -330,11 +303,11 @@ export class ExportEngine {
   private async getBacklinks(documents: MnemosyneDocument[]): Promise<any> {
     // Get all backlinks for documents
     const backlinks: Record<string, any[]> = {};
-    
+
     for (const doc of documents) {
       backlinks[doc.id] = await this.getDocumentBacklinks(doc.id);
     }
-    
+
     return backlinks;
   }
 
@@ -391,7 +364,7 @@ export class ExportEngine {
  */
 export interface Exporter {
   format: ExportFormat;
-  
+
   validate(documents: MnemosyneDocument[], options: ExportOptions): Promise<void>;
   export(context: ExportContext): Promise<any>;
   preview(context: ExportContext): Promise<ExportPreview>;

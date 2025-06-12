@@ -23,12 +23,10 @@ export class NotificationService {
    * Send alert through specified channels
    */
   async sendAlert(alert: AlertEvent, channels: AlertChannel[]): Promise<void> {
-    const sendPromises = channels.map(channel => 
-      this.sendToChannel(alert, channel)
-    );
+    const sendPromises = channels.map((channel) => this.sendToChannel(alert, channel));
 
     const results = await Promise.allSettled(sendPromises);
-    
+
     // Log any failures
     results.forEach((result, index) => {
       if (result.status === 'rejected') {
@@ -44,15 +42,12 @@ export class NotificationService {
   /**
    * Send to specific channel
    */
-  private async sendToChannel(
-    alert: AlertEvent,
-    channel: AlertChannel
-  ): Promise<void> {
+  private async sendToChannel(alert: AlertEvent, channel: AlertChannel): Promise<void> {
     // Check rate limit
     if (this.isRateLimited(alert.ruleId, channel)) {
-      logger.debug('Notification rate limited', { 
-        ruleId: alert.ruleId, 
-        channel 
+      logger.debug('Notification rate limited', {
+        ruleId: alert.ruleId,
+        channel
       });
       return;
     }
@@ -66,15 +61,15 @@ export class NotificationService {
     try {
       const notification = this.formatNotification(alert, channel);
       await handler(notification);
-      
+
       this.updateRateLimit(alert.ruleId, channel);
-      
+
       logger.info('Notification sent', {
         alertId: alert.id,
         channel,
         severity: alert.severity
       });
-      
+
       // Emit event
       this.eventBus.emit('notification:sent', {
         alert,
@@ -94,12 +89,10 @@ export class NotificationService {
   /**
    * Format notification based on channel and template
    */
-  private formatNotification(
-    alert: AlertEvent,
-    channel: AlertChannel
-  ): FormattedNotification {
-    const template = this.templates.get(`${channel}_${alert.severity}`) ||
-                    this.templates.get(`${channel}_default`)!;
+  private formatNotification(alert: AlertEvent, channel: AlertChannel): FormattedNotification {
+    const template =
+      this.templates.get(`${channel}_${alert.severity}`) ||
+      this.templates.get(`${channel}_default`)!;
 
     const formatted: FormattedNotification = {
       channel,
@@ -151,7 +144,7 @@ export class NotificationService {
         subject: notification.title,
         severity: notification.severity
       });
-      
+
       // Emit event for email service to handle
       this.eventBus.emit('email:send', {
         to: process.env.ALERT_EMAIL || 'admin@example.com',
@@ -168,17 +161,19 @@ export class NotificationService {
         channel: process.env.SLACK_ALERT_CHANNEL || '#alerts',
         title: notification.title
       });
-      
+
       // Emit event for Slack integration
       this.eventBus.emit('slack:send', {
         channel: process.env.SLACK_ALERT_CHANNEL || '#alerts',
         text: notification.title,
-        attachments: [{
-          color: notification.color,
-          text: notification.message,
-          fields: notification.fields,
-          ts: Math.floor(notification.timestamp.getTime() / 1000)
-        }]
+        attachments: [
+          {
+            color: notification.color,
+            text: notification.message,
+            fields: notification.fields,
+            ts: Math.floor(notification.timestamp.getTime() / 1000)
+          }
+        ]
       });
     });
 
@@ -195,7 +190,7 @@ export class NotificationService {
         url: webhookUrl,
         payload: notification.json
       });
-      
+
       // Emit event for webhook service
       this.eventBus.emit('webhook:send', {
         url: webhookUrl,
@@ -213,7 +208,7 @@ export class NotificationService {
         severity: notification.severity,
         title: notification.title
       });
-      
+
       // Emit event for PagerDuty integration
       this.eventBus.emit('pagerduty:trigger', {
         severity: notification.severity === 'critical' ? 'critical' : 'warning',
@@ -235,7 +230,11 @@ export class NotificationService {
         timestamp: notification.timestamp,
         actions: [
           { label: 'View Details', action: 'view_alert', data: notification.metadata },
-          { label: 'Acknowledge', action: 'acknowledge_alert', data: { alertId: notification.metadata.alertId } }
+          {
+            label: 'Acknowledge',
+            action: 'acknowledge_alert',
+            data: { alertId: notification.metadata.alertId }
+          }
         ]
       });
     });
@@ -319,15 +318,15 @@ This may require attention.
     return template.replace(/{{([^}]+)}}/g, (match, path) => {
       const keys = path.split('.');
       let value = data;
-      
+
       for (const key of keys) {
         value = value?.[key];
       }
-      
+
       if (value instanceof Date) {
         return value.toISOString();
       }
-      
+
       return value?.toString() || match;
     });
   }
@@ -347,10 +346,7 @@ This may require attention.
   /**
    * Generate HTML email content
    */
-  private generateEmailHTML(
-    alert: AlertEvent,
-    template: NotificationTemplate
-  ): string {
+  private generateEmailHTML(alert: AlertEvent, template: NotificationTemplate): string {
     return `
 <!DOCTYPE html>
 <html>
@@ -415,9 +411,9 @@ This may require attention.
   private isRateLimited(ruleId: string, channel: AlertChannel): boolean {
     const key = `${ruleId}_${channel}`;
     const lastSent = this.rateLimiter.get(key);
-    
+
     if (!lastSent) return false;
-    
+
     // Different rate limits per channel
     const limits: Record<AlertChannel, number> = {
       email: 5 * 60 * 1000, // 5 minutes
@@ -426,7 +422,7 @@ This may require attention.
       pagerduty: 10 * 60 * 1000, // 10 minutes
       in_app: 30 * 1000 // 30 seconds
     };
-    
+
     const limit = limits[channel] || 60 * 1000;
     return Date.now() - lastSent < limit;
   }
@@ -437,12 +433,12 @@ This may require attention.
   private updateRateLimit(ruleId: string, channel: AlertChannel): void {
     const key = `${ruleId}_${channel}`;
     this.rateLimiter.set(key, Date.now());
-    
+
     // Clean up old entries
     if (this.rateLimiter.size > 1000) {
       const entries = Array.from(this.rateLimiter.entries());
       const cutoff = Date.now() - 60 * 60 * 1000; // 1 hour
-      
+
       entries.forEach(([k, timestamp]) => {
         if (timestamp < cutoff) {
           this.rateLimiter.delete(k);

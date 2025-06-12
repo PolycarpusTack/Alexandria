@@ -9,20 +9,20 @@ export const alexandriaGlobalCSS = `
 // Function to inject global styles into a document or shadow DOM
 export function injectAlexandriaStyles(target: Document | ShadowRoot = document): void {
   const styleId = 'alexandria-global-styles';
-  
+
   // Check if styles are already injected
   if (target.getElementById(styleId)) {
     return;
   }
-  
+
   // Create style element
   const styleElement = document.createElement('style');
   styleElement.id = styleId;
-  
+
   // Fetch and inject the global CSS
   fetch('/src/styles/global.css')
-    .then(response => response.text())
-    .then(css => {
+    .then((response) => response.text())
+    .then((css) => {
       styleElement.textContent = css;
       if (target instanceof Document) {
         target.head.appendChild(styleElement);
@@ -30,12 +30,15 @@ export function injectAlexandriaStyles(target: Document | ShadowRoot = document)
         target.appendChild(styleElement);
       }
     })
-    .catch(error => {
+    .catch((error) => {
       console.error('Failed to load Alexandria global styles:', error);
     });
 }
 // Function to apply theme class to a plugin container
-export function applyPluginTheme(element: HTMLElement, pluginName: 'alfred' | 'hadron' | 'heimdall'): void {
+export function applyPluginTheme(
+  element: HTMLElement,
+  pluginName: 'alfred' | 'hadron' | 'heimdall'
+): void {
   element.classList.add('plugin-container', `theme-${pluginName}`);
 }
 

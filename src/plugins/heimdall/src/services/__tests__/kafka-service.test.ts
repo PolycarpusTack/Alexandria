@@ -32,10 +32,7 @@ describe('KafkaService', () => {
       }))
     }));
 
-    kafkaService = new KafkaService(
-      { brokers: ['localhost:9092'] },
-      mockLogger
-    );
+    kafkaService = new KafkaService({ brokers: ['localhost:9092'] }, mockLogger);
   });
 
   afterEach(() => {
@@ -46,10 +43,7 @@ describe('KafkaService', () => {
     it('should initialize successfully', async () => {
       await kafkaService.initialize();
 
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        'Kafka service initialized',
-        expect.any(Object)
-      );
+      expect(mockLogger.info).toHaveBeenCalledWith('Kafka service initialized', expect.any(Object));
     });
 
     it('should handle initialization errors', async () => {
@@ -88,15 +82,17 @@ describe('KafkaService', () => {
 
       expect(mockProducer.send).toHaveBeenCalledWith({
         topic: 'heimdall-logs',
-        messages: [{
-          key: 'test-service',
-          value: JSON.stringify(mockLog),
-          headers: {
-            version: '1',
-            service: 'test-service',
-            level: 'INFO'
+        messages: [
+          {
+            key: 'test-service',
+            value: JSON.stringify(mockLog),
+            headers: {
+              version: '1',
+              service: 'test-service',
+              level: 'INFO'
+            }
           }
-        }]
+        ]
       });
     });
 
@@ -168,10 +164,7 @@ describe('KafkaService', () => {
         ])
       });
 
-      expect(mockLogger.debug).toHaveBeenCalledWith(
-        'Sent batch to Kafka',
-        { count: 2 }
-      );
+      expect(mockLogger.debug).toHaveBeenCalledWith('Sent batch to Kafka', { count: 2 });
     });
 
     it('should handle empty batch', async () => {

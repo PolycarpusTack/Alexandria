@@ -1,5 +1,4 @@
 import { IUploadedFile } from './interfaces';
-import { v4 as uuidv4 } from 'uuid';
 import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -22,7 +21,7 @@ export class UploadedFile implements IUploadedFile {
 
   /**
    * Create a new UploadedFile instance
-   * 
+   *
    * @param data Uploaded file data, partial or complete
    */
   constructor(data: Partial<IUploadedFile>) {
@@ -41,7 +40,7 @@ export class UploadedFile implements IUploadedFile {
 
   /**
    * Validate uploaded file data
-   * 
+   *
    * @returns true if valid, throws error if invalid
    */
   validate(): boolean {
@@ -66,7 +65,7 @@ export class UploadedFile implements IUploadedFile {
 
   /**
    * Get file extension
-   * 
+   *
    * @returns File extension or empty string
    */
   getExtension(): string {
@@ -75,28 +74,41 @@ export class UploadedFile implements IUploadedFile {
 
   /**
    * Check if file is a text file
-   * 
+   *
    * @returns true if text file
    */
   isTextFile(): boolean {
     const textMimeTypes = [
-      'text/plain', 
-      'text/html', 
-      'text/css', 
+      'text/plain',
+      'text/html',
+      'text/css',
       'text/javascript',
       'application/json',
       'application/xml',
       'application/javascript',
       'application/typescript'
     ];
-    
-    return textMimeTypes.includes(this.mimeType) || 
-           ['.txt', '.log', '.md', '.json', '.xml', '.js', '.ts', '.html', '.css', '.stacktrace'].includes(this.getExtension());
+
+    return (
+      textMimeTypes.includes(this.mimeType) ||
+      [
+        '.txt',
+        '.log',
+        '.md',
+        '.json',
+        '.xml',
+        '.js',
+        '.ts',
+        '.html',
+        '.css',
+        '.stacktrace'
+      ].includes(this.getExtension())
+    );
   }
 
   /**
    * Calculate checksum for file
-   * 
+   *
    * @param filePath Path to file
    * @returns SHA-256 checksum
    */
@@ -104,16 +116,16 @@ export class UploadedFile implements IUploadedFile {
     return new Promise((resolve, reject) => {
       const hash = crypto.createHash('sha256');
       const stream = fs.createReadStream(filePath);
-      
-      stream.on('error', err => reject(err));
-      stream.on('data', chunk => hash.update(chunk));
+
+      stream.on('error', (err) => reject(err));
+      stream.on('data', (chunk) => hash.update(chunk));
       stream.on('end', () => resolve(hash.digest('hex')));
     });
   }
 
   /**
    * Convert to JSON object
-   * 
+   *
    * @returns UploadedFile data as plain object
    */
   toJSON(): Record<string, any> {
@@ -134,7 +146,7 @@ export class UploadedFile implements IUploadedFile {
 
   /**
    * Create an UploadedFile instance from database record
-   * 
+   *
    * @param record Database record
    * @returns UploadedFile instance
    */

@@ -1,12 +1,12 @@
 /**
  * Dropdown Menu Component
- * 
+ *
  * A flexible dropdown menu component that follows VSCode/Notion design aesthetic.
  * Built on Radix UI's DropdownMenu primitive for accessibility.
  */
 import React from 'react';
 import * as DropdownMenuPrimitive from '@radix-ui/react-dropdown-menu';
-import {   Check, ChevronRight, Circle   } from 'lucide-react';
+import { Check, ChevronRight, Circle } from 'lucide-react';
 
 // Root component
 const DropdownMenuRoot = DropdownMenuPrimitive.Root;
@@ -53,7 +53,7 @@ const DropdownMenuSubTrigger = React.forwardRef<
     {...props}
   >
     {children}
-    <ChevronRight className="ml-auto h-4 w-4" />
+    <ChevronRight className='ml-auto h-4 w-4' />
   </DropdownMenuPrimitive.SubTrigger>
 ));
 DropdownMenuSubTrigger.displayName = 'DropdownMenuSubTrigger';
@@ -115,9 +115,9 @@ const DropdownMenuCheckboxItem = React.forwardRef<
     checked={checked}
     {...props}
   >
-    <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+    <span className='absolute left-2 flex h-3.5 w-3.5 items-center justify-center'>
       <DropdownMenuPrimitive.ItemIndicator>
-        <Check className="h-4 w-4" />
+        <Check className='h-4 w-4' />
       </DropdownMenuPrimitive.ItemIndicator>
     </span>
     {children}
@@ -135,9 +135,9 @@ const DropdownMenuRadioItem = React.forwardRef<
     className={`relative flex cursor-default select-none items-center rounded-sm py-1.5 pl-8 pr-2 text-sm outline-none focus:bg-gray-100 dark:focus:bg-gray-800 data-[disabled]:pointer-events-none data-[disabled]:opacity-50 ${className}`}
     {...props}
   >
-    <span className="absolute left-2 flex h-3.5 w-3.5 items-center justify-center">
+    <span className='absolute left-2 flex h-3.5 w-3.5 items-center justify-center'>
       <DropdownMenuPrimitive.ItemIndicator>
-        <Circle className="h-2 w-2 fill-current" />
+        <Circle className='h-2 w-2 fill-current' />
       </DropdownMenuPrimitive.ItemIndicator>
     </span>
     {children}
@@ -176,10 +176,7 @@ const DropdownMenuSeparator = React.forwardRef<
 DropdownMenuSeparator.displayName = 'DropdownMenuSeparator';
 
 // Shortcut component
-const DropdownMenuShortcut = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLSpanElement>) => {
+const DropdownMenuShortcut = ({ className, ...props }: React.HTMLAttributes<HTMLSpanElement>) => {
   return (
     <span
       className={`ml-auto text-xs tracking-widest text-gray-500 dark:text-gray-400 ${className}`}
@@ -205,7 +202,7 @@ export {
   DropdownMenuSub as Sub,
   DropdownMenuSubContent as SubContent,
   DropdownMenuSubTrigger as SubTrigger,
-  DropdownMenuRadioGroup as RadioGroup,
+  DropdownMenuRadioGroup as RadioGroup
 };
 
 // Export components with their full names
@@ -224,7 +221,7 @@ export {
   DropdownMenuSub,
   DropdownMenuSubContent,
   DropdownMenuSubTrigger,
-  DropdownMenuRadioGroup,
+  DropdownMenuRadioGroup
 };
 
 // Default export for DropdownMenu root
@@ -246,5 +243,5 @@ export default {
   Sub: DropdownMenuSub,
   SubContent: DropdownMenuSubContent,
   SubTrigger: DropdownMenuSubTrigger,
-  RadioGroup: DropdownMenuRadioGroup,
+  RadioGroup: DropdownMenuRadioGroup
 };

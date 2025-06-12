@@ -15,7 +15,6 @@ import {
 import { MnemosyneDocument } from '../../../interfaces';
 import { ProvenanceTracker } from './ProvenanceTracker';
 import { FormatConverter } from './FormatConverter';
-import { v4 as uuidv4 } from 'uuid';
 
 export class ImportEngine {
   private adapters: Map<string, ImportAdapter> = new Map();
@@ -41,7 +40,7 @@ export class ImportEngine {
    */
   async analyze(source: ImportSource): Promise<ImportAnalysis> {
     const adapter = this.getAdapter(source.type);
-    
+
     // Detect if source is valid
     const isValid = await adapter.detect(source);
     if (!isValid) {
@@ -50,10 +49,10 @@ export class ImportEngine {
 
     // Perform analysis
     const analysis = await adapter.analyze(source);
-    
+
     // Check for potential conflicts
     analysis.conflicts = await this.detectConflicts(analysis);
-    
+
     // Emit analysis event
     this.context.events.emit('mnemosyne:import:analyzed', {
       source,
@@ -66,10 +65,7 @@ export class ImportEngine {
   /**
    * Import documents from source
    */
-  async import(
-    source: ImportSource,
-    options: ImportOptions
-  ): Promise<ImportResult> {
+  async import(source: ImportSource, options: ImportOptions): Promise<ImportResult> {
     const sessionId = uuidv4();
     const session = new ImportSession(sessionId, source, options);
     this.activeImports.set(sessionId, session);
@@ -85,39 +81,22 @@ export class ImportEngine {
       // Parse content
       session.updatePhase('parsing');
       const parsedContent = await adapter.parse(source);
-      
+
       // Transform to Mnemosyne format
       session.updatePhase('transforming');
-      const documents = await this.transformDocuments(
-        parsedContent,
-        adapter,
-        options,
-        session
-      );
+      const documents = await this.transformDocuments(parsedContent, adapter, options, session);
 
       // Handle conflicts
       session.updatePhase('resolving');
-      const resolvedDocuments = await this.resolveConflicts(
-        documents,
-        options,
-        session
-      );
+      const resolvedDocuments = await this.resolveConflicts(documents, options, session);
 
       // Save documents
       session.updatePhase('saving');
-      const savedDocuments = await this.saveDocuments(
-        resolvedDocuments,
-        session
-      );
+      const savedDocuments = await this.saveDocuments(resolvedDocuments, session);
 
       // Track provenance
       session.updatePhase('tracking');
-      const provenanceNodes = await this.trackProvenance(
-        savedDocuments,
-        source,
-        options,
-        adapter
-      );
+      const provenanceNodes = await this.trackProvenance(savedDocuments, source, options, adapter);
 
       // Update knowledge graph
       session.updatePhase('graphing');
@@ -125,9 +104,9 @@ export class ImportEngine {
 
       // Complete import
       session.complete(savedDocuments, provenanceNodes);
-      
+
       const result = session.getResult();
-      
+
       // Emit completion event
       this.context.events.emit('mnemosyne:import:completed', {
         sessionId,
@@ -135,7 +114,6 @@ export class ImportEngine {
       });
 
       return result;
-
     } catch (error) {
       session.fail(error);
       this.context.logger.error('Import failed', {
@@ -185,14 +163,14 @@ export class ImportEngine {
     session: ImportSession
   ): Promise<MnemosyneDocument[]> {
     const documents: MnemosyneDocument[] = [];
-    
+
     for (const parsedDoc of parsedContent.documents) {
       try {
         session.updateProgress('transforming', parsedDoc.path);
-        
+
         // Basic transformation
         const docs = await adapter.transform(parsedContent, options);
-        
+
         // Apply format conversion if needed
         for (const doc of docs) {
           const converted = await this.formatConverter.convert(doc, {
@@ -200,10 +178,10 @@ export class ImportEngine {
             preserveStructure: options.preserveStructure,
             convertWikilinks: options.convertWikilinks
           });
-          
+
           documents.push(converted);
         }
-        
+
         session.incrementProcessed();
       } catch (error) {
         session.addError({
@@ -213,13 +191,13 @@ export class ImportEngine {
         });
       }
     }
-    
+
     return documents;
   }
 
   private async detectConflicts(analysis: ImportAnalysis): Promise<ImportConflict[]> {
     const conflicts: ImportConflict[] = [];
-    
+
     // Check for duplicate titles
     for (const sample of analysis.sample) {
       const existing = await this.checkExistingDocument(sample.title);
@@ -231,7 +209,7 @@ export class ImportEngine {
         });
       }
     }
-    
+
     return conflicts;
   }
 
@@ -241,38 +219,38 @@ export class ImportEngine {
     session: ImportSession
   ): Promise<MnemosyneDocument[]> {
     const resolved: MnemosyneDocument[] = [];
-    
+
     for (const doc of documents) {
       const conflict = await this.checkDocumentConflict(doc);
-      
+
       if (!conflict) {
         resolved.push(doc);
         continue;
       }
-      
+
       const resolution = await this.resolveConflict(conflict, options);
-      
+
       switch (resolution.strategy) {
         case 'skip':
           session.incrementSkipped();
           break;
-          
+
         case 'rename':
           doc.title = resolution.newName || `${doc.title} (imported)`;
           resolved.push(doc);
           break;
-          
+
         case 'merge':
           const merged = await this.mergeDocuments(doc, conflict);
           resolved.push(merged);
           break;
-          
+
         case 'replace':
           resolved.push(doc);
           break;
       }
     }
-    
+
     return resolved;
   }
 
@@ -281,15 +259,15 @@ export class ImportEngine {
     session: ImportSession
   ): Promise<MnemosyneDocument[]> {
     const saved: MnemosyneDocument[] = [];
-    
+
     for (const doc of documents) {
       try {
         session.updateProgress('saving', doc.title);
-        
+
         // Save to database
         const savedDoc = await this.saveDocument(doc);
         saved.push(savedDoc);
-        
+
         session.incrementProcessed();
       } catch (error) {
         session.addError({
@@ -300,7 +278,7 @@ export class ImportEngine {
         session.incrementFailed();
       }
     }
-    
+
     return saved;
   }
 
@@ -311,13 +289,13 @@ export class ImportEngine {
     adapter: ImportAdapter
   ): Promise<ProvenanceNode[]> {
     const provenanceNodes: ProvenanceNode[] = [];
-    
+
     for (const doc of documents) {
       const node = await adapter.trackProvenance(doc, source);
       const saved = await this.provenanceTracker.track(node);
       provenanceNodes.push(saved);
     }
-    
+
     return provenanceNodes;
   }
 
@@ -326,10 +304,10 @@ export class ImportEngine {
     adapter: ImportAdapter
   ): Promise<void> {
     const graphUpdate = await adapter.mapRelationships(documents);
-    
+
     // Update knowledge graph with new nodes and relationships
     await this.context.storage.set('graph_update', graphUpdate);
-    
+
     this.context.events.emit('mnemosyne:graph:updated', graphUpdate);
   }
 

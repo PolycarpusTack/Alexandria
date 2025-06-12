@@ -1,25 +1,16 @@
 /**
  * Mnemosyne Core System
- * 
+ *
  * Enterprise-grade core system providing centralized coordination,
  * resource management, and lifecycle control for the Mnemosyne plugin
  */
 
-import { 
-  PluginContext,
-  Logger,
-  EventBus,
-  DataService
-} from '@alexandria/plugin-interface';
+import { PluginContext, Logger, EventBus, DataService } from '@alexandria/plugin-interface';
 
-import {
-  CoreSystemError,
-  ServiceError,
-  ValidationError
-} from '@alexandria/core/errors';
+import { CoreSystemError, ServiceError, ValidationError } from '@alexandria/core/errors';
 
 import { MnemosyneConfiguration } from './config/Configuration';
-import { 
+import {
   MnemosyneCoreInterface,
   CoreMetrics,
   ServiceConstructorOptions,
@@ -58,7 +49,7 @@ export enum CoreSystemState {
 
 /**
  * Mnemosyne Core System
- * 
+ *
  * Central coordination hub for all Mnemosyne plugin operations.
  * Provides enterprise-grade resource management, state control,
  * error recovery, and performance monitoring.
@@ -134,14 +125,12 @@ export class MnemosyneCore implements MnemosyneCoreInterface {
 
       this.setState(CoreSystemState.INITIALIZED);
       this.logger.info('Mnemosyne core system initialized successfully');
-
     } catch (error) {
       this.setState(CoreSystemState.ERROR);
       this.logger.error('Failed to initialize Mnemosyne core system', { error });
-      throw new CoreSystemError(
-        `Core system initialization failed: ${error.message}`,
-        { originalError: error }
-      );
+      throw new CoreSystemError(`Core system initialization failed: ${error.message}`, {
+        originalError: error
+      });
     }
   }
 
@@ -177,15 +166,14 @@ export class MnemosyneCore implements MnemosyneCoreInterface {
 
       this.setState(CoreSystemState.ACTIVE);
       this.startTime = new Date();
-      
+
       this.logger.info('Mnemosyne core system activated successfully');
-      
+
       // Emit activation event
       this.eventBus.emit('mnemosyne:core:activated', {
         timestamp: new Date().toISOString(),
         metrics: await this.getMetrics()
       });
-
     } catch (error) {
       this.setState(CoreSystemState.ERROR);
       this.logger.error('Failed to activate Mnemosyne core system', { error });
@@ -222,7 +210,6 @@ export class MnemosyneCore implements MnemosyneCoreInterface {
         timestamp: new Date().toISOString(),
         uptime: this.getUptime()
       });
-
     } catch (error) {
       this.setState(CoreSystemState.ERROR);
       this.logger.error('Failed to deactivate Mnemosyne core system', { error });
@@ -249,7 +236,6 @@ export class MnemosyneCore implements MnemosyneCoreInterface {
       this.errors = [];
 
       this.logger.info('Mnemosyne core system cleanup completed');
-
     } catch (error) {
       this.logger.error('Error during core system cleanup', { error });
       throw error;
@@ -439,7 +425,16 @@ export class MnemosyneCore implements MnemosyneCoreInterface {
     const failedComponents = componentChecks
       .map((result, index) => ({ result, index }))
       .filter(({ result }) => result.status === 'rejected')
-      .map(({ index }) => ['resourceManager', 'stateManager', 'securityManager', 'performanceMonitor', 'errorRecoveryManager'][index]);
+      .map(
+        ({ index }) =>
+          [
+            'resourceManager',
+            'stateManager',
+            'securityManager',
+            'performanceMonitor',
+            'errorRecoveryManager'
+          ][index]
+      );
 
     if (failedComponents.length > 0) {
       throw new CoreSystemError(
@@ -469,9 +464,7 @@ export class MnemosyneCore implements MnemosyneCoreInterface {
 
     for (const [name, service] of this.services) {
       if (service && typeof service.activate === 'function') {
-        activationPromises.push(
-          this.activateService(name, service)
-        );
+        activationPromises.push(this.activateService(name, service));
       }
     }
 
@@ -482,7 +475,7 @@ export class MnemosyneCore implements MnemosyneCoreInterface {
   private async activateService(name: string, service: any): Promise<void> {
     try {
       await service.activate();
-      
+
       this.serviceHealth.set(name, {
         healthy: true,
         details: {
@@ -493,7 +486,6 @@ export class MnemosyneCore implements MnemosyneCoreInterface {
       });
 
       this.logger.debug(`Service '${name}' activated successfully`);
-      
     } catch (error) {
       this.serviceHealth.set(name, {
         healthy: false,
@@ -532,9 +524,7 @@ export class MnemosyneCore implements MnemosyneCoreInterface {
 
     for (const [name, service] of this.services) {
       if (service && typeof service.deactivate === 'function') {
-        deactivationPromises.push(
-          this.deactivateService(name, service)
-        );
+        deactivationPromises.push(this.deactivateService(name, service));
       }
     }
 
@@ -545,7 +535,7 @@ export class MnemosyneCore implements MnemosyneCoreInterface {
   private async deactivateService(name: string, service: any): Promise<void> {
     try {
       await service.deactivate();
-      
+
       this.serviceHealth.set(name, {
         healthy: false,
         details: {
@@ -556,7 +546,6 @@ export class MnemosyneCore implements MnemosyneCoreInterface {
       });
 
       this.logger.debug(`Service '${name}' deactivated successfully`);
-      
     } catch (error) {
       this.logger.error(`Error deactivating service '${name}'`, { error });
     }
@@ -586,7 +575,6 @@ export class MnemosyneCore implements MnemosyneCoreInterface {
 
       await this.stateManager.saveState('core-system', state);
       this.logger.debug('System state saved');
-      
     } catch (error) {
       this.logger.error('Failed to save system state', { error });
     }
@@ -630,7 +618,7 @@ export class MnemosyneCore implements MnemosyneCoreInterface {
       database: await this.checkDatabaseHealth()
     };
 
-    const healthy = Object.values(checks).every(check => check === true);
+    const healthy = Object.values(checks).every((check) => check === true);
 
     return {
       healthy,
@@ -652,9 +640,7 @@ export class MnemosyneCore implements MnemosyneCoreInterface {
         this.errorRecoveryManager?.healthCheck() ?? Promise.resolve(true)
       ]);
 
-      return checks.every(check => 
-        check.status === 'fulfilled' && check.value === true
-      );
+      return checks.every((check) => check.status === 'fulfilled' && check.value === true);
     } catch {
       return false;
     }
@@ -670,9 +656,7 @@ export class MnemosyneCore implements MnemosyneCoreInterface {
       })
     );
 
-    return healthChecks.every(check => 
-      check.status === 'fulfilled' && check.value === true
-    );
+    return healthChecks.every((check) => check.status === 'fulfilled' && check.value === true);
   }
 
   private async checkResourceHealth(): Promise<boolean> {
@@ -692,13 +676,13 @@ export class MnemosyneCore implements MnemosyneCoreInterface {
     const memoryUsage = process.memoryUsage();
     const uptime = this.getUptime();
 
-    const performanceMetrics = await this.performanceMonitor?.getMetrics() ?? {
+    const performanceMetrics = (await this.performanceMonitor?.getMetrics()) ?? {
       avgResponseTime: 0,
       requestsPerSecond: 0,
       errorRate: 0
     };
 
-    const resourceMetrics = await this.resourceManager?.getResourceMetrics() ?? {
+    const resourceMetrics = (await this.resourceManager?.getResourceMetrics()) ?? {
       documentsCount: 0,
       relationshipsCount: 0,
       templatesCount: 0,
@@ -722,13 +706,13 @@ export class MnemosyneCore implements MnemosyneCoreInterface {
   private async handleCriticalError(error: Error): Promise<void> {
     this.errors.push(error);
     this.setState(CoreSystemState.ERROR);
-    
+
     await this.attemptRecovery(error);
   }
 
   private async handleServiceError(event: any): Promise<void> {
     this.logger.error('Service error event received', { event });
-    
+
     const serviceName = event.serviceName;
     if (serviceName && this.services.has(serviceName)) {
       await this.restartService(serviceName);
@@ -737,7 +721,7 @@ export class MnemosyneCore implements MnemosyneCoreInterface {
 
   private async handleResourceWarning(event: any): Promise<void> {
     this.logger.warn('Resource warning event received', { event });
-    
+
     await this.resourceManager?.handleResourceWarning(event);
   }
 
@@ -749,12 +733,14 @@ export class MnemosyneCore implements MnemosyneCoreInterface {
 
     this.recoveryAttempts++;
     this.setState(CoreSystemState.RECOVERING);
-    
+
     try {
-      this.logger.info(`Attempting recovery (attempt ${this.recoveryAttempts}/${this.maxRecoveryAttempts})...`);
-      
+      this.logger.info(
+        `Attempting recovery (attempt ${this.recoveryAttempts}/${this.maxRecoveryAttempts})...`
+      );
+
       await this.errorRecoveryManager?.attemptRecovery(error);
-      
+
       // Re-check system health
       const healthCheck = await this.performHealthCheck();
       if (healthCheck.healthy) {
@@ -764,13 +750,12 @@ export class MnemosyneCore implements MnemosyneCoreInterface {
       } else {
         throw new Error('System still unhealthy after recovery attempt');
       }
-      
     } catch (recoveryError) {
       this.logger.error('Recovery attempt failed', { error: recoveryError });
-      
+
       if (this.recoveryAttempts < this.maxRecoveryAttempts) {
         // Wait before next attempt
-        await new Promise(resolve => setTimeout(resolve, 5000 * this.recoveryAttempts));
+        await new Promise((resolve) => setTimeout(resolve, 5000 * this.recoveryAttempts));
         await this.attemptRecovery(error);
       }
     }
@@ -789,7 +774,7 @@ export class MnemosyneCore implements MnemosyneCoreInterface {
       }
 
       // Wait a moment
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
       // Reactivate
       if (typeof service.activate === 'function') {
@@ -807,10 +792,9 @@ export class MnemosyneCore implements MnemosyneCoreInterface {
       });
 
       this.logger.info(`Service '${serviceName}' restarted successfully`);
-
     } catch (error) {
       this.logger.error(`Failed to restart service '${serviceName}'`, { error });
-      
+
       this.serviceHealth.set(serviceName, {
         healthy: false,
         details: {
@@ -826,9 +810,9 @@ export class MnemosyneCore implements MnemosyneCoreInterface {
   private setState(newState: CoreSystemState): void {
     const oldState = this.state;
     this.state = newState;
-    
+
     this.logger.debug(`Core system state changed: ${oldState} -> ${newState}`);
-    
+
     // Emit state change event
     this.eventBus.emit('mnemosyne:core:state-changed', {
       oldState,

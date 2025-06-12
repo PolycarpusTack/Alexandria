@@ -3,23 +3,29 @@ module.exports = {
   rules: {
     // Forbid 'any' type
     '@typescript-eslint/no-explicit-any': 'error',
-    
+
     // Require return types on functions
-    '@typescript-eslint/explicit-function-return-type': ['warn', {
-      allowExpressions: true,
-      allowTypedFunctionExpressions: true
-    }],
-    
-    // Require JSDoc for public APIs
-    'jsdoc/require-jsdoc': ['warn', {
-      publicOnly: true,
-      require: {
-        ClassDeclaration: true,
-        FunctionDeclaration: true,
-        MethodDefinition: true
+    '@typescript-eslint/explicit-function-return-type': [
+      'warn',
+      {
+        allowExpressions: true,
+        allowTypedFunctionExpressions: true
       }
-    }],
-    
+    ],
+
+    // Require JSDoc for public APIs
+    'jsdoc/require-jsdoc': [
+      'warn',
+      {
+        publicOnly: true,
+        require: {
+          ClassDeclaration: true,
+          FunctionDeclaration: true,
+          MethodDefinition: true
+        }
+      }
+    ],
+
     // CSS-in-JS rules
     'no-restricted-syntax': [
       'error',
@@ -32,7 +38,7 @@ module.exports = {
         message: 'Use CSS variables instead of RGB colors'
       }
     ],
-    
+
     // Enforce consistent imports
     'no-restricted-imports': [
       'error',
@@ -45,15 +51,15 @@ module.exports = {
         ]
       }
     ],
-    
+
     // Error handling
     'no-throw-literal': 'error',
     '@typescript-eslint/no-floating-promises': 'error',
-    
+
     // Performance
     'no-await-in-loop': 'warn'
   },
-  
+
   overrides: [
     {
       files: ['**/*.test.ts', '**/*.test.tsx'],

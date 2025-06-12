@@ -1,6 +1,6 @@
 /**
  * Route Service Test Suite
- * 
+ *
  * Comprehensive tests for the RouteService including:
  * - Route registration and management
  * - Middleware handling
@@ -34,13 +34,13 @@ describe('RouteService', () => {
       warn: jest.fn(),
       error: jest.fn(),
       debug: jest.fn(),
-      child: jest.fn().mockReturnThis(),
+      child: jest.fn().mockReturnThis()
     } as any;
 
     // Create mock event bus
     mockEventBus = {
       publish: jest.fn().mockResolvedValue({ deliveredToCount: 1, errors: [] }),
-      subscribe: jest.fn().mockReturnValue({ id: 'sub-123', unsubscribe: jest.fn() }),
+      subscribe: jest.fn().mockReturnValue({ id: 'sub-123', unsubscribe: jest.fn() })
     } as any;
 
     // Create mock Express router
@@ -54,12 +54,12 @@ describe('RouteService', () => {
       all: jest.fn(),
       param: jest.fn(),
       route: jest.fn().mockReturnThis(),
-      stack: [],
+      stack: []
     };
 
     // Mock Express
     mockExpress = {
-      Router: jest.fn(() => mockRouter),
+      Router: jest.fn(() => mockRouter)
     };
 
     // Create route service
@@ -70,14 +70,12 @@ describe('RouteService', () => {
     it('should initialize successfully', async () => {
       await routeService.initialize();
 
-      expect(mockLogger.info).toHaveBeenCalledWith(
-        'Route service initialized successfully'
-      );
+      expect(mockLogger.info).toHaveBeenCalledWith('Route service initialized successfully');
     });
 
     it('should throw error if initialized twice', async () => {
       await routeService.initialize();
-      
+
       await expect(routeService.initialize()).rejects.toThrow(
         'Route service is already initialized'
       );
@@ -89,7 +87,7 @@ describe('RouteService', () => {
       expect(mockExpress.Router).toHaveBeenCalledWith({
         caseSensitive: false,
         mergeParams: false,
-        strict: false,
+        strict: false
       });
     });
   });
@@ -106,7 +104,7 @@ describe('RouteService', () => {
 
         routeService.get('/api/users', handler, {
           middleware,
-          description: 'Get all users',
+          description: 'Get all users'
         });
 
         expect(mockRouter.get).toHaveBeenCalledWith(
@@ -118,9 +116,9 @@ describe('RouteService', () => {
 
       it('should register POST route', () => {
         const handler = jest.fn();
-        
+
         routeService.post('/api/users', handler, {
-          permissions: ['users:create'],
+          permissions: ['users:create']
         });
 
         expect(mockRouter.post).toHaveBeenCalledWith(
@@ -131,35 +129,26 @@ describe('RouteService', () => {
 
       it('should register PUT route', () => {
         const handler = jest.fn();
-        
+
         routeService.put('/api/users/:id', handler);
 
-        expect(mockRouter.put).toHaveBeenCalledWith(
-          '/api/users/:id',
-          expect.any(Function)
-        );
+        expect(mockRouter.put).toHaveBeenCalledWith('/api/users/:id', expect.any(Function));
       });
 
       it('should register PATCH route', () => {
         const handler = jest.fn();
-        
+
         routeService.patch('/api/users/:id', handler);
 
-        expect(mockRouter.patch).toHaveBeenCalledWith(
-          '/api/users/:id',
-          expect.any(Function)
-        );
+        expect(mockRouter.patch).toHaveBeenCalledWith('/api/users/:id', expect.any(Function));
       });
 
       it('should register DELETE route', () => {
         const handler = jest.fn();
-        
+
         routeService.delete('/api/users/:id', handler);
 
-        expect(mockRouter.delete).toHaveBeenCalledWith(
-          '/api/users/:id',
-          expect.any(Function)
-        );
+        expect(mockRouter.delete).toHaveBeenCalledWith('/api/users/:id', expect.any(Function));
       });
     });
 
@@ -176,13 +165,17 @@ describe('RouteService', () => {
 
       it('should apply group middleware', () => {
         const groupMiddleware = [jest.fn(), jest.fn()];
-        
-        routeService.group('/api/admin', (group) => {
-          group.get('/stats', jest.fn());
-        }, {
-          middleware: groupMiddleware,
-          permissions: ['admin:access'],
-        });
+
+        routeService.group(
+          '/api/admin',
+          (group) => {
+            group.get('/stats', jest.fn());
+          },
+          {
+            middleware: groupMiddleware,
+            permissions: ['admin:access']
+          }
+        );
 
         expect(mockRouter.use).toHaveBeenCalledWith(
           '/api/admin',
@@ -196,7 +189,7 @@ describe('RouteService', () => {
     describe('Route Parameters', () => {
       it('should register parameter handler', () => {
         const paramHandler = jest.fn();
-        
+
         routeService.param('userId', paramHandler);
 
         expect(mockRouter.param).toHaveBeenCalledWith(
@@ -224,7 +217,7 @@ describe('RouteService', () => {
 
     it('should register global middleware', () => {
       const middleware = jest.fn();
-      
+
       routeService.use(middleware);
 
       expect(mockRouter.use).toHaveBeenCalledWith(middleware);
@@ -232,7 +225,7 @@ describe('RouteService', () => {
 
     it('should register path-specific middleware', () => {
       const middleware = jest.fn();
-      
+
       routeService.use('/api', middleware);
 
       expect(mockRouter.use).toHaveBeenCalledWith('/api', middleware);
@@ -240,16 +233,16 @@ describe('RouteService', () => {
 
     it('should create permission middleware', () => {
       const permissionMiddleware = routeService.createPermissionMiddleware(['users:read']);
-      
+
       expect(permissionMiddleware).toBeInstanceOf(Function);
     });
 
     it('should create rate limiting middleware', () => {
       const rateLimitMiddleware = routeService.createRateLimitMiddleware({
         windowMs: 60000,
-        max: 100,
+        max: 100
       });
-      
+
       expect(rateLimitMiddleware).toBeInstanceOf(Function);
     });
 
@@ -258,13 +251,13 @@ describe('RouteService', () => {
         type: 'object',
         properties: {
           name: { type: 'string' },
-          email: { type: 'string', format: 'email' },
+          email: { type: 'string', format: 'email' }
         },
-        required: ['name', 'email'],
+        required: ['name', 'email']
       };
 
       const validationMiddleware = routeService.createValidationMiddleware(schema);
-      
+
       expect(validationMiddleware).toBeInstanceOf(Function);
     });
   });
@@ -279,28 +272,31 @@ describe('RouteService', () => {
       routeService.get('/api/users/:id', handler);
 
       const route = routeService.findRoute('GET', '/api/users/123');
-      
+
       expect(route).toEqual({
         path: '/api/users/:id',
         method: 'GET',
         handler: expect.any(Function),
         params: { id: '123' },
-        metadata: expect.any(Object),
+        metadata: expect.any(Object)
       });
     });
 
     it('should extract route parameters', () => {
-      const params = routeService.extractParams('/api/users/:id/posts/:postId', '/api/users/123/posts/456');
-      
+      const params = routeService.extractParams(
+        '/api/users/:id/posts/:postId',
+        '/api/users/123/posts/456'
+      );
+
       expect(params).toEqual({
         id: '123',
-        postId: '456',
+        postId: '456'
       });
     });
 
     it('should handle optional parameters', () => {
       const params = routeService.extractParams('/api/users/:id?', '/api/users');
-      
+
       expect(params).toEqual({});
     });
 
@@ -309,7 +305,7 @@ describe('RouteService', () => {
       routeService.get('/api/*', handler);
 
       const route = routeService.findRoute('GET', '/api/any/nested/path');
-      
+
       expect(route).toBeDefined();
       expect(route?.path).toBe('/api/*');
     });
@@ -327,15 +323,15 @@ describe('RouteService', () => {
         user: {
           id: 'user-123',
           roles: ['user'],
-          permissions: ['users:read'],
+          permissions: ['users:read']
         },
         method: 'GET',
-        path: '/api/users',
+        path: '/api/users'
       };
 
       mockRes = {
         status: jest.fn().mockReturnThis(),
-        json: jest.fn(),
+        json: jest.fn()
       };
 
       mockNext = jest.fn();
@@ -343,7 +339,7 @@ describe('RouteService', () => {
 
     it('should check user permissions', async () => {
       const permissionMiddleware = routeService.createPermissionMiddleware(['users:read']);
-      
+
       await permissionMiddleware(mockReq as Request, mockRes as Response, mockNext);
 
       expect(mockNext).toHaveBeenCalledWith(); // No error, permission granted
@@ -351,26 +347,26 @@ describe('RouteService', () => {
 
     it('should deny access for insufficient permissions', async () => {
       const permissionMiddleware = routeService.createPermissionMiddleware(['users:write']);
-      
+
       await permissionMiddleware(mockReq as Request, mockRes as Response, mockNext);
 
       expect(mockRes.status).toHaveBeenCalledWith(403);
       expect(mockRes.json).toHaveBeenCalledWith({
         error: 'Insufficient permissions',
-        required: ['users:write'],
+        required: ['users:write']
       });
     });
 
     it('should handle missing user context', async () => {
       const permissionMiddleware = routeService.createPermissionMiddleware(['users:read']);
-      
+
       delete mockReq.user;
-      
+
       await permissionMiddleware(mockReq as Request, mockRes as Response, mockNext);
 
       expect(mockRes.status).toHaveBeenCalledWith(401);
       expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'Authentication required',
+        error: 'Authentication required'
       });
     });
   });
@@ -387,13 +383,13 @@ describe('RouteService', () => {
         body: {
           name: 'John Doe',
           email: 'john@example.com',
-          age: 25,
-        },
+          age: 25
+        }
       };
 
       mockRes = {
         status: jest.fn().mockReturnThis(),
-        json: jest.fn(),
+        json: jest.fn()
       };
 
       mockNext = jest.fn();
@@ -405,14 +401,14 @@ describe('RouteService', () => {
         properties: {
           name: { type: 'string', minLength: 1 },
           email: { type: 'string', format: 'email' },
-          age: { type: 'number', minimum: 0 },
+          age: { type: 'number', minimum: 0 }
         },
         required: ['name', 'email'],
-        additionalProperties: false,
+        additionalProperties: false
       };
 
       const validationMiddleware = routeService.createValidationMiddleware(schema);
-      
+
       await validationMiddleware(mockReq as Request, mockRes as Response, mockNext);
 
       expect(mockNext).toHaveBeenCalledWith(); // Valid data
@@ -422,21 +418,21 @@ describe('RouteService', () => {
       const schema = {
         type: 'object',
         properties: {
-          email: { type: 'string', format: 'email' },
+          email: { type: 'string', format: 'email' }
         },
-        required: ['email'],
+        required: ['email']
       };
 
       mockReq.body = { email: 'invalid-email' };
 
       const validationMiddleware = routeService.createValidationMiddleware(schema);
-      
+
       await validationMiddleware(mockReq as Request, mockRes as Response, mockNext);
 
       expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.json).toHaveBeenCalledWith({
         error: 'Validation failed',
-        details: expect.any(Array),
+        details: expect.any(Array)
       });
     });
 
@@ -445,14 +441,14 @@ describe('RouteService', () => {
         type: 'object',
         properties: {
           limit: { type: 'string', pattern: '^\\d+$' },
-          offset: { type: 'string', pattern: '^\\d+$' },
-        },
+          offset: { type: 'string', pattern: '^\\d+$' }
+        }
       };
 
       mockReq.query = { limit: '10', offset: '20' };
 
       const validationMiddleware = routeService.createValidationMiddleware(schema, 'query');
-      
+
       await validationMiddleware(mockReq as Request, mockRes as Response, mockNext);
 
       expect(mockNext).toHaveBeenCalledWith();
@@ -470,13 +466,13 @@ describe('RouteService', () => {
       mockReq = {
         ip: '192.168.1.1',
         path: '/api/users',
-        method: 'GET',
+        method: 'GET'
       };
 
       mockRes = {
         status: jest.fn().mockReturnThis(),
         json: jest.fn(),
-        set: jest.fn(),
+        set: jest.fn()
       };
 
       mockNext = jest.fn();
@@ -485,7 +481,7 @@ describe('RouteService', () => {
     it('should allow requests within rate limit', async () => {
       const rateLimitMiddleware = routeService.createRateLimitMiddleware({
         windowMs: 60000,
-        max: 100,
+        max: 100
       });
 
       await rateLimitMiddleware(mockReq as Request, mockRes as Response, mockNext);
@@ -494,14 +490,14 @@ describe('RouteService', () => {
       expect(mockRes.set).toHaveBeenCalledWith({
         'X-RateLimit-Limit': '100',
         'X-RateLimit-Remaining': expect.any(String),
-        'X-RateLimit-Reset': expect.any(String),
+        'X-RateLimit-Reset': expect.any(String)
       });
     });
 
     it('should block requests exceeding rate limit', async () => {
       const rateLimitMiddleware = routeService.createRateLimitMiddleware({
         windowMs: 1000,
-        max: 1,
+        max: 1
       });
 
       // First request should pass
@@ -513,21 +509,21 @@ describe('RouteService', () => {
 
       // Second request should be blocked
       await rateLimitMiddleware(mockReq as Request, mockRes as Response, mockNext);
-      
+
       expect(mockRes.status).toHaveBeenCalledWith(429);
       expect(mockRes.json).toHaveBeenCalledWith({
         error: 'Too many requests',
-        message: 'Rate limit exceeded. Please try again later.',
+        message: 'Rate limit exceeded. Please try again later.'
       });
     });
 
     it('should use custom key generator', async () => {
       const keyGenerator = jest.fn((req: Request) => `${req.ip}:${req.path}`);
-      
+
       const rateLimitMiddleware = routeService.createRateLimitMiddleware({
         windowMs: 60000,
         max: 100,
-        keyGenerator,
+        keyGenerator
       });
 
       await rateLimitMiddleware(mockReq as Request, mockRes as Response, mockNext);
@@ -545,20 +541,18 @@ describe('RouteService', () => {
       const metadata = {
         description: 'Get user by ID',
         tags: ['users', 'api'],
-        parameters: [
-          { name: 'id', in: 'path', required: true, type: 'string' },
-        ],
+        parameters: [{ name: 'id', in: 'path', required: true, type: 'string' }],
         responses: {
           200: { description: 'User found' },
-          404: { description: 'User not found' },
-        },
+          404: { description: 'User not found' }
+        }
       };
 
       routeService.get('/api/users/:id', jest.fn(), { metadata });
 
       const routes = routeService.getRegisteredRoutes();
-      const route = routes.find(r => r.path === '/api/users/:id' && r.method === 'GET');
-      
+      const route = routes.find((r) => r.path === '/api/users/:id' && r.method === 'GET');
+
       expect(route?.metadata).toEqual(metadata);
     });
 
@@ -568,8 +562,8 @@ describe('RouteService', () => {
         metadata: {
           description: 'List all users',
           tags: ['users'],
-          responses: { 200: { description: 'Users list' } },
-        },
+          responses: { 200: { description: 'Users list' } }
+        }
       });
 
       routeService.post('/api/users', jest.fn(), {
@@ -579,30 +573,30 @@ describe('RouteService', () => {
           requestBody: {
             content: {
               'application/json': {
-                schema: { type: 'object' },
-              },
-            },
-          },
-        },
+                schema: { type: 'object' }
+              }
+            }
+          }
+        }
       });
 
       const openApiSpec = routeService.generateOpenApiSpec({
         title: 'Test API',
-        version: '1.0.0',
+        version: '1.0.0'
       });
 
       expect(openApiSpec).toEqual({
         openapi: '3.0.0',
         info: {
           title: 'Test API',
-          version: '1.0.0',
+          version: '1.0.0'
         },
         paths: expect.objectContaining({
           '/api/users': expect.objectContaining({
             get: expect.any(Object),
-            post: expect.any(Object),
-          }),
-        }),
+            post: expect.any(Object)
+          })
+        })
       });
     });
   });
@@ -631,14 +625,14 @@ describe('RouteService', () => {
 
     it('should create error handling middleware', () => {
       const errorMiddleware = routeService.createErrorHandler();
-      
+
       expect(errorMiddleware).toBeInstanceOf(Function);
       expect(errorMiddleware.length).toBe(4); // Error middleware has 4 parameters
     });
 
     it('should handle async route errors', async () => {
       const asyncHandler = jest.fn().mockRejectedValue(new Error('Async error'));
-      
+
       const wrappedHandler = routeService.wrapAsyncHandler(asyncHandler);
       const mockNext = jest.fn();
 
@@ -655,20 +649,20 @@ describe('RouteService', () => {
 
     it('should cache route resolution', () => {
       routeService.get('/api/users/:id', jest.fn());
-      
+
       // First resolution
       const route1 = routeService.findRoute('GET', '/api/users/123');
-      
+
       // Second resolution (should use cache)
       const route2 = routeService.findRoute('GET', '/api/users/456');
-      
+
       expect(route1?.path).toBe('/api/users/:id');
       expect(route2?.path).toBe('/api/users/:id');
     });
 
     it('should measure route performance', () => {
       const performanceMiddleware = routeService.createPerformanceMiddleware();
-      
+
       expect(performanceMiddleware).toBeInstanceOf(Function);
     });
 
@@ -683,9 +677,9 @@ describe('RouteService', () => {
         totalRoutes: 3,
         byMethod: {
           GET: 2,
-          POST: 1,
+          POST: 1
         },
-        byPath: expect.any(Object),
+        byPath: expect.any(Object)
       });
     });
   });
@@ -707,16 +701,16 @@ describe('RouteService', () => {
         expect.arrayContaining([
           expect.objectContaining({
             method: 'GET',
-            path: '/api/users',
+            path: '/api/users'
           }),
           expect.objectContaining({
             method: 'POST',
-            path: '/api/users',
+            path: '/api/users'
           }),
           expect.objectContaining({
             method: 'GET',
-            path: '/api/posts/:id',
-          }),
+            path: '/api/posts/:id'
+          })
         ])
       );
     });
@@ -726,7 +720,7 @@ describe('RouteService', () => {
       routeService.post('/api/admin/users', jest.fn(), { tags: ['admin'] });
 
       const publicRoutes = routeService.getRegisteredRoutes({
-        tags: ['public'],
+        tags: ['public']
       });
 
       expect(publicRoutes).toHaveLength(1);
@@ -737,7 +731,7 @@ describe('RouteService', () => {
   describe('Shutdown', () => {
     it('should clear routes on shutdown', async () => {
       await routeService.initialize();
-      
+
       routeService.get('/api/test', jest.fn());
       expect(routeService.getRegisteredRoutes()).toHaveLength(1);
 

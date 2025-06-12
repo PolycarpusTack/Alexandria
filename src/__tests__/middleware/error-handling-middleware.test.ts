@@ -1,6 +1,6 @@
 /**
  * Error Handling Middleware Test Suite
- * 
+ *
  * Comprehensive tests for error handling middleware including:
  * - Global error handling
  * - Error classification and mapping
@@ -15,12 +15,12 @@
 
 import request from 'supertest';
 import express from 'express';
-import { 
-  errorHandler, 
-  notFoundHandler, 
+import {
+  errorHandler,
+  notFoundHandler,
   createErrorMiddleware,
   ErrorTypes,
-  CustomError,
+  CustomError
 } from '../../core/middleware/error-handler';
 import { Logger } from '../../utils/logger';
 
@@ -44,7 +44,7 @@ describe('Error Handling Middleware', () => {
       warn: jest.fn(),
       error: jest.fn(),
       debug: jest.fn(),
-      child: jest.fn().mockReturnThis(),
+      child: jest.fn().mockReturnThis()
     } as any;
   });
 
@@ -73,15 +73,13 @@ describe('Error Handling Middleware', () => {
     });
 
     it('should handle synchronous errors', async () => {
-      const response = await request(app)
-        .get('/sync-error')
-        .expect(500);
+      const response = await request(app).get('/sync-error').expect(500);
 
       expect(response.body).toEqual({
         error: 'Internal Server Error',
         message: 'An unexpected error occurred',
         timestamp: expect.any(String),
-        requestId: expect.any(String),
+        requestId: expect.any(String)
       });
 
       expect(mockLogger.error).toHaveBeenCalledWith(
@@ -90,43 +88,36 @@ describe('Error Handling Middleware', () => {
           error: expect.any(Error),
           stack: expect.any(String),
           url: '/sync-error',
-          method: 'GET',
+          method: 'GET'
         })
       );
     });
 
     it('should handle asynchronous errors', async () => {
-      const response = await request(app)
-        .get('/async-error')
-        .expect(500);
+      const response = await request(app).get('/async-error').expect(500);
 
       expect(response.body).toEqual({
         error: 'Internal Server Error',
         message: 'An unexpected error occurred',
         timestamp: expect.any(String),
-        requestId: expect.any(String),
+        requestId: expect.any(String)
       });
     });
 
     it('should handle custom errors with specific status codes', async () => {
-      const response = await request(app)
-        .get('/custom-error')
-        .expect(422);
+      const response = await request(app).get('/custom-error').expect(422);
 
       expect(response.body).toEqual({
         error: 'Validation Error',
         message: 'Custom error message',
         code: 'VALIDATION_ERROR',
         timestamp: expect.any(String),
-        requestId: expect.any(String),
+        requestId: expect.any(String)
       });
     });
 
     it('should not interfere with successful requests', async () => {
-      await request(app)
-        .get('/success')
-        .expect(200)
-        .expect({ success: true });
+      await request(app).get('/success').expect(200).expect({ success: true });
 
       expect(mockLogger.error).not.toHaveBeenCalled();
     });
@@ -164,72 +155,62 @@ describe('Error Handling Middleware', () => {
     });
 
     it('should handle validation errors', async () => {
-      const response = await request(app)
-        .get('/validation-error')
-        .expect(400);
+      const response = await request(app).get('/validation-error').expect(400);
 
       expect(response.body).toEqual({
         error: 'Validation Error',
         message: 'Invalid input',
         code: 'VALIDATION_ERROR',
         timestamp: expect.any(String),
-        requestId: expect.any(String),
+        requestId: expect.any(String)
       });
     });
 
     it('should handle authentication errors', async () => {
-      const response = await request(app)
-        .get('/auth-error')
-        .expect(401);
+      const response = await request(app).get('/auth-error').expect(401);
 
       expect(response.body).toEqual({
         error: 'Authentication Required',
         message: 'Unauthorized',
         code: 'AUTHENTICATION_ERROR',
         timestamp: expect.any(String),
-        requestId: expect.any(String),
+        requestId: expect.any(String)
       });
     });
 
     it('should handle authorization errors', async () => {
-      const response = await request(app)
-        .get('/permission-error')
-        .expect(403);
+      const response = await request(app).get('/permission-error').expect(403);
 
       expect(response.body).toEqual({
         error: 'Forbidden',
         message: 'Forbidden',
         code: 'AUTHORIZATION_ERROR',
         timestamp: expect.any(String),
-        requestId: expect.any(String),
+        requestId: expect.any(String)
       });
     });
 
     it('should handle not found errors', async () => {
-      const response = await request(app)
-        .get('/not-found-error')
-        .expect(404);
+      const response = await request(app).get('/not-found-error').expect(404);
 
       expect(response.body).toEqual({
         error: 'Not Found',
         message: 'Resource not found',
         code: 'NOT_FOUND_ERROR',
         timestamp: expect.any(String),
-        requestId: expect.any(String),
+        requestId: expect.any(String)
       });
     });
 
     it('should handle rate limiting errors', async () => {
-      const response = await request(app)
-        .get('/rate-limit-error')
-        .expect(429);
+      const response = await request(app).get('/rate-limit-error').expect(429);
 
       expect(response.body).toEqual({
         error: 'Too Many Requests',
         message: 'Too many requests',
         code: 'RATE_LIMIT_ERROR',
         timestamp: expect.any(String),
-        requestId: expect.any(String),
+        requestId: expect.any(String)
       });
     });
   });
@@ -244,9 +225,7 @@ describe('Error Handling Middleware', () => {
 
       app.use(errorHandler(mockLogger));
 
-      const response = await request(app)
-        .get('/error')
-        .expect(500);
+      const response = await request(app).get('/error').expect(500);
 
       expect(response.body).toHaveProperty('stack');
       expect(response.body.stack).toContain('Error: Test error');
@@ -261,9 +240,7 @@ describe('Error Handling Middleware', () => {
 
       app.use(errorHandler(mockLogger));
 
-      const response = await request(app)
-        .get('/error')
-        .expect(500);
+      const response = await request(app).get('/error').expect(500);
 
       expect(response.body).not.toHaveProperty('stack');
     });
@@ -285,9 +262,7 @@ describe('Error Handling Middleware', () => {
     });
 
     it('should handle non-existent routes', async () => {
-      const response = await request(app)
-        .get('/non-existent-route')
-        .expect(404);
+      const response = await request(app).get('/non-existent-route').expect(404);
 
       expect(response.body).toEqual({
         error: 'Not Found',
@@ -295,23 +270,20 @@ describe('Error Handling Middleware', () => {
         path: '/non-existent-route',
         method: 'GET',
         timestamp: expect.any(String),
-        requestId: expect.any(String),
+        requestId: expect.any(String)
       });
 
       expect(mockLogger.warn).toHaveBeenCalledWith(
         '404 - Route not found',
         expect.objectContaining({
           path: '/non-existent-route',
-          method: 'GET',
+          method: 'GET'
         })
       );
     });
 
     it('should not interfere with existing routes', async () => {
-      await request(app)
-        .get('/existing-route')
-        .expect(200)
-        .expect({ exists: true });
+      await request(app).get('/existing-route').expect(200).expect({ exists: true });
 
       expect(mockLogger.warn).not.toHaveBeenCalled();
     });
@@ -327,8 +299,8 @@ describe('Error Handling Middleware', () => {
         rateLimiting: {
           enabled: true,
           maxErrors: 10,
-          windowMs: 60000,
-        },
+          windowMs: 60000
+        }
       });
 
       app.get('/error', (req, res) => {
@@ -337,12 +309,12 @@ describe('Error Handling Middleware', () => {
 
       app.use(customErrorMiddleware);
 
-      const response = await request(app)
-        .get('/error')
-        .expect(500);
+      const response = await request(app).get('/error').expect(500);
 
       expect(response.body).toHaveProperty('requestId');
-      expect(response.body.requestId).toMatch(/^req_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/);
+      expect(response.body.requestId).toMatch(
+        /^req_[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/
+      );
     });
   });
 
@@ -350,7 +322,7 @@ describe('Error Handling Middleware', () => {
     beforeEach(() => {
       const sanitizingErrorHandler = createErrorMiddleware({
         logger: mockLogger,
-        sanitizeErrors: true,
+        sanitizeErrors: true
       });
 
       app.get('/sql-injection-error', (req, res) => {
@@ -367,9 +339,7 @@ describe('Error Handling Middleware', () => {
     });
 
     it('should sanitize sensitive information from error messages', async () => {
-      const response = await request(app)
-        .get('/sql-injection-error')
-        .expect(500);
+      const response = await request(app).get('/sql-injection-error').expect(500);
 
       expect(response.body.message).toBe('An unexpected error occurred');
       expect(response.body.message).not.toContain('password');
@@ -377,9 +347,7 @@ describe('Error Handling Middleware', () => {
     });
 
     it('should sanitize file paths from error messages', async () => {
-      const response = await request(app)
-        .get('/file-path-error')
-        .expect(500);
+      const response = await request(app).get('/file-path-error').expect(500);
 
       expect(response.body.message).toBe('An unexpected error occurred');
       expect(response.body.message).not.toContain('/etc/passwd');
@@ -393,8 +361,8 @@ describe('Error Handling Middleware', () => {
         rateLimiting: {
           enabled: true,
           maxErrors: 3,
-          windowMs: 60000,
-        },
+          windowMs: 60000
+        }
       });
 
       app.get('/frequent-error', (req, res) => {
@@ -407,22 +375,18 @@ describe('Error Handling Middleware', () => {
     it('should track error frequency per client', async () => {
       // Make multiple error requests
       for (let i = 0; i < 3; i++) {
-        await request(app)
-          .get('/frequent-error')
-          .expect(500);
+        await request(app).get('/frequent-error').expect(500);
       }
 
       // Fourth request should be rate limited
-      const response = await request(app)
-        .get('/frequent-error')
-        .expect(429);
+      const response = await request(app).get('/frequent-error').expect(429);
 
       expect(response.body).toEqual({
         error: 'Too Many Errors',
         message: 'Too many errors from this client. Please try again later.',
         retryAfter: expect.any(Number),
         timestamp: expect.any(String),
-        requestId: expect.any(String),
+        requestId: expect.any(String)
       });
     });
   });
@@ -435,8 +399,8 @@ describe('Error Handling Middleware', () => {
         circuitBreaker: {
           enabled: true,
           failureThreshold: 5,
-          recoveryTimeout: 30000,
-        },
+          recoveryTimeout: 30000
+        }
       });
 
       app.get('/recoverable-error', (req, res) => {
@@ -447,15 +411,13 @@ describe('Error Handling Middleware', () => {
     });
 
     it('should attempt error recovery for recoverable errors', async () => {
-      const response = await request(app)
-        .get('/recoverable-error')
-        .expect(500);
+      const response = await request(app).get('/recoverable-error').expect(500);
 
       expect(mockLogger.info).toHaveBeenCalledWith(
         'Error recovery attempted',
         expect.objectContaining({
           error: expect.any(Error),
-          recoveryAttempt: 1,
+          recoveryAttempt: 1
         })
       );
     });
@@ -477,9 +439,7 @@ describe('Error Handling Middleware', () => {
     });
 
     it('should include request context in error logs', async () => {
-      await request(app)
-        .get('/context-error')
-        .expect(500);
+      await request(app).get('/context-error').expect(500);
 
       expect(mockLogger.error).toHaveBeenCalledWith(
         'Unhandled error',
@@ -487,7 +447,7 @@ describe('Error Handling Middleware', () => {
           requestId: expect.any(String),
           userId: 'user-123',
           userAgent: expect.any(String),
-          ip: expect.any(String),
+          ip: expect.any(String)
         })
       );
     });
@@ -506,27 +466,25 @@ describe('Error Handling Middleware', () => {
       });
 
       // Wrap async handlers
-      app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
-        if (err) {
-          next(err);
+      app.use(
+        (err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+          if (err) {
+            next(err);
+          }
         }
-      });
+      );
 
       app.use(errorHandler(mockLogger));
     });
 
     it('should handle promise rejections', async () => {
-      const response = await request(app)
-        .get('/promise-rejection')
-        .expect(500);
+      const response = await request(app).get('/promise-rejection').expect(500);
 
       expect(response.body.error).toBe('Internal Server Error');
     });
 
     it('should handle timeout errors', async () => {
-      const response = await request(app)
-        .get('/timeout-error')
-        .expect(500);
+      const response = await request(app).get('/timeout-error').expect(500);
 
       expect(response.body.error).toBe('Internal Server Error');
     });
@@ -539,12 +497,12 @@ describe('Error Handling Middleware', () => {
       mockMonitoringService = {
         reportError: jest.fn(),
         incrementErrorCounter: jest.fn(),
-        recordErrorMetrics: jest.fn(),
+        recordErrorMetrics: jest.fn()
       };
 
       const monitoringErrorHandler = createErrorMiddleware({
         logger: mockLogger,
-        monitoring: mockMonitoringService,
+        monitoring: mockMonitoringService
       });
 
       app.get('/monitored-error', (req, res) => {
@@ -555,22 +513,20 @@ describe('Error Handling Middleware', () => {
     });
 
     it('should report errors to monitoring service', async () => {
-      await request(app)
-        .get('/monitored-error')
-        .expect(500);
+      await request(app).get('/monitored-error').expect(500);
 
       expect(mockMonitoringService.reportError).toHaveBeenCalledWith(
         expect.any(Error),
         expect.objectContaining({
           url: '/monitored-error',
-          method: 'GET',
+          method: 'GET'
         })
       );
 
       expect(mockMonitoringService.incrementErrorCounter).toHaveBeenCalledWith({
         errorType: 'Error',
         statusCode: 500,
-        endpoint: '/monitored-error',
+        endpoint: '/monitored-error'
       });
     });
   });
@@ -581,8 +537,8 @@ describe('Error Handling Middleware', () => {
         logger: mockLogger,
         caching: {
           enabled: true,
-          cacheDuration: 300, // 5 minutes
-        },
+          cacheDuration: 300 // 5 minutes
+        }
       });
 
       app.get('/cached-error', (req, res) => {
@@ -593,9 +549,7 @@ describe('Error Handling Middleware', () => {
     });
 
     it('should set cache headers for cacheable errors', async () => {
-      const response = await request(app)
-        .get('/cached-error')
-        .expect(500);
+      const response = await request(app).get('/cached-error').expect(500);
 
       expect(response.headers['cache-control']).toBe('public, max-age=300');
       expect(response.headers['etag']).toBeDefined();

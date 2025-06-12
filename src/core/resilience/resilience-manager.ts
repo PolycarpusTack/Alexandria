@@ -1,6 +1,6 @@
 /**
  * Resilience Manager
- * 
+ *
  * Combines circuit breakers, retry policies, and other resilience patterns
  * to provide comprehensive error recovery and fault tolerance
  */
@@ -8,7 +8,7 @@
 import { Logger } from '@utils/logger';
 import { EventBus } from '../event-bus/event-bus';
 import { CircuitBreaker, CircuitBreakerFactory, CircuitBreakerConfig } from './circuit-breaker';
-import { RetryPolicy, RetryPolicyFactory, RetryConfig, BackoffStrategy } from './retry-policy';
+import { RetryPolicyFactory, RetryConfig } from './retry-policy';
 
 export interface ResilienceConfig {
   enableCircuitBreaker: boolean;
@@ -69,7 +69,7 @@ export class ResilienceManager {
   ) {
     this.circuitBreakerFactory = new CircuitBreakerFactory(logger, eventBus);
     this.retryPolicyFactory = new RetryPolicyFactory(logger);
-    
+
     // Set up metrics collection
     this.setupMetricsCollection();
   }
@@ -84,7 +84,7 @@ export class ResilienceManager {
   ): Promise<T> {
     const resConfig = { ...this.defaultConfig, ...config };
     const startTime = Date.now();
-    
+
     try {
       // Bulkhead check
       if (resConfig.enableBulkhead) {
@@ -93,7 +93,7 @@ export class ResilienceManager {
           this.recordBulkheadRejection(name);
           throw new Error(`Bulkhead limit exceeded for ${name}`);
         }
-        
+
         try {
           return await this.executeWithResilience(name, fn, resConfig, startTime);
         } finally {
@@ -173,44 +173,47 @@ export class ResilienceManager {
     startTime: number
   ): Promise<T> {
     let operation = fn;
-    
+
     // Wrap with timeout
     if (config.enableTimeout && config.timeout) {
       operation = this.wrapWithTimeout(operation, config.timeout, name);
     }
-    
+
     // Wrap with retry
     if (config.enableRetry) {
       const retryPolicy = this.retryPolicyFactory.getPolicy(name, config.retryConfig);
       const originalOp = operation;
-      
+
       operation = async () => {
         const result = await retryPolicy.execute(originalOp, name);
-        
+
         if (result.attempts > 1) {
           this.recordRetries(name, result.attempts - 1);
         }
-        
+
         if (!result.success) {
           throw result.error || new Error('Operation failed after retries');
         }
-        
+
         return result.result!;
       };
     }
-    
+
     // Wrap with circuit breaker
     if (config.enableCircuitBreaker) {
-      const circuitBreaker = this.circuitBreakerFactory.getBreaker(name, config.circuitBreakerConfig);
+      const circuitBreaker = this.circuitBreakerFactory.getBreaker(
+        name,
+        config.circuitBreakerConfig
+      );
       const originalOp = operation;
-      
+
       operation = () => circuitBreaker.execute(originalOp);
     }
-    
+
     // Execute the wrapped operation
     const result = await operation();
     this.recordSuccess(name, Date.now() - startTime);
-    
+
     return result;
   }
 
@@ -219,32 +222,36 @@ export class ResilienceManager {
     timeout: number,
     name: string
   ): () => Promise<T> {
-    return () => new Promise((resolve, reject) => {
-      const timer = setTimeout(() => {
-        this.recordTimeout(name);
-        reject(new Error(`Operation timed out after ${timeout}ms`));
-      }, timeout);
+    return () =>
+      new Promise((resolve, reject) => {
+        const timer = setTimeout(() => {
+          this.recordTimeout(name);
+          reject(new Error(`Operation timed out after ${timeout}ms`));
+        }, timeout);
 
-      fn()
-        .then(result => {
-          clearTimeout(timer);
-          resolve(result);
-        })
-        .catch(error => {
-          clearTimeout(timer);
-          reject(error);
-        });
-    });
+        fn()
+          .then((result) => {
+            clearTimeout(timer);
+            resolve(result);
+          })
+          .catch((error) => {
+            clearTimeout(timer);
+            reject(error);
+          });
+      });
   }
 
-  private getBulkhead(name: string, config: { maxConcurrent: number; maxQueued: number }): Bulkhead {
+  private getBulkhead(
+    name: string,
+    config: { maxConcurrent: number; maxQueued: number }
+  ): Bulkhead {
     let bulkhead = this.bulkheads.get(name);
-    
+
     if (!bulkhead) {
       bulkhead = new Bulkhead(config.maxConcurrent, config.maxQueued);
       this.bulkheads.set(name, bulkhead);
     }
-    
+
     return bulkhead;
   }
 
@@ -260,7 +267,7 @@ export class ResilienceManager {
 
   private getOrCreateMetrics(name: string): ResilienceMetrics {
     let metrics = this.metrics.get(name);
-    
+
     if (!metrics) {
       metrics = {
         totalCalls: 0,
@@ -274,7 +281,7 @@ export class ResilienceManager {
       };
       this.metrics.set(name, metrics);
     }
-    
+
     return metrics;
   }
 
@@ -282,9 +289,9 @@ export class ResilienceManager {
     const metrics = this.getOrCreateMetrics(name);
     metrics.totalCalls++;
     metrics.successfulCalls++;
-    
+
     // Update average response time
-    metrics.averageResponseTime = 
+    metrics.averageResponseTime =
       (metrics.averageResponseTime * (metrics.totalCalls - 1) + responseTime) / metrics.totalCalls;
   }
 
@@ -292,9 +299,9 @@ export class ResilienceManager {
     const metrics = this.getOrCreateMetrics(name);
     metrics.totalCalls++;
     metrics.failedCalls++;
-    
+
     // Update average response time
-    metrics.averageResponseTime = 
+    metrics.averageResponseTime =
       (metrics.averageResponseTime * (metrics.totalCalls - 1) + responseTime) / metrics.totalCalls;
   }
 
@@ -336,7 +343,7 @@ class Bulkhead {
       this.inFlight++;
       return true;
     }
-    
+
     if (this.queue.length < this.maxQueued) {
       return new Promise<boolean>((resolve) => {
         this.queue.push(() => {
@@ -345,13 +352,13 @@ class Bulkhead {
         });
       }) as any; // Simplified for sync interface
     }
-    
+
     return false;
   }
 
   release(): void {
     this.inFlight--;
-    
+
     if (this.queue.length > 0) {
       const next = this.queue.shift();
       next?.();
@@ -362,31 +369,26 @@ class Bulkhead {
 /**
  * Resilience decorator for class methods
  */
-export function Resilient(
-  name: string,
-  config?: Partial<ResilienceConfig>
-) {
-  return function (
-    target: any,
-    propertyKey: string,
-    descriptor: PropertyDescriptor
-  ) {
+export function Resilient(name: string, config?: Partial<ResilienceConfig>) {
+  return function (target: any, propertyKey: string, descriptor: PropertyDescriptor) {
     const originalMethod = descriptor.value;
-    
+
     descriptor.value = async function (...args: any[]) {
       const manager = (this as any).resilienceManager;
-      
+
       if (!manager) {
-        throw new Error('ResilienceManager not found. Ensure class has resilienceManager property.');
+        throw new Error(
+          'ResilienceManager not found. Ensure class has resilienceManager property.'
+        );
       }
-      
+
       return manager.execute(
         `${name}.${propertyKey}`,
         () => originalMethod.apply(this, args),
         config
       );
     };
-    
+
     return descriptor;
   };
 }

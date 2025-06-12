@@ -1,6 +1,6 @@
 /**
  * Mnemosyne Validation Middleware
- * 
+ *
  * Comprehensive request validation middleware with schema validation,
  * sanitization, and custom validation rules
  */
@@ -44,7 +44,7 @@ export interface ValidationResult {
 
 /**
  * Request Validation Middleware
- * 
+ *
  * Provides comprehensive validation for request body, query parameters,
  * and URL parameters with detailed error reporting
  */
@@ -62,7 +62,7 @@ export class ValidationMiddleware {
     return (req: Request, res: Response, next: NextFunction): void => {
       try {
         const validation = this.validateData(req.body, schema, 'body');
-        
+
         if (!validation.isValid) {
           this.logger.warn('Request body validation failed', {
             requestId: (req as any).requestId,
@@ -103,7 +103,7 @@ export class ValidationMiddleware {
     return (req: Request, res: Response, next: NextFunction): void => {
       try {
         const validation = this.validateData(req.query, schema, 'query');
-        
+
         if (!validation.isValid) {
           this.logger.warn('Query parameters validation failed', {
             requestId: (req as any).requestId,
@@ -144,7 +144,7 @@ export class ValidationMiddleware {
     return (req: Request, res: Response, next: NextFunction): void => {
       try {
         const validation = this.validateData(req.params, schema, 'params');
-        
+
         if (!validation.isValid) {
           this.logger.warn('URL parameters validation failed', {
             requestId: (req as any).requestId,
@@ -181,13 +181,11 @@ export class ValidationMiddleware {
   /**
    * Custom validation middleware factory
    */
-  public customValidation = (
-    validator: (req: Request) => ValidationResult
-  ) => {
+  public customValidation = (validator: (req: Request) => ValidationResult) => {
     return (req: Request, res: Response, next: NextFunction): void => {
       try {
         const validation = validator(req);
-        
+
         if (!validation.isValid) {
           this.logger.warn('Custom validation failed', {
             requestId: (req as any).requestId,
@@ -219,20 +217,24 @@ export class ValidationMiddleware {
   /**
    * File upload validation
    */
-  public validateFileUpload = (options: {
-    maxSize?: number;
-    allowedTypes?: string[];
-    required?: boolean;
-  } = {}) => {
+  public validateFileUpload = (
+    options: {
+      maxSize?: number;
+      allowedTypes?: string[];
+      required?: boolean;
+    } = {}
+  ) => {
     return (req: Request, res: Response, next: NextFunction): void => {
       const { maxSize = 10 * 1024 * 1024, allowedTypes = [], required = false } = options;
 
       // Check if file is required
-      if (required && (!req.file && !req.files)) {
-        return this.sendValidationErrorResponse(res, [{
-          field: 'file',
-          message: 'File upload is required'
-        }]);
+      if (required && !req.file && !req.files) {
+        return this.sendValidationErrorResponse(res, [
+          {
+            field: 'file',
+            message: 'File upload is required'
+          }
+        ]);
       }
 
       // Skip validation if no file uploaded and not required
@@ -240,7 +242,11 @@ export class ValidationMiddleware {
         return next();
       }
 
-      const files = req.files ? (Array.isArray(req.files) ? req.files : Object.values(req.files).flat()) : [req.file];
+      const files = req.files
+        ? Array.isArray(req.files)
+          ? req.files
+          : Object.values(req.files).flat()
+        : [req.file];
       const errors: ValidationError[] = [];
 
       for (const file of files) {
@@ -316,7 +322,7 @@ export class ValidationMiddleware {
 
       // Validate and sanitize the value
       const validationResult = this.validateField(value, rule, fieldPath);
-      
+
       if (validationResult.errors.length > 0) {
         errors.push(...validationResult.errors);
       } else {
@@ -334,7 +340,11 @@ export class ValidationMiddleware {
   /**
    * Validate individual field
    */
-  private validateField(value: any, rule: ValidationRule, fieldPath: string): {
+  private validateField(
+    value: any,
+    rule: ValidationRule,
+    fieldPath: string
+  ): {
     errors: ValidationError[];
     sanitizedValue: any;
   } {
@@ -480,7 +490,11 @@ export class ValidationMiddleware {
   /**
    * Validate data type
    */
-  private validateType(value: any, type: ValidationRule['type'], fieldPath: string): ValidationResult {
+  private validateType(
+    value: any,
+    type: ValidationRule['type'],
+    fieldPath: string
+  ): ValidationResult {
     const errors: ValidationError[] = [];
 
     switch (type) {
@@ -586,18 +600,19 @@ export class ValidationMiddleware {
     switch (type) {
       case 'string':
         // Basic HTML sanitization - remove script tags and dangerous content
-        return typeof value === 'string' ? 
-          value.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '') : value;
-      
+        return typeof value === 'string'
+          ? value.replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
+          : value;
+
       case 'number':
         return typeof value === 'string' ? parseFloat(value) : value;
-      
+
       case 'boolean':
         if (typeof value === 'string') {
           return value.toLowerCase() === 'true' || value === '1';
         }
         return Boolean(value);
-      
+
       default:
         return value;
     }

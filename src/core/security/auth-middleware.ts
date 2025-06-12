@@ -1,7 +1,7 @@
 /// <reference path="../../types/express-custom.d.ts" />
 /**
  * Authentication Middleware for the Alexandria Platform
- * 
+ *
  * This middleware handles extracting and validating JWT tokens from requests,
  * retrieving user information, and attaching the user object to the request.
  */
@@ -52,7 +52,7 @@ export interface AuthMiddlewareOptions {
 
 /**
  * Create an Express middleware that handles authentication
- * 
+ *
  * @param authService Authentication service instance
  * @param logger Logger instance
  * @param options Authentication middleware options
@@ -64,10 +64,7 @@ export function createAuthMiddleware(
   options: AuthMiddlewareOptions = {}
 ) {
   // Default options
-  const {
-    requireAuth = false,
-    tokenExtractor = defaultTokenExtractor
-  } = options;
+  const { requireAuth = false, tokenExtractor = defaultTokenExtractor } = options;
 
   // The middleware function
   return async function authMiddleware(req: Request, res: Response, next: NextFunction) {
@@ -83,12 +80,12 @@ export function createAuthMiddleware(
             path: req.path,
             method: req.method
           });
-          
+
           return res.status(401).json({
             error: 'Authentication required'
           });
         }
-        
+
         // If no token and auth is not required, continue without user
         return next();
       }
@@ -96,11 +93,11 @@ export function createAuthMiddleware(
       // Validate token
       try {
         const payload = await authService.validateToken(token);
-        
+
         // Get user details
         const dataService = (req as AlexandriaRequest).app.locals.dataService;
         const user = await retrieveUserDetails(payload.userId, dataService);
-        
+
         // Check if user was found
         if (!user) {
           if (requireAuth) {
@@ -111,16 +108,16 @@ export function createAuthMiddleware(
           // Continue without user for optional auth routes
           return next();
         }
-        
+
         // Attach user to request
         req.user = user as any;
-        
+
         logger.debug('User authenticated successfully', {
           component: 'AuthMiddleware',
           userId: user.id,
           username: user.username
         });
-        
+
         next();
       } catch (error) {
         // Token validation failed
@@ -128,13 +125,13 @@ export function createAuthMiddleware(
           component: 'AuthMiddleware',
           error: error instanceof Error ? error.message : String(error)
         });
-        
+
         if (requireAuth) {
           return res.status(401).json({
             error: 'Invalid authentication token'
           });
         }
-        
+
         // If auth is not required, continue without user
         next();
       }
@@ -143,7 +140,7 @@ export function createAuthMiddleware(
         component: 'AuthMiddleware',
         error: error instanceof Error ? error.message : String(error)
       });
-      
+
       // For unexpected errors, continue to error handling middleware
       next(error);
     }
@@ -155,18 +152,18 @@ export function createAuthMiddleware(
  */
 function defaultTokenExtractor(req: Request): string | null {
   const authHeader = req.headers.authorization;
-  
+
   if (!authHeader) {
     return null;
   }
-  
+
   // Extract token from Bearer format
   const parts = authHeader.split(' ');
-  
+
   if (parts.length !== 2 || parts[0] !== 'Bearer') {
     return null;
   }
-  
+
   return parts[1];
 }
 
@@ -180,17 +177,19 @@ async function retrieveUserDetails(userId: string, dataService?: DataService) {
   try {
     // If no data service is provided, return null
     if (!dataService) {
-      createLogger({ serviceName: 'auth-middleware' }).warn('No data service available for user retrieval');
+      createLogger({ serviceName: 'auth-middleware' }).warn(
+        'No data service available for user retrieval'
+      );
       return null;
     }
-    
+
     // Fetch user from database
     const user = await dataService.users.findById(userId);
-    
+
     if (!user || !user.isActive) {
       return null;
     }
-    
+
     // Return user with proper role and permission structure
     return {
       id: user.id,
@@ -201,7 +200,10 @@ async function retrieveUserDetails(userId: string, dataService?: DataService) {
       isActive: user.isActive
     };
   } catch (error) {
-    createLogger({ serviceName: 'auth-middleware' }).error('Failed to retrieve user details', { error, userId });
+    createLogger({ serviceName: 'auth-middleware' }).error('Failed to retrieve user details', {
+      error,
+      userId
+    });
     return null;
   }
 }

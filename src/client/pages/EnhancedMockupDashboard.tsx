@@ -1,11 +1,27 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import {          
-  Activity, Brain, Code, FileText, Bug, CheckCircle,
-  ArrowUp, ArrowDown, Plus, BarChart3, Users, Database,
-  Server, Cpu, HardDrive, Network, Terminal, Settings,
-  FileExport, Rotate3D
-          } from 'lucide-react';
+import {
+  Activity,
+  Brain,
+  Code,
+  FileText,
+  Bug,
+  CheckCircle,
+  ArrowUp,
+  ArrowDown,
+  Plus,
+  BarChart3,
+  Users,
+  Database,
+  Server,
+  Cpu,
+  HardDrive,
+  Network,
+  Terminal,
+  Settings,
+  FileExport,
+  Rotate3D
+} from 'lucide-react';
 
 const EnhancedMockupDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -19,7 +35,7 @@ const EnhancedMockupDashboard: React.FC = () => {
   // Simulate real-time data updates
   useEffect(() => {
     const interval = setInterval(() => {
-      setSystemMetrics(prev => ({
+      setSystemMetrics((prev) => ({
         cpu: Math.max(10, Math.min(90, prev.cpu + (Math.random() - 0.5) * 10)),
         memory: Math.max(20, Math.min(80, prev.memory + (Math.random() - 0.5) * 5)),
         disk: Math.max(50, Math.min(90, prev.disk + (Math.random() - 0.5) * 2)),
@@ -70,7 +86,8 @@ const EnhancedMockupDashboard: React.FC = () => {
       name: 'Alfred',
       version: 'v2.0.0',
       status: 'Active',
-      description: 'AI-powered coding assistant with project-aware context and intelligent code generation capabilities.',
+      description:
+        'AI-powered coding assistant with project-aware context and intelligent code generation capabilities.',
       color: 'var(--color-alfred)',
       icon: '💻',
       metrics: { requests: 893, success: '98.2%', avgTime: '145ms' }
@@ -79,7 +96,8 @@ const EnhancedMockupDashboard: React.FC = () => {
       name: 'Hadron',
       version: 'v1.0.0',
       status: 'Active',
-      description: 'AI-powered crash log analysis with root cause detection and solution recommendations.',
+      description:
+        'AI-powered crash log analysis with root cause detection and solution recommendations.',
       color: 'var(--color-hadron)',
       icon: '🔍',
       metrics: { logs: 24, accuracy: '89.4%', avgTime: '2.3s' }
@@ -88,7 +106,8 @@ const EnhancedMockupDashboard: React.FC = () => {
       name: 'Heimdall',
       version: 'v1.0.0',
       status: 'Inactive',
-      description: 'Advanced log visualization and pattern detection platform for system monitoring.',
+      description:
+        'Advanced log visualization and pattern detection platform for system monitoring.',
       color: 'var(--color-heimdall)',
       icon: '📈',
       metrics: { sources: '—', monitors: '—', alerts: '—' }
@@ -96,29 +115,55 @@ const EnhancedMockupDashboard: React.FC = () => {
   ];
 
   const recentActivity = [
-    { type: 'ai', message: 'LLM model loaded', detail: 'qwen2.5-coder:14b • 5 minutes ago', icon: '🤖' },
-    { type: 'alfred', message: 'Alfred session started', detail: 'Code generation • 15 minutes ago', icon: '💻' },
-    { type: 'crash', message: 'Crash analyzed', detail: 'High confidence • 1 hour ago', icon: '🔍' },
-    { type: 'system', message: 'System startup complete', detail: 'All services online • 2 hours ago', icon: '✅' }
+    {
+      type: 'ai',
+      message: 'LLM model loaded',
+      detail: 'qwen2.5-coder:14b • 5 minutes ago',
+      icon: '🤖'
+    },
+    {
+      type: 'alfred',
+      message: 'Alfred session started',
+      detail: 'Code generation • 15 minutes ago',
+      icon: '💻'
+    },
+    {
+      type: 'crash',
+      message: 'Crash analyzed',
+      detail: 'High confidence • 1 hour ago',
+      icon: '🔍'
+    },
+    {
+      type: 'system',
+      message: 'System startup complete',
+      detail: 'All services online • 2 hours ago',
+      icon: '✅'
+    }
   ];
 
   return (
-    <div className="enhanced-dashboard">
+    <div className='enhanced-dashboard'>
       <style>{enhancedDashboardStyles}</style>
-      
+
       {/* Welcome Section */}
-      <div className="dashboard-header">
-        <h1 className="dashboard-title">Welcome back</h1>
-        <p className="dashboard-subtitle">Here's what's happening with your Alexandria Platform</p>
+      <div className='dashboard-header'>
+        <h1 className='dashboard-title'>Welcome back</h1>
+        <p className='dashboard-subtitle'>Here's what's happening with your Alexandria Platform</p>
       </div>
 
       {/* Stats Grid */}
-      <div className="stats-grid">
+      <div className='stats-grid'>
         {stats.map((stat, index) => (
-          <div key={index} className="stat-card animate-slideUp" style={{ animationDelay: `${index * 0.05}s` }}>
-            <div className="stat-icon">{stat.icon}</div>
-            <div className="stat-value" style={{ color: stat.color }}>{stat.value}</div>
-            <div className="stat-label">{stat.title}</div>
+          <div
+            key={index}
+            className='stat-card animate-slideUp'
+            style={{ animationDelay: `${index * 0.05}s` }}
+          >
+            <div className='stat-icon'>{stat.icon}</div>
+            <div className='stat-value' style={{ color: stat.color }}>
+              {stat.value}
+            </div>
+            <div className='stat-label'>{stat.title}</div>
             <div className={`stat-change ${stat.trend}`}>
               {stat.trend === 'up' ? '📈' : '📉'}
               <span>{stat.change}</span>
@@ -127,42 +172,44 @@ const EnhancedMockupDashboard: React.FC = () => {
         ))}
       </div>
 
-      <div className="dashboard-content">
+      <div className='dashboard-content'>
         {/* Left Column */}
-        <div className="dashboard-left">
+        <div className='dashboard-left'>
           {/* Plugins Section */}
-          <div className="dashboard-card">
-            <div className="card-header">
-              <h2 className="card-title">Installed Plugins</h2>
-              <div className="card-actions">
-                <button className="btn btn-secondary">
-                  ➕ Add Plugin
-                </button>
-                <button className="btn btn-ghost">
-                  🔄
-                </button>
+          <div className='dashboard-card'>
+            <div className='card-header'>
+              <h2 className='card-title'>Installed Plugins</h2>
+              <div className='card-actions'>
+                <button className='btn btn-secondary'>➕ Add Plugin</button>
+                <button className='btn btn-ghost'>🔄</button>
               </div>
             </div>
-            
-            <div className="plugins-grid">
+
+            <div className='plugins-grid'>
               {plugins.map((plugin, index) => (
-                <div key={index} className="plugin-card" style={{ '--plugin-color': plugin.color } as any}>
-                  <div className="plugin-header">
-                    <div className="plugin-icon">{plugin.icon}</div>
-                    <div className="plugin-info">
-                      <div className="plugin-title">{plugin.name}</div>
-                      <div className="plugin-version">{plugin.version} • {plugin.status}</div>
+                <div
+                  key={index}
+                  className='plugin-card'
+                  style={{ '--plugin-color': plugin.color } as any}
+                >
+                  <div className='plugin-header'>
+                    <div className='plugin-icon'>{plugin.icon}</div>
+                    <div className='plugin-info'>
+                      <div className='plugin-title'>{plugin.name}</div>
+                      <div className='plugin-version'>
+                        {plugin.version} • {plugin.status}
+                      </div>
                     </div>
                     <div className={`plugin-badge ${plugin.status.toLowerCase()}`}>
                       {plugin.status === 'Active' ? '🟢' : '🔴'} {plugin.status}
                     </div>
                   </div>
-                  <p className="plugin-description">{plugin.description}</p>
-                  <div className="plugin-metrics">
+                  <p className='plugin-description'>{plugin.description}</p>
+                  <div className='plugin-metrics'>
                     {Object.entries(plugin.metrics).map(([key, value]) => (
-                      <div key={key} className="plugin-metric">
-                        <div className="plugin-metric-value">{value}</div>
-                        <div className="plugin-metric-label">{key}</div>
+                      <div key={key} className='plugin-metric'>
+                        <div className='plugin-metric-value'>{value}</div>
+                        <div className='plugin-metric-label'>{key}</div>
                       </div>
                     ))}
                   </div>
@@ -172,17 +219,17 @@ const EnhancedMockupDashboard: React.FC = () => {
           </div>
 
           {/* Activity Chart */}
-          <div className="dashboard-card">
-            <div className="card-header">
-              <h2 className="card-title">System Activity</h2>
-              <select className="select-input">
+          <div className='dashboard-card'>
+            <div className='card-header'>
+              <h2 className='card-title'>System Activity</h2>
+              <select className='select-input'>
                 <option>Last 7 days</option>
                 <option>Last 30 days</option>
                 <option>Last 90 days</option>
               </select>
             </div>
-            <div className="chart-placeholder">
-              <div className="chart-message">
+            <div className='chart-placeholder'>
+              <div className='chart-message'>
                 📊 Activity chart would be rendered here with Chart.js
               </div>
             </div>
@@ -190,88 +237,98 @@ const EnhancedMockupDashboard: React.FC = () => {
         </div>
 
         {/* Right Column */}
-        <div className="dashboard-right">
+        <div className='dashboard-right'>
           {/* System Health */}
-          <div className="dashboard-card animate-slideUp">
-            <h3 className="card-title">System Health</h3>
-            
-            <div className="health-metric">
-              <div className="metric-header">
-                <span className="metric-label">CPU Usage</span>
-                <span className="metric-value success">{systemMetrics.cpu}%</span>
+          <div className='dashboard-card animate-slideUp'>
+            <h3 className='card-title'>System Health</h3>
+
+            <div className='health-metric'>
+              <div className='metric-header'>
+                <span className='metric-label'>CPU Usage</span>
+                <span className='metric-value success'>{systemMetrics.cpu}%</span>
               </div>
-              <div className="progress-bar">
-                <div className="progress-fill success" style={{ width: `${systemMetrics.cpu}%` }}></div>
+              <div className='progress-bar'>
+                <div
+                  className='progress-fill success'
+                  style={{ width: `${systemMetrics.cpu}%` }}
+                ></div>
               </div>
             </div>
 
-            <div className="health-metric">
-              <div className="metric-header">
-                <span className="metric-label">Memory</span>
-                <span className="metric-value success">{systemMetrics.memory}%</span>
+            <div className='health-metric'>
+              <div className='metric-header'>
+                <span className='metric-label'>Memory</span>
+                <span className='metric-value success'>{systemMetrics.memory}%</span>
               </div>
-              <div className="progress-bar">
-                <div className="progress-fill success" style={{ width: `${systemMetrics.memory}%` }}></div>
-              </div>
-            </div>
-
-            <div className="health-metric">
-              <div className="metric-header">
-                <span className="metric-label">Disk Space</span>
-                <span className="metric-value warning">{systemMetrics.disk}%</span>
-              </div>
-              <div className="progress-bar">
-                <div className="progress-fill warning" style={{ width: `${systemMetrics.disk}%` }}></div>
+              <div className='progress-bar'>
+                <div
+                  className='progress-fill success'
+                  style={{ width: `${systemMetrics.memory}%` }}
+                ></div>
               </div>
             </div>
 
-            <div className="health-metric">
-              <div className="metric-header">
-                <span className="metric-label">API Latency</span>
-                <span className="metric-value success">{systemMetrics.latency}ms</span>
+            <div className='health-metric'>
+              <div className='metric-header'>
+                <span className='metric-label'>Disk Space</span>
+                <span className='metric-value warning'>{systemMetrics.disk}%</span>
               </div>
-              <div className="progress-bar">
-                <div className="progress-fill success" style={{ width: `${Math.min(systemMetrics.latency, 100)}%` }}></div>
+              <div className='progress-bar'>
+                <div
+                  className='progress-fill warning'
+                  style={{ width: `${systemMetrics.disk}%` }}
+                ></div>
+              </div>
+            </div>
+
+            <div className='health-metric'>
+              <div className='metric-header'>
+                <span className='metric-label'>API Latency</span>
+                <span className='metric-value success'>{systemMetrics.latency}ms</span>
+              </div>
+              <div className='progress-bar'>
+                <div
+                  className='progress-fill success'
+                  style={{ width: `${Math.min(systemMetrics.latency, 100)}%` }}
+                ></div>
               </div>
             </div>
           </div>
 
           {/* Recent Activity */}
-          <div className="dashboard-card animate-slideUp" style={{ animationDelay: '0.1s' }}>
-            <h3 className="card-title">Recent Activity</h3>
-            
-            <div className="activity-list">
+          <div className='dashboard-card animate-slideUp' style={{ animationDelay: '0.1s' }}>
+            <h3 className='card-title'>Recent Activity</h3>
+
+            <div className='activity-list'>
               {recentActivity.map((activity, index) => (
-                <div key={index} className="activity-item">
-                  <div className="activity-icon">{activity.icon}</div>
-                  <div className="activity-content">
-                    <div className="activity-message">{activity.message}</div>
-                    <div className="activity-detail">{activity.detail}</div>
+                <div key={index} className='activity-item'>
+                  <div className='activity-icon'>{activity.icon}</div>
+                  <div className='activity-content'>
+                    <div className='activity-message'>{activity.message}</div>
+                    <div className='activity-detail'>{activity.detail}</div>
                   </div>
                 </div>
               ))}
             </div>
 
-            <button className="btn btn-secondary btn-full-width">
-              View All Activity
-            </button>
+            <button className='btn btn-secondary btn-full-width'>View All Activity</button>
           </div>
 
           {/* Quick Actions */}
-          <div className="dashboard-card animate-slideUp" style={{ animationDelay: '0.2s' }}>
-            <h3 className="card-title">Quick Actions</h3>
-            
-            <div className="quick-actions-grid">
-              <button className="btn btn-secondary" onClick={() => navigate('/alfred')}>
+          <div className='dashboard-card animate-slideUp' style={{ animationDelay: '0.2s' }}>
+            <h3 className='card-title'>Quick Actions</h3>
+
+            <div className='quick-actions-grid'>
+              <button className='btn btn-secondary' onClick={() => navigate('/alfred')}>
                 💻 Launch Alfred
               </button>
-              <button className="btn btn-secondary" onClick={() => navigate('/crash-analyzer')}>
+              <button className='btn btn-secondary' onClick={() => navigate('/crash-analyzer')}>
                 🔍 Analyze Crash
               </button>
-              <button className="btn btn-secondary" onClick={() => navigate('/llm-models')}>
+              <button className='btn btn-secondary' onClick={() => navigate('/llm-models')}>
                 🤖 AI Models
               </button>
-              <button className="btn btn-secondary" onClick={() => navigate('/settings')}>
+              <button className='btn btn-secondary' onClick={() => navigate('/settings')}>
                 ⚙️ Settings
               </button>
             </div>

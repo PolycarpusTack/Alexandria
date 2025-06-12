@@ -1,33 +1,39 @@
 /**
  * Enhanced Variable Input Component
- * 
+ *
  * Advanced form input with real-time validation, AI suggestions,
  * auto-completion, and smart defaults
  */
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { VariableSchema, VariableMap } from '../../services/template-engine/interfaces';
+import { VariableSchema } from '../../services/template-engine/interfaces';
 import { Input } from '../../../../../client/components/ui/input';
 import { Button } from '../../../../../client/components/ui/button';
 import { Badge } from '../../../../../client/components/ui/badge';
 import { Alert, AlertDescription } from '../../../../../client/components/ui/alert';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../../../client/components/ui/card';
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from '../../../../../client/components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue
 } from '../../../../../client/components/ui/select';
-import {   
-  Sparkles, 
-  CheckCircle, 
-  AlertTriangle, 
-  Info, 
+import {
+  Sparkles,
+  CheckCircle,
+  AlertTriangle,
+  Info,
   Lightbulb,
   RefreshCw,
   Copy
-  } from 'lucide-react';
+} from 'lucide-react';
 
 export interface VariableInputProps {
   variable: VariableSchema;
@@ -123,91 +129,96 @@ export const VariableInput: React.FC<VariableInputProps> = ({
     }
   }, [variable, onRequestSuggestion]);
 
-  const validateValue = useCallback((val: any): ValidationState => {
-    const errors: string[] = [];
-    const warnings: string[] = [];
+  const validateValue = useCallback(
+    (val: any): ValidationState => {
+      const errors: string[] = [];
+      const warnings: string[] = [];
 
-    // Required validation
-    if (variable.required && (val == null || val === '')) {
-      errors.push('This field is required');
-    }
-
-    // Type-specific validation
-    if (val != null && val !== '' && variable.validation) {
-      const validation = variable.validation;
-
-      // Pattern validation
-      if (validation.pattern && typeof val === 'string') {
-        try {
-          const regex = new RegExp(validation.pattern);
-          if (!regex.test(val)) {
-            errors.push('Value does not match the required pattern');
-          }
-        } catch (error) {
-          warnings.push('Invalid validation pattern');
-        }
+      // Required validation
+      if (variable.required && (val == null || val === '')) {
+        errors.push('This field is required');
       }
 
-      // Length validation
-      if (validation.minLength && typeof val === 'string') {
-        if (val.length < validation.minLength) {
-          errors.push(`Must be at least ${validation.minLength} characters`);
-        }
-      }
+      // Type-specific validation
+      if (val != null && val !== '' && variable.validation) {
+        const validation = variable.validation;
 
-      if (validation.maxLength && typeof val === 'string') {
-        if (val.length > validation.maxLength) {
-          errors.push(`Must be at most ${validation.maxLength} characters`);
-        }
-      }
-
-      // Number range validation
-      if (variable.type === 'number') {
-        const numVal = Number(val);
-        if (isNaN(numVal)) {
-          errors.push('Must be a valid number');
-        } else {
-          if (validation.min !== undefined && numVal < validation.min) {
-            errors.push(`Must be at least ${validation.min}`);
-          }
-          if (validation.max !== undefined && numVal > validation.max) {
-            errors.push(`Must be at most ${validation.max}`);
+        // Pattern validation
+        if (validation.pattern && typeof val === 'string') {
+          try {
+            const regex = new RegExp(validation.pattern);
+            if (!regex.test(val)) {
+              errors.push('Value does not match the required pattern');
+            }
+          } catch (error) {
+            warnings.push('Invalid validation pattern');
           }
         }
+
+        // Length validation
+        if (validation.minLength && typeof val === 'string') {
+          if (val.length < validation.minLength) {
+            errors.push(`Must be at least ${validation.minLength} characters`);
+          }
+        }
+
+        if (validation.maxLength && typeof val === 'string') {
+          if (val.length > validation.maxLength) {
+            errors.push(`Must be at most ${validation.maxLength} characters`);
+          }
+        }
+
+        // Number range validation
+        if (variable.type === 'number') {
+          const numVal = Number(val);
+          if (isNaN(numVal)) {
+            errors.push('Must be a valid number');
+          } else {
+            if (validation.min !== undefined && numVal < validation.min) {
+              errors.push(`Must be at least ${validation.min}`);
+            }
+            if (validation.max !== undefined && numVal > validation.max) {
+              errors.push(`Must be at most ${validation.max}`);
+            }
+          }
+        }
+
+        // Options validation
+        if (validation.options && !validation.options.includes(val)) {
+          errors.push(`Must be one of: ${validation.options.join(', ')}`);
+        }
       }
 
-      // Options validation
-      if (validation.options && !validation.options.includes(val)) {
-        errors.push(`Must be one of: ${validation.options.join(', ')}`);
-      }
-    }
+      // Add external validation errors
+      errors.push(...validationErrors);
 
-    // Add external validation errors
-    errors.push(...validationErrors);
-
-    return {
-      isValid: errors.length === 0,
-      errors,
-      warnings
-    };
-  }, [variable, validationErrors]);
+      return {
+        isValid: errors.length === 0,
+        errors,
+        warnings
+      };
+    },
+    [variable, validationErrors]
+  );
 
   const loadAISuggestions = async () => {
     if (!onRequestSuggestion) return;
 
-    setSuggestions(prev => ({ ...prev, isLoading: true, error: undefined }));
+    setSuggestions((prev) => ({ ...prev, isLoading: true, error: undefined }));
 
     try {
       const suggestion = await onRequestSuggestion(variable);
-      
+
       if (suggestion) {
         setSuggestions({
           isLoading: false,
-          suggestions: [{
-            value: suggestion,
-            confidence: 0.8,
-            reasoning: 'AI-generated based on project context'
-          }],
+          suggestions: [
+            {
+              value: suggestion,
+              confidence: 0.8,
+              reasoning: 'AI-generated based on project context'
+            }
+          ],
           error: undefined
         });
       }
@@ -257,16 +268,16 @@ export const VariableInput: React.FC<VariableInputProps> = ({
     switch (variable.type) {
       case 'boolean':
         return (
-          <div className="flex items-center space-x-3">
+          <div className='flex items-center space-x-3'>
             <input
-              type="checkbox"
+              type='checkbox'
               id={variable.name}
               checked={Boolean(localValue)}
               onChange={(e) => handleInputChange(e.target.checked)}
               disabled={disabled}
-              className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
+              className='w-4 h-4 text-blue-600 rounded focus:ring-blue-500'
             />
-            <label htmlFor={variable.name} className="text-sm font-medium">
+            <label htmlFor={variable.name} className='text-sm font-medium'>
               {variable.description || variable.name}
             </label>
           </div>
@@ -275,26 +286,20 @@ export const VariableInput: React.FC<VariableInputProps> = ({
       case 'select':
         if (!variable.validation?.options) {
           return (
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>
-                Select variable missing options configuration
-              </AlertDescription>
+            <Alert variant='destructive'>
+              <AlertTriangle className='h-4 w-4' />
+              <AlertDescription>Select variable missing options configuration</AlertDescription>
             </Alert>
           );
         }
 
         return (
-          <Select
-            value={localValue}
-            onValueChange={handleInputChange}
-            disabled={disabled}
-          >
+          <Select value={localValue} onValueChange={handleInputChange} disabled={disabled}>
             <SelectTrigger className={commonProps.className}>
-              <SelectValue placeholder="Select an option..." />
+              <SelectValue placeholder='Select an option...' />
             </SelectTrigger>
             <SelectContent>
-              {variable.validation.options.map(option => (
+              {variable.validation.options.map((option) => (
                 <SelectItem key={option} value={option}>
                   {option}
                 </SelectItem>
@@ -305,9 +310,9 @@ export const VariableInput: React.FC<VariableInputProps> = ({
 
       case 'number':
         return (
-          <div className="relative">
+          <div className='relative'>
             <Input
-              type="number"
+              type='number'
               value={localValue}
               onChange={(e) => handleInputChange(e.target.value)}
               placeholder={variable.default ? `Default: ${variable.default}` : 'Enter a number...'}
@@ -320,42 +325,40 @@ export const VariableInput: React.FC<VariableInputProps> = ({
 
       case 'array':
         return (
-          <div className="space-y-2">
+          <div className='space-y-2'>
             <Input
-              type="text"
+              type='text'
               value={Array.isArray(localValue) ? localValue.join(', ') : localValue}
               onChange={(e) => {
                 const arrayValue = e.target.value
                   .split(',')
-                  .map(item => item.trim())
-                  .filter(item => item);
+                  .map((item) => item.trim())
+                  .filter((item) => item);
                 handleInputChange(arrayValue);
               }}
-              placeholder="Enter comma-separated values..."
+              placeholder='Enter comma-separated values...'
               {...commonProps}
             />
-            <p className="text-xs text-gray-500">
-              Separate multiple values with commas
-            </p>
+            <p className='text-xs text-gray-500'>Separate multiple values with commas</p>
           </div>
         );
 
       default: // string
         return (
-          <div className="relative">
+          <div className='relative'>
             <Input
-              type="text"
+              type='text'
               value={localValue}
               onChange={(e) => handleInputChange(e.target.value)}
               placeholder={variable.default ? `Default: ${variable.default}` : 'Enter value...'}
               list={`${variable.name}-autocomplete`}
               {...commonProps}
             />
-            
+
             {/* Auto-complete datalist */}
             {autoCompleteOptions.length > 0 && (
               <datalist id={`${variable.name}-autocomplete`}>
-                {autoCompleteOptions.map(option => (
+                {autoCompleteOptions.map((option) => (
                   <option key={option} value={option} />
                 ))}
               </datalist>
@@ -369,34 +372,31 @@ export const VariableInput: React.FC<VariableInputProps> = ({
     if (!showSuggestions) return null;
 
     return (
-      <Card className="mt-2 border-blue-200 bg-blue-50">
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-blue-500" />
+      <Card className='mt-2 border-blue-200 bg-blue-50'>
+        <CardHeader className='pb-2'>
+          <CardTitle className='text-sm flex items-center gap-2'>
+            <Sparkles className='w-4 h-4 text-blue-500' />
             Suggestions
           </CardTitle>
         </CardHeader>
-        <CardContent className="pt-0">
-          <div className="space-y-2">
+        <CardContent className='pt-0'>
+          <div className='space-y-2'>
             {/* AI Suggestion */}
             {aiSuggestion && (
-              <div className="flex items-center justify-between p-2 bg-white rounded border">
-                <div className="flex-1">
-                  <div className="font-medium text-sm">AI Suggestion</div>
-                  <div className="text-xs text-gray-600">{String(aiSuggestion)}</div>
+              <div className='flex items-center justify-between p-2 bg-white rounded border'>
+                <div className='flex-1'>
+                  <div className='font-medium text-sm'>AI Suggestion</div>
+                  <div className='text-xs text-gray-600'>{String(aiSuggestion)}</div>
                 </div>
-                <div className="flex gap-1">
+                <div className='flex gap-1'>
                   <Button
-                    size="sm"
-                    variant="outline"
+                    size='sm'
+                    variant='outline'
                     onClick={() => copyToClipboard(String(aiSuggestion))}
                   >
-                    <Copy className="w-3 h-3" />
+                    <Copy className='w-3 h-3' />
                   </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => applySuggestion(aiSuggestion)}
-                  >
+                  <Button size='sm' onClick={() => applySuggestion(aiSuggestion)}>
                     Use
                   </Button>
                 </div>
@@ -405,32 +405,28 @@ export const VariableInput: React.FC<VariableInputProps> = ({
 
             {/* Default Value */}
             {defaultValue != null && defaultValue !== localValue && (
-              <div className="flex items-center justify-between p-2 bg-white rounded border">
-                <div className="flex-1">
-                  <div className="font-medium text-sm">Default Value</div>
-                  <div className="text-xs text-gray-600">{String(defaultValue)}</div>
+              <div className='flex items-center justify-between p-2 bg-white rounded border'>
+                <div className='flex-1'>
+                  <div className='font-medium text-sm'>Default Value</div>
+                  <div className='text-xs text-gray-600'>{String(defaultValue)}</div>
                 </div>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={applyDefault}
-                >
+                <Button size='sm' variant='outline' onClick={applyDefault}>
                   Use
                 </Button>
               </div>
             )}
 
             {/* Auto-complete suggestions */}
-            {autoCompleteOptions.slice(0, 3).map(option => (
+            {autoCompleteOptions.slice(0, 3).map((option) => (
               <div
                 key={option}
-                className="flex items-center justify-between p-2 bg-white rounded border cursor-pointer hover:bg-gray-50"
+                className='flex items-center justify-between p-2 bg-white rounded border cursor-pointer hover:bg-gray-50'
                 onClick={() => applySuggestion(option)}
               >
-                <div className="flex-1">
-                  <div className="text-sm">{option}</div>
+                <div className='flex-1'>
+                  <div className='text-sm'>{option}</div>
                 </div>
-                <Button size="sm" variant="ghost">
+                <Button size='sm' variant='ghost'>
                   Use
                 </Button>
               </div>
@@ -447,18 +443,18 @@ export const VariableInput: React.FC<VariableInputProps> = ({
     }
 
     return (
-      <div className="mt-2 space-y-1">
+      <div className='mt-2 space-y-1'>
         {validation.errors.map((error, index) => (
-          <Alert key={index} variant="destructive" className="py-2">
-            <AlertTriangle className="h-3 w-3" />
-            <AlertDescription className="text-xs">{error}</AlertDescription>
+          <Alert key={index} variant='destructive' className='py-2'>
+            <AlertTriangle className='h-3 w-3' />
+            <AlertDescription className='text-xs'>{error}</AlertDescription>
           </Alert>
         ))}
-        
+
         {validation.warnings.map((warning, index) => (
-          <Alert key={index} className="py-2">
-            <Info className="h-3 w-3" />
-            <AlertDescription className="text-xs">{warning}</AlertDescription>
+          <Alert key={index} className='py-2'>
+            <Info className='h-3 w-3' />
+            <AlertDescription className='text-xs'>{warning}</AlertDescription>
           </Alert>
         ))}
       </div>
@@ -468,32 +464,32 @@ export const VariableInput: React.FC<VariableInputProps> = ({
   const renderActionButtons = () => {
     const hasAI = aiSuggestion || onRequestSuggestion;
     const hasDefault = defaultValue != null;
-    
+
     if (!hasAI && !hasDefault && autoCompleteOptions.length === 0) {
       return null;
     }
 
     return (
-      <div className="flex items-center gap-2 mt-2">
+      <div className='flex items-center gap-2 mt-2'>
         {hasAI && (
           <Button
-            size="sm"
-            variant="outline"
+            size='sm'
+            variant='outline'
             onClick={() => setShowSuggestions(!showSuggestions)}
-            className="flex items-center gap-1"
+            className='flex items-center gap-1'
           >
-            <Sparkles className="w-3 h-3" />
+            <Sparkles className='w-3 h-3' />
             {showSuggestions ? 'Hide' : 'Show'} Suggestions
           </Button>
         )}
 
         {onRequestSuggestion && (
           <Button
-            size="sm"
-            variant="outline"
+            size='sm'
+            variant='outline'
             onClick={loadAISuggestions}
             disabled={suggestions.isLoading}
-            className="flex items-center gap-1"
+            className='flex items-center gap-1'
           >
             <RefreshCw className={`w-3 h-3 ${suggestions.isLoading ? 'animate-spin' : ''}`} />
             Refresh AI
@@ -502,12 +498,12 @@ export const VariableInput: React.FC<VariableInputProps> = ({
 
         {hasDefault && defaultValue !== localValue && (
           <Button
-            size="sm"
-            variant="outline"
+            size='sm'
+            variant='outline'
             onClick={applyDefault}
-            className="flex items-center gap-1"
+            className='flex items-center gap-1'
           >
-            <Lightbulb className="w-3 h-3" />
+            <Lightbulb className='w-3 h-3' />
             Use Default
           </Button>
         )}
@@ -516,31 +512,35 @@ export const VariableInput: React.FC<VariableInputProps> = ({
   };
 
   return (
-    <Card className={`transition-all duration-200 ${focused ? 'ring-2 ring-blue-500 ring-opacity-20' : ''} ${className}`}>
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <CardTitle className="text-base flex items-center gap-2">
+    <Card
+      className={`transition-all duration-200 ${focused ? 'ring-2 ring-blue-500 ring-opacity-20' : ''} ${className}`}
+    >
+      <CardHeader className='pb-3'>
+        <div className='flex items-start justify-between'>
+          <div className='flex-1'>
+            <CardTitle className='text-base flex items-center gap-2'>
               {variable.description || variable.name}
-              {variable.required && <Badge variant="destructive" className="text-xs">Required</Badge>}
+              {variable.required && (
+                <Badge variant='destructive' className='text-xs'>
+                  Required
+                </Badge>
+              )}
               {validation.isValid && localValue && (
-                <CheckCircle className="w-4 h-4 text-green-500" />
+                <CheckCircle className='w-4 h-4 text-green-500' />
               )}
             </CardTitle>
             {variable.description && variable.description !== variable.name && (
-              <CardDescription className="mt-1">
-                Variable: {variable.name}
-              </CardDescription>
+              <CardDescription className='mt-1'>Variable: {variable.name}</CardDescription>
             )}
           </div>
-          
-          <div className="flex items-center gap-1">
-            <Badge variant="outline" className="text-xs">
+
+          <div className='flex items-center gap-1'>
+            <Badge variant='outline' className='text-xs'>
               {variable.type}
             </Badge>
             {aiSuggestion && (
-              <Badge variant="secondary" className="text-xs flex items-center gap-1">
-                <Sparkles className="w-3 h-3" />
+              <Badge variant='secondary' className='text-xs flex items-center gap-1'>
+                <Sparkles className='w-3 h-3' />
                 AI
               </Badge>
             )}
@@ -548,17 +548,17 @@ export const VariableInput: React.FC<VariableInputProps> = ({
         </div>
       </CardHeader>
 
-      <CardContent className="pt-0">
+      <CardContent className='pt-0'>
         {renderInput()}
         {renderValidationFeedback()}
         {renderActionButtons()}
         {renderSuggestions()}
-        
+
         {/* Help text */}
         {variable.validation?.pattern && (
-          <div className="mt-2 p-2 bg-gray-50 rounded text-xs">
-            <div className="font-medium">Pattern:</div>
-            <code className="text-gray-600">{variable.validation.pattern}</code>
+          <div className='mt-2 p-2 bg-gray-50 rounded text-xs'>
+            <div className='font-medium'>Pattern:</div>
+            <code className='text-gray-600'>{variable.validation.pattern}</code>
           </div>
         )}
       </CardContent>

@@ -1,21 +1,21 @@
 ﻿/**
  * PostgreSQL Storage Service Implementation
- * 
+ *
  * Implements the StorageService interface using PostgreSQL for metadata,
  * local filesystem for files, and pgvector for embeddings.
  */
 
-import { Pool, PoolClient } from 'pg';
+import { Pool } from 'pg';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import * as crypto from 'crypto';
-import { 
-  StorageService, 
-  StorageConfig, 
-  FileMetadata, 
-  StoredFile, 
-  Document, 
-  SearchOptions, 
+import {
+  StorageService,
+  StorageConfig,
+  FileMetadata,
+  StoredFile,
+  Document,
+  SearchOptions,
   SearchResult,
   VectorMetadata,
   VectorSearchResult
@@ -34,7 +34,7 @@ export class PostgresStorageService implements StorageService {
   ) {
     this.logger = logger;
     this.fileBasePath = config.fileStorage.basePath || './storage/files';
-    
+
     // Initialize PostgreSQL connection pool
     this.pool = new Pool({
       host: config.postgres.host,
@@ -45,25 +45,25 @@ export class PostgresStorageService implements StorageService {
       ssl: config.postgres.ssl,
       max: config.postgres.poolSize || 10,
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000,
+      connectionTimeoutMillis: 2000
     });
   }
 
   async initialize(): Promise<void> {
     if (this.initialized) return;
-    
+
     try {
       // Test connection
       const client = await this.pool.connect();
       await client.query('SELECT NOW()');
       client.release();
-      
+
       // Create file storage directory
       await fs.mkdir(this.fileBasePath, { recursive: true });
-      
+
       // Initialize database schema
       await this.initializeSchema();
-      
+
       this.initialized = true;
       this.logger.info('PostgreSQL storage service initialized', {
         component: 'PostgresStorageService'
@@ -81,12 +81,12 @@ export class PostgresStorageService implements StorageService {
     const client = await this.pool.connect();
     try {
       await client.query('BEGIN');
-      
+
       // Create extensions
       await client.query('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"');
       // Skip vector extension since it's not available
       // // Skipping vector extension for compatibility
-      
+
       // Create files table
       await client.query(`
         CREATE TABLE IF NOT EXISTS files (
@@ -104,7 +104,7 @@ export class PostgresStorageService implements StorageService {
           metadata JSONB DEFAULT '{}'::jsonb
         )
       `);
-      
+
       // Create documents table
       await client.query(`
         CREATE TABLE IF NOT EXISTS documents (
@@ -123,7 +123,7 @@ export class PostgresStorageService implements StorageService {
           ) STORED
         )
       `);
-      
+
       // Create vectors table with JSONB instead of vector type
       await client.query(`
         CREATE TABLE IF NOT EXISTS vectors (
@@ -137,15 +137,21 @@ export class PostgresStorageService implements StorageService {
           created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
         )
       `);
-      
+
       // Create indexes
       await client.query('CREATE INDEX IF NOT EXISTS idx_files_plugin_id ON files(plugin_id)');
       await client.query('CREATE INDEX IF NOT EXISTS idx_files_uploaded_by ON files(uploaded_by)');
-      await client.query('CREATE INDEX IF NOT EXISTS idx_documents_search_vector ON documents USING GIN(search_vector)');
-      await client.query('CREATE INDEX IF NOT EXISTS idx_documents_plugin_id ON documents(plugin_id)');
+      await client.query(
+        'CREATE INDEX IF NOT EXISTS idx_documents_search_vector ON documents USING GIN(search_vector)'
+      );
+      await client.query(
+        'CREATE INDEX IF NOT EXISTS idx_documents_plugin_id ON documents(plugin_id)'
+      );
       // Create JSONB index instead of vector index
-      await client.query('CREATE INDEX IF NOT EXISTS idx_vectors_data ON vectors USING GIN(vector_data)');
-      
+      await client.query(
+        'CREATE INDEX IF NOT EXISTS idx_vectors_data ON vectors USING GIN(vector_data)'
+      );
+
       await client.query('COMMIT');
     } catch (error) {
       await client.query('ROLLBACK');
@@ -158,19 +164,19 @@ export class PostgresStorageService implements StorageService {
   // File Storage Implementation
   async uploadFile(buffer: Buffer, metadata: FileMetadata): Promise<StoredFile> {
     await this.ensureInitialized();
-    
+
     const fileId = crypto.randomUUID();
     const checksum = crypto.createHash('sha256').update(buffer).digest('hex');
     const storagePath = path.join(fileId.substring(0, 2), fileId.substring(2, 4), fileId);
     const fullPath = path.join(this.fileBasePath, storagePath);
-    
+
     try {
       // Create directory structure
       await fs.mkdir(path.dirname(fullPath), { recursive: true });
-      
+
       // Write file to disk
       await fs.writeFile(fullPath, buffer);
-      
+
       // Store metadata in database
       const result = await this.pool.query(
         `INSERT INTO files (
@@ -192,7 +198,7 @@ export class PostgresStorageService implements StorageService {
           JSON.stringify(metadata)
         ]
       );
-      
+
       const file = result.rows[0];
       return {
         id: file.id,
@@ -206,28 +212,25 @@ export class PostgresStorageService implements StorageService {
       try {
         await fs.unlink(fullPath);
       } catch {}
-      
+
       throw error;
     }
   }
 
   async downloadFile(fileId: string): Promise<{ buffer: Buffer; metadata: FileMetadata }> {
     await this.ensureInitialized();
-    
-    const result = await this.pool.query(
-      'SELECT * FROM files WHERE id = $1',
-      [fileId]
-    );
-    
+
+    const result = await this.pool.query('SELECT * FROM files WHERE id = $1', [fileId]);
+
     if (result.rows.length === 0) {
       throw new Error(`File not found: ${fileId}`);
     }
-    
+
     const file = result.rows[0];
     const fullPath = path.join(this.fileBasePath, file.storage_path);
-    
+
     const buffer = await fs.readFile(fullPath);
-    
+
     return {
       buffer,
       metadata: {
@@ -244,12 +247,11 @@ export class PostgresStorageService implements StorageService {
 
   async deleteFile(fileId: string): Promise<void> {
     await this.ensureInitialized();
-    
-    const result = await this.pool.query(
-      'DELETE FROM files WHERE id = $1 RETURNING storage_path',
-      [fileId]
-    );
-    
+
+    const result = await this.pool.query('DELETE FROM files WHERE id = $1 RETURNING storage_path', [
+      fileId
+    ]);
+
     if (result.rows.length > 0) {
       const fullPath = path.join(this.fileBasePath, result.rows[0].storage_path);
       try {
@@ -262,31 +264,31 @@ export class PostgresStorageService implements StorageService {
 
   async listFiles(filter?: Partial<FileMetadata>): Promise<StoredFile[]> {
     await this.ensureInitialized();
-    
+
     let query = 'SELECT * FROM files WHERE 1=1';
     const params: any[] = [];
     let paramCount = 0;
-    
+
     if (filter?.pluginId) {
       query += ` AND plugin_id = $${++paramCount}`;
       params.push(filter.pluginId);
     }
-    
+
     if (filter?.uploadedBy) {
       query += ` AND uploaded_by = $${++paramCount}`;
       params.push(filter.uploadedBy);
     }
-    
+
     if (filter?.tags && filter.tags.length > 0) {
       query += ` AND tags && $${++paramCount}`;
       params.push(filter.tags);
     }
-    
+
     query += ' ORDER BY uploaded_at DESC';
-    
+
     const result = await this.pool.query(query, params);
-    
-    return result.rows.map(file => ({
+
+    return result.rows.map((file) => ({
       id: file.id,
       metadata: {
         filename: file.filename,
@@ -310,9 +312,9 @@ export class PostgresStorageService implements StorageService {
   // Document Storage Implementation
   async indexDocument(doc: Document): Promise<Document> {
     await this.ensureInitialized();
-    
+
     const id = doc.id || crypto.randomUUID();
-    
+
     const result = await this.pool.query(
       `INSERT INTO documents (
         id, title, content, type, plugin_id, created_by, metadata
@@ -334,7 +336,7 @@ export class PostgresStorageService implements StorageService {
         JSON.stringify(doc.metadata || {})
       ]
     );
-    
+
     const savedDoc = result.rows[0];
     return {
       id: savedDoc.id,
@@ -351,10 +353,10 @@ export class PostgresStorageService implements StorageService {
 
   async searchDocuments(query: string, options?: SearchOptions): Promise<SearchResult[]> {
     await this.ensureInitialized();
-    
+
     const limit = options?.limit || 10;
     const offset = options?.offset || 0;
-    
+
     const result = await this.pool.query(
       `SELECT 
         *,
@@ -368,8 +370,8 @@ export class PostgresStorageService implements StorageService {
       LIMIT $2 OFFSET $3`,
       [query, limit, offset]
     );
-    
-    return result.rows.map(row => ({
+
+    return result.rows.map((row) => ({
       document: {
         id: row.id,
         title: row.title,
@@ -389,7 +391,7 @@ export class PostgresStorageService implements StorageService {
   // Vector Storage Implementation
   async storeVector(id: string, vector: number[], metadata: VectorMetadata): Promise<void> {
     await this.ensureInitialized();
-    
+
     await this.pool.query(
       `INSERT INTO vectors (id, vector_data, document_id, chunk_index, text, plugin_id, metadata)
       VALUES ($1, $2, $3, $4, $5, $6, $7)
@@ -408,13 +410,15 @@ export class PostgresStorageService implements StorageService {
     );
   }
 
-  async storeVectors(vectors: Array<{ id: string; vector: number[]; metadata: VectorMetadata }>): Promise<void> {
+  async storeVectors(
+    vectors: Array<{ id: string; vector: number[]; metadata: VectorMetadata }>
+  ): Promise<void> {
     await this.ensureInitialized();
-    
+
     const client = await this.pool.connect();
     try {
       await client.query('BEGIN');
-      
+
       for (const item of vectors) {
         await client.query(
           `INSERT INTO vectors (id, vector_data, document_id, chunk_index, text, plugin_id, metadata)
@@ -433,7 +437,7 @@ export class PostgresStorageService implements StorageService {
           ]
         );
       }
-      
+
       await client.query('COMMIT');
     } catch (error) {
       await client.query('ROLLBACK');
@@ -443,9 +447,13 @@ export class PostgresStorageService implements StorageService {
     }
   }
 
-  async searchSimilar(vector: number[], limit: number, filter?: Record<string, any>): Promise<VectorSearchResult[]> {
+  async searchSimilar(
+    vector: number[],
+    limit: number,
+    filter?: Record<string, any>
+  ): Promise<VectorSearchResult[]> {
     await this.ensureInitialized();
-    
+
     // Note: This is a simplified implementation that doesn't do true vector similarity
     // It just returns vectors based on non-similarity criteria as a fallback
     let query = `
@@ -454,26 +462,26 @@ export class PostgresStorageService implements StorageService {
       FROM vectors
       WHERE 1=1
     `;
-    
+
     const params: any[] = [];
     let paramCount = 0;
-    
+
     if (filter?.pluginId) {
       query += ` AND plugin_id = $${++paramCount}`;
       params.push(filter.pluginId);
     }
-    
+
     if (filter?.documentId) {
       query += ` AND document_id = $${++paramCount}`;
       params.push(filter.documentId);
     }
-    
-    query += ` ORDER BY created_at DESC LIMIT $${++paramCount}`;  // Just sort by creation date as fallback
+
+    query += ` ORDER BY created_at DESC LIMIT $${++paramCount}`; // Just sort by creation date as fallback
     params.push(limit);
-    
+
     const result = await this.pool.query(query, params);
-    
-    return result.rows.map(row => ({
+
+    return result.rows.map((row) => ({
       id: row.id,
       similarity: row.similarity,
       metadata: {
@@ -491,13 +499,13 @@ export class PostgresStorageService implements StorageService {
     vectorCount: number;
   }> {
     await this.ensureInitialized();
-    
+
     const [files, documents, vectors] = await Promise.all([
       this.pool.query('SELECT COUNT(*) as count, COALESCE(SUM(size), 0) as total_size FROM files'),
       this.pool.query('SELECT COUNT(*) as count FROM documents'),
       this.pool.query('SELECT COUNT(*) as count FROM vectors')
     ]);
-    
+
     return {
       fileCount: parseInt(files.rows[0].count),
       totalFileSize: parseInt(files.rows[0].total_size),
@@ -522,11 +530,13 @@ export class PostgresStorageService implements StorageService {
     const { exec } = require('child_process');
     const { promisify } = require('util');
     const execAsync = promisify(exec);
-    
+
     const connectionString = `postgresql://${this.config.postgres.user}:${this.config.postgres.password}@${this.config.postgres.host}:${this.config.postgres.port}/${this.config.postgres.database}`;
-    
+
     try {
-      await execAsync(`pg_dump ${connectionString} -f "${backupPath}" --verbose --format=custom --no-owner --no-privileges`);
+      await execAsync(
+        `pg_dump ${connectionString} -f "${backupPath}" --verbose --format=custom --no-owner --no-privileges`
+      );
       this.logger.info(`Database backup created at: ${backupPath}`);
     } catch (error) {
       this.logger.error('Failed to create database backup', { error });
@@ -538,22 +548,27 @@ export class PostgresStorageService implements StorageService {
     const { exec } = require('child_process');
     const { promisify } = require('util');
     const execAsync = promisify(exec);
-    
+
     const connectionString = `postgresql://${this.config.postgres.user}:${this.config.postgres.password}@${this.config.postgres.host}:${this.config.postgres.port}/${this.config.postgres.database}`;
-    
+
     try {
       // First, drop existing connections to the database
-      await this.pool.query(`
+      await this.pool.query(
+        `
         SELECT pg_terminate_backend(pg_stat_activity.pid)
         FROM pg_stat_activity
         WHERE pg_stat_activity.datname = $1
         AND pid <> pg_backend_pid()
-      `, [this.config.postgres.database]);
-      
+      `,
+        [this.config.postgres.database]
+      );
+
       // Restore the backup
-      await execAsync(`pg_restore ${connectionString} "${backupPath}" --verbose --no-owner --no-privileges --if-exists --clean`);
+      await execAsync(
+        `pg_restore ${connectionString} "${backupPath}" --verbose --no-owner --no-privileges --if-exists --clean`
+      );
       this.logger.info(`Database restored from: ${backupPath}`);
-      
+
       // Reinitialize the connection pool
       await this.initialize();
     } catch (error) {
@@ -564,44 +579,44 @@ export class PostgresStorageService implements StorageService {
 
   async updateDocument(id: string, doc: Partial<Document>): Promise<Document> {
     await this.ensureInitialized();
-    
+
     const updates: string[] = [];
     const params: any[] = [];
     let paramCount = 0;
-    
+
     if (doc.title !== undefined) {
       updates.push(`title = $${++paramCount}`);
       params.push(doc.title);
     }
-    
+
     if (doc.content !== undefined) {
       updates.push(`content = $${++paramCount}`);
       params.push(doc.content);
     }
-    
+
     if (doc.type !== undefined) {
       updates.push(`type = $${++paramCount}`);
       params.push(doc.type);
     }
-    
+
     if (doc.metadata !== undefined) {
       updates.push(`metadata = $${++paramCount}`);
       params.push(JSON.stringify(doc.metadata));
     }
-    
+
     updates.push('updated_at = NOW()');
-    
+
     params.push(id);
-    
+
     const result = await this.pool.query(
       `UPDATE documents SET ${updates.join(', ')} WHERE id = $${++paramCount} RETURNING *`,
       params
     );
-    
+
     if (result.rows.length === 0) {
       throw new Error(`Document not found: ${id}`);
     }
-    
+
     const updatedDoc = result.rows[0];
     return {
       id: updatedDoc.id,
@@ -618,19 +633,19 @@ export class PostgresStorageService implements StorageService {
 
   async deleteDocument(id: string): Promise<void> {
     await this.ensureInitialized();
-    
+
     await this.pool.query('DELETE FROM documents WHERE id = $1', [id]);
   }
 
   async getDocument(id: string): Promise<Document | null> {
     await this.ensureInitialized();
-    
+
     const result = await this.pool.query('SELECT * FROM documents WHERE id = $1', [id]);
-    
+
     if (result.rows.length === 0) {
       return null;
     }
-    
+
     const doc = result.rows[0];
     return {
       id: doc.id,
@@ -647,27 +662,27 @@ export class PostgresStorageService implements StorageService {
 
   async deleteVector(id: string): Promise<void> {
     await this.ensureInitialized();
-    
+
     await this.pool.query('DELETE FROM vectors WHERE id = $1', [id]);
   }
 
   async deleteVectors(filter: Record<string, any>): Promise<number> {
     await this.ensureInitialized();
-    
+
     let query = 'DELETE FROM vectors WHERE 1=1';
     const params: any[] = [];
     let paramCount = 0;
-    
+
     if (filter.pluginId) {
       query += ` AND plugin_id = $${++paramCount}`;
       params.push(filter.pluginId);
     }
-    
+
     if (filter.documentId) {
       query += ` AND document_id = $${++paramCount}`;
       params.push(filter.documentId);
     }
-    
+
     const result = await this.pool.query(query, params);
     return result.rowCount || 0;
   }

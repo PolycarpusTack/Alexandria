@@ -154,10 +154,7 @@ describe('Alfred Plugin Integration', () => {
     it('should register API routes', async () => {
       await plugin.onActivate(mockContext);
 
-      expect(mockAPI.registerRouter).toHaveBeenCalledWith(
-        '/alfred',
-        expect.any(Object)
-      );
+      expect(mockAPI.registerRouter).toHaveBeenCalledWith('/alfred', expect.any(Object));
     });
 
     it('should handle API router fallback', async () => {
@@ -166,10 +163,7 @@ describe('Alfred Plugin Integration', () => {
 
       await plugin.onActivate(mockContext);
 
-      expect(mockAPI.registerRoute).toHaveBeenCalledWith(
-        '/alfred/*',
-        expect.any(Object)
-      );
+      expect(mockAPI.registerRoute).toHaveBeenCalledWith('/alfred/*', expect.any(Object));
     });
 
     it('should subscribe to event bus events', async () => {
@@ -317,7 +311,7 @@ describe('Alfred Plugin Integration', () => {
       mockDataService.query.mockRejectedValue(new Error('Database error'));
 
       const alfredService = (plugin as any).alfredService;
-      
+
       // Operations should still work with in-memory fallback
       const session = await alfredService.createSession();
       expect(session).toBeDefined();
@@ -330,13 +324,13 @@ describe('Alfred Plugin Integration', () => {
       const alfredService = (plugin as any).alfredService;
 
       // Create multiple sessions concurrently
-      const sessionPromises = Array(10).fill(null).map((_, i) => 
-        alfredService.createSession(`/project-${i}`)
-      );
+      const sessionPromises = Array(10)
+        .fill(null)
+        .map((_, i) => alfredService.createSession(`/project-${i}`));
 
       const sessions = await Promise.all(sessionPromises);
       expect(sessions).toHaveLength(10);
-      expect(new Set(sessions.map(s => s.id)).size).toBe(10); // All unique IDs
+      expect(new Set(sessions.map((s) => s.id)).size).toBe(10); // All unique IDs
     });
 
     it('should handle rapid message sending', async () => {
@@ -346,13 +340,13 @@ describe('Alfred Plugin Integration', () => {
       const session = await alfredService.createSession();
 
       // Send multiple messages rapidly
-      const messagePromises = Array(5).fill(null).map((_, i) => 
-        alfredService.sendMessage(session.id, `Message ${i}`)
-      );
+      const messagePromises = Array(5)
+        .fill(null)
+        .map((_, i) => alfredService.sendMessage(session.id, `Message ${i}`));
 
       const responses = await Promise.all(messagePromises);
       expect(responses).toHaveLength(5);
-      expect(responses.every(r => r.role === 'assistant')).toBe(true);
+      expect(responses.every((r) => r.role === 'assistant')).toBe(true);
     });
   });
 });

@@ -9,7 +9,7 @@ export function createRequestLogger(logger: Logger) {
   return (req: Request, res: Response, next: NextFunction) => {
     // Skip logging for static assets and health checks
     if (
-      req.path.includes('/static') || 
+      req.path.includes('/static') ||
       req.path.includes('/assets') ||
       req.path === '/health' ||
       req.path === '/favicon'
@@ -36,11 +36,22 @@ export function createRequestLogger(logger: Logger) {
 
     // Capture the original end method
     const originalEnd = res.end;
-    
-    // Override the end method to log response details
-    res.end = function(...args: any[]) {
+
+    // Create a properly typed wrapper function
+    function logAndEnd(this: Response): Response;
+    function logAndEnd(this: Response, cb: () => void): Response;
+    function logAndEnd(this: Response, chunk: any): Response;
+    function logAndEnd(this: Response, chunk: any, cb: () => void): Response;
+    function logAndEnd(this: Response, chunk: any, encoding: BufferEncoding): Response;
+    function logAndEnd(
+      this: Response,
+      chunk: any,
+      encoding: BufferEncoding,
+      cb: () => void
+    ): Response;
+    function logAndEnd(this: Response, ...args: any[]): Response {
       const responseTime = Date.now() - startTime;
-      
+
       // Log the response
       logger.info('API request completed', {
         source: 'api',
@@ -70,10 +81,25 @@ export function createRequestLogger(logger: Logger) {
           }
         });
       }
-      
-      // Call the original end method
-      originalEnd.apply(res, args);
-    };
+
+      // Call the original end method with proper argument handling
+      switch (args.length) {
+        case 0:
+          return originalEnd.call(this);
+        case 1:
+          return originalEnd.call(this, args[0]);
+        case 2:
+          return originalEnd.call(this, args[0], args[1]);
+        case 3:
+          return originalEnd.call(this, args[0], args[1], args[2]);
+        default:
+          // Should never reach here, but handle it gracefully
+          return originalEnd.apply(this, args as any);
+      }
+    }
+
+    // Assign the wrapper function with proper typing
+    res.end = logAndEnd as any;
 
     next();
   };

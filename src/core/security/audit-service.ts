@@ -1,17 +1,12 @@
 /**
  * Audit Service implementation for the Alexandria Platform
- * 
+ *
  * This implementation provides audit logging for security events.
  */
 
-import { 
-  AuditService, 
-  AuditLogEntry, 
-  AuditEventType 
-} from './interfaces';
+import { AuditService, AuditLogEntry, AuditEventType } from './interfaces';
 import { Logger } from '../../utils/logger';
 import { DataService } from '../data/interfaces';
-import { v4 as uuidv4 } from 'uuid';
 
 /**
  * Basic Audit Service implementation
@@ -34,15 +29,15 @@ export class BasicAuditService implements AuditService {
     if (this.isInitialized) {
       throw new Error('Audit service is already initialized');
     }
-    
+
     this.logger.info('Initializing audit service', {
       component: 'BasicAuditService'
     });
-    
+
     // In a real implementation, we would create the audit log table in the database
-    
+
     this.isInitialized = true;
-    
+
     this.logger.info('Audit service initialized successfully', {
       component: 'BasicAuditService'
     });
@@ -58,10 +53,10 @@ export class BasicAuditService implements AuditService {
       timestamp: new Date(),
       ...event
     };
-    
+
     // Store in memory
     this.auditLogs.push(entry);
-    
+
     // Log to application logs
     const context = {
       component: 'BasicAuditService',
@@ -72,7 +67,7 @@ export class BasicAuditService implements AuditService {
       resourceId: entry.resource.id,
       status: entry.status
     };
-    
+
     if (entry.status === 'success') {
       this.logger.info(
         `Audit: ${entry.action} on ${entry.resource.type}:${entry.resource.id}`,
@@ -87,9 +82,9 @@ export class BasicAuditService implements AuditService {
         }
       );
     }
-    
+
     // In a real implementation, we would persist to the database
-    
+
     // Return the created entry
     return entry;
   }
@@ -110,58 +105,58 @@ export class BasicAuditService implements AuditService {
   }): Promise<AuditLogEntry[]> {
     // Filter logs based on options
     let results = this.auditLogs;
-    
+
     // Filter by date range
     if (options.from || options.to) {
-      results = results.filter(log => {
+      results = results.filter((log) => {
         if (options.from && log.timestamp < options.from) {
           return false;
         }
-        
+
         if (options.to && log.timestamp > options.to) {
           return false;
         }
-        
+
         return true;
       });
     }
-    
+
     // Filter by event types
     if (options.types && options.types.length > 0) {
-      results = results.filter(log => options.types!.includes(log.type));
+      results = results.filter((log) => options.types!.includes(log.type));
     }
-    
+
     // Filter by user ID
     if (options.userId) {
-      results = results.filter(log => log.user?.id === options.userId);
+      results = results.filter((log) => log.user?.id === options.userId);
     }
-    
+
     // Filter by resource type
     if (options.resourceType) {
-      results = results.filter(log => log.resource.type === options.resourceType);
+      results = results.filter((log) => log.resource.type === options.resourceType);
     }
-    
+
     // Filter by resource ID
     if (options.resourceId) {
-      results = results.filter(log => log.resource.id === options.resourceId);
+      results = results.filter((log) => log.resource.id === options.resourceId);
     }
-    
+
     // Filter by status
     if (options.status) {
-      results = results.filter(log => log.status === options.status);
+      results = results.filter((log) => log.status === options.status);
     }
-    
+
     // Sort by timestamp (newest first)
     results.sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime());
-    
+
     // Apply pagination
     if (options.offset !== undefined || options.limit !== undefined) {
       const offset = options.offset || 0;
       const limit = options.limit || results.length;
-      
+
       results = results.slice(offset, offset + limit);
     }
-    
+
     return results;
   }
 
@@ -200,14 +195,14 @@ export class BasicAuditService implements AuditService {
     if (!options) {
       return this.auditLogs.length;
     }
-    
+
     // Use searchLogs to filter and count
     const logs = await this.searchLogs({
       ...options,
       limit: undefined,
       offset: undefined
     });
-    
+
     return logs.length;
   }
 }

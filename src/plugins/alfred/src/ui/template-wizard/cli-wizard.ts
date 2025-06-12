@@ -1,6 +1,6 @@
 /**
  * Template Wizard CLI Interface
- * 
+ *
  * Interactive command-line interface for template generation with
  * inquirer-style prompts, validation, and AI assistance
  */
@@ -8,11 +8,11 @@
 import { Logger } from '../../../../../utils/logger';
 import { EventBus } from '../../../../../core/event-bus/interfaces';
 import { AIService } from '../../../../../core/services/ai-service/interfaces';
-import { 
-  TemplateManifest, 
-  VariableSchema, 
+import {
+  TemplateManifest,
+  VariableSchema,
   VariableMap,
-  TemplateContext 
+  TemplateContext
 } from '../../services/template-engine/interfaces';
 import { ContextAwareVariableResolver } from '../../services/template-engine/variable-resolver';
 import { DeterministicDefaultsSystem } from '../../services/template-engine/deterministic-defaults';
@@ -63,14 +63,14 @@ export class TemplateWizardCLI {
 
   // CLI styling
   private colors = {
-    primary: '\x1b[36m',      // Cyan
-    success: '\x1b[32m',      // Green
-    warning: '\x1b[33m',      // Yellow
-    error: '\x1b[31m',        // Red
-    info: '\x1b[34m',         // Blue
-    muted: '\x1b[90m',        // Gray
-    bold: '\x1b[1m',          // Bold
-    reset: '\x1b[0m'          // Reset
+    primary: '\x1b[36m', // Cyan
+    success: '\x1b[32m', // Green
+    warning: '\x1b[33m', // Yellow
+    error: '\x1b[31m', // Red
+    info: '\x1b[34m', // Blue
+    muted: '\x1b[90m', // Gray
+    bold: '\x1b[1m', // Bold
+    reset: '\x1b[0m' // Reset
   };
 
   private emojis = {
@@ -120,14 +120,14 @@ export class TemplateWizardCLI {
     templates: TemplateManifest[],
     projectPath?: string
   ): Promise<{ templateId: string; variables: VariableMap } | null> {
-    this.logger.info('Starting template wizard', { 
-      templateCount: templates.length, 
-      projectPath 
+    this.logger.info('Starting template wizard', {
+      templateCount: templates.length,
+      projectPath
     });
 
     try {
       this.setupReadline();
-      
+
       // Create new session
       this.currentSession = {
         id: this.generateSessionId(),
@@ -163,10 +163,12 @@ export class TemplateWizardCLI {
         templateId: selectedTemplate.id,
         variables
       };
-
     } catch (error) {
       this.logger.error('Wizard failed', { error });
-      this.printMessage(`Wizard failed: ${error instanceof Error ? error.message : 'Unknown error'}`, 'error');
+      this.printMessage(
+        `Wizard failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        'error'
+      );
       return null;
     } finally {
       this.cleanup();
@@ -184,10 +186,7 @@ export class TemplateWizardCLI {
 
     if (templates.length === 1) {
       const template = templates[0];
-      const confirm = await this.confirm(
-        `Use template "${template.name}"?`,
-        true
-      );
+      const confirm = await this.confirm(`Use template "${template.name}"?`, true);
       return confirm ? template : null;
     }
 
@@ -202,7 +201,7 @@ export class TemplateWizardCLI {
       const name = this.colorize(template.name, 'bold');
       const description = this.colorize(template.description, 'muted');
       const tags = template.tags ? `[${template.tags.join(', ')}]` : '';
-      
+
       this.printRaw(`  ${number} ${emoji} ${name}`);
       this.printRaw(`     ${description}`);
       if (tags) {
@@ -308,7 +307,7 @@ export class TemplateWizardCLI {
         }
         value = await this.select(
           prompt,
-          variable.validation.options.map(opt => ({ name: opt, value: opt })),
+          variable.validation.options.map((opt) => ({ name: opt, value: opt })),
           defaultValue
         );
         break;
@@ -366,7 +365,7 @@ export class TemplateWizardCLI {
   ): Promise<string | null> {
     return new Promise((resolve) => {
       const prompt = this.formatPrompt(message, defaultValue);
-      
+
       this.rl!.question(prompt, (answer) => {
         const value = answer.trim() || defaultValue || '';
         resolve(value === '' ? null : value);
@@ -381,10 +380,10 @@ export class TemplateWizardCLI {
     return new Promise((resolve) => {
       const defaultText = defaultValue ? 'Y/n' : 'y/N';
       const prompt = this.formatPrompt(message, defaultText);
-      
+
       this.rl!.question(prompt, (answer) => {
         const cleaned = answer.trim().toLowerCase();
-        
+
         if (cleaned === '') {
           resolve(defaultValue);
         } else if (cleaned === 'y' || cleaned === 'yes') {
@@ -411,7 +410,7 @@ export class TemplateWizardCLI {
   ): Promise<any> {
     return new Promise((resolve) => {
       this.printRaw(`\n${this.formatMessage(message)}`);
-      
+
       choices.forEach((choice, index) => {
         const number = this.colorize(`${index + 1}.`, 'primary');
         const isDefault = choice.value === defaultValue;
@@ -420,10 +419,10 @@ export class TemplateWizardCLI {
       });
 
       const prompt = this.formatPrompt('Select option (number)', '1');
-      
+
       this.rl!.question(prompt, (answer) => {
         const cleaned = answer.trim();
-        
+
         if (cleaned === '' && defaultValue !== undefined) {
           resolve(defaultValue);
         } else {
@@ -451,10 +450,10 @@ export class TemplateWizardCLI {
   ): Promise<number | null> {
     return new Promise((resolve) => {
       const prompt = this.formatPrompt(message, defaultValue?.toString());
-      
+
       this.rl!.question(prompt, (answer) => {
         const cleaned = answer.trim();
-        
+
         if (cleaned === '' && defaultValue !== undefined) {
           resolve(defaultValue);
         } else if (cleaned === 'q' || cleaned === 'quit') {
@@ -488,10 +487,10 @@ export class TemplateWizardCLI {
     return new Promise((resolve) => {
       const defaultText = defaultValue ? defaultValue.join(', ') : '';
       const prompt = this.formatPrompt(`${message} (comma-separated)`, defaultText);
-      
+
       this.rl!.question(prompt, (answer) => {
         const cleaned = answer.trim();
-        
+
         if (cleaned === '' && defaultValue !== undefined) {
           resolve(defaultValue);
         } else if (cleaned === 'q' || cleaned === 'quit') {
@@ -499,7 +498,10 @@ export class TemplateWizardCLI {
         } else if (cleaned === '') {
           resolve([]);
         } else {
-          const items = cleaned.split(',').map(item => item.trim()).filter(item => item);
+          const items = cleaned
+            .split(',')
+            .map((item) => item.trim())
+            .filter((item) => item);
           resolve(items);
         }
       });
@@ -514,7 +516,7 @@ export class TemplateWizardCLI {
 
     try {
       this.printMessage('Loading AI suggestions...', 'info');
-      
+
       const templateContext: TemplateContext = {
         variables: {},
         projectPath,
@@ -537,8 +539,10 @@ export class TemplateWizardCLI {
         this.currentSession!.aiSuggestions[suggestion.variable] = suggestion.value;
       }
 
-      this.printMessage(`Loaded ${resolutionResult.aiSuggestions.length} AI suggestions`, 'success');
-
+      this.printMessage(
+        `Loaded ${resolutionResult.aiSuggestions.length} AI suggestions`,
+        'success'
+      );
     } catch (error) {
       this.logger.warn('Failed to load AI suggestions', { error });
       this.printMessage('Failed to load AI suggestions, using defaults', 'warning');
@@ -573,9 +577,10 @@ export class TemplateWizardCLI {
 
   /**
    * Print raw text
+   * Note: This is intentionally console.log for CLI output to stdout
    */
   private printRaw(text: string): void {
-    console.log(text);
+    process.stdout.write(text + '\n');
   }
 
   /**
@@ -591,7 +596,7 @@ export class TemplateWizardCLI {
   private printWelcome(): void {
     const title = this.colorize('Alfred Template Wizard', 'bold');
     const emoji = this.options.enableEmojis ? `${this.emojis.magic} ` : '';
-    
+
     this.printRaw('');
     this.printLine();
     this.printRaw(`  ${emoji}${title}`);
@@ -605,12 +610,12 @@ export class TemplateWizardCLI {
    */
   private printProgress(current: number, total: number, variableName: string): void {
     if (!this.options.showProgress) return;
-    
+
     const percentage = Math.round((current / total) * 100);
     const progressBar = this.buildProgressBar(current, total);
     const step = this.colorize(`[${current}/${total}]`, 'muted');
     const variable = this.colorize(variableName, 'bold');
-    
+
     this.printRaw(`\n${step} ${progressBar} ${percentage}% - ${variable}`);
   }
 
@@ -637,7 +642,7 @@ export class TemplateWizardCLI {
    */
   private getMessageEmoji(type: string): string {
     if (!this.options.enableEmojis) return '';
-    
+
     const emojiMap: Record<string, string> = {
       success: this.emojis.success + ' ',
       warning: this.emojis.warning + ' ',
@@ -645,7 +650,7 @@ export class TemplateWizardCLI {
       info: this.emojis.info + ' ',
       primary: this.emojis.gear + ' '
     };
-    
+
     return emojiMap[type] || '';
   }
 
@@ -654,7 +659,7 @@ export class TemplateWizardCLI {
    */
   private getTemplateEmoji(category: string): string {
     if (!this.options.enableEmojis) return '';
-    
+
     const categoryEmojis: Record<string, string> = {
       react: '⚛️',
       vue: '💚',
@@ -665,7 +670,7 @@ export class TemplateWizardCLI {
       ci: '🔄',
       config: '⚙️'
     };
-    
+
     return categoryEmojis[category] || '📦';
   }
 
@@ -674,11 +679,11 @@ export class TemplateWizardCLI {
    */
   private buildVariablePrompt(variable: VariableSchema): string {
     let prompt = variable.description || variable.name;
-    
+
     if (variable.required) {
       prompt += this.colorize(' *', 'error');
     }
-    
+
     return prompt;
   }
 
@@ -692,7 +697,10 @@ export class TemplateWizardCLI {
   /**
    * Validate variable value
    */
-  private validateVariable(variable: VariableSchema, value: any): { valid: boolean; errors: string[] } {
+  private validateVariable(
+    variable: VariableSchema,
+    value: any
+  ): { valid: boolean; errors: string[] } {
     const errors: string[] = [];
 
     // Required check
@@ -703,25 +711,25 @@ export class TemplateWizardCLI {
     // Type-specific validation
     if (variable.validation && value != null && value !== '') {
       const validation = variable.validation;
-      
+
       if (validation.pattern && typeof value === 'string') {
         if (!new RegExp(validation.pattern).test(value)) {
           errors.push(`${variable.name} does not match required pattern`);
         }
       }
-      
+
       if (validation.minLength && typeof value === 'string') {
         if (value.length < validation.minLength) {
           errors.push(`${variable.name} must be at least ${validation.minLength} characters`);
         }
       }
-      
+
       if (validation.maxLength && typeof value === 'string') {
         if (value.length > validation.maxLength) {
           errors.push(`${variable.name} must be at most ${validation.maxLength} characters`);
         }
       }
-      
+
       if (validation.options && !validation.options.includes(value)) {
         errors.push(`${variable.name} must be one of: ${validation.options.join(', ')}`);
       }
@@ -743,7 +751,7 @@ export class TemplateWizardCLI {
    * Setup event listeners
    */
   private setupEventListeners(): void {
-    this.eventBus.on('template:wizard:cancel', () => {
+    this.eventBus.subscribe('alfred:template:wizard:cancel', () => {
       this.printMessage('Template generation cancelled by user.', 'warning');
       this.cleanup();
     });

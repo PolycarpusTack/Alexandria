@@ -1,5 +1,3 @@
-import { MnemosyneDocument } from '../../interfaces';
-
 export interface TemplateVariable {
   name: string;
   type: 'string' | 'number' | 'boolean' | 'date' | 'array' | 'object';
@@ -98,7 +96,7 @@ export interface TemplateContext {
     knowledgeScore: number;
     collaborativeNotes: Array<{ author: string; note: string; timestamp: Date }>;
   };
-  
+
   // AI-enhanced variables
   alfred?: {
     available: boolean;
@@ -107,7 +105,7 @@ export interface TemplateContext {
     suggestions?: string[];
     relatedConcepts?: string[];
   };
-  
+
   // User context
   user: {
     id: string;
@@ -115,7 +113,7 @@ export interface TemplateContext {
     expertise: string[];
     preferences: Record<string, any>;
   };
-  
+
   // Project context
   project?: {
     name: string;
@@ -123,7 +121,7 @@ export interface TemplateContext {
     technologies: string[];
     team: string[];
   };
-  
+
   // Custom variables from user input
   variables: Record<string, any>;
 }

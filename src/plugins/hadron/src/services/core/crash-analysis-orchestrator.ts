@@ -1,6 +1,6 @@
 /**
  * Crash Analysis Orchestrator
- * 
+ *
  * Coordinates the entire crash analysis workflow including file processing,
  * parsing, AI analysis, and result storage. This is the main service that
  * other components interact with.
@@ -8,22 +8,21 @@
 
 import { Logger } from '../../../../../utils/logger';
 import { EventBus } from '../../../../../core/event-bus/event-bus';
-import { 
-  ICrashAnalyzerService, 
-  ILogParser, 
-  ILlmService, 
+import {
+  ICrashAnalyzerService,
+  ILogParser,
+  ILlmService,
   ICrashRepository,
-  CrashLog, 
+  CrashLog,
   CrashAnalysisResult,
   ParsedCrashData
 } from '../../interfaces';
-import { v4 as uuidv4 } from 'uuid';
 import { HadronRepository } from '../../repositories/hadron-repository';
 import { FileProcessingService } from './file-processing-service';
 import { AnalysisWorkflowService } from './analysis-workflow-service';
 import { ResultStorageService } from './result-storage-service';
 import { ValidationService } from './validation-service';
-import { NotFoundError, ValidationError } from '../../../../../core/errors';
+import { NotFoundError } from '../../../../../core/errors';
 
 export interface CrashAnalyzerConfig {
   maxConcurrentAnalyses: number;
@@ -38,7 +37,7 @@ export interface CrashAnalyzerConfig {
  */
 export class CrashAnalysisOrchestrator implements ICrashAnalyzerService {
   private readonly config: CrashAnalyzerConfig;
-  
+
   constructor(
     private logParser: ILogParser,
     private llmService: ILlmService,
@@ -84,7 +83,7 @@ export class CrashAnalysisOrchestrator implements ICrashAnalyzerService {
       await this.validationService.validateUpload(file, filename, metadata);
 
       // Process file (security scan, validation, storage)
-      const { fileId, processedContent, securityScanResult } = 
+      const { fileId, processedContent, securityScanResult } =
         await this.fileProcessingService.processUploadedFile(file, filename, userId);
 
       // Create crash log record
@@ -119,10 +118,10 @@ export class CrashAnalysisOrchestrator implements ICrashAnalyzerService {
 
       return { logId, uploadId: fileId };
     } catch (error) {
-      this.logger.error('Error uploading crash log', { 
-        filename, 
-        userId, 
-        error: error instanceof Error ? error.message : String(error) 
+      this.logger.error('Error uploading crash log', {
+        filename,
+        userId,
+        error: error instanceof Error ? error.message : String(error)
       });
       throw error;
     }
@@ -156,7 +155,7 @@ export class CrashAnalysisOrchestrator implements ICrashAnalyzerService {
       }
 
       // Update status to analyzing
-      await this.crashRepository.update(logId, { 
+      await this.crashRepository.update(logId, {
         status: 'analyzing',
         analyzedAt: new Date()
       });
@@ -175,33 +174,33 @@ export class CrashAnalysisOrchestrator implements ICrashAnalyzerService {
       await this.resultStorageService.storeAnalysisResult(logId, analysisResult);
 
       // Update crash log status
-      await this.crashRepository.update(logId, { 
+      await this.crashRepository.update(logId, {
         status: 'analyzed',
         analysis: analysisResult
       });
 
       // Emit analysis completed event
-      this.eventBus.publish('crash:analysis:completed', { 
-        logId, 
+      this.eventBus.publish('crash:analysis:completed', {
+        logId,
         analysisId: analysisResult.id,
         confidence: analysisResult.confidence
       });
 
-      this.logger.info('Crash log analysis completed', { 
-        logId, 
+      this.logger.info('Crash log analysis completed', {
+        logId,
         analysisId: analysisResult.id,
         confidence: analysisResult.confidence
       });
 
       return analysisResult;
     } catch (error) {
-      this.logger.error('Error analyzing crash log', { 
-        logId, 
-        error: error instanceof Error ? error.message : String(error) 
+      this.logger.error('Error analyzing crash log', {
+        logId,
+        error: error instanceof Error ? error.message : String(error)
       });
 
       // Update status to failed
-      await this.crashRepository.update(logId, { 
+      await this.crashRepository.update(logId, {
         status: 'failed',
         errorMessage: error instanceof Error ? error.message : String(error)
       });
@@ -220,9 +219,9 @@ export class CrashAnalysisOrchestrator implements ICrashAnalyzerService {
     try {
       return await this.crashRepository.findById(logId);
     } catch (error) {
-      this.logger.error('Error retrieving crash log', { 
-        logId, 
-        error: error instanceof Error ? error.message : String(error) 
+      this.logger.error('Error retrieving crash log', {
+        logId,
+        error: error instanceof Error ? error.message : String(error)
       });
       throw error;
     }
@@ -252,9 +251,9 @@ export class CrashAnalysisOrchestrator implements ICrashAnalyzerService {
     try {
       return await this.crashRepository.findMany(filters, pagination);
     } catch (error) {
-      this.logger.error('Error retrieving crash logs', { 
-        filters, 
-        error: error instanceof Error ? error.message : String(error) 
+      this.logger.error('Error retrieving crash logs', {
+        filters,
+        error: error instanceof Error ? error.message : String(error)
       });
       throw error;
     }
@@ -287,9 +286,9 @@ export class CrashAnalysisOrchestrator implements ICrashAnalyzerService {
 
       this.logger.info('Crash log deleted successfully', { logId });
     } catch (error) {
-      this.logger.error('Error deleting crash log', { 
-        logId, 
-        error: error instanceof Error ? error.message : String(error) 
+      this.logger.error('Error deleting crash log', {
+        logId,
+        error: error instanceof Error ? error.message : String(error)
       });
       throw error;
     }
@@ -315,7 +314,7 @@ export class CrashAnalysisOrchestrator implements ICrashAnalyzerService {
     const batchSize = this.config.maxConcurrentAnalyses;
     for (let i = 0; i < logIds.length; i += batchSize) {
       const batch = logIds.slice(i, i + batchSize);
-      
+
       const promises = batch.map(async (logId) => {
         try {
           const result = await this.analyzeLog(logId);
@@ -331,7 +330,7 @@ export class CrashAnalysisOrchestrator implements ICrashAnalyzerService {
       await Promise.all(promises);
     }
 
-    this.logger.info('Batch analysis completed', { 
+    this.logger.info('Batch analysis completed', {
       total: logIds.length,
       successful: successful.length,
       failed: failed.length
@@ -343,9 +342,7 @@ export class CrashAnalysisOrchestrator implements ICrashAnalyzerService {
   /**
    * Get analysis statistics
    */
-  async getAnalysisStatistics(
-    timeRange?: { start: Date; end: Date }
-  ): Promise<{
+  async getAnalysisStatistics(timeRange?: { start: Date; end: Date }): Promise<{
     totalAnalyses: number;
     averageConfidence: number;
     averageProcessingTime: number;
@@ -355,9 +352,9 @@ export class CrashAnalysisOrchestrator implements ICrashAnalyzerService {
     try {
       return await this.resultStorageService.getAnalysisStatistics(timeRange);
     } catch (error) {
-      this.logger.error('Error retrieving analysis statistics', { 
-        timeRange, 
-        error: error instanceof Error ? error.message : String(error) 
+      this.logger.error('Error retrieving analysis statistics', {
+        timeRange,
+        error: error instanceof Error ? error.message : String(error)
       });
       throw error;
     }
@@ -375,7 +372,7 @@ export class CrashAnalysisOrchestrator implements ICrashAnalyzerService {
     try {
       const services = {
         llmService: await this.llmService.checkAvailability(),
-        database: await this.crashRepository.healthCheck?.() ?? true,
+        database: (await this.crashRepository.healthCheck?.()) ?? true,
         fileStorage: await this.fileProcessingService.healthCheck(),
         parser: true // Log parser is always available
       };
@@ -390,10 +387,10 @@ export class CrashAnalysisOrchestrator implements ICrashAnalyzerService {
         activeAnalyses: await this.analysisWorkflowService.getActiveAnalysesCount()
       };
     } catch (error) {
-      this.logger.error('Health check failed', { 
-        error: error instanceof Error ? error.message : String(error) 
+      this.logger.error('Health check failed', {
+        error: error instanceof Error ? error.message : String(error)
       });
-      
+
       return {
         status: 'unhealthy',
         services: {},

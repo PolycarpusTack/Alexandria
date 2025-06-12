@@ -90,7 +90,7 @@ export class CircuitBreakerService extends EventEmitter {
    */
   getStats(): Record<string, CircuitBreakerStats> {
     const stats: Record<string, CircuitBreakerStats> = {};
-    
+
     for (const [serviceName, circuit] of this.circuits) {
       stats[serviceName] = circuit.getStats();
     }
@@ -145,7 +145,10 @@ class CircuitBreaker extends EventEmitter {
       }
     }
 
-    if (this.state === CircuitState.HALF_OPEN && this.halfOpenCalls >= this.config.halfOpenMaxCalls) {
+    if (
+      this.state === CircuitState.HALF_OPEN &&
+      this.halfOpenCalls >= this.config.halfOpenMaxCalls
+    ) {
       throw new Error(`Half-open circuit breaker at max calls for service: ${this.serviceName}`);
     }
 
@@ -179,7 +182,7 @@ class CircuitBreaker extends EventEmitter {
     this.failures++;
     this.lastFailureTime = new Date();
     this.recordCall(false);
-    
+
     this.emit('failure', error);
 
     if (this.state === CircuitState.HALF_OPEN) {
@@ -199,10 +202,10 @@ class CircuitBreaker extends EventEmitter {
     }
 
     // Calculate failure rate in monitoring window
-    const recentFailures = recentCalls.filter(call => !call.success).length;
+    const recentFailures = recentCalls.filter((call) => !call.success).length;
     const failureRate = recentFailures / recentCalls.length;
 
-    return failureRate >= (this.config.failureThreshold / recentCalls.length);
+    return failureRate >= this.config.failureThreshold / recentCalls.length;
   }
 
   private shouldAttemptReset(): boolean {
@@ -215,7 +218,7 @@ class CircuitBreaker extends EventEmitter {
   private transitionToOpen(): void {
     this.state = CircuitState.OPEN;
     this.nextRetryTime = new Date(Date.now() + this.config.resetTimeout);
-    
+
     this.logger.warn(`Circuit breaker opened for service: ${this.serviceName}`, {
       failures: this.failures,
       successes: this.successes,
@@ -228,7 +231,7 @@ class CircuitBreaker extends EventEmitter {
   private transitionToHalfOpen(): void {
     this.state = CircuitState.HALF_OPEN;
     this.halfOpenCalls = 0;
-    
+
     this.logger.info(`Circuit breaker half-open for service: ${this.serviceName}`);
     this.emit('stateChange', this.state);
   }
@@ -238,7 +241,7 @@ class CircuitBreaker extends EventEmitter {
     this.failures = 0;
     this.halfOpenCalls = 0;
     this.nextRetryTime = undefined;
-    
+
     this.logger.info(`Circuit breaker closed for service: ${this.serviceName}`);
     this.emit('stateChange', this.state);
   }
@@ -256,7 +259,7 @@ class CircuitBreaker extends EventEmitter {
 
   private getRecentCalls(): Array<{ success: boolean; timestamp: Date }> {
     const cutoff = new Date(Date.now() - this.config.monitoringWindow);
-    return this.callHistory.filter(call => call.timestamp >= cutoff);
+    return this.callHistory.filter((call) => call.timestamp >= cutoff);
   }
 
   getStats(): CircuitBreakerStats {
