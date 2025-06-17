@@ -66,6 +66,43 @@ export interface ExportResult {
   errors?: ExportError[];
 }
 
+export interface ExportMetadata {
+  exportedAt: Date;
+  documentCount: number;
+  format: string;
+  options: ExportOptions;
+  duration: number;
+}
+
+export interface ExportError {
+  type: string;
+  message: string;
+  documentId?: string;
+  details?: any;
+}
+
+export interface AIExportEnhancement {
+  enabled: boolean;
+  model?: string;
+  style?: string;
+  enrichment?: string[];
+}
+
+export interface ExportContext {
+  documents: MnemosyneDocument[];
+  format: string;
+  options: ExportOptions;
+  template?: any;
+  metadata?: any;
+}
+
+export interface ExportPreset {
+  name: string;
+  format: string;
+  options: ExportOptions;
+  template?: string;
+}
+
 export class ExportEngine {
   private templateEngine: TemplateEngine;
   private exporters: Map<string, any> = new Map();
@@ -198,7 +235,7 @@ export class ExportEngine {
       return true;
     });
   }
-}
+  
   /**
    * Get related documents from knowledge graph
    */
@@ -428,5 +465,68 @@ export class ExportEngine {
     }
     
     return results;
+  }
+  
+  private async buildKnowledgeGraphData(
+    documents: MnemosyneDocument[]
+  ): Promise<any> {
+    const nodes: any[] = [];
+    const edges: any[] = [];
+    const visited = new Set<string>();
+    
+    for (const doc of documents) {
+      if (visited.has(doc.id)) continue;
+      visited.add(doc.id);
+      
+      // Add node
+      nodes.push({
+        id: doc.id,
+        label: doc.title,
+        type: doc.type || 'document',
+        tags: doc.tags,
+        metadata: doc.metadata
+      });
+      
+      // Get relationships
+      const relationships = await this.mnemosyne.knowledgeGraph.getRelationships(doc.id);
+      for (const rel of relationships) {
+        edges.push({
+          source: rel.sourceId,
+          target: rel.targetId,
+          type: rel.type,
+          label: rel.metadata?.label || rel.type
+        });
+      }
+    }
+    
+    return {
+      nodes,
+      edges,
+      stats: {
+        nodeCount: nodes.length,
+        edgeCount: edges.length,
+        averageDegree: edges.length / nodes.length
+      }
+    };
+  }
+  
+  private async buildBacklinksData(
+    documents: MnemosyneDocument[]
+  ): Promise<Record<string, any[]>> {
+    const backlinks: Record<string, any[]> = {};
+    
+    for (const doc of documents) {
+      const incoming = await this.mnemosyne.knowledgeGraph.getIncomingLinks(doc.id);
+      if (incoming.length > 0) {
+        backlinks[doc.id] = incoming.map(link => ({
+          sourceId: link.sourceId,
+          sourceTitle: link.sourceTitle || 'Unknown',
+          context: link.context || '',
+          type: link.type
+        }));
+      }
+    }
+    
+    return backlinks;
   }
 }

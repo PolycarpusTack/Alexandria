@@ -1,0 +1,42 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "lib": ["ES2020"],
+    "outDir": "./dist",
+    "declaration": true,
+    "declarationMap": true,
+    "sourceMap": true,
+    "strict": false,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node",
+    "resolveJsonModule": true,
+    "allowJs": false,
+    "noImplicitAny": false,
+    "strictNullChecks": false,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@alexandria/shared/*": ["../../alexandria-platform/packages/shared/src/*"]
+    },
+    "types": ["node"]
+  },
+  "include": [
+    "src/index.ts",
+    "src/MnemosynePlugin.ts",
+    "src/types/**/*.ts",
+    "src/core/**/*.ts",
+    "src/services/interfaces/**/*.ts",
+    "src/errors/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "src/ui/**",
+    "src/api/**"
+  ]
+}

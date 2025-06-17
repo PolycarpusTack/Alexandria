@@ -3,12 +3,29 @@ import { MnemosyneContext } from '../../types/MnemosyneContext';
 
 /**
  * Extended request interface with user information
+ * Uses Alexandria's AlexandriaUser type which has optional email and username
  */
+declare global {
+  namespace Express {
+    interface Request {
+      user?: {
+        id: string;
+        username: string;
+        email?: string;
+        role?: string;
+        permissions?: string[];
+      };
+    }
+  }
+}
+
 export interface AuthenticatedRequest extends Request {
   user?: {
     id: string;
     username: string;
-    permissions: string[];
+    email?: string;
+    role?: string;
+    permissions?: string[];
   };
   permissions?: string[];
 }

@@ -1,14 +1,17 @@
 import axios, { AxiosRequestConfig, AxiosResponse, AxiosError } from 'axios';
+import { createHttpsAgent } from './https-config';
 
 /**
- * Create an Axios instance with common configuration
+ * Create an Axios instance with common configuration and secure HTTPS settings
  */
 const apiClient = axios.create({
   baseURL: '/api',
   timeout: 30000, // 30 seconds
   headers: {
     'Content-Type': 'application/json'
-  }
+  },
+  // Use secure HTTPS agent for all requests
+  httpsAgent: createHttpsAgent()
 });
 
 // Request interceptor for API calls

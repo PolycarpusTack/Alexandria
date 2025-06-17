@@ -13,12 +13,6 @@ importers:
 
   .:
     dependencies:
-      '@alexandria/shared':
-        specifier: workspace:*
-        version: link:packages/shared
-      '@alexandria/ui-components':
-        specifier: workspace:*
-        version: link:packages/ui-components
       '@elastic/elasticsearch':
         specifier: ^8.17.0
         version: 8.18.2

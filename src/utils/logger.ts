@@ -16,6 +16,7 @@ import type {
   Logger,
   LoggerOptions
 } from './logger.interface';
+import { getLoggingConfig, shouldLog, sanitizeLogData } from '../config/logging.config';
 
 // Re-export types for backward compatibility
 export type {
@@ -33,40 +34,43 @@ const contextStorage = new AsyncLocalStorage<RequestContext>();
 /**
  * Default enhanced logger options
  */
-const defaultOptions: LoggerOptions = {
-  level: 'info',
-  serviceName: 'alexandria',
-  format: 'json',
-  enableRequestCorrelation: true,
-  enablePerformanceMonitoring: true,
-  enableSecurityAudit: true,
-  enableStructuredLogging: true,
-  transports: {
-    console: true,
-    file: {
-      enabled: process.env.NODE_ENV === 'production',
-      path: 'logs/alexandria.log',
-      maxSize: '100mb',
-      maxFiles: 5
+const defaultOptions: LoggerOptions = (() => {
+  const config = getLoggingConfig();
+  return {
+    level: config.level as LogLevel,
+    serviceName: 'alexandria',
+    format: config.format,
+    enableRequestCorrelation: true,
+    enablePerformanceMonitoring: true,
+    enableSecurityAudit: true,
+    enableStructuredLogging: true,
+    transports: {
+      console: true,
+      file: {
+        enabled: process.env.NODE_ENV === 'production',
+        path: 'logs/alexandria.log',
+        maxSize: config.maxSize || '100mb',
+        maxFiles: config.maxFiles || 5
+      },
+      securityFile: {
+        enabled: process.env.NODE_ENV === 'production',
+        path: 'logs/security.log'
+      },
+      performanceFile: {
+        enabled: process.env.NODE_ENV === 'production',
+        path: 'logs/performance.log'
+      },
+      auditFile: {
+        enabled: process.env.NODE_ENV === 'production',
+        path: 'logs/audit.log'
+      }
     },
-    securityFile: {
-      enabled: process.env.NODE_ENV === 'production',
-      path: 'logs/security.log'
-    },
-    performanceFile: {
-      enabled: process.env.NODE_ENV === 'production',
-      path: 'logs/performance.log'
-    },
-    auditFile: {
-      enabled: process.env.NODE_ENV === 'production',
-      path: 'logs/audit.log'
+    metadata: {
+      environment: process.env.NODE_ENV || 'development',
+      version: process.env.APP_VERSION || '1.0.0'
     }
-  },
-  metadata: {
-    environment: process.env.NODE_ENV || 'development',
-    version: process.env.APP_VERSION || '1.0.0'
-  }
-};
+  };
+})();
 
 /**
  * Enhanced Winston logger implementation
@@ -269,28 +273,52 @@ export class WinstonLogger implements Logger {
    * Log a debug message
    */
   debug(message: string, context: Record<string, any> = {}): void {
-    this.logger.debug(message, this.enrichContext(context));
+    const config = getLoggingConfig();
+    if (shouldLog('debug', this.serviceName, config)) {
+      const sanitizedContext = process.env.NODE_ENV === 'production' 
+        ? sanitizeLogData(context) 
+        : context;
+      this.logger.debug(message, this.enrichContext(sanitizedContext));
+    }
   }
 
   /**
    * Log an info message
    */
   info(message: string, context: Record<string, any> = {}): void {
-    this.logger.info(message, this.enrichContext(context));
+    const config = getLoggingConfig();
+    if (shouldLog('info', this.serviceName, config)) {
+      const sanitizedContext = process.env.NODE_ENV === 'production' 
+        ? sanitizeLogData(context) 
+        : context;
+      this.logger.info(message, this.enrichContext(sanitizedContext));
+    }
   }
 
   /**
    * Log a warning message
    */
   warn(message: string, context: Record<string, any> = {}): void {
-    this.logger.warn(message, this.enrichContext(context));
+    const config = getLoggingConfig();
+    if (shouldLog('warn', this.serviceName, config)) {
+      const sanitizedContext = process.env.NODE_ENV === 'production' 
+        ? sanitizeLogData(context) 
+        : context;
+      this.logger.warn(message, this.enrichContext(sanitizedContext));
+    }
   }
 
   /**
    * Log an error message
    */
   error(message: string, context: Record<string, any> = {}): void {
-    this.logger.error(message, this.enrichContext(context));
+    const config = getLoggingConfig();
+    if (shouldLog('error', this.serviceName, config)) {
+      const sanitizedContext = process.env.NODE_ENV === 'production' 
+        ? sanitizeLogData(context) 
+        : context;
+      this.logger.error(message, this.enrichContext(sanitizedContext));
+    }
   }
 
   /**

@@ -55,8 +55,6 @@
     "permissions:validate": "ts-node src/cli/index.ts validate"
   },
   "dependencies": {
-    "@alexandria/shared": "workspace:*",
-    "@alexandria/ui-components": "workspace:*",
     "@elastic/elasticsearch": "^8.17.0",
     "@radix-ui/react-alert-dialog": "^1.1.2",
     "@radix-ui/react-collapsible": "^1.1.1",

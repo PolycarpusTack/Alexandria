@@ -1,9 +1,10 @@
 import { Router } from 'express';
+import type { Router as ExpressRouter } from 'express';
 import nodesRouter from './routes/nodes';
 import relationshipsRouter from './routes/relationships';
 import { errorHandler, requestId, requestLogger, healthCheck } from '../middleware/errorHandler';
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 // Add middleware
 router.use(requestId);
@@ -36,3 +37,8 @@ router.get('/', (req, res) => {
 router.use(errorHandler);
 
 export default router;
+
+// Export registration function for plugin
+export function registerMnemosyneAPI(app: any, basePath: string = '/api/mnemosyne') {
+  app.use(basePath, router);
+}

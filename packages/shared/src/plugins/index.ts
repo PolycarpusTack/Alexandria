@@ -4,6 +4,7 @@
  */
 
 import { EventEmitter } from 'events';
+import type { Logger, DataService, ApiRegistry } from '../../../src/types/common-types';
 
 export interface PluginManifest {
   id: string;
@@ -18,17 +19,17 @@ export interface PluginManifest {
   capabilities: string[];
   permissions: string[];
   dependencies?: string[];
-  config?: Record<string, any>;
+  config?: Record<string, string | number | boolean | null | undefined | Record<string, unknown> | unknown[]>;
   routes?: string[];
 }
 
 export interface PluginContext {
   pluginId: string;
-  config: Record<string, any>;
-  logger: any;
+  config: Record<string, string | number | boolean | null | undefined | Record<string, unknown> | unknown[]>;
+  logger: Logger;
   eventBus: EventEmitter;
-  dataService: any;
-  apiRegistry: any;
+  dataService: DataService;
+  apiRegistry: ApiRegistry;
 }
 
 export interface PluginLifecycle {
@@ -41,7 +42,7 @@ export interface PluginLifecycle {
 export interface PluginHealth {
   status: 'healthy' | 'unhealthy' | 'degraded';
   message?: string;
-  details?: Record<string, any>;
+  details?: Record<string, string | number | boolean | unknown[] | Record<string, unknown>>;
   lastChecked: string;
 }
 
@@ -149,17 +150,17 @@ export abstract class BasePlugin implements PluginLifecycle {
   protected abstract checkHealth(): Promise<Omit<PluginHealth, 'lastChecked'>>;
 
   // Utility methods
-  protected emitEvent(eventName: string, data?: any): void {
+  protected emitEvent(eventName: string, data?: unknown): void {
     this.metrics.eventCount = (this.metrics.eventCount || 0) + 1;
     this.metrics.lastActivity = new Date().toISOString();
     this.context.eventBus.emit(`plugin:${this.manifest.id}:${eventName}`, data);
   }
 
-  protected log(level: string, message: string, meta?: any): void {
+  protected log(level: string, message: string, meta?: Record<string, unknown>): void {
     this.context.logger[level](`[${this.manifest.id}] ${message}`, meta);
   }
 
-  protected getConfig<T = any>(key?: string): T {
+  protected getConfig<T = unknown>(key?: string): T {
     if (key) {
       return this.context.config[key];
     }
@@ -181,10 +182,10 @@ export interface PluginService {
 // Base plugin service class
 export abstract class BasePluginService implements PluginService {
   protected pluginId: string;
-  protected logger: any;
+  protected logger: Logger;
   protected isInitialized = false;
 
-  constructor(pluginId: string, logger: any) {
+  constructor(pluginId: string, logger: Logger) {
     this.pluginId = pluginId;
     this.logger = logger;
   }
@@ -249,22 +250,22 @@ export abstract class BasePluginService implements PluginService {
 }
 
 // Plugin repository interface
-export interface PluginRepository<T = any> {
+export interface PluginRepository<T = unknown> {
   create(data: Omit<T, 'id' | 'createdAt' | 'updatedAt'>): Promise<T>;
   findById(id: string): Promise<T | null>;
-  findMany(filters?: Record<string, any>): Promise<T[]>;
+  findMany(filters?: Record<string, unknown>): Promise<T[]>;
   update(id: string, data: Partial<T>): Promise<T>;
   delete(id: string): Promise<void>;
-  count(filters?: Record<string, any>): Promise<number>;
+  count(filters?: Record<string, unknown>): Promise<number>;
 }
 
 // Base plugin repository
 export abstract class BasePluginRepository<T extends { id: string }> implements PluginRepository<T> {
   protected pluginId: string;
   protected tableName: string;
-  protected dataService: any;
+  protected dataService: DataService;
 
-  constructor(pluginId: string, tableName: string, dataService: any) {
+  constructor(pluginId: string, tableName: string, dataService: DataService) {
     this.pluginId = pluginId;
     this.tableName = tableName;
     this.dataService = dataService;
@@ -286,7 +287,7 @@ export abstract class BasePluginRepository<T extends { id: string }> implements 
     return await this.dataService.findById(this.tableName, id);
   }
 
-  async findMany(filters: Record<string, any> = {}): Promise<T[]> {
+  async findMany(filters: Record<string, unknown> = {}): Promise<T[]> {
     return await this.dataService.findMany(this.tableName, filters);
   }
 
@@ -303,7 +304,7 @@ export abstract class BasePluginRepository<T extends { id: string }> implements 
     await this.dataService.delete(this.tableName, id);
   }
 
-  async count(filters: Record<string, any> = {}): Promise<number> {
+  async count(filters: Record<string, unknown> = {}): Promise<number> {
     return await this.dataService.count(this.tableName, filters);
   }
 
@@ -313,7 +314,7 @@ export abstract class BasePluginRepository<T extends { id: string }> implements 
 }
 
 // Plugin utilities
-export const validatePluginManifest = (manifest: any): PluginManifest => {
+export const validatePluginManifest = (manifest: unknown): PluginManifest => {
   const required = ['id', 'name', 'version', 'description', 'author', 'license', 'main', 'capabilities', 'permissions'];
   
   for (const field of required) {
@@ -327,12 +328,12 @@ export const validatePluginManifest = (manifest: any): PluginManifest => {
 
 export const createPluginContext = (
   pluginId: string,
-  config: Record<string, any>,
+  config: Record<string, string | number | boolean | null | undefined | Record<string, unknown> | unknown[]>,
   dependencies: {
-    logger: any;
+    logger: Logger;
     eventBus: EventEmitter;
-    dataService: any;
-    apiRegistry: any;
+    dataService: DataService;
+    apiRegistry: ApiRegistry;
   }
 ): PluginContext => {
   return {
@@ -342,11 +343,12 @@ export const createPluginContext = (
   };
 };
 
-export const createPluginLogger = (pluginId: string, baseLogger: any) => {
+export const createPluginLogger = (pluginId: string, baseLogger: Logger): Logger => {
   return {
-    debug: (message: string, meta?: any) => baseLogger.debug(`[${pluginId}] ${message}`, meta),
-    info: (message: string, meta?: any) => baseLogger.info(`[${pluginId}] ${message}`, meta),
-    warn: (message: string, meta?: any) => baseLogger.warn(`[${pluginId}] ${message}`, meta),
-    error: (message: string, meta?: any) => baseLogger.error(`[${pluginId}] ${message}`, meta)
+    debug: (message: string, meta?: Record<string, unknown>) => baseLogger.debug(`[${pluginId}] ${message}`, meta),
+    info: (message: string, meta?: Record<string, unknown>) => baseLogger.info(`[${pluginId}] ${message}`, meta),
+    warn: (message: string, meta?: Record<string, unknown>) => baseLogger.warn(`[${pluginId}] ${message}`, meta),
+    error: (message: string, meta?: Record<string, unknown>) => baseLogger.error(`[${pluginId}] ${message}`, meta),
+    child: (meta: Record<string, unknown>) => createPluginLogger(pluginId, baseLogger.child(meta))
   };
 };

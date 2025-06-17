@@ -3,7 +3,10 @@
  * Tracks cache performance, query times, and system metrics
  */
 
-import { cacheService } from '../services/CacheService';
+import { CacheService } from '../services/CacheService';
+
+// Get cache service instance
+let cacheService: CacheService;
 
 export interface PerformanceMetric {
   timestamp: Date;
@@ -36,6 +39,10 @@ export class PerformanceMonitor {
   private metrics: PerformanceMetric[] = [];
   private maxMetrics: number = 1000; // Keep last 1000 metrics in memory
   private startTime: Date = new Date();
+  
+  constructor(private cache?: CacheService) {
+    cacheService = cache || new CacheService(100);
+  }
 
   /**
    * Record a performance metric
@@ -75,8 +82,8 @@ export class PerformanceMonitor {
 
         try {
           // Check if this operation might hit cache
-          const cacheKey = this.generateCacheKey?.(args) || '';
-          if (cacheKey && cacheService.has(cacheKey)) {
+          const cacheKey = (this as any).generateCacheKey?.(args) || '';
+          if (cacheKey && await cacheService.has(cacheKey)) {
             cacheHit = true;
           }
 

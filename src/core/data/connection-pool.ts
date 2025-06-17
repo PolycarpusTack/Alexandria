@@ -8,7 +8,7 @@ export interface DatabaseConfig {
   database: string;
   user: string;
   password: string;
-  ssl?: boolean | { rejectUnauthorized: boolean };
+  ssl?: boolean | { rejectUnauthorized: boolean; ca?: string };
   max?: number; // Maximum number of clients in the pool
   idleTimeoutMillis?: number;
   connectionTimeoutMillis?: number;

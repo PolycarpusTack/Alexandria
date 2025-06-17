@@ -1,21 +1,23 @@
-import { PluginLifecycle, PluginContext, PluginAPI } from '../../../src/core/plugin-registry/interfaces';
+import { Plugin, AlexandriaPluginContext, LoggerService } from './types/alexandria-plugin-api';
 import { MnemosyneCore } from './core/MnemosyneCore';
 import { MnemosyneEvents } from './events/MnemosyneEvents';
-import { Logger } from '../../../src/utils/logger';
 import { registerMnemosyneAPI } from './api';
 import { registerGraphQLWithAlexandria } from './graphql';
+import { adaptPluginContext } from './types/plugin-adapter';
 
 /**
  * Main Mnemosyne plugin class implementing Alexandria plugin lifecycle
  */
-export class MnemosynePlugin implements PluginLifecycle {
+export class MnemosynePlugin implements Plugin {
   public readonly id = 'mnemosyne';
   public readonly name = 'Mnemosyne Knowledge Management';
   public readonly version = '0.1.0';
+  public readonly description = 'Comprehensive knowledge management and graph visualization';
+  public readonly author = 'Alexandria Platform Team';
 
   private core?: MnemosyneCore;
-  private context?: PluginContext;
-  private logger?: Logger;
+  private context?: AlexandriaPluginContext;
+  private logger?: LoggerService;
 
   /**
    * Called when the plugin is installed
@@ -39,7 +41,7 @@ export class MnemosynePlugin implements PluginLifecycle {
   /**
    * Called when the plugin is activated
    */
-  async onActivate(context?: PluginContext): Promise<void> {
+  async onActivate(context?: AlexandriaPluginContext): Promise<void> {
     this.logger?.info('Mnemosyne plugin activation started');
     
     try {
@@ -48,10 +50,11 @@ export class MnemosynePlugin implements PluginLifecycle {
       }
 
       this.context = context;
-      this.logger = context.services.logger as Logger;
+      this.logger = context.logger;
 
       // Initialize the core service
-      this.core = new MnemosyneCore(context);
+      const pluginContext = adaptPluginContext(context);
+      this.core = new MnemosyneCore(pluginContext);
       await this.core.initialize();
 
       // Register event handlers
@@ -149,7 +152,7 @@ export class MnemosynePlugin implements PluginLifecycle {
   /**
    * Get the plugin context
    */
-  public getContext(): PluginContext | undefined {
+  public getContext(): AlexandriaPluginContext | undefined {
     return this.context;
   }
 
@@ -157,71 +160,84 @@ export class MnemosynePlugin implements PluginLifecycle {
    * Register event handlers for Mnemosyne events
    */
   private registerEventHandlers(): void {
-    if (!this.context?.services.eventBus) {
+    if (!this.context?.eventBus) {
       return;
     }
 
-    const eventBus = this.context.services.eventBus;
+    const eventBus = this.context.eventBus;
 
     // Register handlers for Mnemosyne-specific events
-    eventBus.subscribe(MnemosyneEvents.KNOWLEDGE_CREATED, this.handleKnowledgeCreated.bind(this));
-    eventBus.subscribe(MnemosyneEvents.KNOWLEDGE_UPDATED, this.handleKnowledgeUpdated.bind(this));
-    eventBus.subscribe(MnemosyneEvents.KNOWLEDGE_DELETED, this.handleKnowledgeDeleted.bind(this));
-    eventBus.subscribe(MnemosyneEvents.GRAPH_UPDATED, this.handleGraphUpdated.bind(this));
-    eventBus.subscribe(MnemosyneEvents.TEMPLATE_APPLIED, this.handleTemplateApplied.bind(this));
+    eventBus.on(MnemosyneEvents.KNOWLEDGE_CREATED, this.handleKnowledgeCreated.bind(this));
+    eventBus.on(MnemosyneEvents.KNOWLEDGE_UPDATED, this.handleKnowledgeUpdated.bind(this));
+    eventBus.on(MnemosyneEvents.KNOWLEDGE_DELETED, this.handleKnowledgeDeleted.bind(this));
+    eventBus.on(MnemosyneEvents.GRAPH_UPDATED, this.handleGraphUpdated.bind(this));
+    eventBus.on(MnemosyneEvents.TEMPLATE_APPLIED, this.handleTemplateApplied.bind(this));
   }
 
   /**
    * Unregister event handlers
    */
   private unregisterEventHandlers(): void {
-    if (!this.context?.services.eventBus) {
+    if (!this.context?.eventBus) {
       return;
     }
 
-    const eventBus = this.context.services.eventBus;
+    const eventBus = this.context.eventBus;
 
     // Unregister all Mnemosyne event handlers
-    eventBus.unsubscribe(MnemosyneEvents.KNOWLEDGE_CREATED, this.handleKnowledgeCreated.bind(this));
-    eventBus.unsubscribe(MnemosyneEvents.KNOWLEDGE_UPDATED, this.handleKnowledgeUpdated.bind(this));
-    eventBus.unsubscribe(MnemosyneEvents.KNOWLEDGE_DELETED, this.handleKnowledgeDeleted.bind(this));
-    eventBus.unsubscribe(MnemosyneEvents.GRAPH_UPDATED, this.handleGraphUpdated.bind(this));
-    eventBus.unsubscribe(MnemosyneEvents.TEMPLATE_APPLIED, this.handleTemplateApplied.bind(this));
+    eventBus.off(MnemosyneEvents.KNOWLEDGE_CREATED, this.handleKnowledgeCreated.bind(this));
+    eventBus.off(MnemosyneEvents.KNOWLEDGE_UPDATED, this.handleKnowledgeUpdated.bind(this));
+    eventBus.off(MnemosyneEvents.KNOWLEDGE_DELETED, this.handleKnowledgeDeleted.bind(this));
+    eventBus.off(MnemosyneEvents.GRAPH_UPDATED, this.handleGraphUpdated.bind(this));
+    eventBus.off(MnemosyneEvents.TEMPLATE_APPLIED, this.handleTemplateApplied.bind(this));
   }
 
   /**
    * Register UI components with Alexandria
    */
   private registerUIComponents(): void {
-    if (!this.context?.services.ui) {
+    if (!this.context?.ui) {
       return;
     }
 
     // Register main dashboard component
-    this.context.services.ui.registerComponent({
+    this.context.ui.registerComponent({
       id: 'mnemosyne-dashboard',
-      name: 'Mnemosyne Dashboard',
-      type: 'dashboard',
       component: 'MnemosyneDashboard',
-      route: '/mnemosyne'
+      zone: 'content',
+      title: 'Mnemosyne Dashboard'
     });
 
     // Register graph visualization component
-    this.context.services.ui.registerComponent({
+    this.context.ui.registerComponent({
       id: 'mnemosyne-graph',
-      name: 'Knowledge Graph',
-      type: 'visualization',
       component: 'KnowledgeGraphVisualization',
-      route: '/mnemosyne/graph'
+      zone: 'content',
+      title: 'Knowledge Graph'
     });
 
     // Register search interface component
-    this.context.services.ui.registerComponent({
+    this.context.ui.registerComponent({
       id: 'mnemosyne-search',
-      name: 'Knowledge Search',
-      type: 'search',
       component: 'SearchInterface',
-      route: '/mnemosyne/search'
+      zone: 'widget',
+      title: 'Knowledge Search'
+    });
+    
+    // Register routes
+    this.context.ui.registerRoute({
+      path: '/mnemosyne',
+      component: 'MnemosyneDashboard'
+    });
+    
+    this.context.ui.registerRoute({
+      path: '/mnemosyne/graph',
+      component: 'KnowledgeGraphVisualization'
+    });
+    
+    this.context.ui.registerRoute({
+      path: '/mnemosyne/search',
+      component: 'SearchInterface'
     });
   }
 
@@ -229,13 +245,14 @@ export class MnemosynePlugin implements PluginLifecycle {
    * Unregister UI components
    */
   private unregisterUIComponents(): void {
-    if (!this.context?.services.ui) {
+    if (!this.context?.ui) {
       return;
     }
 
-    this.context.services.ui.unregisterComponent('mnemosyne-dashboard');
-    this.context.services.ui.unregisterComponent('mnemosyne-graph');
-    this.context.services.ui.unregisterComponent('mnemosyne-search');
+    // TODO: Implement component unregistration when available in UIService
+    // this.context.ui.unregisterComponent('mnemosyne-dashboard');
+    // this.context.ui.unregisterComponent('mnemosyne-graph');
+    // this.context.ui.unregisterComponent('mnemosyne-search');
   }
 
   /**
@@ -248,7 +265,7 @@ export class MnemosynePlugin implements PluginLifecycle {
 
     try {
       // Get Alexandria's Express app instance
-      const app = this.context.services?.app;
+      const app = (this.context as any).app || (this.context as any).services?.app;
       if (!app) {
         this.logger?.warn('Express app not available, skipping API registration');
         return;
@@ -269,7 +286,7 @@ export class MnemosynePlugin implements PluginLifecycle {
 
       try {
         // Try to register existing API if it exists
-        registerMnemosyneAPI(app, mnemosyneContext, '/api/mnemosyne/legacy', securityOptions);
+        registerMnemosyneAPI(app, '/api/mnemosyne/legacy');
       } catch (error) {
         this.logger?.debug('Legacy API registration skipped (not available)');
       }

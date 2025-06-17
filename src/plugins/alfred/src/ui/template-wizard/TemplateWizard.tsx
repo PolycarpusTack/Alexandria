@@ -37,6 +37,7 @@ import {
   Loader2
 } from 'lucide-react';
 
+import { clientLogger } from '@/utils/client-logger';
 export interface TemplateWizardProps {
   templates: TemplateManifest[];
   projectPath?: string;
@@ -117,7 +118,7 @@ export const TemplateWizard: React.FC<TemplateWizardProps> = ({
         aiSuggestions: mockSuggestions
       }));
     } catch (error) {
-      console.warn('Failed to load AI suggestions:', error);
+      clientLogger.warn('Failed to load AI suggestions:', error);
     }
   };
 
@@ -222,7 +223,7 @@ export const TemplateWizard: React.FC<TemplateWizardProps> = ({
         }));
       }
     } catch (error) {
-      console.error('Template generation failed:', error);
+      clientLogger.error('Template generation failed:', error);
       setState((prev) => ({
         ...prev,
         generationError: error as Error,

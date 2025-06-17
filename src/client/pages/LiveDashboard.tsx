@@ -35,6 +35,7 @@ import {
 import { formatDistanceToNow } from 'date-fns';
 import { SimpleChart } from '../components/SimpleChart';
 
+import { clientLogger } from '../utils/client-logger';
 interface SystemMetrics {
   cpu: number;
   memory: {
@@ -115,11 +116,11 @@ const LiveDashboard: React.FC = () => {
         setSystemMetrics(data);
       } else {
         // If API doesn't exist yet, show error
-        console.warn('System metrics API not available');
+        clientLogger.warn('System metrics API not available');
         setSystemMetrics(null);
       }
     } catch (error) {
-      console.error('Failed to fetch system metrics:', error);
+      clientLogger.error('Failed to fetch system metrics:', error);
       setSystemMetrics(null);
     }
   };
@@ -132,11 +133,11 @@ const LiveDashboard: React.FC = () => {
         const data = await response.json();
         setPlugins(data);
       } else {
-        console.warn('Plugins API not available');
+        clientLogger.warn('Plugins API not available');
         setPlugins([]);
       }
     } catch (error) {
-      console.error('Failed to fetch plugins:', error);
+      clientLogger.error('Failed to fetch plugins:', error);
       setPlugins([]);
     }
   };
@@ -149,11 +150,11 @@ const LiveDashboard: React.FC = () => {
         const data = await response.json();
         setAIModels(data);
       } else {
-        console.warn('AI models API not available');
+        clientLogger.warn('AI models API not available');
         setAIModels([]);
       }
     } catch (error) {
-      console.error('Failed to fetch AI models:', error);
+      clientLogger.error('Failed to fetch AI models:', error);
       setAIModels([]);
     }
   };
@@ -166,11 +167,11 @@ const LiveDashboard: React.FC = () => {
         const data = await response.json();
         setActivities(data);
       } else {
-        console.warn('Activities API not available');
+        clientLogger.warn('Activities API not available');
         setActivities([]);
       }
     } catch (error) {
-      console.error('Failed to fetch activities:', error);
+      clientLogger.error('Failed to fetch activities:', error);
       setActivities([]);
     }
   };
@@ -183,10 +184,10 @@ const LiveDashboard: React.FC = () => {
         const data = await response.json();
         setStats(data);
       } else {
-        console.warn('Stats API not available');
+        clientLogger.warn('Stats API not available');
       }
     } catch (error) {
-      console.error('Failed to fetch stats:', error);
+      clientLogger.error('Failed to fetch stats:', error);
     }
   };
 
@@ -198,11 +199,11 @@ const LiveDashboard: React.FC = () => {
         const data = await response.json();
         setChartData(data);
       } else {
-        console.warn('Chart data API not available');
+        clientLogger.warn('Chart data API not available');
         setChartData([]);
       }
     } catch (error) {
-      console.error('Failed to fetch chart data:', error);
+      clientLogger.error('Failed to fetch chart data:', error);
       setChartData([]);
     }
   };
@@ -221,7 +222,7 @@ const LiveDashboard: React.FC = () => {
         fetchChartData()
       ]);
     } catch (error) {
-      console.error('Failed to load dashboard data:', error);
+      clientLogger.error('Failed to load dashboard data:', error);
       toast({
         title: 'Error',
         description: 'Failed to load some dashboard data',

@@ -130,3 +130,4 @@ export interface UIShell {
     getComponentsByType: (type: UIComponent['type']) => UIComponent[];
     getComponentsByPosition: (position: UIComponent['position']) => UIComponent[];
 }
+//# sourceMappingURL=interfaces.d.ts.map

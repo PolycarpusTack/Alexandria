@@ -1,10 +1,14 @@
+import { createLogger } from '../../../../utils/logger';
+
+const logger = createLogger({ serviceName: 'export' });
+
 /**
  * Export utilities for analytics data
  */
 
 export function exportToCSV(data: any[], filename: string): void {
   if (!data || data.length === 0) {
-    console.warn('No data to export');
+    logger.warn('No data to export');
     return;
   }
 
@@ -54,7 +58,7 @@ export function exportToCSV(data: any[], filename: string): void {
 
 export function exportToJSON(data: any, filename: string): void {
   if (!data) {
-    console.warn('No data to export');
+    logger.warn('No data to export');
     return;
   }
 
@@ -80,7 +84,7 @@ export function exportToJSON(data: any, filename: string): void {
 
 export function exportToExcel(data: any[], sheetName: string, filename: string): void {
   // This would require a library like xlsx
-  console.warn('Excel export not implemented. Use CSV export instead.');
+  logger.warn('Excel export not implemented. Use CSV export instead.');
   exportToCSV(data, filename);
 }
 

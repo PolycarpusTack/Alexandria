@@ -81,6 +81,14 @@ export interface AuthenticationService {
      * Compare a password with a hash
      */
     comparePassword(password: string, hash: string): Promise<boolean>;
+    /**
+     * Destroy the authentication service and clean up resources
+     */
+    destroy?(): void;
+    /**
+     * Check if the service is properly initialized
+     */
+    isServiceInitialized?(): boolean;
 }
 /**
  * Permission check result
@@ -358,3 +366,4 @@ export interface SecurityService {
      */
     initialize(): Promise<void>;
 }
+//# sourceMappingURL=interfaces.d.ts.map

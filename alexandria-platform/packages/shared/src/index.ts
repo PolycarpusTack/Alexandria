@@ -131,6 +131,59 @@ export interface ThemeConfig {
   typography: Record<string, any>;
 }
 
+// Base Classes and Utilities
+export abstract class BasePluginService {
+  protected logger: Logger;
+  protected eventBus: EventBus;
+  
+  constructor(logger: Logger, eventBus: EventBus) {
+    this.logger = logger;
+    this.eventBus = eventBus;
+  }
+  
+  abstract getHealth(): Promise<PluginHealth>;
+}
+
+export interface PluginHealth {
+  status: 'healthy' | 'degraded' | 'unhealthy';
+  message?: string;
+  details?: Record<string, any>;
+  timestamp: Date;
+}
+
+export class BaseError extends Error {
+  public readonly code: string;
+  public readonly statusCode: number;
+  public readonly context?: any;
+  
+  constructor(message: string, code: string, statusCode: number = 500, context?: any) {
+    super(message);
+    this.code = code;
+    this.statusCode = statusCode;
+    this.context = context;
+    this.name = this.constructor.name;
+  }
+}
+
+export const idUtils = {
+  generate: (): string => {
+    return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  },
+  isValid: (id: string): boolean => {
+    return /^\d{13}-[a-z0-9]{9}$/.test(id);
+  }
+};
+
+export function createErrorContext(error: any, context?: any): any {
+  return {
+    message: error.message || 'Unknown error',
+    code: error.code || 'UNKNOWN',
+    stack: error.stack,
+    timestamp: new Date().toISOString(),
+    ...context
+  };
+}
+
 // Export all types
 export * from './types/plugin';
 export * from './types/data';

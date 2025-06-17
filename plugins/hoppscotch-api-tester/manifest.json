@@ -1,0 +1,55 @@
+{
+  "id": "hoppscotch-api-tester",
+  "name": "Hoppscotch API Tester",
+  "version": "1.0.0",
+  "description": "Professional API development and testing suite with AI-powered insights, supporting HTTP, WebSocket, GraphQL, and more",
+  "author": {
+    "name": "Alexandria Developer",
+    "email": "dev@alexandria.platform",
+    "url": "https://alexandria.platform"
+  },
+  "category": "analysis",
+  "keywords": ["api", "testing", "http", "rest", "graphql", "websocket", "development", "ai"],
+  "icon": "assets/icons/hoppscotch-icon.svg",
+  "color": "#00d89e",
+  "permissions": [
+    "network:*",
+    "filesystem:read",
+    "filesystem:write",
+    "ai:inference",
+    "clipboard:read",
+    "clipboard:write"
+  ],
+  "main": "index.js",
+  "ui": {
+    "panels": ["main", "sidebar", "statusbar"],
+    "commands": [
+      {
+        "id": "hoppscotch.newRequest",
+        "title": "New API Request",
+        "shortcut": "cmd+shift+n"
+      },
+      {
+        "id": "hoppscotch.importCurl",
+        "title": "Import cURL Command",
+        "shortcut": "cmd+shift+i"
+      },
+      {
+        "id": "hoppscotch.generateCode",
+        "title": "Generate Code Snippet",
+        "shortcut": "cmd+shift+g"
+      },
+      {
+        "id": "hoppscotch.aiAssist",
+        "title": "AI Request Assistant",
+        "shortcut": "cmd+shift+a"
+      }
+    ]
+  },
+  "dependencies": {
+    "alexandria-sdk": "^2.0.0"
+  },
+  "engines": {
+    "alexandria": ">=2.0.0"
+  }
+}

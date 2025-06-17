@@ -10,6 +10,10 @@ import {
   ProjectContext
 } from '../../interfaces';
 
+
+import { createLogger } from '../../../../../utils/logger';
+
+const logger = createLogger({ serviceName: 'template-engine' });
 export interface TemplateEngineConfig {
   securityEnabled?: boolean;
   maxFileSize?: number;
@@ -250,7 +254,7 @@ export class TemplateEngine {
           const argValues = this.parseHelperArgs(args, variables);
           return helper(...argValues);
         } catch (error) {
-          console.warn(`Helper ${helperName} failed:`, error);
+          logger.warn(`Helper ${helperName} failed:`, error);
           return match;
         }
       }
@@ -332,7 +336,7 @@ export class TemplateEngine {
         action: fileSpec.action || 'create'
       };
     } catch (error) {
-      console.warn('Failed to generate file from spec:', error);
+      logger.warn('Failed to generate file from spec:', error);
       return null;
     }
   }

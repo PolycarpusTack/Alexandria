@@ -171,3 +171,4 @@ export interface EventBus {
      */
     destroy(): void;
 }
+//# sourceMappingURL=interfaces.d.ts.map

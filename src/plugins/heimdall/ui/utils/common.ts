@@ -6,6 +6,7 @@
 import { HeimdallLogEntry, LogLevel } from '../../src/interfaces';
 import { toast } from '@/client/components/ui/use-toast';
 
+import { clientLogger } from '@/utils/client-logger';
 // ============= Date and Time Utilities =============
 
 export const formatTimestamp = (timestamp: bigint | string | Date): string => {
@@ -123,7 +124,7 @@ export const handleApiError = (error: unknown, context?: string): void => {
   const message = error instanceof Error ? error.message : 'Unknown error occurred';
   const title = context ? `${context} Failed` : 'Operation Failed';
 
-  console.error('API Error:', { context, error });
+  clientLogger.error('API Error:', { context, error });
 
   toast({
     title,
@@ -261,7 +262,7 @@ export const saveToLocalStorage = (key: string, value: any): void => {
   try {
     localStorage.setItem(`heimdall_${key}`, JSON.stringify(value));
   } catch (error) {
-    console.warn('Failed to save to localStorage:', error);
+    clientLogger.warn('Failed to save to localStorage:', error);
   }
 };
 
@@ -270,7 +271,7 @@ export const loadFromLocalStorage = <T>(key: string, defaultValue: T): T => {
     const stored = localStorage.getItem(`heimdall_${key}`);
     return stored ? JSON.parse(stored) : defaultValue;
   } catch (error) {
-    console.warn('Failed to load from localStorage:', error);
+    clientLogger.warn('Failed to load from localStorage:', error);
     return defaultValue;
   }
 };
@@ -279,7 +280,7 @@ export const removeFromLocalStorage = (key: string): void => {
   try {
     localStorage.removeItem(`heimdall_${key}`);
   } catch (error) {
-    console.warn('Failed to remove from localStorage:', error);
+    clientLogger.warn('Failed to remove from localStorage:', error);
   }
 };
 
@@ -290,7 +291,7 @@ export const measurePerformance = <T>(name: string, fn: () => T): T => {
   const result = fn();
   const end = performance.now();
 
-  console.debug(`Performance: ${name} took ${(end - start).toFixed(2)}ms`);
+  clientLogger.debug(`Performance: ${name} took ${(end - start).toFixed(2)}ms`);
   return result;
 };
 

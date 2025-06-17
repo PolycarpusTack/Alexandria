@@ -232,7 +232,7 @@ export const TemplateWizard: React.FC<TemplateWizardProps> = ({
           generatePreview={generatePreview}
           isProcessing={isProcessing}
           projectContext={projectContext}
-          theme={theme}
+          // theme prop removed for compatibility
         />
       </div>
 
@@ -547,8 +547,7 @@ const PreviewAndGenerate: React.FC<any> = ({
               <CodeBlock
                 code={previewContent}
                 language={selectedTemplate.language}
-                filename={`preview.${getFileExtension(selectedTemplate.language)}`
-                theme={theme}
+                filename={`preview.${getFileExtension(selectedTemplate.language)}`}
               />
             </div>
           ) : (
@@ -585,3 +584,5 @@ function getFileExtension(language: string): string {
   };
   return extensions[language.toLowerCase()] || 'txt';
 }
+
+export default TemplateWizard;

@@ -103,13 +103,13 @@ export interface TemplateVariable {
   type: 'string' | 'number' | 'boolean' | 'array' | 'object';
   description: string;
   required: boolean;
-  default?: any;
+  default?: string | number | boolean | string[] | Record<string, unknown>;
   validation?: string; // regex or validation rule
 }
 
 export interface TemplateExample {
   name: string;
-  variables: Record<string, any>;
+  variables: Record<string, string | number | boolean | string[] | Record<string, unknown>>;
   output: string;
 }
 
@@ -117,8 +117,8 @@ export interface CodeGenerationRequest {
   templateId?: string;
   prompt: string;
   language?: string;
-  context?: string | Record<string, any>;
-  variables?: Record<string, any>;
+  context?: string | Record<string, unknown>;
+  variables?: Record<string, string | number | boolean | string[] | Record<string, unknown>>;
   temperature?: number;
   maxTokens?: number;
   sessionId?: string;
@@ -195,7 +195,7 @@ export interface GenerateCodeRequest {
 export interface AlfredEvent {
   type: string;
   timestamp: Date;
-  data: any;
+  data: Record<string, unknown>;
 }
 
 export interface ProjectAnalyzedEvent extends AlfredEvent {
@@ -244,7 +244,7 @@ export interface StreamChunk {
     tokenCount?: number;
     provider?: string;
     model?: string;
-    [key: string]: any;
+    [key: string]: unknown;
   };
 }
 
@@ -307,19 +307,19 @@ export interface CompletionOptions {
 }
 
 export interface TemplateEngine {
-  generateTemplate?(request: any): Promise<any>;
+  generateTemplate?(request: CodeGenerationRequest): Promise<ProcessedTemplate>;
 }
 
 // Enhanced AI Provider Interface
 export interface AIProvider {
-  streamChat(messages: ChatMessage[], options?: any): AsyncIterableIterator<StreamChunk>;
-  generateCode(prompt: string, options?: any): Promise<CodeGenerationResponse>;
+  streamChat(messages: ChatMessage[], options?: CompletionOptions): AsyncIterableIterator<StreamChunk>;
+  generateCode(prompt: string, options?: CompletionOptions): Promise<CodeGenerationResponse>;
   getCodeSuggestions(
     code: string, 
     cursorPosition: { line: number; column: number }, 
-    options?: any
+    options?: CompletionOptions
   ): Promise<Array<{ suggestion: string; confidence: number; type: string }>>;
-  continueConversation(sessionId: string, message: string, options?: any): Promise<{ response: string; metadata: any }>;
+  continueConversation(sessionId: string, message: string, options?: CompletionOptions): Promise<{ response: string; metadata: Record<string, unknown> }>;
   healthCheck(): Promise<void>;
 }
 
@@ -422,7 +422,7 @@ export interface CodeSuggestion {
 export interface UseAlfredServiceReturn {
   sendMessage: (content: string) => Promise<void>;
   sendMessageStream: (content: string) => AsyncGenerator<StreamChunk>;
-  generateCode: (prompt: string, options?: any) => Promise<CodeGenerationResponse>;
+  generateCode: (prompt: string, options?: CompletionOptions) => Promise<CodeGenerationResponse>;
   getSuggestions: (code: string, cursor: { line: number; column: number }) => Promise<CodeSuggestion[]>;
   isStreaming: boolean;
   isLoading: boolean;
@@ -444,12 +444,12 @@ export interface UseProjectContextReturn {
 export interface UseTemplateEngineReturn {
   templates: CodeTemplate[];
   currentTemplate: CodeTemplate | null;
-  variables: Record<string, any>;
+  variables: Record<string, string | number | boolean | string[] | Record<string, unknown>>;
   preview: ProcessedTemplate | null;
   isGenerating: boolean;
   error: string | null;
   loadTemplate: (templateId: string) => Promise<void>;
-  updateVariable: (key: string, value: any) => void;
+  updateVariable: (key: string, value: string | number | boolean | string[] | Record<string, unknown>) => void;
   resetVariables: () => void;
   generatePreview: () => Promise<void>;
   generateFiles: (outputPath: string) => Promise<GenerationResult>;
@@ -470,7 +470,7 @@ export interface TemplateWizardProps {
   templateId?: string;
   onComplete: (result: GenerationResult) => void;
   onCancel: () => void;
-  initialValues?: Record<string, any>;
+  initialValues?: Record<string, string | number | boolean | string[] | Record<string, unknown>>;
   projectContext?: ProjectContext;
   readonly?: boolean;
   enablePreview?: boolean;
@@ -508,7 +508,7 @@ export interface AlfredContextValue {
   projectContext: ProjectContext | null;
   isLoading: boolean;
   error: string | null;
-  createSession: (options?: any) => Promise<ChatSession>;
+  createSession: (options?: CreateSessionRequest) => Promise<ChatSession>;
   switchSession: (sessionId: string) => Promise<void>;
   deleteSession: (sessionId: string) => Promise<void>;
   updateSession: (sessionId: string, updates: Partial<ChatSession>) => Promise<void>;
@@ -554,7 +554,7 @@ export class AlfredError extends Error {
   constructor(
     message: string,
     public code: string,
-    public context?: any
+    public context?: Record<string, unknown>
   ) {
     super(message);
     this.name = 'AlfredError';
@@ -562,19 +562,19 @@ export class AlfredError extends Error {
 }
 
 export class ProviderError extends AlfredError {
-  constructor(message: string, public provider: string, context?: any) {
+  constructor(message: string, public provider: string, context?: Record<string, unknown>) {
     super(message, 'PROVIDER_ERROR', { provider, ...context });
   }
 }
 
 export class TemplateError extends AlfredError {
-  constructor(message: string, public templateId?: string, context?: any) {
+  constructor(message: string, public templateId?: string, context?: Record<string, unknown>) {
     super(message, 'TEMPLATE_ERROR', { templateId, ...context });
   }
 }
 
 export class ValidationError extends AlfredError {
-  constructor(message: string, public field?: string, context?: any) {
+  constructor(message: string, public field?: string, context?: Record<string, unknown>) {
     super(message, 'VALIDATION_ERROR', { field, ...context });
   }
 }

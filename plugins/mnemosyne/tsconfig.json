@@ -9,21 +9,27 @@
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true,
+    "strictPropertyInitialization": false,
     "module": "ESNext",
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "noEmit": true,
+    "noEmit": false,
     "jsx": "react-jsx",
     "declaration": true,
     "declarationMap": true,
     "sourceMap": true,
     "outDir": "./dist",
     "rootDir": "./src",
+    "composite": false,
     "baseUrl": ".",
+    "allowImportingTsExtensions": false,
     "paths": {
       "@/*": ["./src/*"],
       "@alexandria/*": ["../../src/*"],
+      "@alexandria/shared/*": ["../../alexandria-platform/packages/shared/src/*"],
       "@ui/*": ["../../src/client/components/*"],
       "@core/*": ["../../src/core/*"],
       "@utils/*": ["../../src/utils/*"],
@@ -41,9 +47,7 @@
     ]
   },
   "include": [
-    "src/**/*",
-    "../../src/types/**/*",
-    "../../src/core/plugin-registry/interfaces.ts"
+    "src/**/*"
   ],
   "exclude": [
     "node_modules",
@@ -53,5 +57,9 @@
     "**/*.spec.ts",
     "**/*.spec.tsx"
   ],
-  "extends": "../../tsconfig.json"
+  "ts-node": {
+    "compilerOptions": {
+      "module": "commonjs"
+    }
+  }
 }

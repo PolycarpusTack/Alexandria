@@ -28,6 +28,22 @@ export interface ImportOptions {
   conflictStrategy?: 'keep-local' | 'keep-remote' | 'ai-merge';
 }
 
+export interface ImportStatistics {
+  totalImports: number;
+  bySource: Record<string, number>;
+  successRate: number;
+  averageDuration: number;
+  mostRecentImport: any;
+}
+
+export interface AIEnhancementOptions {
+  enabled?: boolean;
+  enrichMetadata?: boolean;
+  generateSummaries?: boolean;
+  extractEntities?: boolean;
+  detectLanguage?: boolean;
+}
+
 export interface ImportResult {
   success: boolean;
   imported: number;
@@ -36,6 +52,35 @@ export interface ImportResult {
   errors: ImportError[];
   provenance: ProvenanceNode[];
   report: ImportReport;
+}
+
+export interface ImportError {
+  type: string;
+  message: string;
+  source?: string;
+  documentId?: string;
+  error?: any;
+}
+
+export interface ProvenanceNode {
+  id: string;
+  source: string;
+  originalPath: string;
+  importedAt: Date;
+  importedBy: string;
+  transformations: string[];
+}
+
+export interface ImportReport {
+  summary: {
+    total: number;
+    imported: number;
+    failed: number;
+    skipped: number;
+  };
+  byType: Record<string, number>;
+  errors: ImportError[];
+  warnings: string[];
 }
 
 export class ImportEngine {
@@ -147,7 +192,7 @@ export class ImportEngine {
 
     return result;
   }
-}
+  
   /**
    * Get adapter for source type
    */
@@ -305,5 +350,33 @@ export class ImportEngine {
     if (url.includes('roamresearch.com')) return 'roam';
     if (url.includes('logseq.com')) return 'logseq';
     return 'markdown';
+  }
+  
+  private groupBySource(imports: any[]): Record<string, number> {
+    const grouped: Record<string, number> = {};
+    
+    for (const imp of imports) {
+      const source = imp.source || 'unknown';
+      grouped[source] = (grouped[source] || 0) + 1;
+    }
+    
+    return grouped;
+  }
+  
+  private calculateSuccessRate(imports: any[]): number {
+    if (imports.length === 0) return 0;
+    
+    const successful = imports.filter(imp => imp.status === 'success').length;
+    return (successful / imports.length) * 100;
+  }
+  
+  private calculateAverageDuration(imports: any[]): number {
+    if (imports.length === 0) return 0;
+    
+    const totalDuration = imports.reduce((sum, imp) => {
+      return sum + (imp.duration || 0);
+    }, 0);
+    
+    return totalDuration / imports.length;
   }
 }

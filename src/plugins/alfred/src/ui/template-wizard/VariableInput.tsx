@@ -35,6 +35,7 @@ import {
   Copy
 } from 'lucide-react';
 
+import { clientLogger } from '@/utils/client-logger';
 export interface VariableInputProps {
   variable: VariableSchema;
   value: any;
@@ -251,7 +252,7 @@ export const VariableInput: React.FC<VariableInputProps> = ({
     try {
       await navigator.clipboard.writeText(text);
     } catch (error) {
-      console.warn('Failed to copy to clipboard:', error);
+      clientLogger.warn('Failed to copy to clipboard:', error);
     }
   };
 

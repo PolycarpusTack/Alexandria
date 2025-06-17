@@ -7,6 +7,57 @@
 import { UIComponent } from '../system/interfaces';
 import { EventBus } from '../event-bus/interfaces';
 /**
+ * Logger service interface for plugin context
+ */
+interface LoggerService {
+    debug(message: string, context?: Record<string, unknown>): void;
+    info(message: string, context?: Record<string, unknown>): void;
+    warn(message: string, context?: Record<string, unknown>): void;
+    error(message: string, context?: Record<string, unknown>): void;
+}
+/**
+ * Data service interface for plugin data persistence
+ */
+interface DataService {
+    get<T = unknown>(key: string): Promise<T | null>;
+    set<T = unknown>(key: string, value: T): Promise<void>;
+    delete(key: string): Promise<boolean>;
+    query<T = unknown>(query: string, params?: unknown[]): Promise<T[]>;
+}
+/**
+ * UI service interface for plugin component registration
+ */
+interface UIService {
+    registerComponent(component: UIComponent): void;
+    unregisterComponent(id: string): void;
+    getComponent(id: string): UIComponent | undefined;
+}
+/**
+ * Feature flag service interface for plugin feature toggles
+ */
+interface FeatureFlagService {
+    isEnabled(flag: string): boolean;
+    getFlags(): Record<string, boolean>;
+}
+/**
+ * Security service interface for plugin permission checking and encryption
+ */
+interface SecurityService {
+    checkPermission(permission: string, context?: Record<string, unknown>): boolean;
+    encryptData(data: string): string;
+    decryptData(encryptedData: string): string;
+}
+/**
+ * API service interface for plugin HTTP requests
+ */
+interface APIService {
+    request<T = unknown>(endpoint: string, options?: {
+        method?: string;
+        headers?: Record<string, string>;
+        body?: unknown;
+    }): Promise<T>;
+}
+/**
  * Plugin permissions
  */
 export type PluginPermission = 'file:read' | 'file:write' | 'network:http' | 'network:access' | 'network:external' | 'network:internal' | 'database:access' | 'database:read' | 'database:write' | 'database:delete' | 'database:schema' | 'event:emit' | 'event:subscribe' | 'event:publish' | 'event:list' | 'event:history' | 'llm:access' | 'ml:execute' | 'ml:train' | 'ml:manage' | 'code:generate' | 'code:analyze' | 'project:analyze' | 'project:read' | 'project:write' | 'project:create' | 'project:delete' | 'template:manage' | 'template:create' | 'template:read' | 'template:write' | 'template:delete' | 'analytics:read' | 'analytics:write' | 'analytics:export' | 'analytics:manage' | 'crypto:access' | 'buffer:access' | 'system:info' | 'system:shutdown' | 'plugin:communicate' | 'security:bypass';
@@ -99,7 +150,13 @@ export interface PluginManifest {
     /**
      * Plugin settings schema
      */
-    settingsSchema?: Record<string, any>;
+    settingsSchema?: Record<string, {
+        type: string;
+        description?: string;
+        default?: unknown;
+        required?: boolean;
+        enum?: unknown[];
+    }>;
     /**
      * Plugin homepage URL
      */
@@ -136,7 +193,7 @@ export interface Plugin {
     /**
      * Plugin instance
      */
-    instance?: any;
+    instance?: PluginLifecycle;
     /**
      * Installation timestamp
      */
@@ -152,7 +209,7 @@ export interface Plugin {
     /**
      * Plugin settings
      */
-    settings?: Record<string, any>;
+    settings?: Record<string, unknown>;
 }
 /**
  * Plugin interface for sandboxing
@@ -207,15 +264,15 @@ export interface PluginAPI {
     /**
      * Get plugin settings
      */
-    getSettings<T extends Record<string, any>>(): T;
+    getSettings<T extends Record<string, unknown>>(): T;
     /**
      * Update plugin settings
      */
-    updateSettings(settings: Record<string, any>): Promise<void>;
+    updateSettings(settings: Record<string, unknown>): Promise<void>;
     /**
      * Register a route handler
      */
-    registerRoute(path: string, handler: any): void;
+    registerRoute(path: string, handler: (req: unknown, res: unknown) => void | Promise<void>): void;
     /**
      * Get information about the platform
      */
@@ -239,7 +296,7 @@ export interface PluginAPI {
     /**
      * Log a message to the platform's logging system
      */
-    log(level: 'debug' | 'info' | 'warn' | 'error', message: string, context?: Record<string, any>): void;
+    log(level: 'debug' | 'info' | 'warn' | 'error', message: string, context?: Record<string, unknown>): void;
 }
 /**
  * Plugin Registry interface
@@ -315,7 +372,7 @@ export interface PluginContext {
         /**
          * Logger service
          */
-        logger: any;
+        logger: LoggerService;
         /**
          * Event bus service
          */
@@ -323,26 +380,28 @@ export interface PluginContext {
         /**
          * Data service
          */
-        data: any;
+        data: DataService;
         /**
          * UI registry
          */
-        ui: any;
+        ui: UIService;
         /**
          * Feature flag service
          */
-        featureFlags: any;
+        featureFlags: FeatureFlagService;
         /**
          * Security service
          */
-        security?: any;
+        security?: SecurityService;
         /**
          * API service
          */
-        api?: any;
+        api?: APIService;
     };
     /**
      * Plugin manifest
      */
     manifest: PluginManifest;
 }
+export {};
+//# sourceMappingURL=interfaces.d.ts.map

@@ -60,5 +60,20 @@ export {
   AlertDialogCancel
 } from './alert-dialog';
 
+// Select components
+export {
+  Select,
+  SelectGroup,
+  SelectValue,
+  SelectTrigger,
+  SelectContent,
+  SelectLabel,
+  SelectItem,
+  SelectSeparator
+} from './select';
+
+// Label component
+export { Label } from './label';
+
 // Context
 export { UIContext, UIContextProvider, useUI, UIRegistryImpl } from '../../context/ui-context';

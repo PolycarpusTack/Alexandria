@@ -148,7 +148,7 @@ export const patterns = {
 
 // Validation middleware factory
 export const createValidator = (schema: Joi.ObjectSchema) => {
-  return (data: any) => {
+  return (data: unknown) => {
     const { error, value } = schema.validate(data, {
       abortEarly: false,
       stripUnknown: true,
@@ -174,10 +174,10 @@ export class ValidationError extends Error {
   public errors: Array<{
     field: string;
     message: string;
-    value?: any;
+    value?: unknown;
   }>;
 
-  constructor(message: string, errors: Array<{ field: string; message: string; value?: any }>) {
+  constructor(message: string, errors: Array<{ field: string; message: string; value?: unknown }>) {
     super(message);
     this.name = 'ValidationError';
     this.errors = errors;

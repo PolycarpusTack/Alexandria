@@ -227,6 +227,41 @@ export class SecurityServiceImpl implements SecurityService {
       status: 'success'
     });
   }
+
+  /**
+   * Destroy the security service and clean up all resources
+   * CRITICAL: This prevents memory leaks from authentication service intervals
+   */
+  async destroy(): Promise<void> {
+    this.logger.info('Destroying security service', {
+      component: 'SecurityService'
+    });
+
+    try {
+      // Destroy authentication service (contains interval cleanup)
+      if (this.authentication && 'destroy' in this.authentication) {
+        (this.authentication as JwtAuthenticationService).destroy();
+      }
+
+      // Future: Add cleanup for other services as needed
+      // this.authorization.destroy();
+      // this.encryption.destroy();
+      // this.audit.destroy();
+      // this.validation.destroy();
+
+      this.isInitialized = false;
+
+      this.logger.info('Security service destroyed successfully', {
+        component: 'SecurityService'
+      });
+    } catch (error) {
+      this.logger.error('Error destroying security service', {
+        component: 'SecurityService',
+        error: error instanceof Error ? error.message : String(error)
+      });
+      throw error;
+    }
+  }
 }
 
 // Export alias for backwards compatibility

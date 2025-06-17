@@ -1,9 +1,10 @@
 import { Router } from 'express';
+import type { Router as ExpressRouter } from 'express';
 import { DatabaseKnowledgeNodeService } from '../../services/DatabaseKnowledgeNodeService';
 import { DatabaseAdapterFactory } from '../../services/DatabaseAdapter';
 import { validateRequest, nodeValidationSchemas, sanitizeString, sanitizeArray, sanitizeHtml } from '../../middleware/validation';
 
-const router = Router();
+const router: ExpressRouter = Router();
 
 // Get database connection from request context (will be set by middleware)
 let nodeService: DatabaseKnowledgeNodeService | null = null;

@@ -557,13 +557,37 @@ async function start() {
       : undefined;
 
     // Initialize core services
+    // Critical: Ensure JWT secret is properly set
+    const jwtSecret = process.env.JWT_SECRET || (
+      process.env.NODE_ENV === 'development' 
+        ? 'alexandria-dev-secret-CHANGE-IN-PRODUCTION-' + crypto.randomBytes(16).toString('hex')
+        : undefined
+    );
+    
+    // Critical: Ensure encryption key is properly set
+    const encryptionKey = process.env.ENCRYPTION_KEY || (
+      process.env.NODE_ENV === 'development'
+        ? 'alexandria-dev-key-CHANGE-IN-PROD-' + crypto.randomBytes(16).toString('hex')
+        : undefined
+    );
+
+    // Double-check for production
+    if (process.env.NODE_ENV === 'production') {
+      if (!process.env.JWT_SECRET) {
+        throw new Error('JWT_SECRET environment variable must be set in production');
+      }
+      if (!process.env.ENCRYPTION_KEY) {
+        throw new Error('ENCRYPTION_KEY environment variable must be set in production');
+      }
+    }
+
     coreServices = await initializeCore({
       logLevel: (process.env.LOG_LEVEL as 'debug' | 'info' | 'warn' | 'error') || 'info',
       environment: (process.env.NODE_ENV as 'development' | 'production' | 'test') || 'development',
       pluginsDir: process.env.PLUGINS_DIR || path.join(__dirname, 'plugins'),
       platformVersion: process.env.PLATFORM_VERSION || '0.1.0',
-      jwtSecret: process.env.JWT_SECRET,
-      encryptionKey: process.env.ENCRYPTION_KEY,
+      jwtSecret,
+      encryptionKey,
       dataServiceType: usePostgres ? 'postgres' : 'in-memory',
       postgresOptions
     });

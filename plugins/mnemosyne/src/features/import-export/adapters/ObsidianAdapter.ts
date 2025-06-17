@@ -5,7 +5,11 @@ import {
   RawDocument,
   RawRelationship,
   RawAttachment,
-  DocumentPreview
+  DocumentPreview,
+  ImportWarning,
+  FolderStructure,
+  LinkGraph,
+  TransformationPreview
 } from './base/ImportAdapter';
 import { 
   MnemosyneCore,
@@ -162,7 +166,7 @@ export default class ObsidianAdapter extends ImportAdapter {
     
     return documents;
   }
-}
+  
   /**
    * Map relationships for knowledge graph
    */
@@ -428,5 +432,305 @@ export default class ObsidianAdapter extends ImportAdapter {
   private isAttachment(ext: string): boolean {
     const attachmentExts = ['.png', '.jpg', '.jpeg', '.gif', '.pdf', '.mp3', '.mp4'];
     return attachmentExts.includes(ext);
+  }
+  
+  // Additional missing methods
+  
+  private async scanDirectory(
+    dirPath: string, 
+    callback: (filePath: string) => Promise<void>
+  ): Promise<void> {
+    const entries = await fs.readdir(dirPath, { withFileTypes: true });
+    
+    for (const entry of entries) {
+      const fullPath = path.join(dirPath, entry.name);
+      
+      if (entry.isDirectory() && !entry.name.startsWith('.')) {
+        await this.scanDirectory(fullPath, callback);
+      } else if (entry.isFile()) {
+        await callback(fullPath);
+      }
+    }
+  }
+  
+  private async loadVaultConfig(vaultPath: string): Promise<ObsidianConfig> {
+    try {
+      const configPath = path.join(vaultPath, '.obsidian', 'app.json');
+      const configContent = await fs.readFile(configPath, 'utf-8');
+      return JSON.parse(configContent);
+    } catch {
+      return {}; // Return empty config if not found
+    }
+  }
+  
+  private parseNote(note: ObsidianNote): { 
+    document: RawDocument; 
+    relationships: RawRelationship[] 
+  } {
+    const document: RawDocument = {
+      id: this.generateDocumentId('obsidian', note.path),
+      path: note.path,
+      title: this.extractTitle(note),
+      content: note.content,
+      frontmatter: note.frontmatter,
+      tags: note.tags,
+      created: note.created,
+      modified: note.modified,
+      metadata: {
+        links: note.links,
+        embeds: note.embeds
+      }
+    };
+    
+    const relationships: RawRelationship[] = note.links.map(link => ({
+      source: note.path,
+      target: link,
+      type: 'links-to',
+      metadata: { linkType: 'wikilink' }
+    }));
+    
+    return { document, relationships };
+  }
+  
+  private async parseAttachment(
+    attachment: ObsidianAttachment
+  ): Promise<RawAttachment> {
+    return {
+      id: this.generateDocumentId('obsidian', attachment.path),
+      path: attachment.path,
+      name: path.basename(attachment.path),
+      type: attachment.type,
+      size: attachment.size
+    };
+  }
+  
+  private async loadAttachment(
+    filePath: string,
+    vaultPath: string
+  ): Promise<ObsidianAttachment> {
+    const stats = await fs.stat(filePath);
+    return {
+      path: path.relative(vaultPath, filePath),
+      type: path.extname(filePath),
+      size: stats.size
+    };
+  }
+  
+  private async analyzeFolderStructure(
+    vaultPath: string
+  ): Promise<FolderStructure[]> {
+    const structure: FolderStructure[] = [];
+    
+    const analyze = async (dirPath: string): Promise<FolderStructure> => {
+      const name = path.basename(dirPath);
+      const folder: FolderStructure = {
+        path: path.relative(vaultPath, dirPath),
+        name,
+        children: [],
+        documentCount: 0
+      };
+      
+      const entries = await fs.readdir(dirPath, { withFileTypes: true });
+      
+      for (const entry of entries) {
+        const fullPath = path.join(dirPath, entry.name);
+        
+        if (entry.isDirectory() && !entry.name.startsWith('.')) {
+          const child = await analyze(fullPath);
+          folder.children.push(child);
+          folder.documentCount += child.documentCount;
+        } else if (entry.isFile() && entry.name.endsWith('.md')) {
+          folder.documentCount++;
+        }
+      }
+      
+      return folder;
+    };
+    
+    const rootEntries = await fs.readdir(vaultPath, { withFileTypes: true });
+    for (const entry of rootEntries) {
+      if (entry.isDirectory() && !entry.name.startsWith('.')) {
+        const folderStructure = await analyze(path.join(vaultPath, entry.name));
+        structure.push(folderStructure);
+      }
+    }
+    
+    return structure;
+  }
+  
+  private extractAllTags(notes: ObsidianNote[]): string[] {
+    const allTags = new Set<string>();
+    notes.forEach(note => {
+      note.tags.forEach(tag => allTags.add(tag));
+    });
+    return Array.from(allTags).sort();
+  }
+  
+  private buildLinkGraph(notes: ObsidianNote[]): LinkGraph {
+    const nodes: string[] = notes.map(n => n.path);
+    const edges: Array<{ source: string; target: string; count: number }> = [];
+    const edgeMap = new Map<string, number>();
+    
+    notes.forEach(note => {
+      note.links.forEach(link => {
+        const key = `${note.path}::${link}`;
+        const count = (edgeMap.get(key) || 0) + 1;
+        edgeMap.set(key, count);
+      });
+    });
+    
+    edgeMap.forEach((count, key) => {
+      const [source, target] = key.split('::');
+      edges.push({ source, target, count });
+    });
+    
+    return { nodes, edges };
+  }
+  
+  private getTransformationPreviews(): TransformationPreview[] {
+    return [
+      {
+        type: 'wikilinks',
+        description: 'Convert Obsidian [[wikilinks]] to Mnemosyne links',
+        example: {
+          before: '[[My Note|Display Text]]',
+          after: '[Display Text](mnemosyne://obsidian-my-note-1234567890)'
+        }
+      },
+      {
+        type: 'embeds',
+        description: 'Convert Obsidian embeds to Mnemosyne embeds',
+        example: {
+          before: '![[image.png]]',
+          after: '![image.png](mnemosyne://embed/obsidian-image-png-1234567890)'
+        }
+      },
+      {
+        type: 'callouts',
+        description: 'Convert Obsidian callouts to admonitions',
+        example: {
+          before: '> [!note] Title',
+          after: '!!! note "Title"'
+        }
+      }
+    ];
+  }
+  
+  private async detectWarnings(vault: ObsidianVault): Promise<ImportWarning[]> {
+    const warnings: ImportWarning[] = [];
+    
+    // Check for broken links
+    const allPaths = new Set(vault.notes.map(n => n.path));
+    const brokenLinks: string[] = [];
+    
+    vault.notes.forEach(note => {
+      note.links.forEach(link => {
+        if (!allPaths.has(link) && !allPaths.has(link + '.md')) {
+          brokenLinks.push(`${note.path} → ${link}`);
+        }
+      });
+    });
+    
+    if (brokenLinks.length > 0) {
+      warnings.push({
+        type: 'broken-link',
+        message: `Found ${brokenLinks.length} broken internal links`,
+        affected: brokenLinks.slice(0, 10), // Show first 10
+        severity: 'medium'
+      });
+    }
+    
+    // Check for missing attachments
+    const attachmentPaths = new Set(vault.attachments.map(a => a.path));
+    const missingAttachments: string[] = [];
+    
+    vault.notes.forEach(note => {
+      note.embeds.forEach(embed => {
+        if (!attachmentPaths.has(embed)) {
+          missingAttachments.push(`${note.path} → ${embed}`);
+        }
+      });
+    });
+    
+    if (missingAttachments.length > 0) {
+      warnings.push({
+        type: 'missing-attachment',
+        message: `Found ${missingAttachments.length} missing attachments`,
+        affected: missingAttachments.slice(0, 10),
+        severity: 'high'
+      });
+    }
+    
+    return warnings;
+  }
+  
+  private estimateImportDuration(vault: ObsidianVault): number {
+    // Estimate based on content size and complexity
+    const baseTimePerNote = 50; // ms
+    const timePerLink = 10; // ms
+    const timePerAttachment = 100; // ms
+    
+    const noteTime = vault.notes.length * baseTimePerNote;
+    const linkTime = vault.notes.reduce((sum, n) => sum + n.links.length, 0) * timePerLink;
+    const attachmentTime = vault.attachments.length * timePerAttachment;
+    
+    return noteTime + linkTime + attachmentTime;
+  }
+  
+  private extractTitle(note: ObsidianNote): string {
+    // Try frontmatter title first
+    if (note.frontmatter?.title) {
+      return note.frontmatter.title;
+    }
+    
+    // Try first heading
+    const headingMatch = note.content.match(/^#\s+(.+)$/m);
+    if (headingMatch) {
+      return headingMatch[1];
+    }
+    
+    // Use filename without extension
+    return path.basename(note.path, '.md');
+  }
+  
+  private extractEmbeds(content: string): string[] {
+    const embeds: string[] = [];
+    const embedPattern = /!\[\[([^\]]+)\]\]/g;
+    let match;
+    
+    while ((match = embedPattern.exec(content)) !== null) {
+      embeds.push(match[1]);
+    }
+    
+    return embeds;
+  }
+  
+  private transformTags(content: string): string {
+    // Ensure tags have proper formatting
+    return content.replace(/#([a-zA-Z0-9_\-\/]+)/g, (match, tag) => {
+      // Normalize tag format
+      return `#${tag.toLowerCase().replace(/\s+/g, '-')}`;
+    });
+  }
+  
+  private extractLinks(content: string): string[] {
+    const links: string[] = [];
+    
+    // Extract wikilinks
+    const wikilinkPattern = /\[\[([^\]|]+)(\|[^\]]+)?\]\]/g;
+    let match;
+    while ((match = wikilinkPattern.exec(content)) !== null) {
+      links.push(match[1]);
+    }
+    
+    // Extract markdown links
+    const mdLinkPattern = /\[([^\]]+)\]\(([^)]+)\)/g;
+    while ((match = mdLinkPattern.exec(content)) !== null) {
+      if (!match[2].startsWith('http')) {
+        links.push(match[2]);
+      }
+    }
+    
+    return links;
   }
 }

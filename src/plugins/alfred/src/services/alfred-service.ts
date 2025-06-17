@@ -2,7 +2,6 @@
  * Main Alfred Service - Orchestrates AI chat functionality
  */
 
-import { EventEmitter } from 'events';
 import { Logger } from '../../../../utils/logger';
 import { DataService } from '../../../../core/data/interfaces';
 import { EventBus } from '../../../../core/event-bus/interfaces';
@@ -38,10 +37,8 @@ export interface AlfredServiceOptions {
   alfredPath?: string;
 }
 
-export class AlfredService extends EventEmitter implements AlfredServiceInterface {
-  private logger: Logger;
+export class AlfredService extends BasePluginService implements AlfredServiceInterface {
   private dataService: DataService;
-  private eventBus: EventBus;
   private aiService: AIService;
   private storageService: StorageService;
   private sessionRepository?: SessionRepository;
@@ -52,10 +49,8 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
   private alfredPath: string;
 
   constructor(options: AlfredServiceOptions) {
-    super();
-    this.logger = options.logger;
+    super(options.logger, options.eventBus);
     this.dataService = options.dataService;
-    this.eventBus = options.eventBus;
     this.aiService = options.aiService;
     this.storageService = options.storageService;
     this.sessionRepository = options.sessionRepository;
@@ -945,5 +940,24 @@ export class AlfredService extends EventEmitter implements AlfredServiceInterfac
     }
 
     return health;
+  }
+
+  // Required by BasePluginService
+  async getHealth(): Promise<PluginHealth> {
+    const healthCheck = await this.checkHealth();
+    
+    return {
+      status: healthCheck.status === 'healthy' ? 'healthy' : 
+              healthCheck.aiService || healthCheck.repository ? 'degraded' : 'unhealthy',
+      message: healthCheck.status === 'healthy' ? 
+               'Alfred service is operational' : 
+               'Alfred service has issues',
+      details: {
+        aiService: healthCheck.aiService,
+        repository: healthCheck.repository,
+        activeSessions: healthCheck.activeSessions
+      },
+      timestamp: new Date()
+    };
   }
 }

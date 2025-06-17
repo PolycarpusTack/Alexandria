@@ -25,6 +25,36 @@ export function getDatabaseConfig(): PostgresOptions {
     logger.warn('Using default database credentials - this is only acceptable for development');
   }
 
+  // Configure SSL based on environment
+  let sslConfig: boolean | { rejectUnauthorized: boolean; ca?: string } = false;
+  
+  if (process.env.DB_SSL === 'true') {
+    if (process.env.NODE_ENV === 'production') {
+      // In production, always validate certificates
+      sslConfig = {
+        rejectUnauthorized: true,
+        // Allow custom CA certificate for self-signed certs
+        ca: process.env.DB_SSL_CA || undefined
+      };
+      
+      // Warn if certificate validation is being bypassed
+      if (process.env.DB_SSL_REJECT_UNAUTHORIZED === 'false') {
+        logger.error('SECURITY WARNING: SSL certificate validation is disabled in production!');
+        throw new Error('SSL certificate validation cannot be disabled in production');
+      }
+    } else {
+      // In development, allow disabling certificate validation with explicit env var
+      sslConfig = {
+        rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED !== 'false',
+        ca: process.env.DB_SSL_CA || undefined
+      };
+      
+      if (process.env.DB_SSL_REJECT_UNAUTHORIZED === 'false') {
+        logger.warn('SSL certificate validation is disabled - this is only acceptable for development');
+      }
+    }
+  }
+
   const config: PostgresOptions = {
     host: process.env.DB_HOST || 'localhost',
     port: parseInt(process.env.DB_PORT || '5432', 10),
@@ -32,7 +62,7 @@ export function getDatabaseConfig(): PostgresOptions {
     user: process.env.DB_USER || (process.env.NODE_ENV !== 'production' ? 'alexandria' : ''),
     password:
       process.env.DB_PASSWORD || (process.env.NODE_ENV !== 'production' ? 'alexandria' : ''),
-    ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : false,
+    ssl: sslConfig,
     max: parseInt(process.env.DB_POOL_MAX || '10', 10),
     idleTimeoutMillis: parseInt(process.env.DB_IDLE_TIMEOUT || '30000', 10),
     connectionTimeoutMillis: parseInt(process.env.DB_CONNECTION_TIMEOUT || '2000', 10),

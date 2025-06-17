@@ -1,0 +1,660 @@
+openapi: 3.0.3
+info:
+  title: Mnemosyne Knowledge Management API
+  description: |
+    The Mnemosyne API provides comprehensive knowledge management capabilities including:
+    - Knowledge node creation and management
+    - Relationship mapping between nodes
+    - Advanced search functionality
+    - Graph visualization data
+    - Import/export capabilities
+    - Template management
+  version: 1.0.0
+  contact:
+    name: Alexandria Platform Team
+    email: support@alexandria.dev
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:3000/api/mnemosyne
+    description: Development server
+  - url: https://api.alexandria.dev/mnemosyne
+    description: Production server
+
+security:
+  - bearerAuth: []
+
+tags:
+  - name: Nodes
+    description: Knowledge node operations
+  - name: Relationships
+    description: Node relationship operations
+  - name: Search
+    description: Search and discovery operations
+  - name: Analytics
+    description: Analytics and statistics
+  - name: Import/Export
+    description: Data import and export operations
+
+paths:
+  /nodes:
+    get:
+      tags:
+        - Nodes
+      summary: List all nodes
+      description: Retrieve a paginated list of knowledge nodes with optional filtering
+      operationId: listNodes
+      parameters:
+        - name: type
+          in: query
+          description: Filter by node type
+          schema:
+            type: string
+            enum: [document, note, concept, reference, template]
+        - name: status
+          in: query
+          description: Filter by node status
+          schema:
+            type: string
+            enum: [active, archived, draft]
+        - name: tags
+          in: query
+          description: Filter by tags (comma-separated)
+          schema:
+            type: string
+        - name: limit
+          in: query
+          description: Number of items to return
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: offset
+          in: query
+          description: Number of items to skip
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Node'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    post:
+      tags:
+        - Nodes
+      summary: Create a new node
+      description: Create a new knowledge node
+      operationId: createNode
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateNodeInput'
+      responses:
+        '201':
+          description: Node created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Node'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /nodes/{nodeId}:
+    get:
+      tags:
+        - Nodes
+      summary: Get a node by ID
+      description: Retrieve a specific knowledge node by its ID
+      operationId: getNode
+      parameters:
+        - name: nodeId
+          in: path
+          required: true
+          description: The ID of the node
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Node'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    put:
+      tags:
+        - Nodes
+      summary: Update a node
+      description: Update an existing knowledge node
+      operationId: updateNode
+      parameters:
+        - name: nodeId
+          in: path
+          required: true
+          description: The ID of the node
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateNodeInput'
+      responses:
+        '200':
+          description: Node updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Node'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+    delete:
+      tags:
+        - Nodes
+      summary: Delete a node
+      description: Delete a knowledge node
+      operationId: deleteNode
+      parameters:
+        - name: nodeId
+          in: path
+          required: true
+          description: The ID of the node
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Node deleted successfully
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /nodes/search:
+    post:
+      tags:
+        - Search
+      summary: Search nodes
+      description: Search knowledge nodes with advanced filters
+      operationId: searchNodes
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SearchQuery'
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SearchResult'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalError'
+
+  /relationships:
+    get:
+      tags:
+        - Relationships
+      summary: List relationships
+      description: Get all relationships with optional filtering
+      operationId: listRelationships
+      parameters:
+        - name: nodeId
+          in: query
+          description: Filter by source or target node ID
+          schema:
+            type: string
+        - name: type
+          in: query
+          description: Filter by relationship type
+          schema:
+            type: string
+            enum: [links-to, references, contains, tagged-with, derived-from]
+        - name: direction
+          in: query
+          description: Direction of relationships (when nodeId is provided)
+          schema:
+            type: string
+            enum: [incoming, outgoing, both]
+            default: both
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Relationship'
+
+    post:
+      tags:
+        - Relationships
+      summary: Create relationship
+      description: Create a new relationship between nodes
+      operationId: createRelationship
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRelationshipInput'
+      responses:
+        '201':
+          description: Relationship created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/Relationship'
+
+  /analytics/stats:
+    get:
+      tags:
+        - Analytics
+      summary: Get system statistics
+      description: Retrieve overall system statistics
+      operationId: getStats
+      responses:
+        '200':
+          description: Statistics retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/SystemStats'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Node:
+      type: object
+      required:
+        - id
+        - type
+        - title
+        - created
+        - updated
+      properties:
+        id:
+          type: string
+          description: Unique identifier for the node
+        type:
+          type: string
+          enum: [document, note, concept, reference, template]
+          description: Type of the knowledge node
+        title:
+          type: string
+          description: Title of the node
+        content:
+          type: string
+          description: Content of the node (Markdown format)
+        tags:
+          type: array
+          items:
+            type: string
+          description: Tags associated with the node
+        status:
+          type: string
+          enum: [active, archived, draft]
+          default: active
+        metadata:
+          type: object
+          description: Additional metadata
+        created:
+          type: string
+          format: date-time
+        updated:
+          type: string
+          format: date-time
+        version:
+          type: integer
+          description: Version number for tracking changes
+
+    CreateNodeInput:
+      type: object
+      required:
+        - type
+        - title
+      properties:
+        type:
+          type: string
+          enum: [document, note, concept, reference, template]
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        content:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        metadata:
+          type: object
+
+    UpdateNodeInput:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        content:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [active, archived, draft]
+        metadata:
+          type: object
+
+    Relationship:
+      type: object
+      required:
+        - id
+        - sourceId
+        - targetId
+        - type
+      properties:
+        id:
+          type: string
+        sourceId:
+          type: string
+        targetId:
+          type: string
+        type:
+          type: string
+          enum: [links-to, references, contains, tagged-with, derived-from]
+        metadata:
+          type: object
+        created:
+          type: string
+          format: date-time
+
+    CreateRelationshipInput:
+      type: object
+      required:
+        - sourceId
+        - targetId
+        - type
+      properties:
+        sourceId:
+          type: string
+        targetId:
+          type: string
+        type:
+          type: string
+          enum: [links-to, references, contains, tagged-with, derived-from]
+        metadata:
+          type: object
+
+    SearchQuery:
+      type: object
+      required:
+        - query
+      properties:
+        query:
+          type: string
+          description: Search query text
+        filters:
+          type: object
+          properties:
+            types:
+              type: array
+              items:
+                type: string
+            tags:
+              type: array
+              items:
+                type: string
+            status:
+              type: array
+              items:
+                type: string
+            dateRange:
+              type: object
+              properties:
+                start:
+                  type: string
+                  format: date-time
+                end:
+                  type: string
+                  format: date-time
+        options:
+          type: object
+          properties:
+            fuzzy:
+              type: boolean
+              default: false
+            semantic:
+              type: boolean
+              default: false
+            includeRelated:
+              type: boolean
+              default: false
+            limit:
+              type: integer
+              minimum: 1
+              maximum: 100
+              default: 20
+            offset:
+              type: integer
+              minimum: 0
+              default: 0
+
+    SearchResult:
+      type: object
+      properties:
+        node:
+          $ref: '#/components/schemas/Node'
+        relevance:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        highlights:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              snippet:
+                type: string
+
+    SystemStats:
+      type: object
+      properties:
+        nodes:
+          type: object
+          properties:
+            total:
+              type: integer
+            byType:
+              type: object
+              additionalProperties:
+                type: integer
+            byStatus:
+              type: object
+              additionalProperties:
+                type: integer
+        relationships:
+          type: object
+          properties:
+            total:
+              type: integer
+            byType:
+              type: object
+              additionalProperties:
+                type: integer
+        activity:
+          type: object
+          properties:
+            recentNodes:
+              type: integer
+            recentSearches:
+              type: integer
+
+    Pagination:
+      type: object
+      properties:
+        limit:
+          type: integer
+        offset:
+          type: integer
+        total:
+          type: integer
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+        timestamp:
+          type: string
+          format: date-time
+
+  responses:
+    BadRequest:
+      description: Bad request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    
+    Conflict:
+      description: Resource conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    
+    InternalError:
+      description: Internal server error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

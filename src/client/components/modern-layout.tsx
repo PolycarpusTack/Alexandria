@@ -151,6 +151,13 @@ export function ModernLayout({ children }: ModernLayoutProps) {
               )}
               {coreItems.map((item) => {
                 const isActive = isActiveRoute(item.path);
+                
+                // Map icons for core items
+                const iconMap: Record<string, React.ReactNode> = {
+                  dashboard: <Home className='h-4 w-4' />,
+                  settings: <Settings className='h-4 w-4' />,
+                  users: <User className='h-4 w-4' />
+                };
 
                 return (
                   <Button
@@ -162,7 +169,7 @@ export function ModernLayout({ children }: ModernLayoutProps) {
                     )}
                     onClick={() => navigate(item.path)}
                   >
-                    {item.icon}
+                    {iconMap[item.id] || <LayoutGrid className='h-4 w-4' />}
                     {!layoutState.sidebarCollapsed && (
                       <>
                         <span className='ml-3'>{item.label}</span>
@@ -187,6 +194,14 @@ export function ModernLayout({ children }: ModernLayoutProps) {
               )}
               {pluginItems.map((item) => {
                 const isActive = isActiveRoute(item.path);
+                
+                // Map icons for plugin items
+                const iconMap: Record<string, React.ReactNode> = {
+                  alfred: <Brain className='h-4 w-4' />,
+                  'crash-analyzer': <FileSearch className='h-4 w-4' />,
+                  heimdall: <Shield className='h-4 w-4' />,
+                  mnemosyne: <Book className='h-4 w-4' />
+                };
 
                 return (
                   <Button
@@ -198,7 +213,7 @@ export function ModernLayout({ children }: ModernLayoutProps) {
                     )}
                     onClick={() => navigate(item.path)}
                   >
-                    {item.icon}
+                    {iconMap[item.id] || <Package className='h-4 w-4' />}
                     {!layoutState.sidebarCollapsed && (
                       <>
                         <span className='ml-3'>{item.label}</span>
@@ -223,6 +238,12 @@ export function ModernLayout({ children }: ModernLayoutProps) {
               )}
               {aiServiceItems.map((item) => {
                 const isActive = isActiveRoute(item.path);
+                
+                // Map icons for AI service items
+                const iconMap: Record<string, React.ReactNode> = {
+                  'llm-models': <Brain className='h-4 w-4' />,
+                  'vector-store': <Database className='h-4 w-4' />
+                };
 
                 return (
                   <Button
@@ -234,7 +255,7 @@ export function ModernLayout({ children }: ModernLayoutProps) {
                     )}
                     onClick={() => navigate(item.path)}
                   >
-                    {item.icon}
+                    {iconMap[item.id] || <Zap className='h-4 w-4' />}
                     {!layoutState.sidebarCollapsed && (
                       <>
                         <span className='ml-3'>{item.label}</span>
@@ -259,6 +280,13 @@ export function ModernLayout({ children }: ModernLayoutProps) {
               )}
               {quickLinks.map((item) => {
                 const isActive = isActiveRoute(item.path);
+                
+                // Map icons for quick link items
+                const iconMap: Record<string, React.ReactNode> = {
+                  documentation: <Book className='h-4 w-4' />,
+                  support: <MessageSquare className='h-4 w-4' />,
+                  'plugin-store': <Package className='h-4 w-4' />
+                };
 
                 return (
                   <Button
@@ -270,7 +298,7 @@ export function ModernLayout({ children }: ModernLayoutProps) {
                     )}
                     onClick={() => navigate(item.path)}
                   >
-                    {item.icon}
+                    {iconMap[item.id] || <HelpCircle className='h-4 w-4' />}
                     {!layoutState.sidebarCollapsed && (
                       <>
                         <span className='ml-3'>{item.label}</span>

@@ -7,6 +7,10 @@ import {
 } from '../interfaces';
 import { INestedObject, IQueryOptions } from '../types/llm-types';
 
+
+import { createLogger } from '../../../../utils/logger';
+
+const logger = createLogger({ serviceName: 'crash-repository' });
 /**
  * Repository for storing and retrieving crash logs and analysis results
  */
@@ -183,7 +187,7 @@ export class CrashRepository implements ICrashRepository {
       // Log any failed deletions but don't fail the entire operation
       const failed = deletionResults.filter((result) => result.status === 'rejected');
       if (failed.length > 0) {
-        console.warn(
+        logger.warn(
           `Failed to delete ${failed.length} of ${analyses.length} analyses for crash log ${id}`,
           {
             failedCount: failed.length,

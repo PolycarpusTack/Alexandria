@@ -17,6 +17,7 @@ import {
   SelectValue
 } from '../../../../client/components/ui/select';
 import { useToast } from '../../../../client/components/ui/use-toast';
+import { clientLogger } from '@/utils/client-logger';
 // UI context import removed - using proper component imports
 import { CrashLog } from '../../src/interfaces';
 import { CrashLogList } from './CrashLogList';
@@ -102,7 +103,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ crashAnalyzerService }) =>
     showModal = undefined;
   } catch (error) {
     // UI context not available - we'll handle modals differently
-    console.warn('UI context not available in Hadron Dashboard, using fallback modal handling');
+    clientLogger.warn('UI context not available in Hadron Dashboard, using fallback modal handling');
   }
 
   useEffect(() => {
@@ -171,7 +172,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ crashAnalyzerService }) =>
       const errorMsg = 'Failed to load crash logs. Please try again.';
       setError(errorMsg);
       toast({ title: 'Error', description: errorMsg, variant: 'destructive' });
-      console.error('Error loading crash logs:', err);
+      clientLogger.error('Error loading crash logs:', err);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -239,7 +240,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ crashAnalyzerService }) =>
         await crashAnalyzerService.deleteCrashLog(logId);
         loadCrashLogs();
       } catch (err) {
-        console.error('Error deleting crash log:', err);
+        clientLogger.error('Error deleting crash log:', err);
         setError('Failed to delete crash log.');
       }
     }

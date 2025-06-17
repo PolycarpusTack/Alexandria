@@ -155,11 +155,11 @@ export interface PluginStorageRepository {
     /**
      * Get a value from plugin storage
      */
-    get(pluginId: string, key: string): Promise<any>;
+    get<T = unknown>(pluginId: string, key: string): Promise<T | null>;
     /**
      * Set a value in plugin storage
      */
-    set(pluginId: string, key: string, value: any): Promise<void>;
+    set<T = unknown>(pluginId: string, key: string, value: T): Promise<void>;
     /**
      * Remove a value from plugin storage
      */
@@ -236,7 +236,7 @@ export interface CaseSchema {
     assigned_to: string | null;
     created_by: string;
     tags: string[];
-    metadata: Record<string, any>;
+    metadata: Record<string, unknown>;
 }
 /**
  * Log entry table schema
@@ -246,7 +246,7 @@ export interface LogEntrySchema {
     timestamp: Date;
     level: string;
     message: string;
-    context: Record<string, any>;
+    context: Record<string, unknown>;
     source: string;
 }
 /**
@@ -255,7 +255,8 @@ export interface LogEntrySchema {
 export interface PluginStorageSchema {
     plugin_id: string;
     key: string;
-    value: any;
+    value: unknown;
     created_at: Date;
     updated_at: Date;
 }
+//# sourceMappingURL=interfaces.d.ts.map

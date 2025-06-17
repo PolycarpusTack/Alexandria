@@ -1,0 +1,54 @@
+{
+  "id": "apicarus",
+  "name": "Apicarus",
+  "version": "1.0.0",
+  "description": "Professional API development and testing suite with AI-powered insights and shared knowledge repository. Soar through API testing like Icarus, but with better engineering.",
+  "author": {
+    "name": "Alexandria Developer",
+    "email": "dev@alexandria.platform",
+    "url": "https://alexandria.platform"
+  },
+  "category": "assistant",
+  "keywords": ["api", "rest", "graphql", "websocket", "testing", "development", "http", "ai"],
+  "icon": "assets/icons/apicarus.svg",
+  "color": "#10b981",
+  "permissions": [
+    "network:*",
+    "filesystem:read",
+    "filesystem:write",
+    "ai:inference",
+    "storage:unlimited"
+  ],
+  "main": "index.js",
+  "ui": {
+    "panels": ["main", "sidebar", "statusbar"],
+    "commands": [
+      {
+        "id": "apicarus.newRequest",
+        "title": "New API Request",
+        "shortcut": "cmd+shift+n"
+      },
+      {
+        "id": "apicarus.importCurl",
+        "title": "Import cURL Command",
+        "shortcut": "cmd+shift+i"
+      },
+      {
+        "id": "apicarus.generateCode",
+        "title": "Generate Code Snippet",
+        "shortcut": "cmd+shift+g"
+      },
+      {
+        "id": "apicarus.aiAssist",
+        "title": "AI Request Assistant",
+        "shortcut": "cmd+shift+a"
+      }
+    ]
+  },
+  "dependencies": {
+    "@alexandria/shared": "workspace:*"
+  },
+  "engines": {
+    "alexandria": ">=2.0.0"
+  }
+}

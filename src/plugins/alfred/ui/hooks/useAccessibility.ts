@@ -1,100 +1,65 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 
-export const useAccessibility = () => {
-  const announcementRef = useRef<HTMLDivElement>(null);
+export function useAccessibility() {
+    useEffect(() => {
+        // Set up keyboard navigation
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Handle escape key
+            if (e.key === 'Escape') {
+                const activeElement = document.activeElement as HTMLElement;
+                if (activeElement) {
+                    activeElement.blur();
+                }
+            }
+        };
 
-  const announce = (message: string, priority: 'polite' | 'assertive' = 'polite') => {
-    if (announcementRef.current) {
-      announcementRef.current.setAttribute('aria-live', priority);
-      announcementRef.current.textContent = message;
-      
-      // Clear after announcement
-      setTimeout(() => {
-        if (announcementRef.current) {
-          announcementRef.current.textContent = '';
+        document.addEventListener('keydown', handleKeyDown);
+
+        // Ensure proper ARIA labels
+        const ensureAccessibility = () => {
+            // Add ARIA labels to interactive elements without them
+            const interactiveElements = document.querySelectorAll(
+                'button:not([aria-label]), a:not([aria-label]), input:not([aria-label])'
+            );
+            
+            interactiveElements.forEach((element) => {
+                const text = element.textContent?.trim();
+                if (text && !element.getAttribute('aria-label')) {
+                    element.setAttribute('aria-label', text);
+                }
+            });
+        };
+
+        ensureAccessibility();
+
+        // Set up mutation observer to handle dynamic content
+        const observer = new MutationObserver(ensureAccessibility);
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+            observer.disconnect();
+        };
+    }, []);
+
+    return {
+        announceToScreenReader: (message: string) => {
+            const announcement = document.createElement('div');
+            announcement.setAttribute('role', 'status');
+            announcement.setAttribute('aria-live', 'polite');
+            announcement.textContent = message;
+            announcement.style.position = 'absolute';
+            announcement.style.left = '-9999px';
+            document.body.appendChild(announcement);
+            
+            setTimeout(() => {
+                document.body.removeChild(announcement);
+            }, 1000);
         }
-      }, 1000);
-    }
-  };
-
-  const ScreenReaderAnnouncer = () => (
-    <div
-      ref={announcementRef}
-      aria-live="polite"
-      aria-atomic="true"
-      className="sr-only"
-    />
-  );
-
-  return { announce, ScreenReaderAnnouncer };
-};
-
-export const useFocusManagement = () => {
-  const trapFocus = (container: HTMLElement) => {
-    const focusableElements = container.querySelectorAll(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    );
-    
-    const firstElement = focusableElements[0] as HTMLElement;
-    const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
-
-    const handleTabKey = (e: KeyboardEvent) => {
-      if (e.key === 'Tab') {
-        if (e.shiftKey) {
-          if (document.activeElement === firstElement) {
-            e.preventDefault();
-            lastElement.focus();
-          }
-        } else {
-          if (document.activeElement === lastElement) {
-            e.preventDefault();
-            firstElement.focus();
-          }
-        }
-      }
     };
+}
 
-    container.addEventListener('keydown', handleTabKey);
-    firstElement?.focus();
-
-    return () => container.removeEventListener('keydown', handleTabKey);
-  };
-
-  return { trapFocus };
-};
-
-export const useKeyboardNavigation = (items: any[], onSelect: (index: number) => void) => {
-  const selectedIndex = useRef(0);
-
-  const handleKeyDown = (e: KeyboardEvent) => {
-    switch (e.key) {
-      case 'ArrowDown':
-        e.preventDefault();
-        selectedIndex.current = Math.min(selectedIndex.current + 1, items.length - 1);
-        break;
-      case 'ArrowUp':
-        e.preventDefault();
-        selectedIndex.current = Math.max(selectedIndex.current - 1, 0);
-        break;
-      case 'Enter':
-        e.preventDefault();
-        onSelect(selectedIndex.current);
-        break;
-      case 'Home':
-        e.preventDefault();
-        selectedIndex.current = 0;
-        break;
-      case 'End':
-        e.preventDefault();
-        selectedIndex.current = items.length - 1;
-        break;
-    }
-  };
-
-  useEffect(() => {
-    document.addEventListener('keydown', handleKeyDown);
-    return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [items]);
-
-  return selectedIndex.current;
-};
+export default useAccessibility;

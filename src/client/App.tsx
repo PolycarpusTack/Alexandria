@@ -29,6 +29,7 @@ import { CrashAnalyzerRoutes } from './pages/crash-analyzer';
 // Plugin Routes - Dynamic imports for better code splitting
 const AlfredApp = React.lazy(() => import('../plugins/alfred/ui/index'));
 const HeimdallRoutes = React.lazy(() => import('./pages/heimdall'));
+const MnemosyneRoutes = React.lazy(() => import('../../plugins/mnemosyne/ui/index'));
 
 // Auth types moved to store
 export type { User } from '../store/auth-store';
@@ -78,7 +79,7 @@ const AuthInitializer: React.FC<{ children: React.ReactNode }> = ({ children }) 
         // Invalid JSON, clear storage
         localStorage.removeItem('authToken');
         localStorage.removeItem('authUser');
-        console.warn('Invalid user data in localStorage, cleared');
+        clientLogger.warn('Invalid user data in localStorage, cleared');
       }
     }
   }, [login]);
@@ -168,6 +169,22 @@ const App: React.FC = () => {
                       <RouteErrorBoundary>
                         <React.Suspense fallback={<div>Loading Heimdall...</div>}>
                           <HeimdallRoutes />
+                        </React.Suspense>
+                      </RouteErrorBoundary>
+                    </DynamicLayout>
+                  }
+                />
+              }
+            />
+            <Route
+              path='/mnemosyne/*'
+              element={
+                <ProtectedRoute
+                  element={
+                    <DynamicLayout>
+                      <RouteErrorBoundary>
+                        <React.Suspense fallback={<div>Loading Mnemosyne...</div>}>
+                          <MnemosyneRoutes />
                         </React.Suspense>
                       </RouteErrorBoundary>
                     </DynamicLayout>

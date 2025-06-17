@@ -45,7 +45,7 @@ export class BasicValidationService implements ValidationService {
   /**
    * Validate input data against a schema
    */
-  validate(data: Record<string, any>, schema: ValidationSchema): ValidationResult {
+  validate(data: Record<string, unknown>, schema: ValidationSchema): ValidationResult {
     const errors: Array<{
       field: string;
       message: string;
@@ -81,7 +81,7 @@ export class BasicValidationService implements ValidationService {
    * Sanitize input data
    */
   sanitize(
-    data: Record<string, any>,
+    data: Record<string, unknown>,
     options?: {
       allowHtml?: boolean;
       allowScripts?: boolean;
@@ -89,8 +89,8 @@ export class BasicValidationService implements ValidationService {
       allowedTags?: string[];
       allowedAttributes?: Record<string, string[]>;
     }
-  ): Record<string, any> {
-    const result: Record<string, any> = {};
+  ): Record<string, unknown> {
+    const result: Record<string, unknown> = {};
 
     // Default options
     const sanitizeOptions = {
@@ -125,7 +125,7 @@ export class BasicValidationService implements ValidationService {
   /**
    * Create a validation schema
    */
-  createSchema(schema: Record<string, any>): ValidationSchema {
+  createSchema(schema: Record<string, unknown>): ValidationSchema {
     const validationSchema: ValidationSchema = {};
     const rules = this.getRules();
 

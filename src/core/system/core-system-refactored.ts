@@ -121,12 +121,26 @@ export class CoreSystemRefactored implements ICoreSystem {
     this.logger.info('Shutting down core system', { component: 'CoreSystemRefactored' });
 
     try {
+      // CRITICAL: Destroy security service to prevent memory leaks
+      if (this.securityService && typeof this.securityService.destroy === 'function') {
+        await this.securityService.destroy();
+        this.logger.info('Security service destroyed', { component: 'CoreSystemRefactored' });
+      }
+
+      // Clean up plugin registry
+      if (this.pluginRegistry && typeof this.pluginRegistry.destroy === 'function') {
+        await this.pluginRegistry.destroy();
+        this.logger.info('Plugin registry destroyed', { component: 'CoreSystemRefactored' });
+      }
+
       // Clean up resources
       this.routeService.clearRoutes();
 
       // Reset services
       this.userService = undefined;
       this.caseService = undefined;
+      this.securityService = undefined;
+      this.pluginRegistry = undefined;
 
       this.isInitialized = false;
       this.logger.info('Core system shut down successfully', { component: 'CoreSystemRefactored' });

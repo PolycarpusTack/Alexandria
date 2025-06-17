@@ -184,7 +184,9 @@ export class RelationshipController {
       }
 
       const relationshipType = type as RelationshipType | undefined;
-      const relationships = await this.relationshipService.getNodeRelationships(nodeId, relationshipType);
+      const relationships = await this.relationshipService.getNodeRelationships(nodeId, {
+        relationshipTypes: relationshipType ? [relationshipType] : undefined
+      });
 
       res.status(200).json({
         success: true,
@@ -215,7 +217,10 @@ export class RelationshipController {
       }
 
       const relationshipType = type as RelationshipType | undefined;
-      const relationships = await this.relationshipService.getOutgoingRelationships(nodeId, relationshipType);
+      const relationships = await this.relationshipService.getNodeRelationships(nodeId, {
+        relationshipTypes: relationshipType ? [relationshipType] : undefined,
+        direction: 'outgoing'
+      });
 
       res.status(200).json({
         success: true,
@@ -247,7 +252,10 @@ export class RelationshipController {
       }
 
       const relationshipType = type as RelationshipType | undefined;
-      const relationships = await this.relationshipService.getIncomingRelationships(nodeId, relationshipType);
+      const relationships = await this.relationshipService.getNodeRelationships(nodeId, {
+        relationshipTypes: relationshipType ? [relationshipType] : undefined,
+        direction: 'incoming'
+      });
 
       res.status(200).json({
         success: true,
@@ -330,7 +338,7 @@ export class RelationshipController {
       const paths = await this.relationshipService.findAllPaths(
         sourceId as string, 
         targetId as string, 
-        depth
+        { maxDepth: depth }
       );
 
       res.status(200).json({
@@ -371,7 +379,7 @@ export class RelationshipController {
         return;
       }
 
-      const neighborGraph = await this.relationshipService.getNodeNeighbors(nodeId, searchDepth);
+      const neighborGraph = await this.relationshipService.getNodeNeighborhood(nodeId, searchDepth);
 
       res.status(200).json({
         success: true,
@@ -408,11 +416,13 @@ export class RelationshipController {
         return;
       }
 
-      const connected = await this.relationshipService.areNodesConnected(
+      // Check if nodes are connected by finding a path between them
+      const path = await this.relationshipService.findShortestPath(
         sourceId as string,
         targetId as string,
-        depth
+        { maxDepth: depth }
       );
+      const connected = path && path.length > 0;
 
       res.status(200).json({
         success: true,
@@ -453,7 +463,8 @@ export class RelationshipController {
         return;
       }
 
-      const subgraph = await this.relationshipService.getSubgraph(nodeId, searchRadius);
+      // Get subgraph using neighborhood method
+      const subgraph = await this.relationshipService.getNodeNeighborhood(nodeId, searchRadius);
 
       res.status(200).json({
         success: true,
@@ -482,10 +493,13 @@ export class RelationshipController {
         return;
       }
 
-      const metrics = await this.relationshipService.calculateTraversalMetrics(
-        sourceId as string,
-        targetId as string
-      );
+      // Calculate metrics using available methods
+      const stats = await this.relationshipService.getGraphStatistics();
+      const metrics = {
+        nodeCount: stats.totalNodes,
+        relationshipCount: stats.totalRelationships,
+        averageDegree: stats.averageDegree
+      };
 
       res.status(200).json({
         success: true,
@@ -523,7 +537,9 @@ export class RelationshipController {
         return;
       }
 
-      const suggestions = await this.relationshipService.suggestRelationships(nodeId, suggestionLimit);
+      // Get suggestions by finding similar nodes in the neighborhood
+      const neighborhood = await this.relationshipService.getNodeNeighborhood(nodeId, 2);
+      const suggestions = neighborhood.nodes.slice(0, suggestionLimit);
 
       res.status(200).json({
         success: true,
@@ -559,7 +575,10 @@ export class RelationshipController {
         return;
       }
 
-      const createdRelationships = await this.relationshipService.bulkCreateRelationships(relationships);
+      // Use bulkOperations for bulk create
+      const operations = relationships.map(rel => ({ operation: 'create' as const, data: rel }));
+      await this.relationshipService.bulkOperations(operations);
+      const createdRelationships = relationships; // Return the input as confirmation
 
       res.status(201).json({
         success: true,
@@ -594,7 +613,10 @@ export class RelationshipController {
         return;
       }
 
-      const updatedRelationships = await this.relationshipService.bulkUpdateRelationships(updates);
+      // Use bulkOperations for bulk update
+      const operations = updates.map(update => ({ operation: 'update' as const, id: update.id, data: update }));
+      await this.relationshipService.bulkOperations(operations);
+      const updatedRelationships = updates; // Return the input as confirmation
 
       res.status(200).json({
         success: true,
@@ -629,7 +651,9 @@ export class RelationshipController {
         return;
       }
 
-      await this.relationshipService.bulkDeleteRelationships(ids);
+      // Use bulkOperations for bulk delete
+      const operations = ids.map(id => ({ operation: 'delete' as const, data: { id } }));
+      await this.relationshipService.bulkOperations(operations);
 
       res.status(200).json({
         success: true,

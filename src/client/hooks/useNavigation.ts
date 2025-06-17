@@ -100,6 +100,15 @@ export function useNavigation() {
             badgeVariant: 'outline',
             statusIndicator: 'offline',
             color: '#a78bfa'
+          },
+          {
+            id: 'mnemosyne',
+            label: 'Mnemosyne',
+            path: '/mnemosyne',
+            badge: 'KB',
+            badgeVariant: 'secondary',
+            statusIndicator: 'online',
+            color: '#22c55e'
           }
         ]
       },
